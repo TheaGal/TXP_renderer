@@ -49,6 +49,7 @@ endif()
 # Dependencies.
 set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cpp_glm/include  # Header only.
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/esfw/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastgltf/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo
@@ -58,6 +59,7 @@ set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tomlplusplus/include  # Header only.
 )
 
+add_subdirectory(third_party/esfw)
 add_subdirectory(third_party/fastgltf)
 add_subdirectory(third_party/stduuid)
 
@@ -142,6 +144,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
+    esfw
     fastgltf
     stduuid
     ${PLAT_SPECIFIC_LINK_LIBS}

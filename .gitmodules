@@ -28,3 +28,6 @@
 [submodule "third_party/VulkanMemoryAllocator"]
 	path = third_party/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "third_party/esfw"]
+	path = third_party/esfw
+	url = https://github.com/SpartanJ/efsw.git
