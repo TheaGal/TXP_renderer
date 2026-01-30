@@ -1,0 +1,30 @@
+[submodule "third_party/fastgltf"]
+	path = third_party/fastgltf
+	url = https://github.com/spnda/fastgltf.git
+[submodule "third_party/glfw"]
+	path = third_party/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "third_party/imgui"]
+	path = third_party/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "third_party/tinyobjloader"]
+	path = third_party/tinyobjloader
+	url = https://github.com/tinyobjloader/tinyobjloader.git
+[submodule "third_party/stb"]
+	path = third_party/stb
+	url = https://github.com/nothings/stb.git
+[submodule "third_party/stduuid"]
+	path = third_party/stduuid
+	url = https://github.com/mariusbancila/stduuid.git
+[submodule "third_party/ImGuizmo"]
+	path = third_party/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "third_party/tomlplusplus"]
+	path = third_party/tomlplusplus
+	url = https://github.com/marzer/tomlplusplus.git
+[submodule "third_party/cpp_glm"]
+	path = third_party/cpp_glm
+	url = https://github.com/TheaGal/cpp_glm.git
+[submodule "third_party/VulkanMemoryAllocator"]
+	path = third_party/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

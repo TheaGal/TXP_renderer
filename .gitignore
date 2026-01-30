@@ -1,0 +1,11 @@
+# VSCode cache folder.
+.vscode/
+
+# CMake build folder.
+[Bb]uild/
+
+# CMake VSCode ext cache folder.
+.cache/
+
+# Clangd compile_commands.json (@NOTE: Only appears when using clang compiler)
+compile_commands.json
