@@ -8,7 +8,7 @@ C++20 cross-platform renderer library.
 
 ## Software
 
-- Clang 20.1.X
+- Clang
     - win64: 20.1.X
     - macOS: 17.0.0 (default)
 
