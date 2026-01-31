@@ -69,17 +69,21 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows|Darwin")
 
     find_package(Vulkan REQUIRED)
     add_subdirectory(third_party/glfw)
+    add_subdirectory(third_party/vk-bootstrap)
+    add_subdirectory(third_party/VulkanMemoryAllocator)
 
     set(PLAT_SPECIFIC_INCLUDE_DIRS
         ${Vulkan_INCLUDE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glfw/include
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/vk-bootstrap
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party/VulkanMemoryAllocator/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/third_party/glfw/include
     )
     set(PLAT_SPECIFIC_LINK_LIBS
         glfw
         ${GLFW_LIBRARIES}
         Vulkan::Vulkan
+        vk-bootstrap::vk-bootstrap
+        GPUOpen::VulkanMemoryAllocator
     )
 else()
     message(FATAL_ERROR "GFX Lib not implemented yet!!")

@@ -31,3 +31,6 @@
 [submodule "third_party/esfw"]
 	path = third_party/esfw
 	url = https://github.com/SpartanJ/efsw.git
+[submodule "third_party/vk-bootstrap"]
+	path = third_party/vk-bootstrap
+	url = https://github.com/charles-lunarg/vk-bootstrap

@@ -9,11 +9,16 @@ C++20 cross-platform renderer library.
 ## Software
 
 - Clang
-    - win64: 20.1.X
+    - win64: 20.1.X (install llvm for windows and ninja)
     - macOS: 17.0.0 (default)
 
-- Vulkan 1.3.296.0 SDK
+- Vulkan SDK
     - System Global Installation
+    - win64: 1.3.296.0
+        > @NOTE: a different version could be more suitable? Still unknown how much the 1.3 vs 1.4 vulkan sdks change development.
+    - macOS: 1.4.335.1 (note: contains MoltenVK 1.4.2)
+
+- vk-bootstrap v1.4.341
 
 - VulkanMemoryAllocator v3.3.0
 
