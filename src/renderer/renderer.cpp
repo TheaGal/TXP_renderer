@@ -12,7 +12,7 @@
 namespace TXP
 {
 
-// struct Renderer::Impl
+/// Impl class for Renderer.
 struct Renderer::Impl
 {
     std::string title;
@@ -29,6 +29,7 @@ struct Renderer::Impl
 };
 
 
+// struct Renderer::Impl
 void Renderer::Impl::run()
 {
     // Setup renderer.
