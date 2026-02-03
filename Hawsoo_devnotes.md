@@ -79,4 +79,4 @@ And then creating the vulkan renderer (ideally it should be identical for these 
 Making abstractions along the way is the goal, since I don't want to be stuck with any vulkan syntax inside the actual `renderer.cpp` by the end.
     > GOALS HERE!!!
 
-
+> Ahhhhhhhh I just (re-found out) found out that glfw (and all windowing code for that matter) MUST RUN ON THE MAIN THREAD. Fwick. That sucks. Well, ig that means that simulation thread can run on a separate thread then?

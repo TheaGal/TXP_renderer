@@ -66,6 +66,9 @@ add_subdirectory(third_party/stduuid)
 # Platform-specific dependencies.
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows|Darwin")
     message("GFX Lib: Vulkan 1.3")
+    set(GFX_LIB_DEFINITIONS
+        TXP_GFX_BACKEND_VULKAN=1
+    )
 
     find_package(Vulkan REQUIRED)
     add_subdirectory(third_party/glfw)
@@ -92,8 +95,16 @@ endif()
 
 # Main source files.
 set(MAIN_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer_public.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/deformed_render_model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/renderer.cpp
 )
 
 # Executable build.
@@ -152,6 +163,12 @@ target_link_libraries(${PROJECT_NAME}
     fastgltf
     stduuid
     ${PLAT_SPECIFIC_LINK_LIBS}
+)
+
+
+target_compile_definitions(${PROJECT_NAME}
+    PRIVATE
+        ${GFX_LIB_DEFINITIONS}
 )
 
 # Set this project as Visual Studio startup project.

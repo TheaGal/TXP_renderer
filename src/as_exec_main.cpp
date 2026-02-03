@@ -10,9 +10,12 @@ int32_t main()
 {
     std::cout << "Hello warld!" << std::endl;
 
-    TXP::Renderer r{ "My renderer test!" };
+    TXP::Renderer r{ "My renderer test!", 1024, 576 };
 
-    
+    auto ro0_key = r.create_render_obj({
+        .layer      = TXP::RENDER_LAYER_DEFAULT,
+        .model_name = "DefaultModel",
+    });
 
     return 0;
 }
