@@ -148,7 +148,7 @@ target_include_directories(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
-    esfw
+    efsw-static
     fastgltf
     stduuid
     ${PLAT_SPECIFIC_LINK_LIBS}
