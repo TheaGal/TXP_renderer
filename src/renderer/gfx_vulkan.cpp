@@ -1,3 +1,4 @@
+#include <sstream>
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "gfx.h"
@@ -101,6 +102,15 @@ struct Vk_gfx_instance
     vkb::Instance vkb_instance;
     vkb::Device vkb_device;
 
+#if defined(__APPLE__)
+    // Apple lagging behind the standard and being a piece of shit wtf guys.  -Thea 2026/02/04
+    static constexpr bool k_feature_draw_indirect_count{ false };
+    static constexpr bool k_feature_minmax_sampler_filter{ false };
+#else
+    static constexpr bool k_feature_draw_indirect_count{ true };
+    static constexpr bool k_feature_minmax_sampler_filter{ true };
+#endif // defined(__APPLE__)
+
     VkInstance instance;
 #ifndef NDEBUG
     VkDebugUtilsMessengerEXT debug_utils_messenger;
@@ -199,38 +209,53 @@ void init_vulkan_build_device()
     VkPhysicalDeviceVulkan12Features vulkan12_features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .pNext = nullptr,
-        // For `vkCmdDrawIndexedIndirectCount`.
-        .drawIndirectCount = VK_TRUE,
         // For non-uniform, dynamic arrays of textures in shaders.
         .descriptorIndexing = VK_TRUE,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
         .descriptorBindingVariableDescriptorCount = VK_TRUE,
         .runtimeDescriptorArray = VK_TRUE,
-        // For MIN/MAX sampler when creating mip chains for occlusion culling.
-        .samplerFilterMinmax = VK_TRUE,
         // For buffer references in the stead of descriptor sets.
         .bufferDeviceAddress = VK_TRUE,
     };
 
+    if constexpr (Vk_gfx_instance::k_feature_draw_indirect_count)
+        vulkan12_features.drawIndirectCount = VK_TRUE;  // For `vkCmdDrawIndexedIndirectCount`.
+    if constexpr (Vk_gfx_instance::k_feature_minmax_sampler_filter)
+        vulkan12_features.samplerFilterMinmax = VK_TRUE;  // For MIN/MAX sampler when creating mip chains for occlusion culling.
+
     // Select physical device.
     vkb::PhysicalDeviceSelector selector{ s_gfx.vkb_instance };
-    vkb::PhysicalDevice physical_device{
-        selector
-            .set_minimum_version(1, 3)
-            .set_required_features_13(vulkan13_features)
-            .set_required_features_12(vulkan12_features)
-            .set_surface(s_gfx.surface)
-            .set_required_features({
-                // @NOTE: @FEATURES: Enable required features right here
-                // .multiDrawIndirect = VK_TRUE,         // So that vkCmdDrawIndexedIndirect() can be called with a >1 drawCount. (@NOTE: not happening with current setup)
-                .depthClamp = VK_TRUE,                // For shadow maps, this is really nice.
-                .fillModeNonSolid = VK_TRUE,          // To render wireframes.
-                .samplerAnisotropy = VK_TRUE,
-                .fragmentStoresAndAtomics = VK_TRUE,  // For the picking buffer! @TODO: If a release build then disable.
-            })
-            .select()
-            .value()
-    };
+    vkb::PhysicalDevice physical_device;
+    {
+        auto physical_device_selection{
+            selector
+                .set_minimum_version(1, 3)
+                .set_required_features_13(vulkan13_features)
+                .set_required_features_12(vulkan12_features)
+                .set_surface(s_gfx.surface)
+                .set_required_features({
+                    // @NOTE: @FEATURES: Enable required features right here
+                    // .multiDrawIndirect = VK_TRUE,         // So that vkCmdDrawIndexedIndirect() can be called with a >1 drawCount. (@NOTE: not happening with current setup)
+                    .depthClamp = VK_TRUE,                // For shadow maps, this is really nice.
+                    .fillModeNonSolid = VK_TRUE,          // To render wireframes.
+                    .samplerAnisotropy = VK_TRUE,
+                    .fragmentStoresAndAtomics = VK_TRUE,  // For the picking buffer! @TODO: If a release build then disable.
+                })
+                .select()
+        };
+
+        if (!physical_device_selection.has_value())
+        {
+            std::ostringstream err_msg;
+            err_msg << "No physical device found that meets requirements.\n";
+            for (auto const& det_msg : physical_device_selection.detailed_failure_reasons())
+                err_msg << "  " << det_msg << "\n";
+
+            throw std::runtime_error(err_msg.str());
+        }
+
+        physical_device = physical_device_selection.value();
+    }
     s_gfx.physical_device = physical_device.physical_device;
     s_gfx.physical_device_properties = physical_device.properties;
 
@@ -316,13 +341,20 @@ void init_vulkan_retrieve_queues()
     s_gfx.graphics_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::graphics).value();
     s_gfx.graphics_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::graphics).value();
 
+    // @THEA: getting more queues will be a bit more complicated. It seems that on the M4 pro chip
+    //   there are 4 queue families which all have complete capabilities, so using the `compute` or
+    //   `transfer` flags will actually not find them!
+    // @TODO: figure out some way to get multiple queues as long as they have one of the wanted
+    //   capabilities. ALSO, would be good to really think about the queue architecture for this to
+    //   really shine.  -Thea 2026/02/04
+
     // @NOTE: the vv below vv queues are left unused currently.
 
-    s_gfx.async_compute_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::compute).value();
-    s_gfx.async_compute_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::compute).value();
+    // s_gfx.async_compute_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::compute).value();
+    // s_gfx.async_compute_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::compute).value();
 
-    s_gfx.transfer_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::transfer).value();
-    s_gfx.transfer_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::transfer).value();
+    // s_gfx.transfer_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::transfer).value();
+    // s_gfx.transfer_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::transfer).value();
 }
 
 void init_vulkan_create_cmd_structures()
