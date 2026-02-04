@@ -17,5 +17,7 @@ int32_t main()
         .model_name = "DefaultModel",
     });
 
+    r.run();
+
     return 0;
 }
