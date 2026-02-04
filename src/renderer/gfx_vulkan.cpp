@@ -133,6 +133,9 @@ static Vk_gfx_instance s_gfx;
 /// Number of frames-in-flight.
 constexpr uint32_t k_frame_overlap{ 3 };
 
+/// Index of current frame.
+static uint32_t s_current_frame_idx{ 0 };
+
 /// Holds per-frame data.
 struct Frame_data
 {
@@ -400,37 +403,38 @@ void init_vulkan_create_sync_structures()
 
 void init_vulkan_allocate_descriptors()
 {
-    // Init allocator pool.
-    std::vector<vk_desc::Descriptor_allocator::Pool_size_ratio> sizes{
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
-    };
+    // @TODO: figure out the descriptor sets vv below vv
+    // // Init allocator pool.
+    // std::vector<vk_desc::Descriptor_allocator::Pool_size_ratio> sizes{
+    //     { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+    // };
 
-    out_descriptor_alloc.init_pool(device, 10, sizes);
+    // out_descriptor_alloc.init_pool(device, 10, sizes);
 
-    // Build layout.
-    vk_desc::Descriptor_layout_builder builder;
-    builder.add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    out_descriptor_layout = builder.build(device, VK_SHADER_STAGE_COMPUTE_BIT);
+    // // Build layout.
+    // vk_desc::Descriptor_layout_builder builder;
+    // builder.add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
+    // out_descriptor_layout = builder.build(device, VK_SHADER_STAGE_COMPUTE_BIT);
 
-    // Allocate descriptor set.
-    out_descriptor_set = out_descriptor_alloc.allocate(device, out_descriptor_layout);
+    // // Allocate descriptor set.
+    // out_descriptor_set = out_descriptor_alloc.allocate(device, out_descriptor_layout);
 
-    VkDescriptorImageInfo image_info{
-        .imageView = hdr_image_view,
-        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-    };
+    // VkDescriptorImageInfo image_info{
+    //     .imageView = hdr_image_view,
+    //     .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+    // };
 
-    VkWriteDescriptorSet image_write{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .pNext = nullptr,
-        .dstSet = out_descriptor_set,
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        .pImageInfo = &image_info,
-    };
+    // VkWriteDescriptorSet image_write{
+    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+    //     .pNext = nullptr,
+    //     .dstSet = out_descriptor_set,
+    //     .dstBinding = 0,
+    //     .descriptorCount = 1,
+    //     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+    //     .pImageInfo = &image_info,
+    // };
 
-    vkUpdateDescriptorSets(device, 1, &image_write, 0, nullptr);
+    // vkUpdateDescriptorSets(device, 1, &image_write, 0, nullptr);
 }
 
 void init_vulkan_create_pipelines()
@@ -472,29 +476,42 @@ uint32_t TXP::GFX::acquire_next_image()
     // Wait until GPU has finished rendering last frame.
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
-    err = vkWaitForFences(device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
+    auto& current_frame{ s_frames[s_current_frame_idx] };
+
+    err = vkWaitForFences(s_gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
     if (err)
     {
         throw std::runtime_error("wait for render fence timed out.");
     }
 
-    err = vkResetFences(device, 1, &current_frame.render_fence);
+    err = vkResetFences(s_gfx.device, 1, &current_frame.render_fence);
     if (err)
     {
         throw std::runtime_error("reset render fence failed.");
     }
 
     // Request image from swapchain.
-    err = vkAcquireNextImageKHR(device,
-                                swapchain,
+    uint32_t swapchain_image_idx;
+    err = vkAcquireNextImageKHR(s_gfx.device,
+                                s_gfx.swapchain,
                                 k_10sec_as_ns,
                                 current_frame.swapchain_semaphore,
                                 nullptr,
-                                &out_swapchain_image_idx);
+                                &swapchain_image_idx);
     if (err)
     {
         throw std::runtime_error("Acquire next swapchain image failed.");
     }
+
+    return swapchain_image_idx;
+}
+
+void TXP::GFX::present_frame_to_screen()
+{
+    // @TODO:
+
+    // Increment frame counter now that this frame's work is finished.
+    s_current_frame_idx = (s_current_frame_idx + 1) % k_frame_overlap;
 }
 
 #endif // TXP_GFX_BACKEND_VULKAN

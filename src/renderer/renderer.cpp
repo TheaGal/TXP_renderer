@@ -58,6 +58,8 @@ void Renderer::Impl::run()
 void Renderer::Impl::render_one_frame_to_screen(uint32_t present_img_idx)
 {
     // @TODO.
+
+    GFX::present_frame_to_screen();
 }
 
 

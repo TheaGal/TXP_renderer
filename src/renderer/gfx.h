@@ -17,5 +17,8 @@ void teardown_renderer();
 /// Acquires next render image. Will block until an image becomes available.
 uint32_t acquire_next_image();
 
+/// Presents rendered frame to screen.
+void present_frame_to_screen();
+
 }  // namespace GFX
 }  // namespace TXP
