@@ -72,10 +72,8 @@ GLFWwindow* create_window(std::string const& title, int32_t win_width, int32_t w
     auto glfw_window = glfwCreateWindow(win_width, win_height, title.c_str(), nullptr, nullptr);
     if (!glfw_window)
     {
-        // std::cerr << "ERROR: Window creation failed." << std::endl;
         glfwTerminate();
-        assert(false);
-        return nullptr;
+        throw std::runtime_error("Window creation failed.");
     }
 
     // @TODO: add window icon here.
@@ -130,6 +128,25 @@ struct Vk_gfx_instance
     uint32_t transfer_queue_family_idx;
 };
 static Vk_gfx_instance s_gfx;
+
+
+/// Number of frames-in-flight.
+constexpr uint32_t k_frame_overlap{ 3 };
+
+/// Holds per-frame data.
+struct Frame_data
+{
+    VkCommandPool command_pool;
+    VkCommandBuffer graphics_queue_command_buffer;
+    VkSemaphore swapchain_semaphore;
+    VkSemaphore render_semaphore;
+    VkFence render_fence;
+
+    // @TODO: figure out the vv below vv
+    // vk_buffer::Allocated_buffer camera_buffer;
+    // vk_buffer::GPU_geo_per_frame_buffer geo_per_frame_buffer;
+};
+static std::array<Frame_data, k_frame_overlap> s_frames;
 
 
 void init_vulkan_instance()
@@ -313,32 +330,30 @@ void init_vulkan_create_cmd_structures()
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = graphics_queue_family_idx
+        .queueFamilyIndex = s_gfx.graphics_queue_family_idx,
     };
 
     for (uint32_t i = 0; i < k_frame_overlap; i++)
     {
-        err = vkCreateCommandPool(device, &cmd_pool_info, nullptr, &out_frames[i].command_pool);
+        err = vkCreateCommandPool(s_gfx.device, &cmd_pool_info, nullptr, &s_frames[i].command_pool);
         if (err)
         {
-            std::cerr << "ERROR: Vulkan command pool creation failed for frame #" << i << std::endl;
-            return false;
+            throw std::runtime_error("Vulkan command pool creation failed for frame #");
         }
 
         // Allocate default cmd buffer for rendering.
         VkCommandBufferAllocateInfo cmd_alloc_info{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
-            .commandPool = out_frames[i].command_pool,
+            .commandPool = s_frames[i].command_pool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = 1,
         };
 
-        err = vkAllocateCommandBuffers(device, &cmd_alloc_info, &out_frames[i].main_command_buffer);
+        err = vkAllocateCommandBuffers(s_gfx.device, &cmd_alloc_info, &s_frames[i].graphics_queue_command_buffer);
         if (err)
         {
-            std::cerr << "ERROR: Vulkan command pool allocation failed for frame #" << i << std::endl;
-            return false;
+            throw std::runtime_error("Vulkan command pool allocation failed for frame #");
         }
     }
 }
@@ -363,25 +378,22 @@ void init_vulkan_create_sync_structures()
 
     for (uint32_t i = 0; i < k_frame_overlap; i++)
     {
-        err = vkCreateFence(device, &fence_create_info, nullptr, &out_frames[i].render_fence);
+        err = vkCreateFence(s_gfx.device, &fence_create_info, nullptr, &s_frames[i].render_fence);
         if (err)
         {
-            std::cerr << "ERROR: Vulkan render fence creation failed for frame #" << i << std::endl;
-            return false;
+            throw std::runtime_error("Vulkan render fence creation failed for frame #");
         }
 
-        err = vkCreateSemaphore(device, &semaphore_create_info, nullptr, &out_frames[i].swapchain_semaphore);
+        err = vkCreateSemaphore(s_gfx.device, &semaphore_create_info, nullptr, &s_frames[i].swapchain_semaphore);
         if (err)
         {
-            std::cerr << "ERROR: Vulkan swapchain semaphore creation failed for frame #" << i << std::endl;
-            return false;
+            throw std::runtime_error("Vulkan swapchain semaphore creation failed for frame #");
         }
 
-        err = vkCreateSemaphore(device, &semaphore_create_info, nullptr, &out_frames[i].render_semaphore);
+        err = vkCreateSemaphore(s_gfx.device, &semaphore_create_info, nullptr, &s_frames[i].render_semaphore);
         if (err)
         {
-            std::cerr << "ERROR: Vulkan render semaphore creation failed for frame #" << i << std::endl;
-            return false;
+            throw std::runtime_error("Vulkan render semaphore creation failed for frame #");
         }
     }
 }
