@@ -1,3 +1,4 @@
+#include "vulkan/vulkan_core.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "gfx.h"
@@ -20,6 +21,53 @@
 namespace TXP
 {
 
+VkImageSubresourceRange txp_vk_image_subresource_range(VkImageAspectFlags aspect_mask)
+{
+    VkImageSubresourceRange subresource_range{
+        .aspectMask = aspect_mask,
+        .baseMipLevel = 0,
+        .levelCount = VK_REMAINING_MIP_LEVELS,
+        .baseArrayLayer = 0,
+        .layerCount = VK_REMAINING_ARRAY_LAYERS,
+    };
+    return subresource_range;
+}
+
+VkSemaphoreSubmitInfo txp_vk_semaphore_submit_info(VkPipelineStageFlags2 stage_mask,
+                                                   VkSemaphore semaphore)
+{
+    VkSemaphoreSubmitInfo submit_info{
+        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+        .pNext = nullptr,
+        .semaphore = semaphore,
+        .stageMask = stage_mask,
+        .deviceIndex = 0,
+        .value = 1,
+    };
+
+	return submit_info;
+}
+
+VkSubmitInfo2 txp_vk_submit_info(VkCommandBufferSubmitInfo* cmd_info,
+                                 VkSemaphoreSubmitInfo* signal_info,
+                                 VkSemaphoreSubmitInfo* wait_info)
+{
+    VkSubmitInfo2 info = {
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .pNext = nullptr,
+
+        .waitSemaphoreInfoCount = (wait_info == nullptr ? 0u : 1u),
+        .pWaitSemaphoreInfos = wait_info,
+
+        .signalSemaphoreInfoCount = (signal_info == nullptr ? 0u : 1u),
+        .pSignalSemaphoreInfos = signal_info,
+
+        .commandBufferInfoCount = 1u,
+        .pCommandBufferInfos = cmd_info,
+    };
+    return info;
+}
+
 struct Graphics::Impl
 {
     Impl(std::string const& title, int32_t width, int32_t height)
@@ -39,6 +87,68 @@ struct Graphics::Impl
     void init_window_props();
     void init_window();
 
+
+    /// Image abstraction for vulkan renderer.
+    class Image
+    {
+    public:
+        Image(VkImage img)
+            : m_img(img)
+        {
+        }
+
+        void transition_to(VkCommandBuffer cmd, VkImageLayout new_layout)
+        {
+            if (m_current_layout == new_layout)
+                return;  // Cancel transition if same layout.
+
+            VkImageAspectFlags aspect_mask = (new_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL
+                                                  ? VK_IMAGE_ASPECT_DEPTH_BIT
+                                                  : VK_IMAGE_ASPECT_COLOR_BIT);
+
+            VkImageMemoryBarrier2 image_barrier{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+                .pNext = nullptr,
+
+                .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+                .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                .dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
+
+                .oldLayout = m_current_layout,
+                .newLayout = new_layout,
+
+                .subresourceRange = txp_vk_image_subresource_range(aspect_mask),
+                .image = m_img,
+            };
+
+            VkDependencyInfo dep_info{
+                .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+                .pNext = nullptr,
+
+                .imageMemoryBarrierCount = 1,
+                .pImageMemoryBarriers = &image_barrier,
+            };
+
+            vkCmdPipelineBarrier2(cmd, &dep_info);
+
+            m_current_layout = new_layout;
+        }
+
+        VkImage get()
+        {
+            return m_img;
+        }
+
+        VkImageLayout get_layout()
+        {
+            return m_current_layout;
+        }
+
+    private:
+        VkImage m_img;
+        VkImageLayout m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
+    };
 
     /// Holds Vulkan graphics initialization information.
     struct Vk_gfx_instance
@@ -67,7 +177,7 @@ struct Graphics::Impl
         VmaAllocator allocator;
 
         VkSwapchainKHR swapchain;
-        std::vector<VkImage> swapchain_images;
+        std::vector<Image> swapchain_images;
         std::vector<VkImageView> swapchain_image_views;
         VkFormat swapchain_image_format;
         VkExtent2D swapchain_extent;
@@ -86,11 +196,92 @@ struct Graphics::Impl
     /// Number of frames-in-flight.
     static constexpr uint32_t k_frame_overlap{ 3 };
 
+    /// Command buffer abstraction for this vulkan renderer.
+    class Command_buffer
+    {
+    public:
+        /// Allocates command buffer.
+        void allocate(VkDevice device, VkCommandPool cmd_pool, bool is_primary_level)
+        {
+            VkCommandBufferAllocateInfo cmd_alloc_info{
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                .pNext = nullptr,
+                .commandPool = cmd_pool,
+                .level = (is_primary_level ? VK_COMMAND_BUFFER_LEVEL_PRIMARY
+                                           : VK_COMMAND_BUFFER_LEVEL_SECONDARY),
+                .commandBufferCount = 1,
+            };
+
+            VkResult err;
+
+            err = vkAllocateCommandBuffers(device, &cmd_alloc_info, &m_cmd);
+            if (err)
+            {
+                throw std::runtime_error("Vulkan command pool allocation failed for frame #");
+            }
+        }
+
+        /// Resets command buffer, causing initialization for the next `.get()` call.
+        void reset()
+        {
+            m_initialized = false;
+        }
+
+        /// Gets command buffer, initializing if needed.
+        VkCommandBuffer get()
+        {
+            if (!m_initialized)
+            {
+                VkResult err;
+
+                err = vkResetCommandBuffer(m_cmd, 0);
+                if (err)
+                {
+                    std::runtime_error("Reset command buffer failed.");
+                }
+
+                VkCommandBufferBeginInfo info{
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                    .pNext = nullptr,
+                    .pInheritanceInfo = nullptr,
+                    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+                };
+
+                //start the command buffer recording
+                err = vkBeginCommandBuffer(m_cmd, &info);
+                if (err)
+                {
+                    std::runtime_error("Begin command buffer failed.");
+                }
+
+                m_initialized = true;
+            }
+
+            return m_cmd;
+        }
+
+        /// Ends command buffer recording.
+        void finish()
+        {
+            VkResult err;
+
+            err = vkEndCommandBuffer(m_cmd);
+            if (err)
+            {
+                std::runtime_error("End command buffer failed.");
+            }
+        }
+
+    private:
+        bool m_initialized{ false };
+        VkCommandBuffer m_cmd;
+    };
+
     /// Holds per-frame data.
     struct Frame_data
     {
         VkCommandPool command_pool;
-        VkCommandBuffer graphics_queue_command_buffer;
+        Command_buffer graphics_queue_command_buffer;
         VkSemaphore swapchain_semaphore;
         VkSemaphore render_semaphore;
         VkFence render_fence;
@@ -115,10 +306,14 @@ struct Graphics::Impl
 
 
     /// Index of current frame.
-    uint32_t current_frame_idx{ (uint32_t)-1 };
+    size_t current_frame_idx{ (size_t)-1 };
     uint32_t current_swapchain_image_idx;
 
     void start_new_frame();
+
+    void render_incomplete_jojojojojojs();
+
+    void present_frame_to_screen();
 };
 
 
@@ -368,7 +563,19 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     };
 
     gfx.swapchain = swapchain.swapchain;
-    gfx.swapchain_images = swapchain.get_images().value();
+
+    gfx.swapchain_images = ([&]() {
+        auto swapchain_imgs_val = swapchain.get_images().value();
+
+        std::vector<Image> images;
+        images.reserve(swapchain_imgs_val.size());
+
+        for (auto img : swapchain_imgs_val)
+            images.emplace_back(img);
+        
+        return images;
+    })();
+
     gfx.swapchain_image_views = swapchain.get_image_views().value();
     gfx.swapchain_image_format = swapchain.image_format;
     gfx.swapchain_extent.width = render_dim[0];
@@ -415,20 +622,9 @@ void Graphics::Impl::init_vulkan_create_cmd_structures()
             throw std::runtime_error("Vulkan command pool creation failed for frame #");
         }
 
-        // Allocate default cmd buffer for rendering.
-        VkCommandBufferAllocateInfo cmd_alloc_info{
-            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-            .pNext = nullptr,
-            .commandPool = frames[i].command_pool,
-            .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-            .commandBufferCount = 1,
-        };
-
-        err = vkAllocateCommandBuffers(gfx.device, &cmd_alloc_info, &frames[i].graphics_queue_command_buffer);
-        if (err)
-        {
-            throw std::runtime_error("Vulkan command pool allocation failed for frame #");
-        }
+        frames[i].graphics_queue_command_buffer.allocate(gfx.device,
+                                                         frames[i].command_pool,
+                                                         true);
     }
 }
 
@@ -513,10 +709,10 @@ void Graphics::Impl::init_vulkan_create_pipelines()
 
 void Graphics::Impl::start_new_frame()
 {   // Increment frame counter for new frame.
-    current_frame_idx = (current_frame_idx + 1) % k_frame_overlap;
+    current_frame_idx++;
 
     // Wait until GPU has finished rendering last frame (of current frame index).
-    auto& current_frame{ frames[current_frame_idx] };
+    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
 
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
@@ -543,6 +739,101 @@ void Graphics::Impl::start_new_frame()
     if (err)
     {
         throw std::runtime_error("Acquire next swapchain image failed.");
+    }
+
+    // Reset command buffers.
+    current_frame.graphics_queue_command_buffer.reset();
+}
+
+void Graphics::Impl::render_incomplete_jojojojojojs()
+{
+    // @INCOMPLETE: just to get the screen to show.
+    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+    auto& swapchain_img{ gfx.swapchain_images[current_swapchain_image_idx] };
+
+    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+
+    swapchain_img.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
+
+	// Clear image.
+    VkClearColorValue clear_value;
+	float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
+	clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
+    VkImageSubresourceRange clear_range = txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    assert(swapchain_img.get_layout() == VK_IMAGE_LAYOUT_GENERAL);
+    vkCmdClearColorImage(cmd,
+                         swapchain_img.get(),
+                         swapchain_img.get_layout(),
+                         &clear_value,
+                         1,
+                         &clear_range);
+
+    swapchain_img.transition_to(cmd, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+}
+
+void Graphics::Impl::present_frame_to_screen()
+{
+    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+
+    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+
+    // End recording command buffers.
+    current_frame.graphics_queue_command_buffer.finish();
+
+
+
+    //prepare the submission to the queue. 
+	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
+	//we will signal the _renderSemaphore, to signal that rendering has finished
+    VkResult err;
+
+    VkCommandBufferSubmitInfo cmd_info{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .pNext = nullptr,
+        .commandBuffer = cmd,
+        .deviceMask = 0,
+    };
+
+    VkSemaphoreSubmitInfo signal_info =
+        txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+                                     current_frame.render_semaphore);
+    VkSemaphoreSubmitInfo wait_info =
+        txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+                                     current_frame.swapchain_semaphore);
+
+    VkSubmitInfo2 submit = txp_vk_submit_info(&cmd_info, &signal_info, &wait_info);
+    
+
+    //submit command buffer to the queue and execute it.
+	// _renderFence will now block until the graphic commands finish execution
+	err = vkQueueSubmit2(gfx.graphics_queue, 1, &submit, current_frame.render_fence);
+    if (err)
+    {
+        throw std::runtime_error("Queue submit failed.");
+    }
+
+
+
+    //prepare present
+	// this will put the image we just rendered to into the visible window.
+	// we want to wait on the _renderSemaphore for that, 
+	// as its necessary that drawing commands have finished before the image is displayed to the user
+	VkPresentInfoKHR present_info = {};
+	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+	present_info.pNext = nullptr;
+	present_info.pSwapchains = &gfx.swapchain;
+	present_info.swapchainCount = 1;
+
+	present_info.pWaitSemaphores = &current_frame.render_semaphore;
+	present_info.waitSemaphoreCount = 1;
+
+	present_info.pImageIndices = &current_swapchain_image_idx;
+
+	err = vkQueuePresentKHR(gfx.graphics_queue, &present_info);
+    if (err)
+    {
+        throw std::runtime_error("Queue present KHR failed.");
     }
 }
 
@@ -629,7 +920,8 @@ void TXP::Graphics::render_transparent_geometry()
 
 void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 {
-    assert(false);
+    // @INCOMPLETE: just to get the screen to show.
+    m_pimpl->render_incomplete_jojojojojojs();
 }
 
 void TXP::Graphics::render_imgui()
@@ -639,8 +931,7 @@ void TXP::Graphics::render_imgui()
 
 void TXP::Graphics::present_frame_to_screen()
 {
-    // @TODO: implement
-    assert(false);
+    m_pimpl->present_frame_to_screen();
 }
 
 }  // namespace TXP

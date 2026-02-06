@@ -44,21 +44,21 @@ void Renderer::run()
         // Render one frame.
         g->start_new_frame();
 
-        g->compute_light_culling();
-        g->compute_shadow_culling();
-        g->compute_opaque_geometry_culling();
-        g->compute_transparent_geometry_culling();
+        // g->compute_light_culling();
+        // g->compute_shadow_culling();
+        // g->compute_opaque_geometry_culling();
+        // g->compute_transparent_geometry_culling();
 
-        g->render_shadows();
-        g->render_opaque_geometry();
-        g->render_clouds();
-        g->render_volumetric_light();
-        g->render_particles();
-        g->render_transparent_geometry();
+        // g->render_shadows();
+        // g->render_opaque_geometry();
+        // g->render_clouds();
+        // g->render_volumetric_light();
+        // g->render_particles();
+        // g->render_transparent_geometry();
 
         g->render_hdr_to_ldr_postprocessing();
 
-        g->render_imgui();
+        // g->render_imgui();
 
         g->present_frame_to_screen();
     }
