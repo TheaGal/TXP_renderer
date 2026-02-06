@@ -57,7 +57,21 @@ void Renderer::Impl::run()
 
 void Renderer::Impl::render_one_frame_to_screen(uint32_t present_img_idx)
 {
-    // @TODO.
+    GFX::compute_light_culling();
+    GFX::compute_shadow_culling();
+    GFX::compute_opaque_geometry_culling();
+    GFX::compute_transparent_geometry_culling();
+
+    GFX::render_shadows();
+    GFX::render_opaque_geometry();
+    GFX::render_clouds();
+    GFX::render_volumetric_light();
+    GFX::render_particles();
+    GFX::render_transparent_geometry();
+
+    GFX::render_hdr_to_ldr_postprocessing();
+
+    GFX::render_imgui();
 
     GFX::present_frame_to_screen();
 }

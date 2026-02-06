@@ -162,6 +162,23 @@ struct Frame_data
 static std::array<Frame_data, k_frame_overlap> s_frames;
 
 
+/// Flags for controlling how to construct/destruct render pass.
+enum Lifetime_render_pass_flag
+{
+    LRP_CONSTRUCT = 0,
+    LRP_RE_CONSTRUCT,
+    LRP_DESTRUCT,
+};
+
+/// Opaque geometry pass.
+struct Render_pass_opaque_geometry
+{
+    void lifetime_change(Lifetime_render_pass_flag new_life);
+    void execute();
+};
+static Render_pass_opaque_geometry s_render_pass_opaque_geometry;
+
+
 void init_vulkan_instance()
 {   // Build vulkan instance (targeting Vulkan 1.3).
     vkb::InstanceBuilder builder;
@@ -536,6 +553,66 @@ uint32_t TXP::GFX::acquire_next_image()
     }
 
     return swapchain_image_idx;
+}
+
+void TXP::GFX::compute_light_culling()
+{
+    assert(false);
+}
+
+void TXP::GFX::compute_shadow_culling()
+{
+    assert(false);
+}
+
+void TXP::GFX::compute_opaque_geometry_culling()
+{
+    assert(false);
+}
+
+void TXP::GFX::compute_transparent_geometry_culling()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_shadows()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_opaque_geometry()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_clouds()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_volumetric_light()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_particles()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_transparent_geometry()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_hdr_to_ldr_postprocessing()
+{
+    assert(false);
+}
+
+void TXP::GFX::render_imgui()
+{
+    assert(false);
 }
 
 void TXP::GFX::present_frame_to_screen()
