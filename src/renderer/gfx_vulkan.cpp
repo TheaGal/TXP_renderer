@@ -1,4 +1,3 @@
-#include "vulkan/vulkan_core.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "gfx.h"
@@ -12,6 +11,7 @@
 #include "VkBootstrap.h"
 // clang-format on
 
+#include <array>
 #include <cassert>
 #include <sstream>
 #include <stdexcept>
@@ -795,12 +795,12 @@ void Graphics::Impl::present_frame_to_screen()
         .deviceMask = 0,
     };
 
-    VkSemaphoreSubmitInfo signal_info =
-        txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                                     current_frame.render_semaphore);
     VkSemaphoreSubmitInfo wait_info =
         txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
                                      current_frame.swapchain_semaphore);
+    VkSemaphoreSubmitInfo signal_info =
+        txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+                                     current_frame.render_semaphore);
 
     VkSubmitInfo2 submit = txp_vk_submit_info(&cmd_info, &signal_info, &wait_info);
     
@@ -861,6 +861,11 @@ TXP::Graphics::~Graphics()
 {
     // @TODO
     assert(false);
+}
+
+void TXP::Graphics::poll_input_events()
+{
+    glfwPollEvents();
 }
 
 void TXP::Graphics::start_new_frame()

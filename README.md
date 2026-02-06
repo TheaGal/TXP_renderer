@@ -18,7 +18,7 @@ C++20 cross-platform renderer library.
         > @NOTE: a different version could be more suitable? Still unknown how much the 1.3 vs 1.4 vulkan sdks change development.
     - macOS: 1.4.335.1 (note: contains MoltenVK 1.4.2)
 
-- vk-bootstrap v1.4.341
+- vk-bootstrap v1.4.342
 
 - VulkanMemoryAllocator v3.3.0
 

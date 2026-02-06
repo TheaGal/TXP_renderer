@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 
@@ -13,6 +14,9 @@ class Graphics
 public:
     Graphics(std::string const& title, int32_t width, int32_t height);
     ~Graphics();
+
+    /// Polls for input events.
+    void poll_input_events();
 
     /// Acquires next render image for the frame. Will block until an image becomes available.
     void start_new_frame();

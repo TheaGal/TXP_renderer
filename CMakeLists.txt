@@ -109,6 +109,8 @@ set(MAIN_SOURCES
 
 # Executable build.
 add_executable(${PROJECT_NAME}
+    MACOSX_BUNDLE
+
     # Main source files.
     ${MAIN_SOURCES}
 
@@ -169,6 +171,13 @@ target_link_libraries(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
         ${GFX_LIB_DEFINITIONS}
+)
+
+set_target_properties(${PROJECT_NAME} PROPERTIES
+    MACOSX_BUNDLE_GUI_IDENTIFIER "com.hawsoo.txp_renderer"
+    MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+    MACOSX_BUNDLE_BUNDLE_VERSION "0.1.0"
+    MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
 )
 
 # Set this project as Visual Studio startup project.

@@ -41,6 +41,9 @@ void Renderer::run()
 
         // Calculate animator joints.
 
+        // Poll for input events.
+        g->poll_input_events();
+
         // Render one frame.
         g->start_new_frame();
 
@@ -61,6 +64,8 @@ void Renderer::run()
         // g->render_imgui();
 
         g->present_frame_to_screen();
+
+        std::cout << "RENDERED ONE FRAME" << std::endl;
     }
 }
 

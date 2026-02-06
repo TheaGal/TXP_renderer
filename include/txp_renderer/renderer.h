@@ -1,8 +1,8 @@
 #pragma once
 
 #include "txp_renderer/types.h"
+
 #include <cstdint>
-#include <memory>
 #include <string>
 
 
