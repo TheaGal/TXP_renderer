@@ -5,56 +5,60 @@
 
 namespace TXP
 {
-namespace GFX
+
+/// Renderer backend with implementation depending on the platform using preprocessor macros in the
+/// .cpp source file to differentiate the different implementations.
+class Graphics
 {
+public:
+    Graphics(std::string const& title, int32_t width, int32_t height);
+    ~Graphics();
 
-/// Sets up the renderer platform-dependent backend and the render graph.
-void setup_renderer(std::string const& title, int32_t width, int32_t height);
+    /// Acquires next render image for the frame. Will block until an image becomes available.
+    void start_new_frame();
 
-/// Tears down renderer, cleaning up resources.
-void teardown_renderer();
+    /// .
+    void compute_light_culling();
 
-/// Acquires next render image. Will block until an image becomes available.
-uint32_t acquire_next_image();
+    /// .
+    void compute_shadow_culling();
 
-/// .
-void compute_light_culling();
+    /// .
+    void compute_opaque_geometry_culling();
 
-/// .
-void compute_shadow_culling();
+    /// .
+    void compute_transparent_geometry_culling();
 
-/// .
-void compute_opaque_geometry_culling();
+    /// .
+    void render_shadows();
 
-/// .
-void compute_transparent_geometry_culling();
+    /// .
+    void render_opaque_geometry();
 
-/// .
-void render_shadows();
+    /// .
+    void render_clouds();
 
-/// .
-void render_opaque_geometry();
+    /// .
+    void render_volumetric_light();
 
-/// .
-void render_clouds();
+    /// .
+    void render_particles();
 
-/// .
-void render_volumetric_light();
+    /// .
+    void render_transparent_geometry();
 
-/// .
-void render_particles();
+    /// .
+    void render_hdr_to_ldr_postprocessing();
 
-/// .
-void render_transparent_geometry();
+    /// .
+    void render_imgui();
 
-/// .
-void render_hdr_to_ldr_postprocessing();
+    /// Presents rendered frame to screen.
+    void present_frame_to_screen();
 
-/// .
-void render_imgui();
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_pimpl;
+};
 
-/// Presents rendered frame to screen.
-void present_frame_to_screen();
-
-}  // namespace GFX
 }  // namespace TXP

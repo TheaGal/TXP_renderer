@@ -1,4 +1,3 @@
-#include <sstream>
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "gfx.h"
@@ -13,14 +12,118 @@
 // clang-format on
 
 #include <cassert>
+#include <sstream>
 #include <stdexcept>
 #include <string>
 
 
-namespace
+namespace TXP
 {
 
-void init_glfw_no_api()
+struct Graphics::Impl
+{
+    Impl(std::string const& title, int32_t width, int32_t height)
+        : window_title(title)
+        , render_dim{ width, height }
+    {
+    }
+
+
+    std::string window_title;
+    GLFWwindow* window{ nullptr };
+
+    int32_t render_dim[2];
+
+
+    void init_glfw_no_api();
+    void init_window_props();
+    void init_window();
+
+
+    /// Holds Vulkan graphics initialization information.
+    struct Vk_gfx_instance
+    {
+        vkb::Instance vkb_instance;
+        vkb::Device vkb_device;
+
+    #if defined(__APPLE__)
+        // Apple lagging behind the standard and being a piece of shit wtf guys.  -Thea 2026/02/04
+        static constexpr bool k_feature_draw_indirect_count{ false };
+        static constexpr bool k_feature_minmax_sampler_filter{ false };
+    #else
+        static constexpr bool k_feature_draw_indirect_count{ true };
+        static constexpr bool k_feature_minmax_sampler_filter{ true };
+    #endif // defined(__APPLE__)
+
+        VkInstance instance;
+    #ifndef NDEBUG
+        VkDebugUtilsMessengerEXT debug_utils_messenger;
+    #endif
+        VkSurfaceKHR surface;
+        VkPhysicalDevice physical_device;
+        VkPhysicalDeviceProperties physical_device_properties;
+        VkDevice device;
+
+        VmaAllocator allocator;
+
+        VkSwapchainKHR swapchain;
+        std::vector<VkImage> swapchain_images;
+        std::vector<VkImageView> swapchain_image_views;
+        VkFormat swapchain_image_format;
+        VkExtent2D swapchain_extent;
+
+        VkQueue graphics_queue;
+        uint32_t graphics_queue_family_idx;
+
+        VkQueue async_compute_queue;
+        uint32_t async_compute_queue_family_idx;
+
+        VkQueue transfer_queue;
+        uint32_t transfer_queue_family_idx;
+    };
+    Vk_gfx_instance gfx;
+
+    /// Number of frames-in-flight.
+    static constexpr uint32_t k_frame_overlap{ 3 };
+
+    /// Holds per-frame data.
+    struct Frame_data
+    {
+        VkCommandPool command_pool;
+        VkCommandBuffer graphics_queue_command_buffer;
+        VkSemaphore swapchain_semaphore;
+        VkSemaphore render_semaphore;
+        VkFence render_fence;
+
+        // @TODO: figure out the vv below vv
+        // vk_buffer::Allocated_buffer camera_buffer;
+        // vk_buffer::GPU_geo_per_frame_buffer geo_per_frame_buffer;
+    };
+    std::array<Frame_data, k_frame_overlap> frames;
+
+
+    void init_vulkan_instance();
+    void init_vulkan_window_surface();
+    void init_vulkan_build_device();
+    void init_vulkan_create_memory_allocator();
+    void init_vulkan_build_swapchain();
+    void init_vulkan_retrieve_queues();
+    void init_vulkan_create_cmd_structures();
+    void init_vulkan_create_sync_structures();
+    void init_vulkan_allocate_descriptors();
+    void init_vulkan_create_pipelines();
+
+
+    /// Index of current frame.
+    uint32_t current_frame_idx{ (uint32_t)-1 };
+    uint32_t current_swapchain_image_idx;
+
+    void start_new_frame();
+};
+
+
+// struct Graphics::Impl
+void Graphics::Impl::init_glfw_no_api()
 {
     auto result = glfwInit();
     assert(result == GLFW_TRUE);
@@ -28,9 +131,9 @@ void init_glfw_no_api()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 }
 
-void apply_window_props(int32_t win_width, int32_t win_height)
+void Graphics::Impl::init_window_props()
 {
-    assert(win_width > 0 && win_height > 0);
+    assert(render_dim[0] > 0 && render_dim[1] > 0);
 
     // Apply centering hints.
     struct Monitor_workarea
@@ -48,9 +151,9 @@ void apply_window_props(int32_t win_width, int32_t win_height)
 
     int32_t centered_window_pos[2]{
         monitor_workarea.xpos +
-            static_cast<int32_t>(monitor_workarea.width * 0.5 - win_width * 0.5),
+            static_cast<int32_t>(monitor_workarea.width * 0.5 - render_dim[0] * 0.5),
         monitor_workarea.ypos +
-            static_cast<int32_t>(monitor_workarea.height * 0.5 - win_height * 0.5),
+            static_cast<int32_t>(monitor_workarea.height * 0.5 - render_dim[1] * 0.5),
     };
 
     glfwWindowHint(GLFW_POSITION_X, centered_window_pos[0]);
@@ -66,12 +169,17 @@ void apply_window_props(int32_t win_width, int32_t win_height)
     glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 }
 
-GLFWwindow* create_window(std::string const& title, int32_t win_width, int32_t win_height)
+void Graphics::Impl::init_window()
 {
-    assert(win_width > 0 && win_height > 0);
+    assert(render_dim[0] > 0 && render_dim[1] > 0);
+    assert(window == nullptr);
 
-    auto glfw_window = glfwCreateWindow(win_width, win_height, title.c_str(), nullptr, nullptr);
-    if (!glfw_window)
+    window = glfwCreateWindow(render_dim[0],
+                              render_dim[1],
+                              window_title.c_str(),
+                              nullptr,
+                              nullptr);
+    if (!window)
     {
         glfwTerminate();
         throw std::runtime_error("Window creation failed.");
@@ -80,7 +188,7 @@ GLFWwindow* create_window(std::string const& title, int32_t win_width, int32_t w
     // @TODO: add window icon here.
 
 
-    glfwShowWindow(glfw_window);
+    glfwShowWindow(window);
 
     // // Window callbacks.
     // // @NOTE: With key callbacks etc that's also used by Imgui, Imgui
@@ -91,105 +199,19 @@ GLFWwindow* create_window(std::string const& title, int32_t win_width, int32_t w
     // glfwSetScrollCallback(m_window, scroll_callback);
     // glfwSetWindowFocusCallback(m_window, window_focus_callback);
     // glfwSetWindowIconifyCallback(m_window, window_iconify_callback);
-
-    return glfw_window;
 }
 
-
-/// Holds Vulkan graphics initialization information.
-struct Vk_gfx_instance
-{
-    vkb::Instance vkb_instance;
-    vkb::Device vkb_device;
-
-#if defined(__APPLE__)
-    // Apple lagging behind the standard and being a piece of shit wtf guys.  -Thea 2026/02/04
-    static constexpr bool k_feature_draw_indirect_count{ false };
-    static constexpr bool k_feature_minmax_sampler_filter{ false };
-#else
-    static constexpr bool k_feature_draw_indirect_count{ true };
-    static constexpr bool k_feature_minmax_sampler_filter{ true };
-#endif // defined(__APPLE__)
-
-    VkInstance instance;
-#ifndef NDEBUG
-    VkDebugUtilsMessengerEXT debug_utils_messenger;
-#endif
-    VkSurfaceKHR surface;
-    VkPhysicalDevice physical_device;
-    VkPhysicalDeviceProperties physical_device_properties;
-    VkDevice device;
-
-    VmaAllocator allocator;
-
-    VkSwapchainKHR swapchain;
-    std::vector<VkImage> swapchain_images;
-    std::vector<VkImageView> swapchain_image_views;
-    VkFormat swapchain_image_format;
-    VkExtent2D swapchain_extent;
-
-    VkQueue graphics_queue;
-    uint32_t graphics_queue_family_idx;
-
-    VkQueue async_compute_queue;
-    uint32_t async_compute_queue_family_idx;
-
-    VkQueue transfer_queue;
-    uint32_t transfer_queue_family_idx;
-};
-static Vk_gfx_instance s_gfx;
-
-
-/// Number of frames-in-flight.
-constexpr uint32_t k_frame_overlap{ 3 };
-
-/// Index of current frame.
-static uint32_t s_current_frame_idx{ 0 };
-
-/// Holds per-frame data.
-struct Frame_data
-{
-    VkCommandPool command_pool;
-    VkCommandBuffer graphics_queue_command_buffer;
-    VkSemaphore swapchain_semaphore;
-    VkSemaphore render_semaphore;
-    VkFence render_fence;
-
-    // @TODO: figure out the vv below vv
-    // vk_buffer::Allocated_buffer camera_buffer;
-    // vk_buffer::GPU_geo_per_frame_buffer geo_per_frame_buffer;
-};
-static std::array<Frame_data, k_frame_overlap> s_frames;
-
-
-/// Flags for controlling how to construct/destruct render pass.
-enum Lifetime_render_pass_flag
-{
-    LRP_CONSTRUCT = 0,
-    LRP_RE_CONSTRUCT,
-    LRP_DESTRUCT,
-};
-
-/// Opaque geometry pass.
-struct Render_pass_opaque_geometry
-{
-    void lifetime_change(Lifetime_render_pass_flag new_life);
-    void execute();
-};
-static Render_pass_opaque_geometry s_render_pass_opaque_geometry;
-
-
-void init_vulkan_instance()
+void Graphics::Impl::init_vulkan_instance()
 {   // Build vulkan instance (targeting Vulkan 1.3).
     vkb::InstanceBuilder builder;
     vkb::Result<vkb::Instance> instance_build_result{
         builder
             .set_app_name("Thea Cross-Platform (TXP) Renderer")
             .require_api_version(1, 3, 0)
-#ifndef NDEBUG
+        #ifndef NDEBUG
             .request_validation_layers(true)
             .use_default_debug_messenger()
-#endif
+        #endif
             .build()
     };
     if (!instance_build_result.has_value())
@@ -197,23 +219,23 @@ void init_vulkan_instance()
         throw std::runtime_error("Vulkan instance creation failed.");
     }
 
-    s_gfx.vkb_instance = instance_build_result.value();
-    s_gfx.instance = s_gfx.vkb_instance.instance;
+    gfx.vkb_instance = instance_build_result.value();
+    gfx.instance = gfx.vkb_instance.instance;
 #ifndef NDEBUG
-    s_gfx.debug_utils_messenger = s_gfx.vkb_instance.debug_messenger;
+    gfx.debug_utils_messenger = gfx.vkb_instance.debug_messenger;
 #endif
 }
 
-void init_vulkan_window_surface(GLFWwindow* window)
+void Graphics::Impl::init_vulkan_window_surface()
 {
-    VkResult err = glfwCreateWindowSurface(s_gfx.instance, window, nullptr, &s_gfx.surface);
+    VkResult err = glfwCreateWindowSurface(gfx.instance, window, nullptr, &gfx.surface);
     if (err)
     {
         throw std::runtime_error("Vulkan surface creation failed.");
     }
 }
 
-void init_vulkan_build_device()
+void Graphics::Impl::init_vulkan_build_device()
 {   // Vulkan 1.3 features.
     VkPhysicalDeviceVulkan13Features vulkan13_features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
@@ -241,7 +263,7 @@ void init_vulkan_build_device()
         vulkan12_features.samplerFilterMinmax = VK_TRUE;  // For MIN/MAX sampler when creating mip chains for occlusion culling.
 
     // Select physical device.
-    vkb::PhysicalDeviceSelector selector{ s_gfx.vkb_instance };
+    vkb::PhysicalDeviceSelector selector{ gfx.vkb_instance };
     vkb::PhysicalDevice physical_device;
     {
         auto physical_device_selection{
@@ -249,7 +271,7 @@ void init_vulkan_build_device()
                 .set_minimum_version(1, 3)
                 .set_required_features_13(vulkan13_features)
                 .set_required_features_12(vulkan12_features)
-                .set_surface(s_gfx.surface)
+                .set_surface(gfx.surface)
                 .set_required_features({
                     // @NOTE: @FEATURES: Enable required features right here
                     // .multiDrawIndirect = VK_TRUE,         // So that vkCmdDrawIndexedIndirect() can be called with a >1 drawCount. (@NOTE: not happening with current setup)
@@ -273,8 +295,8 @@ void init_vulkan_build_device()
 
         physical_device = physical_device_selection.value();
     }
-    s_gfx.physical_device = physical_device.physical_device;
-    s_gfx.physical_device_properties = physical_device.properties;
+    gfx.physical_device = physical_device.physical_device;
+    gfx.physical_device_properties = physical_device.properties;
 
     // @TODO: import bttrace and print the vv below vv out!
     // // Print phsyical device properties.
@@ -309,33 +331,33 @@ void init_vulkan_build_device()
         .pNext = nullptr,
         .shaderDrawParameters = VK_TRUE,
     };
-    s_gfx.vkb_device =
+    gfx.vkb_device =
         device_builder
             .add_pNext(&shader_draw_parameters_features)
             .build()
             .value();
-    s_gfx.device = s_gfx.vkb_device.device;
+    gfx.device = gfx.vkb_device.device;
 }
 
-void init_vulkan_create_memory_allocator()
+void Graphics::Impl::init_vulkan_create_memory_allocator()
 {   // Initialize VMA.
     VmaAllocatorCreateInfo vma_allocator_info{
         .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,  // To access GPU pointers.
-        .physicalDevice = s_gfx.physical_device,
-        .device = s_gfx.device,
-        .instance = s_gfx.instance,
+        .physicalDevice = gfx.physical_device,
+        .device = gfx.device,
+        .instance = gfx.instance,
     };
-    vmaCreateAllocator(&vma_allocator_info, &s_gfx.allocator);
+    vmaCreateAllocator(&vma_allocator_info, &gfx.allocator);
 }
 
-void init_vulkan_build_swapchain(int32_t window_width, int32_t window_height)
+void Graphics::Impl::init_vulkan_build_swapchain()
 {   // Build swapchain.
-    vkb::SwapchainBuilder swapchain_builder{ s_gfx.physical_device, s_gfx.device, s_gfx.surface };
+    vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
     vkb::Swapchain swapchain{
         swapchain_builder.use_default_format_selection()
             .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // Mailbox (G-Sync/Freesync).
             .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // FIFO (V-Sync).
-            .set_desired_extent(window_width, window_height)
+            .set_desired_extent(render_dim[0], render_dim[1])
             // @TODO: TRANSFER_DST image usage added below. Try removing once renderer is finished
             // (assuming you're not gonna have some kind of image transfer as the last step into the
             // swapchain image).
@@ -345,18 +367,18 @@ void init_vulkan_build_swapchain(int32_t window_width, int32_t window_height)
             .value()
     };
 
-    s_gfx.swapchain = swapchain.swapchain;
-    s_gfx.swapchain_images = swapchain.get_images().value();
-    s_gfx.swapchain_image_views = swapchain.get_image_views().value();
-    s_gfx.swapchain_image_format = swapchain.image_format;
-    s_gfx.swapchain_extent.width = window_width;
-    s_gfx.swapchain_extent.height = window_height;
+    gfx.swapchain = swapchain.swapchain;
+    gfx.swapchain_images = swapchain.get_images().value();
+    gfx.swapchain_image_views = swapchain.get_image_views().value();
+    gfx.swapchain_image_format = swapchain.image_format;
+    gfx.swapchain_extent.width = render_dim[0];
+    gfx.swapchain_extent.height = render_dim[1];
 }
 
-void init_vulkan_retrieve_queues()
+void Graphics::Impl::init_vulkan_retrieve_queues()
 {
-    s_gfx.graphics_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::graphics).value();
-    s_gfx.graphics_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::graphics).value();
+    gfx.graphics_queue = gfx.vkb_device.get_queue(vkb::QueueType::graphics).value();
+    gfx.graphics_queue_family_idx = gfx.vkb_device.get_queue_index(vkb::QueueType::graphics).value();
 
     // @THEA: getting more queues will be a bit more complicated. It seems that on the M4 pro chip
     //   there are 4 queue families which all have complete capabilities, so using the `compute` or
@@ -367,14 +389,14 @@ void init_vulkan_retrieve_queues()
 
     // @NOTE: the vv below vv queues are left unused currently.
 
-    // s_gfx.async_compute_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::compute).value();
-    // s_gfx.async_compute_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::compute).value();
+    // gfx.async_compute_queue = gfx.vkb_device.get_queue(vkb::QueueType::compute).value();
+    // gfx.async_compute_queue_family_idx = gfx.vkb_device.get_queue_index(vkb::QueueType::compute).value();
 
-    // s_gfx.transfer_queue = s_gfx.vkb_device.get_queue(vkb::QueueType::transfer).value();
-    // s_gfx.transfer_queue_family_idx = s_gfx.vkb_device.get_queue_index(vkb::QueueType::transfer).value();
+    // gfx.transfer_queue = gfx.vkb_device.get_queue(vkb::QueueType::transfer).value();
+    // gfx.transfer_queue_family_idx = gfx.vkb_device.get_queue_index(vkb::QueueType::transfer).value();
 }
 
-void init_vulkan_create_cmd_structures()
+void Graphics::Impl::init_vulkan_create_cmd_structures()
 {
     VkResult err;
 
@@ -382,12 +404,12 @@ void init_vulkan_create_cmd_structures()
         .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
         .pNext = nullptr,
         .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = s_gfx.graphics_queue_family_idx,
+        .queueFamilyIndex = gfx.graphics_queue_family_idx,
     };
 
     for (uint32_t i = 0; i < k_frame_overlap; i++)
     {
-        err = vkCreateCommandPool(s_gfx.device, &cmd_pool_info, nullptr, &s_frames[i].command_pool);
+        err = vkCreateCommandPool(gfx.device, &cmd_pool_info, nullptr, &frames[i].command_pool);
         if (err)
         {
             throw std::runtime_error("Vulkan command pool creation failed for frame #");
@@ -397,12 +419,12 @@ void init_vulkan_create_cmd_structures()
         VkCommandBufferAllocateInfo cmd_alloc_info{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
             .pNext = nullptr,
-            .commandPool = s_frames[i].command_pool,
+            .commandPool = frames[i].command_pool,
             .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
             .commandBufferCount = 1,
         };
 
-        err = vkAllocateCommandBuffers(s_gfx.device, &cmd_alloc_info, &s_frames[i].graphics_queue_command_buffer);
+        err = vkAllocateCommandBuffers(gfx.device, &cmd_alloc_info, &frames[i].graphics_queue_command_buffer);
         if (err)
         {
             throw std::runtime_error("Vulkan command pool allocation failed for frame #");
@@ -410,7 +432,7 @@ void init_vulkan_create_cmd_structures()
     }
 }
 
-void init_vulkan_create_sync_structures()
+void Graphics::Impl::init_vulkan_create_sync_structures()
 {
     VkResult err;
 
@@ -430,19 +452,19 @@ void init_vulkan_create_sync_structures()
 
     for (uint32_t i = 0; i < k_frame_overlap; i++)
     {
-        err = vkCreateFence(s_gfx.device, &fence_create_info, nullptr, &s_frames[i].render_fence);
+        err = vkCreateFence(gfx.device, &fence_create_info, nullptr, &frames[i].render_fence);
         if (err)
         {
             throw std::runtime_error("Vulkan render fence creation failed for frame #");
         }
 
-        err = vkCreateSemaphore(s_gfx.device, &semaphore_create_info, nullptr, &s_frames[i].swapchain_semaphore);
+        err = vkCreateSemaphore(gfx.device, &semaphore_create_info, nullptr, &frames[i].swapchain_semaphore);
         if (err)
         {
             throw std::runtime_error("Vulkan swapchain semaphore creation failed for frame #");
         }
 
-        err = vkCreateSemaphore(s_gfx.device, &semaphore_create_info, nullptr, &s_frames[i].render_semaphore);
+        err = vkCreateSemaphore(gfx.device, &semaphore_create_info, nullptr, &frames[i].render_semaphore);
         if (err)
         {
             throw std::runtime_error("Vulkan render semaphore creation failed for frame #");
@@ -450,7 +472,7 @@ void init_vulkan_create_sync_structures()
     }
 }
 
-void init_vulkan_allocate_descriptors()
+void Graphics::Impl::init_vulkan_allocate_descriptors()
 {
     // @TODO: figure out the descriptor sets vv below vv
     // // Init allocator pool.
@@ -486,141 +508,141 @@ void init_vulkan_allocate_descriptors()
     // vkUpdateDescriptorSets(device, 1, &image_write, 0, nullptr);
 }
 
-void init_vulkan_create_pipelines()
-{
-    assert(false);
-}
+void Graphics::Impl::init_vulkan_create_pipelines()
+{}
 
-}  // namespace
+void Graphics::Impl::start_new_frame()
+{   // Increment frame counter for new frame.
+    current_frame_idx = (current_frame_idx + 1) % k_frame_overlap;
 
+    // Wait until GPU has finished rendering last frame (of current frame index).
+    auto& current_frame{ frames[current_frame_idx] };
 
-// TXP::GFX
-void TXP::GFX::setup_renderer(std::string const& title, int32_t width, int32_t height)
-{
-    init_glfw_no_api();
-    apply_window_props(width, height);
-    auto window = create_window(title, width, height);
-    init_vulkan_instance();
-    init_vulkan_window_surface(window);
-    init_vulkan_build_device();
-    init_vulkan_create_memory_allocator();
-    init_vulkan_build_swapchain(width, height);
-    init_vulkan_retrieve_queues();
-    init_vulkan_create_cmd_structures();
-    init_vulkan_create_sync_structures();
-    init_vulkan_allocate_descriptors();
-    init_vulkan_create_pipelines();
-}
-
-void TXP::GFX::teardown_renderer()
-{
-    // @TODO
-    assert(false);
-}
-
-uint32_t TXP::GFX::acquire_next_image()
-{
-    VkResult err;
-
-    // Wait until GPU has finished rendering last frame.
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
-    auto& current_frame{ s_frames[s_current_frame_idx] };
-
-    err = vkWaitForFences(s_gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
+    VkResult err;
+    err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
     if (err)
     {
         throw std::runtime_error("wait for render fence timed out.");
     }
 
-    err = vkResetFences(s_gfx.device, 1, &current_frame.render_fence);
+    err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
     if (err)
     {
         throw std::runtime_error("reset render fence failed.");
     }
 
     // Request image from swapchain.
-    uint32_t swapchain_image_idx;
-    err = vkAcquireNextImageKHR(s_gfx.device,
-                                s_gfx.swapchain,
+    err = vkAcquireNextImageKHR(gfx.device,
+                                gfx.swapchain,
                                 k_10sec_as_ns,
                                 current_frame.swapchain_semaphore,
                                 nullptr,
-                                &swapchain_image_idx);
+                                &current_swapchain_image_idx);
     if (err)
     {
         throw std::runtime_error("Acquire next swapchain image failed.");
     }
-
-    return swapchain_image_idx;
 }
 
-void TXP::GFX::compute_light_culling()
+
+// class Graphics
+TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
+    : m_pimpl(std::make_unique<Impl>(title, width, height))
+{
+    m_pimpl->init_glfw_no_api();
+    m_pimpl->init_window_props();
+    m_pimpl->init_window();
+    m_pimpl->init_vulkan_instance();
+    m_pimpl->init_vulkan_window_surface();
+    m_pimpl->init_vulkan_build_device();
+    m_pimpl->init_vulkan_create_memory_allocator();
+    m_pimpl->init_vulkan_build_swapchain();
+    m_pimpl->init_vulkan_retrieve_queues();
+    m_pimpl->init_vulkan_create_cmd_structures();
+    m_pimpl->init_vulkan_create_sync_structures();
+    m_pimpl->init_vulkan_allocate_descriptors();
+    m_pimpl->init_vulkan_create_pipelines();
+}
+
+TXP::Graphics::~Graphics()
+{
+    // @TODO
+    assert(false);
+}
+
+void TXP::Graphics::start_new_frame()
+{
+    m_pimpl->start_new_frame();
+}
+
+void TXP::Graphics::compute_light_culling()
 {
     assert(false);
 }
 
-void TXP::GFX::compute_shadow_culling()
+void TXP::Graphics::compute_shadow_culling()
 {
     assert(false);
 }
 
-void TXP::GFX::compute_opaque_geometry_culling()
+void TXP::Graphics::compute_opaque_geometry_culling()
 {
     assert(false);
 }
 
-void TXP::GFX::compute_transparent_geometry_culling()
+void TXP::Graphics::compute_transparent_geometry_culling()
 {
     assert(false);
 }
 
-void TXP::GFX::render_shadows()
+void TXP::Graphics::render_shadows()
 {
     assert(false);
 }
 
-void TXP::GFX::render_opaque_geometry()
+void TXP::Graphics::render_opaque_geometry()
 {
     assert(false);
 }
 
-void TXP::GFX::render_clouds()
+void TXP::Graphics::render_clouds()
 {
     assert(false);
 }
 
-void TXP::GFX::render_volumetric_light()
+void TXP::Graphics::render_volumetric_light()
 {
     assert(false);
 }
 
-void TXP::GFX::render_particles()
+void TXP::Graphics::render_particles()
 {
     assert(false);
 }
 
-void TXP::GFX::render_transparent_geometry()
+void TXP::Graphics::render_transparent_geometry()
 {
     assert(false);
 }
 
-void TXP::GFX::render_hdr_to_ldr_postprocessing()
+void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 {
     assert(false);
 }
 
-void TXP::GFX::render_imgui()
+void TXP::Graphics::render_imgui()
 {
     assert(false);
 }
 
-void TXP::GFX::present_frame_to_screen()
+void TXP::Graphics::present_frame_to_screen()
 {
-    // @TODO:
-
-    // Increment frame counter now that this frame's work is finished.
-    s_current_frame_idx = (s_current_frame_idx + 1) % k_frame_overlap;
+    // @TODO: implement
+    assert(false);
 }
+
+}  // namespace TXP
 
 #endif // TXP_GFX_BACKEND_VULKAN

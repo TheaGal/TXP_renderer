@@ -12,74 +12,10 @@
 namespace TXP
 {
 
-/// Impl class for Renderer.
-struct Renderer::Impl
-{
-    std::string title;
-    int32_t width;
-    int32_t height;
-
-    std::atomic_bool shutdown_flag{ false };
-
-    /// See `Renderer::run()`
-    void run();
-
-    /// Renders one frame to the screen using GFX.
-    void render_one_frame_to_screen(uint32_t present_img_idx);
-};
-
-
-// struct Renderer::Impl
-void Renderer::Impl::run()
-{
-    // Setup renderer.
-    GFX::setup_renderer(title, width, height);
-
-    while (!shutdown_flag.load())
-    {   // Process render object destroy requests.
-
-        // Process render object create requests.
-
-        // Update animator timers (renderer-profile).
-
-        // Calculate animator joints.
-
-        // Wait for render opportunity.
-        auto next_image_idx = GFX::acquire_next_image();
-
-        // Render one frame.
-        render_one_frame_to_screen(next_image_idx);
-    }
-
-    // Teardown renderer.
-    GFX::teardown_renderer();
-}
-
-void Renderer::Impl::render_one_frame_to_screen(uint32_t present_img_idx)
-{
-    GFX::compute_light_culling();
-    GFX::compute_shadow_culling();
-    GFX::compute_opaque_geometry_culling();
-    GFX::compute_transparent_geometry_culling();
-
-    GFX::render_shadows();
-    GFX::render_opaque_geometry();
-    GFX::render_clouds();
-    GFX::render_volumetric_light();
-    GFX::render_particles();
-    GFX::render_transparent_geometry();
-
-    GFX::render_hdr_to_ldr_postprocessing();
-
-    GFX::render_imgui();
-
-    GFX::present_frame_to_screen();
-}
-
-
-// class Renderer
 Renderer::Renderer(std::string const& title, int32_t width, int32_t height)
-    : m_pimpl(std::make_unique<Impl>(title, width, height))
+    : m_title(title)
+    , m_width(width)
+    , m_height(height)
 {
     static std::atomic_bool s_init{ false };
     bool expect_init{ false };
@@ -92,13 +28,45 @@ Renderer::Renderer(std::string const& title, int32_t width, int32_t height)
 Renderer::~Renderer() = default;
 
 void Renderer::run()
-{
-    m_pimpl->run();
+{   // Setup renderer.
+    auto g = std::make_unique<Graphics>(m_title, m_width, m_height);
+
+    // Render frames until shutdown flag is tripped.
+    while (!m_shutdown_flag.load())
+    {   // Process render object destroy requests.
+
+        // Process render object create requests.
+
+        // Update animator timers (renderer-profile).
+
+        // Calculate animator joints.
+
+        // Render one frame.
+        g->start_new_frame();
+
+        g->compute_light_culling();
+        g->compute_shadow_culling();
+        g->compute_opaque_geometry_culling();
+        g->compute_transparent_geometry_culling();
+
+        g->render_shadows();
+        g->render_opaque_geometry();
+        g->render_clouds();
+        g->render_volumetric_light();
+        g->render_particles();
+        g->render_transparent_geometry();
+
+        g->render_hdr_to_ldr_postprocessing();
+
+        g->render_imgui();
+
+        g->present_frame_to_screen();
+    }
 }
 
 void Renderer::shutdown_loop()
 {
-    m_pimpl->shutdown_flag.store(true);
+    m_shutdown_flag.store(true);
 }
 
 pool_key_t Renderer::create_render_obj(Render_obj_create_config&& config)

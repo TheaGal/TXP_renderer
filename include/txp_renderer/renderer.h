@@ -46,8 +46,11 @@ public:
     // @TODO.
 
 private:
-    struct Impl;
-    std::unique_ptr<Impl> m_pimpl;
+    std::string m_title;
+    int32_t m_width;
+    int32_t m_height;
+
+    std::atomic_bool m_shutdown_flag{ false };
 };
 
 }  // namespace TXP
