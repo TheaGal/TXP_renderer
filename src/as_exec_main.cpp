@@ -10,7 +10,7 @@ int32_t main()
 {
     std::cout << "Hello warld!" << std::endl;
 
-    TXP::Renderer r{ "My renderer test!", 1024, 576 };
+    TXP::Renderer r{ "My renderer test!", 1920, 1080 };
 
     auto ro0_key = r.create_render_obj({
         .layer      = TXP::RENDER_LAYER_DEFAULT,

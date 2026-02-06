@@ -60,6 +60,9 @@ public:
     /// Presents rendered frame to screen.
     void present_frame_to_screen();
 
+    /// Waits until GPU device is idle.
+    void wait_until_gpu_idle();
+
 private:
     struct Impl;
     std::unique_ptr<Impl> m_pimpl;

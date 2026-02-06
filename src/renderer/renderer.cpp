@@ -67,6 +67,9 @@ void Renderer::run()
 
         std::cout << "RENDERED ONE FRAME" << std::endl;
     }
+
+    // Wait until GPU is idle before destruction.
+    g->wait_until_gpu_idle();
 }
 
 void Renderer::shutdown_loop()

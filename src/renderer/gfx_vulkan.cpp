@@ -5,6 +5,7 @@
 // vv Must be in this order vv
 // clang-format off
 #include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 #define VMA_IMPLEMENTATION
 #include <vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
@@ -314,6 +315,8 @@ struct Graphics::Impl
     void render_incomplete_jojojojojojs();
 
     void present_frame_to_screen();
+
+    void wait_until_gpu_idle();
 };
 
 
@@ -837,6 +840,15 @@ void Graphics::Impl::present_frame_to_screen()
     }
 }
 
+void TXP::Graphics::Impl::wait_until_gpu_idle()
+{
+    VkResult err = vkDeviceWaitIdle(gfx.device);
+    if (err)
+    {
+        throw std::runtime_error("Device wait idle failed.");
+    }
+}
+
 
 // class Graphics
 TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
@@ -937,6 +949,11 @@ void TXP::Graphics::render_imgui()
 void TXP::Graphics::present_frame_to_screen()
 {
     m_pimpl->present_frame_to_screen();
+}
+
+void TXP::Graphics::wait_until_gpu_idle()
+{
+    m_pimpl->wait_until_gpu_idle();
 }
 
 }  // namespace TXP
