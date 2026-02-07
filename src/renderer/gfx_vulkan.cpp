@@ -312,8 +312,7 @@ struct Graphics::Impl
 
     void start_new_frame();
 
-    void render_incomplete_jojojojojojs();
-
+    void clear_color_image();
     void present_frame_to_screen();
 
     void wait_until_gpu_idle();
@@ -748,15 +747,15 @@ void Graphics::Impl::start_new_frame()
     current_frame.graphics_queue_command_buffer.reset();
 }
 
-void Graphics::Impl::render_incomplete_jojojojojojs()
+void Graphics::Impl::clear_color_image()
 {
     // @INCOMPLETE: just to get the screen to show.
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
-    auto& swapchain_img{ gfx.swapchain_images[current_swapchain_image_idx] };
+    auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
 
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    swapchain_img.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
+    image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
 
 	// Clear image.
     VkClearColorValue clear_value;
@@ -764,22 +763,23 @@ void Graphics::Impl::render_incomplete_jojojojojojs()
 	clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
     VkImageSubresourceRange clear_range = txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
-    assert(swapchain_img.get_layout() == VK_IMAGE_LAYOUT_GENERAL);
     vkCmdClearColorImage(cmd,
-                         swapchain_img.get(),
-                         swapchain_img.get_layout(),
+                         image.get(),
+                         VK_IMAGE_LAYOUT_GENERAL,
                          &clear_value,
                          1,
                          &clear_range);
-
-    swapchain_img.transition_to(cmd, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 }
 
 void Graphics::Impl::present_frame_to_screen()
 {
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+    auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
 
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+
+    // Change image to present layout.
+    image.transition_to(cmd, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     // End recording command buffers.
     current_frame.graphics_queue_command_buffer.finish();
@@ -938,7 +938,7 @@ void TXP::Graphics::render_transparent_geometry()
 void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 {
     // @INCOMPLETE: just to get the screen to show.
-    m_pimpl->render_incomplete_jojojojojojs();
+    m_pimpl->clear_color_image();
 }
 
 void TXP::Graphics::render_imgui()
