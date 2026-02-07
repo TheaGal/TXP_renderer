@@ -18,6 +18,9 @@ public:
     /// Polls for input events.
     void poll_input_events();
 
+    /// Builds one imgui frame using a callback and readies the frame for rendering.
+    void build_imgui_frame();
+
     /// Acquires next render image for the frame. Will block until an image becomes available.
     void start_new_frame();
 
@@ -54,7 +57,7 @@ public:
     /// .
     void render_hdr_to_ldr_postprocessing();
 
-    /// .
+    /// Renders collected immediate-mode GUI commands to LDR present surface.
     void render_imgui();
 
     /// Presents rendered frame to screen.

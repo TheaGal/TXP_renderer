@@ -10,10 +10,15 @@
 #include <vk_mem_alloc.h>
 #include <GLFW/glfw3.h>
 #include "VkBootstrap.h"
+
+#include "imgui.h"
+#include "backends/imgui_impl_glfw.h"
+#include "backends/imgui_impl_vulkan.h"
 // clang-format on
 
 #include <array>
 #include <cassert>
+#include <functional>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -21,6 +26,48 @@
 
 namespace TXP
 {
+
+VkRenderingAttachmentInfo txp_vk_attachment_info(VkImageView image_view,
+                                                 VkClearValue* clear_value,
+                                                 VkImageLayout image_layout)
+{
+    VkRenderingAttachmentInfo color_attachment{
+        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+        .pNext = nullptr,
+
+        .imageView = image_view,
+        .imageLayout = image_layout,
+        .loadOp = (clear_value ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD),
+        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+    };
+
+    if (clear_value != nullptr)
+    {
+        color_attachment.clearValue = *clear_value;
+    }
+
+    return color_attachment;
+}
+
+VkRenderingInfo txp_vk_render_info(VkExtent2D render_extent,
+                                   VkRenderingAttachmentInfo* color_attachment,
+                                   VkRenderingAttachmentInfo* depth_attachment)
+{
+    VkRenderingInfo rendering_info{
+        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+        .pNext = nullptr,
+
+        .renderArea = VkRect2D{ .offset = { 0, 0 },
+                                .extent = render_extent },
+        .layerCount = 1,
+        .colorAttachmentCount = 1,
+        .pColorAttachments = color_attachment,
+        .pDepthAttachment = depth_attachment,
+        .pStencilAttachment = nullptr,
+    };
+
+    return rendering_info;
+}
 
 VkImageSubresourceRange txp_vk_image_subresource_range(VkImageAspectFlags aspect_mask)
 {
@@ -82,6 +129,7 @@ struct Graphics::Impl
     GLFWwindow* window{ nullptr };
 
     int32_t render_dim[2];
+    float_t monitor_scale{ 1.0f };
 
 
     void init_glfw_no_api();
@@ -192,6 +240,10 @@ struct Graphics::Impl
 
         VkQueue transfer_queue;
         uint32_t transfer_queue_family_idx;
+
+        VkPipelineCache pipeline_cache{ VK_NULL_HANDLE };  // Unused for now.
+
+        VkDescriptorPool imgui_desc_pool;
     };
     Vk_gfx_instance gfx;
 
@@ -304,6 +356,16 @@ struct Graphics::Impl
     void init_vulkan_create_sync_structures();
     void init_vulkan_allocate_descriptors();
     void init_vulkan_create_pipelines();
+    void init_vulkan_for_imgui();
+
+
+    /// Polls window for input events.
+    void poll_input_events();
+
+    /// Callback for imgui draw.
+    std::function<void()> imgui_build_contents_callback;
+
+    void build_imgui_frame();
 
 
     /// Index of current frame.
@@ -313,6 +375,7 @@ struct Graphics::Impl
     void start_new_frame();
 
     void clear_color_image();
+    void render_imgui();
     void present_frame_to_screen();
 
     void wait_until_gpu_idle();
@@ -332,6 +395,8 @@ void Graphics::Impl::init_window_props()
 {
     assert(render_dim[0] > 0 && render_dim[1] > 0);
 
+    auto target_monitor{ glfwGetPrimaryMonitor() };
+
     // Apply centering hints.
     struct Monitor_workarea
     {
@@ -340,7 +405,7 @@ void Graphics::Impl::init_window_props()
         int32_t width;
         int32_t height;
     } monitor_workarea;
-    glfwGetMonitorWorkarea(glfwGetPrimaryMonitor(),  // monitor_ptr,
+    glfwGetMonitorWorkarea(target_monitor,
                            &monitor_workarea.xpos,
                            &monitor_workarea.ypos,
                            &monitor_workarea.width,
@@ -355,6 +420,9 @@ void Graphics::Impl::init_window_props()
 
     glfwWindowHint(GLFW_POSITION_X, centered_window_pos[0]);
     glfwWindowHint(GLFW_POSITION_Y, centered_window_pos[1]);
+
+    // Get monitor scaling.
+    monitor_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(target_monitor);
 
     // @TODO: implement vv below vv
     // glfwWindowHint(GLFW_RESIZABLE, app_window_settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
@@ -552,8 +620,9 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
     vkb::Swapchain swapchain{
         swapchain_builder.use_default_format_selection()
-            .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // Mailbox (G-Sync/Freesync).
-            .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // FIFO (V-Sync).
+            .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // G-Sync.
+            .add_fallback_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)  // Freesync / V-Sync off.
+            .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // V-Sync on.
             .set_desired_extent(render_dim[0], render_dim[1])
             // @TODO: TRANSFER_DST image usage added below. Try removing once renderer is finished
             // (assuming you're not gonna have some kind of image transfer as the last step into the
@@ -719,6 +788,107 @@ void Graphics::Impl::init_vulkan_allocate_descriptors()
 void Graphics::Impl::init_vulkan_create_pipelines()
 {}
 
+void Graphics::Impl::init_vulkan_for_imgui()
+{
+    {   // Create descriptor pool.
+        VkDescriptorPoolSize pool_sizes[]{
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
+        };
+        VkDescriptorPoolCreateInfo pool_info{};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 0;
+        for (VkDescriptorPoolSize& pool_size : pool_sizes)
+            pool_info.maxSets += pool_size.descriptorCount;
+        pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
+        pool_info.pPoolSizes = pool_sizes;
+
+        VkResult err;
+        err = vkCreateDescriptorPool(gfx.device,
+                                     &pool_info,
+                                     gfx.allocator->GetAllocationCallbacks(),
+                                     &gfx.imgui_desc_pool);
+        if (err)
+        {
+            throw std::runtime_error("Creating ImGui descriptor pool failed.");
+        }
+    }
+
+    // Setup dear ImGui context.
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable keyboard controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable gamepad controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable docking
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable multi-viewport / platform windows
+    // io.ConfigViewportsNoAutoMerge = true;
+    // io.ConfigViewportsNoTaskBarIcon = true;
+
+    // Setup dear ImGui style.
+    ImGui::StyleColorsDark();
+
+    // Setup scaling.
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(monitor_scale);  // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
+    style.FontScaleDpi = monitor_scale;  // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
+    io.ConfigDpiScaleFonts = true;       // [Experimental] Automatically overwrite style.FontScaleDpi in Begin() when Monitor DPI changes. This will scale fonts but _NOT_ scale sizes/padding for now.
+    io.ConfigDpiScaleViewports = true;   // [Experimental] Scale Dear ImGui and Platform Windows when Monitor DPI changes.
+
+    // When viewports are enabled make window corners sharp and opaque.
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // Setup platform/renderer backends.
+    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplVulkan_InitInfo init_info{};
+    init_info.ApiVersion = VK_API_VERSION_1_3;
+    init_info.Instance = gfx.instance;
+    init_info.PhysicalDevice = gfx.physical_device;
+    init_info.Device = gfx.device;
+    init_info.QueueFamily = gfx.graphics_queue_family_idx;
+    init_info.Queue = gfx.graphics_queue;
+    init_info.PipelineCache = gfx.pipeline_cache;
+    init_info.DescriptorPool = gfx.imgui_desc_pool;
+    init_info.MinImageCount = static_cast<uint32_t>(gfx.swapchain_images.size());
+    init_info.ImageCount = static_cast<uint32_t>(gfx.swapchain_images.size());
+    init_info.Allocator = gfx.allocator->GetAllocationCallbacks();
+    init_info.UseDynamicRendering = true;
+
+    VkPipelineRenderingCreateInfo pipe_rend_create_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .colorAttachmentCount = 1,
+        .pColorAttachmentFormats = &gfx.swapchain_image_format,
+    };
+    init_info.PipelineInfoMain.PipelineRenderingCreateInfo = pipe_rend_create_info;
+    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&init_info);
+}
+
+void Graphics::Impl::poll_input_events()
+{
+    glfwPollEvents();
+}
+
+void Graphics::Impl::build_imgui_frame()
+{
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Frame contents.
+    ImGui::ShowDemoWindow();
+    // imgui_build_contents_callback();  @TODO
+
+    // Convert to render instructions.
+    ImGui::Render();
+}
+
 void Graphics::Impl::start_new_frame()
 {   // Wait until GPU has finished rendering last frame (of current frame index).
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
@@ -776,6 +946,37 @@ void Graphics::Impl::clear_color_image()
                          &clear_value,
                          1,
                          &clear_range);
+}
+
+void Graphics::Impl::render_imgui()
+{
+    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+    auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
+    auto image_view{ gfx.swapchain_image_views[current_swapchain_image_idx] };  // @TODO: make this `image_view` a param at some point.
+
+    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+
+    image.transition_to(cmd, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+
+    // Render imgui contents to image.
+    VkRenderingAttachmentInfo color_attachment =
+        txp_vk_attachment_info(image_view, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    VkRenderingInfo render_info =
+        txp_vk_render_info(gfx.swapchain_extent, &color_attachment, nullptr);
+
+    vkCmdBeginRendering(cmd, &render_info);
+
+    ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), cmd);
+
+    vkCmdEndRendering(cmd);
+
+    // Update and render additional platform windows.
+    static auto const& io{ ImGui::GetIO() };
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
 }
 
 void Graphics::Impl::present_frame_to_screen()
@@ -873,6 +1074,7 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
     m_pimpl->init_vulkan_create_sync_structures();
     m_pimpl->init_vulkan_allocate_descriptors();
     m_pimpl->init_vulkan_create_pipelines();
+    m_pimpl->init_vulkan_for_imgui();
 }
 
 TXP::Graphics::~Graphics()
@@ -883,7 +1085,12 @@ TXP::Graphics::~Graphics()
 
 void TXP::Graphics::poll_input_events()
 {
-    glfwPollEvents();
+    m_pimpl->poll_input_events();
+}
+
+void TXP::Graphics::build_imgui_frame()
+{
+    m_pimpl->build_imgui_frame();
 }
 
 void TXP::Graphics::start_new_frame()
@@ -949,7 +1156,7 @@ void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 
 void TXP::Graphics::render_imgui()
 {
-    assert(false);
+    m_pimpl->render_imgui();
 }
 
 void TXP::Graphics::present_frame_to_screen()

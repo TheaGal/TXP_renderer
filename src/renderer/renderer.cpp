@@ -44,7 +44,10 @@ void Renderer::run()
         // Poll for input events.
         g->poll_input_events();
 
-        // Render one frame.
+        // Build imgui for this frame.
+        g->build_imgui_frame();
+
+        // Render One Frame.
         g->start_new_frame();
 
         // g->compute_light_culling();
@@ -60,8 +63,7 @@ void Renderer::run()
         // g->render_transparent_geometry();
 
         g->render_hdr_to_ldr_postprocessing();
-
-        // g->render_imgui();
+        g->render_imgui();
 
         g->present_frame_to_screen();
 
