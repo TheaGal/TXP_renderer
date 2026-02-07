@@ -41,9 +41,9 @@ VkSemaphoreSubmitInfo txp_vk_semaphore_submit_info(VkPipelineStageFlags2 stage_m
         .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
         .pNext = nullptr,
         .semaphore = semaphore,
+        .value = 1,
         .stageMask = stage_mask,
         .deviceIndex = 0,
-        .value = 1,
     };
 
 	return submit_info;
@@ -60,11 +60,11 @@ VkSubmitInfo2 txp_vk_submit_info(VkCommandBufferSubmitInfo* cmd_info,
         .waitSemaphoreInfoCount = (wait_info == nullptr ? 0u : 1u),
         .pWaitSemaphoreInfos = wait_info,
 
-        .signalSemaphoreInfoCount = (signal_info == nullptr ? 0u : 1u),
-        .pSignalSemaphoreInfos = signal_info,
-
         .commandBufferInfoCount = 1u,
         .pCommandBufferInfos = cmd_info,
+
+        .signalSemaphoreInfoCount = (signal_info == nullptr ? 0u : 1u),
+        .pSignalSemaphoreInfos = signal_info,
     };
     return info;
 }
@@ -119,8 +119,8 @@ struct Graphics::Impl
                 .oldLayout = m_current_layout,
                 .newLayout = new_layout,
 
-                .subresourceRange = txp_vk_image_subresource_range(aspect_mask),
                 .image = m_img,
+                .subresourceRange = txp_vk_image_subresource_range(aspect_mask),
             };
 
             VkDependencyInfo dep_info{
@@ -180,6 +180,7 @@ struct Graphics::Impl
         VkSwapchainKHR swapchain;
         std::vector<Image> swapchain_images;
         std::vector<VkImageView> swapchain_image_views;
+        std::vector<VkSemaphore> swapchain_submit_semaphores;
         VkFormat swapchain_image_format;
         VkExtent2D swapchain_extent;
 
@@ -244,8 +245,8 @@ struct Graphics::Impl
                 VkCommandBufferBeginInfo info{
                     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
                     .pNext = nullptr,
-                    .pInheritanceInfo = nullptr,
                     .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+                    .pInheritanceInfo = nullptr,
                 };
 
                 //start the command buffer recording
@@ -283,8 +284,7 @@ struct Graphics::Impl
     {
         VkCommandPool command_pool;
         Command_buffer graphics_queue_command_buffer;
-        VkSemaphore swapchain_semaphore;
-        VkSemaphore render_semaphore;
+        VkSemaphore acquire_nxt_img_semaphore;
         VkFence render_fence;
 
         // @TODO: figure out the vv below vv
@@ -579,6 +579,7 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     })();
 
     gfx.swapchain_image_views = swapchain.get_image_views().value();
+    gfx.swapchain_submit_semaphores.resize(gfx.swapchain_images.size());
     gfx.swapchain_image_format = swapchain.image_format;
     gfx.swapchain_extent.width = render_dim[0];
     gfx.swapchain_extent.height = render_dim[1];
@@ -648,24 +649,33 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
         .flags = 0,
     };
 
+    for (auto& sss : gfx.swapchain_submit_semaphores)
+    {
+        err = vkCreateSemaphore(gfx.device,
+                                &semaphore_create_info,
+                                nullptr,
+                                &sss);
+        if (err)
+        {
+            throw std::runtime_error("Vulkan swapchain submit semaphore creation failed.");
+        }
+    }
+
     for (uint32_t i = 0; i < k_frame_overlap; i++)
     {
         err = vkCreateFence(gfx.device, &fence_create_info, nullptr, &frames[i].render_fence);
         if (err)
         {
-            throw std::runtime_error("Vulkan render fence creation failed for frame #");
+            throw std::runtime_error("Vulkan render fence creation failed.");
         }
 
-        err = vkCreateSemaphore(gfx.device, &semaphore_create_info, nullptr, &frames[i].swapchain_semaphore);
+        err = vkCreateSemaphore(gfx.device,
+                                &semaphore_create_info,
+                                nullptr,
+                                &frames[i].acquire_nxt_img_semaphore);
         if (err)
         {
-            throw std::runtime_error("Vulkan swapchain semaphore creation failed for frame #");
-        }
-
-        err = vkCreateSemaphore(gfx.device, &semaphore_create_info, nullptr, &frames[i].render_semaphore);
-        if (err)
-        {
-            throw std::runtime_error("Vulkan render semaphore creation failed for frame #");
+            throw std::runtime_error("Vulkan acquire next img semaphore creation failed.");
         }
     }
 }
@@ -732,7 +742,7 @@ void Graphics::Impl::start_new_frame()
     err = vkAcquireNextImageKHR(gfx.device,
                                 gfx.swapchain,
                                 k_10sec_as_ns,
-                                current_frame.swapchain_semaphore,
+                                current_frame.acquire_nxt_img_semaphore,
                                 nullptr,
                                 &current_swapchain_image_idx);
     if (err)
@@ -788,6 +798,10 @@ void Graphics::Impl::present_frame_to_screen()
 	//we will signal the _renderSemaphore, to signal that rendering has finished
     VkResult err;
 
+    VkSemaphore swapchain_submit_semaphore{
+        gfx.swapchain_submit_semaphores[current_swapchain_image_idx]
+    };
+
     VkCommandBufferSubmitInfo cmd_info{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
         .pNext = nullptr,
@@ -797,13 +811,13 @@ void Graphics::Impl::present_frame_to_screen()
 
     VkSemaphoreSubmitInfo wait_info =
         txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
-                                     current_frame.swapchain_semaphore);
+                                     current_frame.acquire_nxt_img_semaphore);
     VkSemaphoreSubmitInfo signal_info =
         txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                                     current_frame.render_semaphore);
+                                     swapchain_submit_semaphore);
 
     VkSubmitInfo2 submit = txp_vk_submit_info(&cmd_info, &signal_info, &wait_info);
-    
+
 
     //submit command buffer to the queue and execute it.
 	// _renderFence will now block until the graphic commands finish execution
@@ -825,7 +839,7 @@ void Graphics::Impl::present_frame_to_screen()
 	present_info.pSwapchains = &gfx.swapchain;
 	present_info.swapchainCount = 1;
 
-	present_info.pWaitSemaphores = &current_frame.render_semaphore;
+	present_info.pWaitSemaphores = &swapchain_submit_semaphore;
 	present_info.waitSemaphoreCount = 1;
 
 	present_info.pImageIndices = &current_swapchain_image_idx;
