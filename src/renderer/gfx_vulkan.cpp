@@ -120,7 +120,7 @@ struct Graphics::Impl
 {
     Impl(std::string const& title, int32_t width, int32_t height)
         : window_title(title)
-        , render_dim{ width, height }
+        , window_dims{ width, height }
     {
     }
 
@@ -128,7 +128,7 @@ struct Graphics::Impl
     std::string window_title;
     GLFWwindow* window{ nullptr };
 
-    int32_t render_dim[2];
+    int32_t window_dims[2];
     float_t monitor_scale{ 1.0f };
 
 
@@ -393,7 +393,7 @@ void Graphics::Impl::init_glfw_no_api()
 
 void Graphics::Impl::init_window_props()
 {
-    assert(render_dim[0] > 0 && render_dim[1] > 0);
+    assert(window_dims[0] > 0 && window_dims[1] > 0);
 
     auto target_monitor{ glfwGetPrimaryMonitor() };
 
@@ -413,9 +413,9 @@ void Graphics::Impl::init_window_props()
 
     int32_t centered_window_pos[2]{
         monitor_workarea.xpos +
-            static_cast<int32_t>(monitor_workarea.width * 0.5 - render_dim[0] * 0.5),
+            static_cast<int32_t>(monitor_workarea.width * 0.5 - window_dims[0] * 0.5),
         monitor_workarea.ypos +
-            static_cast<int32_t>(monitor_workarea.height * 0.5 - render_dim[1] * 0.5),
+            static_cast<int32_t>(monitor_workarea.height * 0.5 - window_dims[1] * 0.5),
     };
 
     glfwWindowHint(GLFW_POSITION_X, centered_window_pos[0]);
@@ -436,11 +436,11 @@ void Graphics::Impl::init_window_props()
 
 void Graphics::Impl::init_window()
 {
-    assert(render_dim[0] > 0 && render_dim[1] > 0);
+    assert(window_dims[0] > 0 && window_dims[1] > 0);
     assert(window == nullptr);
 
-    window = glfwCreateWindow(render_dim[0],
-                              render_dim[1],
+    window = glfwCreateWindow(window_dims[0],
+                              window_dims[1],
                               window_title.c_str(),
                               nullptr,
                               nullptr);
@@ -616,14 +616,18 @@ void Graphics::Impl::init_vulkan_create_memory_allocator()
 }
 
 void Graphics::Impl::init_vulkan_build_swapchain()
-{   // Build swapchain.
+{   // Get framebuffer size (if different from window size).
+    int fb_width, fb_height;
+    glfwGetFramebufferSize(window, &fb_width, &fb_height);
+
+    // Build swapchain.
     vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
     vkb::Swapchain swapchain{
         swapchain_builder.use_default_format_selection()
             .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // G-Sync.
             .add_fallback_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)  // Freesync / V-Sync off.
             .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // V-Sync on.
-            .set_desired_extent(render_dim[0], render_dim[1])
+            .set_desired_extent(fb_width, fb_height)
             // @TODO: TRANSFER_DST image usage added below. Try removing once renderer is finished
             // (assuming you're not gonna have some kind of image transfer as the last step into the
             // swapchain image).
@@ -650,8 +654,8 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     gfx.swapchain_image_views = swapchain.get_image_views().value();
     gfx.swapchain_submit_semaphores.resize(gfx.swapchain_images.size());
     gfx.swapchain_image_format = swapchain.image_format;
-    gfx.swapchain_extent.width = render_dim[0];
-    gfx.swapchain_extent.height = render_dim[1];
+    gfx.swapchain_extent.width = fb_width;
+    gfx.swapchain_extent.height = fb_height;
 }
 
 void Graphics::Impl::init_vulkan_retrieve_queues()
@@ -936,8 +940,9 @@ void Graphics::Impl::clear_color_image()
 
     // Clear image.
     VkClearColorValue clear_value;
-    float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
-    clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
+    // float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
+    // clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
+    clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
     VkImageSubresourceRange clear_range = txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkCmdClearColorImage(cmd,
