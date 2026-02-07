@@ -307,7 +307,7 @@ struct Graphics::Impl
 
 
     /// Index of current frame.
-    size_t current_frame_idx{ (size_t)-1 };
+    size_t current_frame_idx{ 0 };
     uint32_t current_swapchain_image_idx;
 
     void start_new_frame();
@@ -710,10 +710,7 @@ void Graphics::Impl::init_vulkan_create_pipelines()
 {}
 
 void Graphics::Impl::start_new_frame()
-{   // Increment frame counter for new frame.
-    current_frame_idx++;
-
-    // Wait until GPU has finished rendering last frame (of current frame index).
+{   // Wait until GPU has finished rendering last frame (of current frame index).
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
 
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
@@ -838,6 +835,11 @@ void Graphics::Impl::present_frame_to_screen()
     {
         throw std::runtime_error("Queue present KHR failed.");
     }
+
+
+
+    // Increment frame counter for new frame.
+    current_frame_idx++;
 }
 
 void TXP::Graphics::Impl::wait_until_gpu_idle()
