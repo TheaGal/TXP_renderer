@@ -219,6 +219,7 @@ struct Graphics::Impl
         VkDebugUtilsMessengerEXT debug_utils_messenger;
     #endif
         VkSurfaceKHR surface;
+        VkSurfaceFormatKHR surface_format;
         VkPhysicalDevice physical_device;
         VkPhysicalDeviceProperties physical_device_properties;
         VkDevice device;
@@ -350,6 +351,7 @@ struct Graphics::Impl
     void init_vulkan_window_surface();
     void init_vulkan_build_device();
     void init_vulkan_create_memory_allocator();
+    void select_vulkan_window_surface_format();
     void init_vulkan_build_swapchain();
     void init_vulkan_retrieve_queues();
     void init_vulkan_create_cmd_structures();
@@ -615,6 +617,55 @@ void Graphics::Impl::init_vulkan_create_memory_allocator()
     vmaCreateAllocator(&vma_allocator_info, &gfx.allocator);
 }
 
+void Graphics::Impl::select_vulkan_window_surface_format()
+{   // Check for WSI support.
+    VkBool32 res;
+    vkGetPhysicalDeviceSurfaceSupportKHR(gfx.physical_device, gfx.graphics_queue_family_idx, gfx.surface, &res);
+    if (res != VK_TRUE)
+    {
+        throw std::runtime_error("Error no WSI support on physical device.");
+    }
+
+    // Select surface format.
+    constexpr VkFormat request_surface_image_formats[]{ VK_FORMAT_B8G8R8A8_UNORM,
+                                                        VK_FORMAT_R8G8B8A8_UNORM,
+                                                        VK_FORMAT_B8G8R8_UNORM,
+                                                        VK_FORMAT_R8G8B8_UNORM };
+    constexpr VkColorSpaceKHR request_surface_color_space{ VK_COLORSPACE_SRGB_NONLINEAR_KHR };
+
+    VkPhysicalDeviceSurfaceInfo2KHR surface_info{
+        .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR,
+        .pNext = nullptr,
+        .surface = gfx.surface,
+    };
+    uint32_t avail_cnt;
+    vkGetPhysicalDeviceSurfaceFormats2KHR(gfx.physical_device, &surface_info, &avail_cnt, nullptr);
+
+    std::vector<VkSurfaceFormat2KHR> avail_formats;
+    avail_formats.resize(avail_cnt);
+    vkGetPhysicalDeviceSurfaceFormats2KHR(gfx.physical_device,
+                                          &surface_info,
+                                          &avail_cnt,
+                                          avail_formats.data());
+
+    bool found{ false };
+    for (auto const& avail_format : avail_formats)
+    {
+        for (auto request_format : request_surface_image_formats)
+        {
+            if (avail_format.surfaceFormat.format == request_format &&
+                avail_format.surfaceFormat.colorSpace == request_surface_color_space)
+            {
+                gfx.surface_format = avail_format.surfaceFormat;
+                found = true;
+                break;
+            }
+        }
+    }
+    if (!found)
+        gfx.surface_format = avail_formats.front().surfaceFormat;
+}
+
 void Graphics::Impl::init_vulkan_build_swapchain()
 {   // Get framebuffer size (if different from window size).
     int fb_width, fb_height;
@@ -623,7 +674,8 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     // Build swapchain.
     vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
     vkb::Swapchain swapchain{
-        swapchain_builder.use_default_format_selection()
+        swapchain_builder
+            .set_desired_format(gfx.surface_format)
             .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // G-Sync.
             .add_fallback_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)  // Freesync / V-Sync off.
             .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // V-Sync on.
@@ -1073,6 +1125,7 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
     m_pimpl->init_vulkan_window_surface();
     m_pimpl->init_vulkan_build_device();
     m_pimpl->init_vulkan_create_memory_allocator();
+    m_pimpl->select_vulkan_window_surface_format();
     m_pimpl->init_vulkan_build_swapchain();
     m_pimpl->init_vulkan_retrieve_queues();
     m_pimpl->init_vulkan_create_cmd_structures();
