@@ -28,9 +28,9 @@
 [submodule "third_party/VulkanMemoryAllocator"]
 	path = third_party/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
-[submodule "third_party/esfw"]
-	path = third_party/esfw
-	url = https://github.com/SpartanJ/efsw.git
 [submodule "third_party/vk-bootstrap"]
 	path = third_party/vk-bootstrap
 	url = https://github.com/charles-lunarg/vk-bootstrap
+[submodule "third_party/efsw"]
+	path = third_party/efsw
+	url = https://github.com/TheaGal/efsw.git

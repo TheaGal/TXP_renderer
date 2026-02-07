@@ -78,7 +78,9 @@ void Renderer::shutdown_loop()
 }
 
 pool_key_t Renderer::create_render_obj(Render_obj_create_config&& config)
-{}
+{
+    return 0;
+}
 
 void Renderer::destroy_render_obj(pool_key_t key)
 {}

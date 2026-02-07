@@ -13,10 +13,10 @@ C++20 cross-platform renderer library.
     - macOS: 17.0.0 (default)
 
 - Vulkan SDK
-    - System Global Installation
-    - win64: 1.3.296.0
-        > @NOTE: a different version could be more suitable? Still unknown how much the 1.3 vs 1.4 vulkan sdks change development.
+    > Include shader symbols.
+    - win64: 1.4.341.0
     - macOS: 1.4.335.1 (note: contains MoltenVK 1.4.2)
+        - System Global Installation
 
 - vk-bootstrap v1.4.342
 

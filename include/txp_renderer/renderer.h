@@ -2,6 +2,7 @@
 
 #include "txp_renderer/types.h"
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 
