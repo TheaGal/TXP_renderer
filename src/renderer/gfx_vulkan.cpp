@@ -46,7 +46,7 @@ VkSemaphoreSubmitInfo txp_vk_semaphore_submit_info(VkPipelineStageFlags2 stage_m
         .deviceIndex = 0,
     };
 
-	return submit_info;
+    return submit_info;
 }
 
 VkSubmitInfo2 txp_vk_submit_info(VkCommandBufferSubmitInfo* cmd_info,
@@ -764,10 +764,10 @@ void Graphics::Impl::clear_color_image()
 
     image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
 
-	// Clear image.
+    // Clear image.
     VkClearColorValue clear_value;
-	float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
-	clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
+    float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
+    clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
     VkImageSubresourceRange clear_range = txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkCmdClearColorImage(cmd,
@@ -791,11 +791,8 @@ void Graphics::Impl::present_frame_to_screen()
     // End recording command buffers.
     current_frame.graphics_queue_command_buffer.finish();
 
-
-
-    //prepare the submission to the queue. 
-	//we want to wait on the _presentSemaphore, as that semaphore is signaled when the swapchain is ready
-	//we will signal the _renderSemaphore, to signal that rendering has finished
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Submit command buffer to queue.
     VkResult err;
 
     VkSemaphore swapchain_submit_semaphore{
@@ -818,42 +815,35 @@ void Graphics::Impl::present_frame_to_screen()
 
     VkSubmitInfo2 submit = txp_vk_submit_info(&cmd_info, &signal_info, &wait_info);
 
-
-    //submit command buffer to the queue and execute it.
-	// _renderFence will now block until the graphic commands finish execution
-	err = vkQueueSubmit2(gfx.graphics_queue, 1, &submit, current_frame.render_fence);
+    err = vkQueueSubmit2(gfx.graphics_queue, 1, &submit, current_frame.render_fence);
     if (err)
     {
         throw std::runtime_error("Queue submit failed.");
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Present image to screen.
+    VkPresentInfoKHR present_info{
+        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext = nullptr,
 
+        .waitSemaphoreCount = 1,
+        .pWaitSemaphores = &swapchain_submit_semaphore,
 
-    //prepare present
-	// this will put the image we just rendered to into the visible window.
-	// we want to wait on the _renderSemaphore for that, 
-	// as its necessary that drawing commands have finished before the image is displayed to the user
-	VkPresentInfoKHR present_info = {};
-	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	present_info.pNext = nullptr;
-	present_info.pSwapchains = &gfx.swapchain;
-	present_info.swapchainCount = 1;
+        .swapchainCount = 1,
+        .pSwapchains = &gfx.swapchain,
+        .pImageIndices = &current_swapchain_image_idx,
+    };
 
-	present_info.pWaitSemaphores = &swapchain_submit_semaphore;
-	present_info.waitSemaphoreCount = 1;
-
-	present_info.pImageIndices = &current_swapchain_image_idx;
-
-	err = vkQueuePresentKHR(gfx.graphics_queue, &present_info);
+    err = vkQueuePresentKHR(gfx.graphics_queue, &present_info);
     if (err)
     {
         throw std::runtime_error("Queue present KHR failed.");
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-    // Increment frame counter for new frame.
-    current_frame_idx++;
+    current_frame_idx++;  // Increment frame counter for new frame.
 }
 
 void TXP::Graphics::Impl::wait_until_gpu_idle()
