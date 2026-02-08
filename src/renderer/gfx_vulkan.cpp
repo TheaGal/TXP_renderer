@@ -982,7 +982,6 @@ void Graphics::Impl::start_new_frame()
 
 void Graphics::Impl::clear_color_image()
 {
-    // @INCOMPLETE: just to get the screen to show.
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
     auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
 
@@ -992,9 +991,9 @@ void Graphics::Impl::clear_color_image()
 
     // Clear image.
     VkClearColorValue clear_value;
-    // float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
-    // clear_value = { { 0.0f, 0.0f, flash, 1.0f } };
-    clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
+    clear_value = { { 0.0f, 0.0f, flash * 0.5f, 1.0f } };
+    // clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
     VkImageSubresourceRange clear_range = txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkCmdClearColorImage(cmd,
