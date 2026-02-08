@@ -938,8 +938,10 @@ void Graphics::Impl::build_imgui_frame()
     ImGui::NewFrame();
 
     // Frame contents.
-    ImGui::ShowDemoWindow();
-    // imgui_build_contents_callback();  @TODO
+    ImGui::ShowDemoWindow();  // @TODO: erase this
+    // if (!imgui_build_contents_callback)  @TODO
+    //     throw std::runtime_error("ImGui build contents callback not defined!");
+    // imgui_build_contents_callback();
 
     // Convert to render instructions.
     ImGui::Render();
