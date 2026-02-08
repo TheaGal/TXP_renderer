@@ -34,3 +34,6 @@
 [submodule "third_party/efsw"]
 	path = third_party/efsw
 	url = https://github.com/TheaGal/efsw.git
+[submodule "third_party/KTX-Software"]
+	path = third_party/KTX-Software
+	url = https://github.com/KhronosGroup/KTX-Software.git

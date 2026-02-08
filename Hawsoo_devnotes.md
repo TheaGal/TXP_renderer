@@ -80,3 +80,7 @@ Making abstractions along the way is the goal, since I don't want to be stuck wi
     > GOALS HERE!!!
 
 > Ahhhhhhhh I just (re-found out) found out that glfw (and all windowing code for that matter) MUST RUN ON THE MAIN THREAD. Fwick. That sucks. Well, ig that means that simulation thread can run on a separate thread then?
+
+
+## Implementing .ktx2 into the asset loading portion.
+

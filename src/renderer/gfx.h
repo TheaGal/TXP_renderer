@@ -1,7 +1,10 @@
 #pragma once
 
+#include "txp_renderer/types.h"
+
 #include <memory>
 #include <string>
+#include <vector>
 
 
 namespace TXP
@@ -14,6 +17,12 @@ class Graphics
 public:
     Graphics(std::string const& title, int32_t width, int32_t height);
     ~Graphics();
+
+    /// Loads all registered assets.
+    void load_assets(std::vector<Texture_asset_create_info>&& texture_assets,
+                     std::vector<Material_asset_create_info>&& material_assets,
+                     std::vector<Material_set_asset_create_info>&& material_set_assets,
+                     std::vector<Model_asset_create_info>&& model_assets);
 
     /// Polls for input events.
     void poll_input_events();

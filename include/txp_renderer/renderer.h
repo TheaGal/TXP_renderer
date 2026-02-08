@@ -1,6 +1,7 @@
 #pragma once
 
 #include "txp_renderer/types.h"
+#include "mutex_wrapper/mutex_wrapper.h"
 
 #include <atomic>
 #include <cstdint>
@@ -14,15 +15,36 @@ namespace TXP
 
 /// Engine that handles render processes and presenting.
 /// @warning this must run on the main thread due to windowing limitations.
-/// @note all of the methods within this class are thread-safe.
+/// @note "Asset loading" must be run prior to the `.run()` function.
+/// @note "Render object lifetime" and "Animator controls" functions are thread-safe.
 class Renderer
 {
 public:
-    Renderer(std::string const& title, int32_t width, int32_t height);
+    Renderer(std::string const& title,
+             int32_t width,
+             int32_t height,
+             std::string const& texture_asset_dir,
+             std::string const& shader_asset_dir,
+             std::string const& model_asset_dir);
     ~Renderer();  // For pimpl.
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Render loop.
+
+    /// Runs render loop until `shutdown_loop()` is called.
+    /// @warning this must be called from the main thread.
+    void run();
+
+    /// Signals for renderer to shut down.
+    void shutdown_loop();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // Asset loading.
+
+    /// Adds texture to renderer.
+    /// @note only ".ktx2" file extension is supported.
+    void add_texture(std::string const& texture_name,
+                     std::string const& file_ext);
 
     /// Adds geometry material to renderer.
     void add_material(std::string const& material_name,
@@ -34,18 +56,7 @@ public:
 
     /// Adds model to renderer.
     void add_model(std::string const& model_name,
-                   std::string const& file_ext,
-                   std::string const& default_mat_set_name);
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Render loop.
-
-    /// Runs render loop until `shutdown_loop()` is called.
-    /// @warning this must be called from the main thread.
-    void run();
-
-    /// Signals for renderer to shut down.
-    void shutdown_loop();
+                   std::string const& file_ext);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Render object lifetime.
@@ -66,6 +77,19 @@ private:
     int32_t m_width;
     int32_t m_height;
 
+    std::string const& m_texture_asset_dir;
+    std::string const& m_shader_asset_dir;
+    std::string const& m_model_asset_dir;
+
+    /// Able to register assets until assets are starting to be loaded into the GPU.
+    std::atomic_bool m_asset_reg_window_open{ true };
+
+    BT::Mutex_wrapper<std::vector<Texture_asset_create_info>> m_texture_assets;
+    BT::Mutex_wrapper<std::vector<Material_asset_create_info>> m_material_assets;
+    BT::Mutex_wrapper<std::vector<Material_set_asset_create_info>> m_material_set_assets;
+    BT::Mutex_wrapper<std::vector<Model_asset_create_info>> m_model_assets;
+
+    /// Flag for renderer to start shutdown process.
     std::atomic_bool m_shutdown_flag{ false };
 };
 

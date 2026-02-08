@@ -2,10 +2,41 @@
 
 #include <cstdint>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 
 namespace TXP
 {
+
+/// Information to create texture asset.
+struct Texture_asset_create_info
+{
+    std::string texture_name;
+    std::string ktx2_fname;
+};
+
+/// Information to create material asset.
+struct Material_asset_create_info
+{
+    std::string material_name;
+    std::string shader_name;
+    std::unordered_map<std::string, std::string> shader_params;
+};
+
+/// Information to create material-set asset.
+struct Material_set_asset_create_info
+{
+    std::string mat_set_name;
+    std::vector<std::string> materials;
+};
+
+/// Information to create model asset.
+struct Model_asset_create_info
+{
+    std::string model_name;
+    std::string file_ext;
+};
 
 /// Key to access editing render objects.
 using pool_key_t = std::uint32_t;

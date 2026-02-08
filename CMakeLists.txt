@@ -53,6 +53,7 @@ set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastgltf/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KTX-Software/lib/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb  # Header only (essentially).
     # ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stduuid/include  # @NOTE: Removing this so that it's not easy to mix up the uuid.h header files.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader
@@ -61,6 +62,7 @@ set(DEPENDENCY_INCLUDE_DIRS
 
 add_subdirectory(third_party/efsw)
 add_subdirectory(third_party/fastgltf)
+add_subdirectory(third_party/KTX-Software/lib ktx)
 add_subdirectory(third_party/stduuid)
 
 # Platform-specific dependencies.
@@ -162,6 +164,7 @@ target_include_directories(${PROJECT_NAME}
 target_link_libraries(${PROJECT_NAME}
     efsw-static
     fastgltf
+    ktx
     stduuid
     ${PLAT_SPECIFIC_LINK_LIBS}
 )

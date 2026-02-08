@@ -1142,6 +1142,15 @@ TXP::Graphics::~Graphics()
     assert(false);
 }
 
+void TXP::Graphics::load_assets(std::vector<Texture_asset_create_info>&& texture_assets,
+                                std::vector<Material_asset_create_info>&& material_assets,
+                                std::vector<Material_set_asset_create_info>&& material_set_assets,
+                                std::vector<Model_asset_create_info>&& model_assets)
+{
+    throw std::runtime_error("implement");
+    // m_pimpl->poll_input_events();
+}
+
 void TXP::Graphics::poll_input_events()
 {
     m_pimpl->poll_input_events();
