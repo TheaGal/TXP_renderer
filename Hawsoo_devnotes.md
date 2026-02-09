@@ -104,3 +104,37 @@ ktx create --format R8G8B8A8_SRGB assets_raw/textures/default_tex.jpg assets/tex
 # For compiling slang shader to SPIR-V (obfuscated and high optimization).
 slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shaders/default_shader.json -O2 -obfuscate assets_raw/shaders/default_shader.slang > assets/shaders/default_shader.spv
 ```
+
+
+There could be a python script that stores the file hashes for all files that have been there and will rebuild everything that is added/deleted/changed. It would just have to check the file hash to see if it changed.
+
+For shaders, it could be compiled into the obfuscated, optimized SPIR-V and then also gt the reflection-json ~~and then also create a glsl version so that it's easy for me to understand?~~
+
+~~For material-specific shaders, there could be a check for the bindless material-param element.~~ Or this could just be assumed.
+
+For images, there could be a file suffix that says what type of image it is.
+Example:
+
+"default_tex.2d.mip-n.jpg" → "default_tex.ktx2" (2D, no mipmapping)
+
+"default_tex.cubemap-px.mip-y.jpg" ┐
+"default_tex.cubemap-nx.mip-y.jpg" ┤
+"default_tex.cubemap-py.mip-y.jpg" ┤
+"default_tex.cubemap-ny.mip-y.jpg" ┤
+"default_tex.cubemap-pz.mip-y.jpg" ┤
+"default_tex.cubemap-nz.mip-y.jpg" ┴→ "default_tex.ktx2" (cubemap, with mipmapping)
+
+"default_tex.3d-0.jpg" ┐
+"default_tex.3d-1.jpg" ┤
+"default_tex.3d-2.jpg" ┴→ "default_tex.ktx2" (3D)
+
+"default_tex.2darray-0.jpg" ┐
+"default_tex.2darray-1.jpg" ┤
+"default_tex.2darray-2.jpg" ┴→ "default_tex.ktx2" (2D array)
+
+
+### Bindless descriptors.
+
+This seems like a nice thing for bindless texture access.
+
+https://docs.shader-slang.org/en/latest/external/slang/docs/user-guide/03-convenience-features.html#descriptorhandle-for-bindless-descriptor-access

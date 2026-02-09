@@ -45,5 +45,7 @@ Vertex_stage_output vert_main(Assembled_vertex assembled_vertex)
 [shader("fragment")]
 float4 frag_main(Coarse_vertex coarse_vertex : CoarseVertex) : SV_Target
 {
-    return float4(1, 0, 0, 1);
+    float2 uv = coarse_vertex.uv;
+
+    return float4(uv, 0, 1);
 }
