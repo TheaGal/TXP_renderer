@@ -25,6 +25,7 @@
 #include <cerrno>
 #include <functional>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -1299,6 +1300,20 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     }
     m_pimpl->destruct_ktx_vk_device_info();
     std::cout << "Loaded all " << std::to_string(texture_assets.size()) << " textures.\n";
+
+    // Collect required shaders.
+    std::set<std::string> shader_names;
+    for (auto const& mat_asset : material_assets)
+        shader_names.emplace(mat_asset.shader_name);
+    std::cout << "Found usage of " << std::to_string(shader_names.size())
+              << " shaders." << std::endl;
+
+    // Load shaders.
+    for (auto const& shad_name : shader_names)
+    {
+        
+    }
+
 
     // Load materials.
     for (auto const& mat_asset : material_assets)

@@ -84,3 +84,23 @@ Making abstractions along the way is the goal, since I don't want to be stuck wi
 
 ## Implementing .ktx2 into the asset loading portion.
 
+- [x] Did it.
+
+- Had to add some extra cmake code to get it to include resources into the app bundle:
+    > Ref: https://discourse.cmake.org/t/how-to-add-resources-to-macos-bundle/9323/2
+
+
+## Implementing shaders into the asset loading portion.
+
+- [x] Write a slang shader.
+
+
+## Compiling the raw assets.
+
+```sh
+# For compiling a JPG to KTX2.
+ktx create --format R8G8B8A8_SRGB assets_raw/textures/default_tex.jpg assets/textures/default_tex.ktx2
+
+# For compiling slang shader to SPIR-V (obfuscated and high optimization).
+slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shaders/default_shader.json -O2 -obfuscate assets_raw/shaders/default_shader.slang > assets/shaders/default_shader.spv
+```

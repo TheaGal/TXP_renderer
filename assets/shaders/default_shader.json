@@ -1,0 +1,219 @@
+{
+    "parameters": [
+        {
+            "name": "Uniforms",
+            "binding": {"kind": "descriptorTableSlot", "index": 0},
+            "type": {
+                "kind": "constantBuffer",
+                "elementType": {
+                    "kind": "struct",
+                    "fields": [
+                        {
+                            "name": "model_view_projection",
+                            "type": {
+                                "kind": "matrix",
+                                "rowCount": 4,
+                                "columnCount": 4,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                        }
+                    ]
+                },
+                "containerVarLayout": {
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                },
+                "elementVarLayout": {
+                    "type": {
+                        "kind": "struct",
+                        "fields": [
+                            {
+                                "name": "model_view_projection",
+                                "type": {
+                                    "kind": "matrix",
+                                    "rowCount": 4,
+                                    "columnCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                            }
+                        ]
+                    },
+                    "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                }
+            }
+        }
+    ],
+    "entryPoints": [
+        {
+            "name": "vert_main",
+            "stage": "vertex",
+            "parameters": [
+                {
+                    "name": "assembled_vertex",
+                    "stage": "vertex",
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
+                    "type": {
+                        "kind": "struct",
+                        "name": "Assembled_vertex",
+                        "fields": [
+                            {
+                                "name": "position",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 0},
+                                "semanticName": "POSITION"
+                            },
+                            {
+                                "name": "normal",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 1},
+                                "semanticName": "NORMAL"
+                            },
+                            {
+                                "name": "uv",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 2,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 2},
+                                "semanticName": "UV"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "result": {
+                "stage": "vertex",
+                "binding": {"kind": "varyingOutput", "index": 0},
+                "type": {
+                    "kind": "struct",
+                    "name": "Vertex_stage_output",
+                    "fields": [
+                        {
+                            "name": "coarse_vertex",
+                            "type": {
+                                "kind": "struct",
+                                "name": "Coarse_vertex",
+                                "fields": [
+                                    {
+                                        "name": "uv",
+                                        "type": {
+                                            "kind": "vector",
+                                            "elementCount": 2,
+                                            "elementType": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            }
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 0},
+                                        "semanticName": "COARSEVERTEX"
+                                    }
+                                ]
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 0},
+                            "semanticName": "COARSEVERTEX"
+                        },
+                        {
+                            "name": "sv_position",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 4,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "semanticName": "SV_POSITION"
+                        }
+                    ]
+                }
+            },
+            "bindings": [
+                {
+                    "name": "Uniforms",
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                }
+            ]
+        },
+        {
+            "name": "frag_main",
+            "stage": "fragment",
+            "parameters": [
+                {
+                    "name": "coarse_vertex",
+                    "stage": "fragment",
+                    "binding": {"kind": "varyingInput", "index": 0},
+                    "semanticName": "COARSEVERTEX",
+                    "type": {
+                        "kind": "struct",
+                        "name": "Coarse_vertex",
+                        "fields": [
+                            {
+                                "name": "uv",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 2,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 0},
+                                "semanticName": "COARSEVERTEX"
+                            }
+                        ]
+                    }
+                }
+            ],
+            "result": {
+                "stage": "fragment",
+                "binding": {"kind": "varyingOutput", "index": 0},
+                "semanticName": "SV_TARGET",
+                "type": {
+                    "kind": "vector",
+                    "elementCount": 4,
+                    "elementType": {
+                        "kind": "scalar",
+                        "scalarType": "float32"
+                    }
+                }
+            },
+            "bindings": [
+                {
+                    "name": "Uniforms",
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                }
+            ]
+        }
+    ]
+}
