@@ -22,6 +22,7 @@
 
 #include <array>
 #include <cassert>
+#include <cerrno>
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -1015,7 +1016,8 @@ ktxVulkanTexture Graphics::Impl::load_and_upload_texture(std::string const& fnam
     {
         std::stringstream ss;
         ss << "Creation of ktxTexture from \"" << fname
-           << "\" failed: " << ktxErrorString(ktxresult);
+           << "\" failed: " << ktxErrorString(ktxresult) << "\n"
+           << "  errno: " << errno;
         throw std::runtime_error(ss.str());
     }
 
@@ -1296,30 +1298,28 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
             m_pimpl->load_and_upload_texture(texture_asset_dir + tex_asset.ktx2_fname));
     }
     m_pimpl->destruct_ktx_vk_device_info();
-    std::cout << "Loaded all textures.\n";
+    std::cout << "Loaded all " << std::to_string(texture_assets.size()) << " textures.\n";
 
     // Load materials.
     for (auto const& mat_asset : material_assets)
     {
 
     }
-    std::cout << "Loaded all materials.\n";
+    std::cout << "Loaded all " << std::to_string(material_assets.size()) << " materials.\n";
 
     // Load material sets.
     for (auto const& mat_set_asset : material_set_assets)
     {
 
     }
-    std::cout << "Loaded all material sets.\n";
+    std::cout << "Loaded all " << std::to_string(material_set_assets.size()) << " material sets.\n";
 
     // Load models.
     for (auto const& mod_asset : model_assets)
     {
 
     }
-    std::cout << "Loaded all models.\n";
-
-    throw std::runtime_error("implement");
+    std::cout << "Loaded all " << std::to_string(model_assets.size()) << " models.\n";
 }
 
 void TXP::Graphics::poll_input_events()

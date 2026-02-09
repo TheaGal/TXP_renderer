@@ -51,6 +51,17 @@ int32_t main()
 - VulkanMemoryAllocator v3.3.0
 
 
+## Helper Software
+
+### KTX-Sofware
+
+Download from here (version 4.4.2): [click here](https://github.com/KhronosGroup/KTX-Software/releases/tag/v4.4.2)
+
+For macOS, install the pkg. (uninstall with `sudo ktx-uninstall`)
+
+For Windows, download the .exe and place it somewhere where it's available from PATH.
+
+
 ## Details
 
 For Win64, macOS, and Linux, this renderer uses Vulkan 1.3 (MacOS being thru MoltenVK).

@@ -13,7 +13,7 @@ def find_existing_files() -> list[Path]:
                          'c',
                          'cxx',
                          'cpp']
-    all_found_files = []
+    all_found_files: list[Path] = []
     for search_dir in SEARCH_DIRS:
         for search_ext in SEARCH_EXTENSIONS:
             # Convert `search_ext` to case-insensitive extension.

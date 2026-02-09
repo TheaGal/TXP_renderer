@@ -95,6 +95,47 @@ else()
 endif()
 
 
+# Use local ASSET_DIR if standalone.
+string(COMPARE EQUAL "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}" TXP_RENDERER_STANDALONE)
+
+if (TXP_RENDERER_STANDALONE)
+    message("TXP Renderer standalone mode! Using standalone asset directory.")
+    set(ASSET_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+endif()
+
+# Create symlink to assets folder.
+if(DEFINED ASSET_DIR)
+    set(dir_name ${ASSET_DIR})
+    set(target_dir_name ${CMAKE_BINARY_DIR}/assets)
+    if(WIN32)
+        string(REPLACE "/" "\\" win32_dir_name ${dir_name})
+        string(REPLACE "/" "\\" win32_target_dir_name ${target_dir_name})
+        if(EXISTS ${dir_name})
+            execute_process(
+                COMMAND cmd /C rmdir ${win32_target_dir_name}
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+        endif()
+        execute_process(
+            COMMAND cmd /C mklink /J ${win32_target_dir_name} ${win32_dir_name}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    else()
+        # The way you create a symlink in every single OS except Windows.s
+        file(CREATE_LINK ${dir_name} ${target_dir_name} SYMBOLIC)
+    endif()
+endif()
+
+# macOS: add all files in assets dir into app bundle package.
+file(GLOB_RECURSE resource_files "${ASSET_DIR}/*")
+foreach (FILE ${resource_files})
+    file(RELATIVE_PATH NEW_FILE "${ASSET_DIR}" ${FILE})
+    get_filename_component(NEW_FILE_PATH ${NEW_FILE} DIRECTORY)
+    set_source_files_properties(${FILE}
+        PROPERTIES
+            MACOSX_PACKAGE_LOCATION "Resources/assets/${NEW_FILE_PATH}"
+    )
+endforeach()
+
+
 # Main source files.
 set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
@@ -151,6 +192,9 @@ add_executable(${PROJECT_NAME}
     # Tinyobjloader source files.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader/tiny_obj_loader.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader/tiny_obj_loader.h
+
+    # Resource files.
+    ${resource_files}
 )
 
 target_include_directories(${PROJECT_NAME}
@@ -181,6 +225,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
     MACOSX_BUNDLE_BUNDLE_VERSION "0.1.0"
     MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+    # RESOURCE "${resource_files}"  @CHECK: commented these out since it caused resource files to get placed at the root of the bundle. So it should be good enough if changes?  -Thea 2026/02/08
 )
 
 # Set this project as Visual Studio startup project.
