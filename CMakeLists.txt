@@ -101,6 +101,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer_public.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/mutex_wrapper/mutex_wrapper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/deformed_render_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.h

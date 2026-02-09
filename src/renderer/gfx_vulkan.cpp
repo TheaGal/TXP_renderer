@@ -14,14 +14,20 @@
 #include "imgui.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
+
+#define KHRONOS_STATIC 1
+#include "ktx.h"
+#include "ktxvulkan.h"
 // clang-format on
 
 #include <array>
 #include <cassert>
 #include <functional>
+#include <iostream>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 
 
 namespace TXP
@@ -199,6 +205,37 @@ struct Graphics::Impl
         VkImageLayout m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
     };
 
+    // @TODO: @THEA: delete this??
+    // /// Allocated image abstraction for vulkan renderer.
+    // class Allocated_image
+    // {
+    // public:
+    //     Allocated_image(Image&& image,
+    //                     VkImageView image_view,
+    //                     VmaAllocation allocation,
+    //                     VkExtent3D extent,
+    //                     VkFormat format)
+    //         : m_image(std::move(image))
+    //         , m_image_view(image_view)
+    //         , m_allocation(allocation)
+    //         , m_extent(extent)
+    //         , m_format(format)
+    //     {
+    //     }
+
+    //     Image& get_image()
+    //     {
+    //         return m_image;
+    //     }
+
+    // private:
+    //     Image m_image;
+    //     VkImageView m_image_view;
+    //     VmaAllocation m_allocation;
+    //     VkExtent3D m_extent;
+    //     VkFormat m_format;
+    // };
+
     /// Holds Vulkan graphics initialization information.
     struct Vk_gfx_instance
     {
@@ -359,6 +396,18 @@ struct Graphics::Impl
     void init_vulkan_allocate_descriptors();
     void init_vulkan_create_pipelines();
     void init_vulkan_for_imgui();
+
+
+    /// Adds textures.
+    std::unordered_map<std::string, ktxVulkanTexture> texture_entries;  // @TODO: delete all ktx vk textures. (use `ktxVulkanTexture_Destruct()`)
+
+    ktxVulkanDeviceInfo ktx_vk_device_info;
+
+    void construct_ktx_vk_device_info();
+    void destruct_ktx_vk_device_info();
+
+    ktxVulkanTexture load_and_upload_texture(std::string const& fname);
+    void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
 
 
     /// Polls window for input events.
@@ -639,31 +688,35 @@ void Graphics::Impl::select_vulkan_window_surface_format()
         .surface = gfx.surface,
     };
     uint32_t avail_cnt;
-    vkGetPhysicalDeviceSurfaceFormats2KHR(gfx.physical_device, &surface_info, &avail_cnt, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(gfx.physical_device, gfx.surface, &avail_cnt, nullptr);
 
-    std::vector<VkSurfaceFormat2KHR> avail_formats;
+    std::vector<VkSurfaceFormatKHR> avail_formats;
     avail_formats.resize(avail_cnt);
-    vkGetPhysicalDeviceSurfaceFormats2KHR(gfx.physical_device,
-                                          &surface_info,
-                                          &avail_cnt,
-                                          avail_formats.data());
+    vkGetPhysicalDeviceSurfaceFormatsKHR(gfx.physical_device,
+                                         gfx.surface,
+                                         &avail_cnt,
+                                         avail_formats.data());
 
     bool found{ false };
     for (auto const& avail_format : avail_formats)
     {
         for (auto request_format : request_surface_image_formats)
         {
-            if (avail_format.surfaceFormat.format == request_format &&
-                avail_format.surfaceFormat.colorSpace == request_surface_color_space)
+            if (avail_format.format == request_format &&
+                avail_format.colorSpace == request_surface_color_space)
             {
-                gfx.surface_format = avail_format.surfaceFormat;
+                gfx.surface_format.format = avail_format.format;
+                gfx.surface_format.colorSpace = avail_format.colorSpace;
                 found = true;
                 break;
             }
         }
     }
     if (!found)
-        gfx.surface_format = avail_formats.front().surfaceFormat;
+    {
+        gfx.surface_format.format = avail_formats.front().format;
+        gfx.surface_format.colorSpace = avail_formats.front().colorSpace;
+    }
 }
 
 void Graphics::Impl::init_vulkan_build_swapchain()
@@ -926,6 +979,89 @@ void Graphics::Impl::init_vulkan_for_imgui()
     ImGui_ImplVulkan_Init(&init_info);
 }
 
+
+void Graphics::Impl::construct_ktx_vk_device_info()
+{
+    // ktxVulkanDeviceInfo kvdi{
+    //     .instance = gfx.instance,
+    //     .physicalDevice = gfx.physical_device,
+    //     .device = gfx.device,
+    //     .queue = gfx.graphics_queue,  // @TODO: maybe add to transfer queue? This should be good enough for now tho.  -Thea 2026/02/08
+    //     .cmdBuffer = frames.front().graphics_queue_command_buffer.get(),
+    //     .cmdPool = frames.front().command_pool,
+    // };
+    ktxVulkanDeviceInfo_Construct(&ktx_vk_device_info,
+                                  gfx.physical_device,
+                                  gfx.device,
+                                  gfx.graphics_queue,
+                                  frames.front().command_pool,  // Use first available command pool.
+                                  gfx.allocator->GetAllocationCallbacks());
+}
+
+void Graphics::Impl::destruct_ktx_vk_device_info()
+{
+    ktxVulkanDeviceInfo_Destruct(&ktx_vk_device_info);
+}
+
+ktxVulkanTexture Graphics::Impl::load_and_upload_texture(std::string const& fname)
+{   // Load from file.
+    ktxTexture* ktxtexture;
+    KTX_error_code ktxresult;
+
+    ktxresult = ktxTexture_CreateFromNamedFile(fname.c_str(),
+                                               KTX_TEXTURE_CREATE_NO_FLAGS,
+                                               &ktxtexture);
+    if (ktxresult != KTX_SUCCESS)
+    {
+        std::stringstream ss;
+        ss << "Creation of ktxTexture from \"" << fname
+           << "\" failed: " << ktxErrorString(ktxresult);
+        throw std::runtime_error(ss.str());
+    }
+
+    // Upload to GPU.
+    ktxVulkanTexture ktx_vk_texture;
+
+    ktxresult = ktxTexture_VkUpload(ktxtexture, &ktx_vk_device_info, &ktx_vk_texture);
+    if (ktxresult != KTX_SUCCESS)
+    {
+        std::stringstream ss;
+        ss << "ktxTexture_VkUploadEx() failed: " << ktxErrorString(ktxresult);
+        throw std::runtime_error(ss.str());
+    }
+
+    // Find orientation of ST texcoords.
+    int32_t texcoords_s_sign{ 1 };
+    int32_t texcoords_t_sign{ 1 };
+
+    char* p_val;
+    uint32_t val_len;
+    if (KTX_SUCCESS == ktxHashList_FindValue(&ktxtexture->kvDataHead,
+                                             KTX_ORIENTATION_KEY,
+                                             &val_len,
+                                             (void**)&p_val))
+    {
+        char s, t;
+        if (sscanf(p_val, KTX_ORIENTATION2_FMT, &s, &t) == 2)
+        {
+            if (s == 'l') texcoords_s_sign = -1;
+            if (t == 'u') texcoords_t_sign = -1;
+        }
+    }
+
+    // Cleanup.
+    ktxTexture_Destroy(ktxtexture);
+
+    // Finish.
+    return ktx_vk_texture;
+}
+
+void Graphics::Impl::add_texture_entry(std::string const& texture_name,
+                                       ktxVulkanTexture&& allocated_image)
+{
+    texture_entries.emplace(texture_name, std::move(allocated_image));
+}
+
 void Graphics::Impl::poll_input_events()
 {
     glfwPollEvents();
@@ -1138,17 +1274,52 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
 
 TXP::Graphics::~Graphics()
 {
+    // m_pimpl->destroy_texture_entries();  @TODO
+
     // @TODO
     assert(false);
 }
 
-void TXP::Graphics::load_assets(std::vector<Texture_asset_create_info>&& texture_assets,
+void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
+                                std::string const& shader_asset_dir,
+                                std::string const& model_asset_dir,
+                                std::vector<Texture_asset_create_info>&& texture_assets,
                                 std::vector<Material_asset_create_info>&& material_assets,
                                 std::vector<Material_set_asset_create_info>&& material_set_assets,
                                 std::vector<Model_asset_create_info>&& model_assets)
-{
+{   // Load textures.
+    m_pimpl->construct_ktx_vk_device_info();
+    for (auto const& tex_asset : texture_assets)
+    {
+        m_pimpl->add_texture_entry(
+            tex_asset.texture_name,
+            m_pimpl->load_and_upload_texture(texture_asset_dir + tex_asset.ktx2_fname));
+    }
+    m_pimpl->destruct_ktx_vk_device_info();
+    std::cout << "Loaded all textures.\n";
+
+    // Load materials.
+    for (auto const& mat_asset : material_assets)
+    {
+
+    }
+    std::cout << "Loaded all materials.\n";
+
+    // Load material sets.
+    for (auto const& mat_set_asset : material_set_assets)
+    {
+
+    }
+    std::cout << "Loaded all material sets.\n";
+
+    // Load models.
+    for (auto const& mod_asset : model_assets)
+    {
+
+    }
+    std::cout << "Loaded all models.\n";
+
     throw std::runtime_error("implement");
-    // m_pimpl->poll_input_events();
 }
 
 void TXP::Graphics::poll_input_events()

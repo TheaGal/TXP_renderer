@@ -19,7 +19,10 @@ public:
     ~Graphics();
 
     /// Loads all registered assets.
-    void load_assets(std::vector<Texture_asset_create_info>&& texture_assets,
+    void load_assets(std::string const& texture_asset_dir,
+                     std::string const& shader_asset_dir,
+                     std::string const& model_asset_dir,
+                     std::vector<Texture_asset_create_info>&& texture_assets,
                      std::vector<Material_asset_create_info>&& material_assets,
                      std::vector<Material_set_asset_create_info>&& material_set_assets,
                      std::vector<Model_asset_create_info>&& model_assets);
