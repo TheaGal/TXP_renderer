@@ -138,3 +138,6 @@ Example:
 This seems like a nice thing for bindless texture access.
 
 https://docs.shader-slang.org/en/latest/external/slang/docs/user-guide/03-convenience-features.html#descriptorhandle-for-bindless-descriptor-access
+
+
+## Going back to a prev convo: implementing shader loading into the thing.
