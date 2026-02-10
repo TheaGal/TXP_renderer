@@ -1313,7 +1313,7 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     Shader_Creation::set_shader_directory(shader_asset_dir);
     for (auto const& shad_name : shader_names)
     {
-        Shader_Creation::load_slang_reflection(shad_name, true);
+        Shader_Creation::load_slang_reflection(shad_name, false);
     }
 
 
