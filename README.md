@@ -67,3 +67,32 @@ For Windows, download the .exe and place it somewhere where it's available from 
 For Win64, macOS, and Linux, this renderer uses Vulkan 1.3 (MacOS being thru MoltenVK).
 
 For other platforms, it is not planned yet.
+
+
+## Progress
+
+Below is a chart showing the timeline of tasks.
+
+```mermaid
+gantt
+    title TXP renderer progress
+    dateFormat YYYY/MM/DD
+    section Texture and material system
+        Create shader pipeline from slang-reflection  : a1, 2026/02/08, 5d
+        Bindlessly load all textures          : a2, after a1, 4d
+        Material system                       : a3, after a2, 2d
+        Material sets as swatches for models  : a4, after a8, 1d
+    section Model system
+        Load 3D meshes (gltf/obj)         : a5, after a3, 3d
+        Material set from model tex names : a6, after a5, 1d
+        Giant static model buffer         : a7, after a6, 2d
+        Draw meshes with material system (use material set from model tex names)  : a8, after a7, 3d
+    section Animation system
+        Load .btafa and .btanitor to model : a9, after m1, 3d
+        Compute shader of static mesh into skinned mesh in its own buffer : a10, after a9, 4d
+        Control animators via setting state-sets : a11, after a10, 3d
+        Control animators via jump queues : a12, after a10, 3d
+    section Milestones
+        Finish basic material-based geometry renderer : milestone, m1, after a4, 0d
+        Finish animation system : milestone, m2, after a12, 0d
+```
