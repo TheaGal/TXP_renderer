@@ -67,17 +67,15 @@ struct Entry_point
 
 // Parameters.
 
-struct Vector_element_type
-{
-    std::string kind;
-    std::string scalarType;
-
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Vector_element_type, kind, scalarType);
-};
-
 struct Field_type
 {
     std::string kind;
+
+    // scalar
+    std::string scalarType;
+
+    // array, vector
+    int32_t elementCount{ -1 };
 
     // matrix
     int32_t rowCount{ -1 };
@@ -88,21 +86,19 @@ struct Field_type
     std::string access;
     json resultType;  // Can convert to `Field_type` manually.
 
-    // vector
-    int32_t elementCount{ -1 };
-
-    // matrix, vector
-    Vector_element_type elementType;
+    // matrix, vector, array
+    json elementType;  // Can convert to `Field_type` manually.
 
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Field_type,
                                                 kind,
+                                                scalarType,
+                                                elementCount,
                                                 rowCount,
                                                 columnCount,
                                                 baseShape,
                                                 access,
                                                 resultType,
-                                                elementCount,
                                                 elementType);
 };
 
