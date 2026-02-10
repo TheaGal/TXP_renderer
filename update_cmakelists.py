@@ -87,7 +87,8 @@ if __name__ == '__main__':
     RES_SEARCH_EXTENSIONS = ['ktx2',
                              'glb',
                              'gltf',
-                             'vkshader']
+                             'shader',
+                             'shadrefl']
     update_file_entries(['./assets/',],
                         RES_SEARCH_EXTENSIONS,
                         'set(ASSET_DIR_FILES',

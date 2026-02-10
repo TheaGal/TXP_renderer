@@ -1,3 +1,4 @@
+#include "shader_creation/shader_creation.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "gfx.h"
@@ -1309,9 +1310,10 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
               << " shaders." << std::endl;
 
     // Load shaders.
+    Shader_Creation::set_shader_directory(shader_asset_dir);
     for (auto const& shad_name : shader_names)
     {
-        
+        Shader_Creation::load_slang_reflection(shad_name, true);
     }
 
 

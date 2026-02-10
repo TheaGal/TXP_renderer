@@ -4,7 +4,8 @@
 // Uniform data to be passed from application -> shader.
 cbuffer Uniforms
 {
-    float4x4 model_view_projection;
+    float4x4 view_projection;
+    StructuredBuffer<float4x4> model_transforms;
 }
 
 /// Per-vertex attributes from vertex buffer.
@@ -37,7 +38,7 @@ Vertex_stage_output vert_main(Assembled_vertex assembled_vertex)
     float2 uv       = assembled_vertex.uv;
 
     output.coarse_vertex.uv = uv;
-    output.sv_position = mul(model_view_projection, float4(position, 1.0));
+    output.sv_position = mul(view_projection, float4(position, 1.0));
 
     return output;
 }

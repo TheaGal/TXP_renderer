@@ -8,12 +8,17 @@ project(txp_renderer
 # When turning this option on, the library will be compiled using assertions. By default asserts are enabled in Debug build.
 option(ENABLE_PROFILING "Enable profiling" OFF)
 
+# When turning this option on, it will attempt to look for nlohmann::json externally instead of using the subdirectory here.
+option(TXP_REND_USE_EXTERNAL_JSON "Use an external JSON library" OFF)
+
+
 # Print out all options.
 message(
     "\n"
     "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
     "|               ::OPTION VALUES::                \n"
-    "| ENABLE_PROFILING    : ${ENABLE_PROFILING}\n"
+    "| ENABLE_PROFILING           : ${ENABLE_PROFILING}\n"
+    "| TXP_REND_USE_EXTERNAL_JSON : ${TXP_REND_USE_EXTERNAL_JSON}\n"
     "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
 
 # C/C++ standard.
@@ -53,6 +58,7 @@ set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastgltf/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/json/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KTX-Software/lib/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb  # Header only (essentially).
     # ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stduuid/include  # @NOTE: Removing this so that it's not easy to mix up the uuid.h header files.
@@ -64,6 +70,14 @@ add_subdirectory(third_party/efsw)
 add_subdirectory(third_party/fastgltf)
 add_subdirectory(third_party/KTX-Software/lib ktx)
 add_subdirectory(third_party/stduuid)
+
+if(TXP_REND_USE_EXTERNAL_JSON)
+  find_package(nlohmann_json 3.12.0 REQUIRED)
+else()
+  set(JSON_BuildTests OFF CACHE INTERNAL "")
+  add_subdirectory(third_party/json)
+endif()
+
 
 # Platform-specific dependencies.
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows|Darwin")
@@ -127,6 +141,10 @@ endif()
 
 # Resource files inside ASSET_DIR.
 set(ASSET_DIR_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/default_tex.ktx2
 )
 
@@ -156,6 +174,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h
 )
 
 # Executable build.
@@ -218,6 +238,7 @@ target_link_libraries(${PROJECT_NAME}
     fastgltf
     ktx
     stduuid
+    nlohmann_json::nlohmann_json
     ${PLAT_SPECIFIC_LINK_LIBS}
 )
 

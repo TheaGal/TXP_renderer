@@ -2,14 +2,14 @@
     "parameters": [
         {
             "name": "Uniforms",
-            "binding": {"kind": "descriptorTableSlot", "index": 0},
+            "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 2},
             "type": {
                 "kind": "constantBuffer",
                 "elementType": {
                     "kind": "struct",
                     "fields": [
                         {
-                            "name": "model_view_projection",
+                            "name": "view_projection",
                             "type": {
                                 "kind": "matrix",
                                 "rowCount": 4,
@@ -20,6 +20,23 @@
                                 }
                             },
                             "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                        },
+                        {
+                            "name": "model_transforms",
+                            "type": {
+                                "kind": "resource",
+                                "baseShape": "structuredBuffer",
+                                "resultType": {
+                                    "kind": "matrix",
+                                    "rowCount": 4,
+                                    "columnCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                }
+                            },
+                            "binding": {"kind": "descriptorTableSlot", "index": 1}
                         }
                     ]
                 },
@@ -31,7 +48,7 @@
                         "kind": "struct",
                         "fields": [
                             {
-                                "name": "model_view_projection",
+                                "name": "view_projection",
                                 "type": {
                                     "kind": "matrix",
                                     "rowCount": 4,
@@ -42,10 +59,30 @@
                                     }
                                 },
                                 "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                            },
+                            {
+                                "name": "model_transforms",
+                                "type": {
+                                    "kind": "resource",
+                                    "baseShape": "structuredBuffer",
+                                    "resultType": {
+                                        "kind": "matrix",
+                                        "rowCount": 4,
+                                        "columnCount": 4,
+                                        "elementType": {
+                                            "kind": "scalar",
+                                            "scalarType": "float32"
+                                        }
+                                    }
+                                },
+                                "binding": {"kind": "descriptorTableSlot", "index": 0}
                             }
                         ]
                     },
-                    "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                    "bindings": [
+                        {"kind": "descriptorTableSlot", "index": 1},
+                        {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                    ]
                 }
             }
         }
@@ -160,7 +197,7 @@
             "bindings": [
                 {
                     "name": "Uniforms",
-                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 2}
                 }
             ]
         },
@@ -211,7 +248,7 @@
             "bindings": [
                 {
                     "name": "Uniforms",
-                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 2}
                 }
             ]
         }

@@ -102,7 +102,7 @@ Making abstractions along the way is the goal, since I don't want to be stuck wi
 ktx create --format R8G8B8A8_SRGB assets_raw/textures/default_tex.jpg assets/textures/default_tex.ktx2
 
 # For compiling slang shader to SPIR-V (obfuscated and high optimization).
-slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shaders/default_shader.json -O2 -obfuscate assets_raw/shaders/default_shader.slang > assets/shaders/default_shader.spv
+slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shaders/default_shader.shadrefl -O2 -obfuscate assets_raw/shaders/default_shader.slang > assets/shaders/default_shader.shader
 ```
 
 
@@ -141,3 +141,8 @@ https://docs.shader-slang.org/en/latest/external/slang/docs/user-guide/03-conven
 
 
 ## Going back to a prev convo: implementing shader loading into the thing.
+
+
+slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shaders/gradient.shadrefl -O2 -obfuscate assets_raw/shaders/gradient.slang > assets/shaders/gradient.shader
+
+slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.slang > assets/shaders/gradient.glsl
