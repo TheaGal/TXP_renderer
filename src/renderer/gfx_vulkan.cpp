@@ -1,4 +1,3 @@
-#include "shader_creation/shader_creation.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "gfx.h"
@@ -20,6 +19,8 @@
 #include "ktx.h"
 #include "ktxvulkan.h"
 // clang-format on
+
+#include "shader_creation/reflection_structs.h"
 
 #include <array>
 #include <cassert>
@@ -411,6 +412,86 @@ struct Graphics::Impl
 
     ktxVulkanTexture load_and_upload_texture(std::string const& fname);
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
+
+
+    /// Build descriptor layouts.
+    VkDescriptorSetLayout build_descriptor_layout(
+        std::vector<std::pair<uint32_t, VkDescriptorType>>&& bindings,
+        VkShaderStageFlags shader_stages,
+        VkDescriptorSetLayoutCreateFlags flags);
+    
+    /// Allocate descriptors.
+    class Descriptor_allocator
+    {
+    public:
+        /// Initialize.
+        void init_pool(VkDevice device,
+                       VmaAllocator allocator,
+                       uint32_t max_sets,
+                       std::vector<std::pair<VkDescriptorType, float_t>>&& size_ratios)
+        {
+            m_device = device;
+            m_allocator = allocator;
+
+            std::vector<VkDescriptorPoolSize> pool_sizes;
+            pool_sizes.reserve(size_ratios.size());
+
+            for (auto [ratio_type, ratio_size] : size_ratios)
+            {
+                pool_sizes.emplace_back(VkDescriptorPoolSize{
+                    .type = ratio_type,
+                    .descriptorCount = static_cast<uint32_t>(ratio_size * max_sets),
+                });
+            }
+
+            VkDescriptorPoolCreateInfo info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .maxSets = max_sets,
+                .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+                .pPoolSizes = pool_sizes.data(),
+            };
+            vkCreateDescriptorPool(m_device, &info, m_allocator->GetAllocationCallbacks(), &m_pool);
+        }
+
+        /// Tears down pool.
+        void teardown_pool()
+        {
+            vkDestroyDescriptorPool(m_device, m_pool, m_allocator->GetAllocationCallbacks());
+        }
+
+        /// Clears all allocated descriptors.
+        void clear_pool()
+        {
+            vkResetDescriptorPool(m_device, m_pool, 0);
+        }
+
+        /// Allocates a single descriptor set. Useful for per-frame descriptor sets.
+        VkDescriptorSet allocate(VkDescriptorSetLayout layout)
+        {
+            VkDescriptorSetAllocateInfo info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .pNext = nullptr,
+                .descriptorPool = m_pool,
+                .descriptorSetCount = 1,
+                .pSetLayouts = &layout,
+            };
+
+            VkDescriptorSet set;
+            VkResult err = vkAllocateDescriptorSets(m_device, &info, &set);
+
+            if (err)
+                throw std::runtime_error("Allocating descriptor set failed.");
+
+            return set;
+        }
+
+    private:
+        VkDevice m_device;
+        VmaAllocator m_allocator;
+        VkDescriptorPool m_pool;
+    };
 
 
     /// Polls window for input events.
@@ -1065,6 +1146,49 @@ void Graphics::Impl::add_texture_entry(std::string const& texture_name,
 {
     texture_entries.emplace(texture_name, std::move(allocated_image));
 }
+
+
+VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
+    std::vector<std::pair<uint32_t, VkDescriptorType>>&& bindings,
+    VkShaderStageFlags shader_stages,
+    VkDescriptorSetLayoutCreateFlags flags)
+{
+    assert(gfx.device);
+    assert(gfx.allocator);
+
+    std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
+    layout_bindings.reserve(bindings.size());
+
+    for (auto [bind_idx, descriptor_type] : bindings)
+    {
+        layout_bindings.emplace_back(VkDescriptorSetLayoutBinding{
+            .binding = bind_idx,
+            .descriptorType = descriptor_type,
+            .descriptorCount = 1,
+            .stageFlags = shader_stages,
+        });
+    }
+
+    VkDescriptorSetLayoutCreateInfo info{
+        .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = flags,
+        .bindingCount = static_cast<uint32_t>(layout_bindings.size()),
+        .pBindings = layout_bindings.data(),
+    };
+
+    VkDescriptorSetLayout layout;
+    VkResult err = vkCreateDescriptorSetLayout(gfx.device,
+                                               &info,
+                                               gfx.allocator->GetAllocationCallbacks(),
+                                               &layout);
+
+    if (err)
+        throw std::runtime_error("Creating descriptor set layout failed.");
+
+    return layout;
+}
+
 
 void Graphics::Impl::poll_input_events()
 {
