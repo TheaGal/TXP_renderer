@@ -22,7 +22,7 @@ static std::string s_shader_dir;
 // Reflection structs.
 // @NOTE: naming convention of vars will not match rest of project.
 
-// Entry points.
+// Helpers.
 
 struct Binding
 {
@@ -42,30 +42,7 @@ struct Binding
                                                 elementStride);
 };
 
-struct NamedBinding
-{
-    std::string name;
-    Binding binding;
-
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(NamedBinding, name, binding);
-};
-
-struct Entry_point
-{
-    std::string name;
-    std::string stage;
-
-    std::vector<int32_t> threadGroupSize;  // Only in compute shader.
-    std::vector<NamedBinding> bindings;
-
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Entry_point,
-                                                name,
-                                                stage,
-                                                threadGroupSize,
-                                                bindings);
-};
-
-// Parameters.
+struct Struct_field;
 
 struct Field_type
 {
@@ -89,8 +66,25 @@ struct Field_type
     // matrix, vector, array
     json elementType;  // Can convert to `Field_type` manually.
 
+    // struct
+    std::string name;
+    std::vector<Struct_field> fields;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Field_type,
+    /// @NOTE: serialization defined non-intrusive vv below vv
+};
+
+struct Struct_field
+{
+    std::string name;
+    Field_type type;
+    std::string stage;
+    Binding binding;
+    std::string semanticName;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct_field, name, type, stage, binding, semanticName);
+};
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Field_type,
                                                 kind,
                                                 scalarType,
                                                 elementCount,
@@ -99,8 +93,55 @@ struct Field_type
                                                 baseShape,
                                                 access,
                                                 resultType,
-                                                elementType);
+                                                elementType,
+                                                name,
+                                                fields);
+
+// Entry points.
+
+struct NamedBinding
+{
+    std::string name;
+    Binding binding;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(NamedBinding, name, binding);
 };
+
+struct Entry_point_parameter
+{
+    std::string name;
+    std::string stage;
+    std::string semanticName;
+    Binding binding;
+    Field_type type;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Entry_point_parameter,
+                                                name,
+                                                stage,
+                                                semanticName,
+                                                binding,
+                                                type);
+};
+
+struct Entry_point
+{
+    std::string name;
+    std::string stage;
+
+    std::vector<int32_t> threadGroupSize;  // Only in compute shader.
+    std::vector<NamedBinding> bindings;
+
+    std::vector<Entry_point_parameter> parameters;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Entry_point,
+                                                name,
+                                                stage,
+                                                threadGroupSize,
+                                                bindings,
+                                                parameters);
+};
+
+// Parameters.
 
 struct Element_type_field  // Data appear to be different depending on `elementType` or `elementVarLayout`.
 {
