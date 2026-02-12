@@ -20,6 +20,7 @@
 #include "ktxvulkan.h"
 // clang-format on
 
+#include "gfx_vulkan/vk_structs.h"
 #include "shader_creation/shader_creation.h"
 
 #include <array>
@@ -36,95 +37,6 @@
 
 namespace TXP
 {
-
-VkRenderingAttachmentInfo txp_vk_attachment_info(VkImageView image_view,
-                                                 VkClearValue* clear_value,
-                                                 VkImageLayout image_layout)
-{
-    VkRenderingAttachmentInfo color_attachment{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
-        .pNext = nullptr,
-
-        .imageView = image_view,
-        .imageLayout = image_layout,
-        .loadOp = (clear_value ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD),
-        .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
-    };
-
-    if (clear_value != nullptr)
-    {
-        color_attachment.clearValue = *clear_value;
-    }
-
-    return color_attachment;
-}
-
-VkRenderingInfo txp_vk_render_info(VkExtent2D render_extent,
-                                   VkRenderingAttachmentInfo* color_attachment,
-                                   VkRenderingAttachmentInfo* depth_attachment)
-{
-    VkRenderingInfo rendering_info{
-        .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-        .pNext = nullptr,
-
-        .renderArea = VkRect2D{ .offset = { 0, 0 },
-                                .extent = render_extent },
-        .layerCount = 1,
-        .colorAttachmentCount = 1,
-        .pColorAttachments = color_attachment,
-        .pDepthAttachment = depth_attachment,
-        .pStencilAttachment = nullptr,
-    };
-
-    return rendering_info;
-}
-
-VkImageSubresourceRange txp_vk_image_subresource_range(VkImageAspectFlags aspect_mask)
-{
-    VkImageSubresourceRange subresource_range{
-        .aspectMask = aspect_mask,
-        .baseMipLevel = 0,
-        .levelCount = VK_REMAINING_MIP_LEVELS,
-        .baseArrayLayer = 0,
-        .layerCount = VK_REMAINING_ARRAY_LAYERS,
-    };
-    return subresource_range;
-}
-
-VkSemaphoreSubmitInfo txp_vk_semaphore_submit_info(VkPipelineStageFlags2 stage_mask,
-                                                   VkSemaphore semaphore)
-{
-    VkSemaphoreSubmitInfo submit_info{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .pNext = nullptr,
-        .semaphore = semaphore,
-        .value = 1,
-        .stageMask = stage_mask,
-        .deviceIndex = 0,
-    };
-
-    return submit_info;
-}
-
-VkSubmitInfo2 txp_vk_submit_info(VkCommandBufferSubmitInfo* cmd_info,
-                                 VkSemaphoreSubmitInfo* signal_info,
-                                 VkSemaphoreSubmitInfo* wait_info)
-{
-    VkSubmitInfo2 info = {
-        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-        .pNext = nullptr,
-
-        .waitSemaphoreInfoCount = (wait_info == nullptr ? 0u : 1u),
-        .pWaitSemaphoreInfos = wait_info,
-
-        .commandBufferInfoCount = 1u,
-        .pCommandBufferInfos = cmd_info,
-
-        .signalSemaphoreInfoCount = (signal_info == nullptr ? 0u : 1u),
-        .pSignalSemaphoreInfos = signal_info,
-    };
-    return info;
-}
 
 struct Graphics::Impl
 {
@@ -178,7 +90,7 @@ struct Graphics::Impl
                 .newLayout = new_layout,
 
                 .image = m_img,
-                .subresourceRange = txp_vk_image_subresource_range(aspect_mask),
+                .subresourceRange = Vk_Structs::txp_vk_image_subresource_range(aspect_mask),
             };
 
             VkDependencyInfo dep_info{
@@ -337,6 +249,14 @@ struct Graphics::Impl
                 throw std::runtime_error("Image view creation failed.");
 
             new_img.m_initialized = true;
+
+            return new_img;
+        }
+
+        /// Default ctor (uninitialized.)
+        Allocated_image()
+            : m_image(Image{ nullptr })
+        {
         }
 
         void teardown()
@@ -365,11 +285,6 @@ struct Graphics::Impl
         static uint32_t s_graphics_queue_family_idx;
         static uint32_t s_async_compute_queue_family_idx;
         static uint32_t s_transfer_queue_family_idx;
-
-        Allocated_image()
-            : m_image(Image{ nullptr })
-        {
-        }
 
         bool m_initialized{ false };
         Image m_image;
@@ -1434,7 +1349,8 @@ void Graphics::Impl::clear_color_image()
     float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
     clear_value = { { 0.0f, 0.0f, flash * 0.5f, 1.0f } };
     // clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-    VkImageSubresourceRange clear_range = txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
+    VkImageSubresourceRange clear_range =
+        Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkCmdClearColorImage(cmd,
                          image.get(),
@@ -1456,9 +1372,11 @@ void Graphics::Impl::render_imgui()
 
     // Render imgui contents to image.
     VkRenderingAttachmentInfo color_attachment =
-        txp_vk_attachment_info(image_view, nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        Vk_Structs::txp_vk_attachment_info(image_view,
+                                           nullptr,
+                                           VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     VkRenderingInfo render_info =
-        txp_vk_render_info(gfx.swapchain_extent, &color_attachment, nullptr);
+        Vk_Structs::txp_vk_render_info(gfx.swapchain_extent, &color_attachment, nullptr);
 
     vkCmdBeginRendering(cmd, &render_info);
 
@@ -1503,14 +1421,14 @@ void Graphics::Impl::present_frame_to_screen()
         .deviceMask = 0,
     };
 
-    VkSemaphoreSubmitInfo wait_info =
-        txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
-                                     current_frame.acquire_nxt_img_semaphore);
+    VkSemaphoreSubmitInfo wait_info = Vk_Structs::txp_vk_semaphore_submit_info(
+        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
+        current_frame.acquire_nxt_img_semaphore);
     VkSemaphoreSubmitInfo signal_info =
-        txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                                     swapchain_submit_semaphore);
+        Vk_Structs::txp_vk_semaphore_submit_info(VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
+                                                 swapchain_submit_semaphore);
 
-    VkSubmitInfo2 submit = txp_vk_submit_info(&cmd_info, &signal_info, &wait_info);
+    VkSubmitInfo2 submit = Vk_Structs::txp_vk_submit_info(&cmd_info, &signal_info, &wait_info);
 
     err = vkQueueSubmit2(gfx.graphics_queue, 1, &submit, current_frame.render_fence);
     if (err)
