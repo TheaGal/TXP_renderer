@@ -96,3 +96,30 @@ gantt
         Finish basic material-based geometry renderer : milestone, m1, after a4, 0d
         Finish animation system : milestone, m2, after a12, 0d
 ```
+
+
+## Render Graph
+
+Below is the flow of data for the render graph.
+
+```mermaid
+sequenceDiagram
+    participant Shadow_images@{ "type" : "collections" }
+    participant HDR_draw_image
+    participant Volumetric_draw_image
+    participant ImGui@{ "type" : "entity" }
+    participant Swapchain@{ "type" : "collections" }
+    participant Present@{ "type" : "queue" }
+    Note over Shadow_images: Render shadow pass(es) (bindless)
+    Shadow_images->>HDR_draw_image: Trans to shader read image
+    Note over HDR_draw_image: Render geometry pass (bindless)
+    HDR_draw_image->>Volumetric_draw_image: Copy depth texture
+    Note over Volumetric_draw_image: Render volumetric pass (low res)
+    Note over HDR_draw_image: Render skybox pass
+    Volumetric_draw_image->>Volumetric_draw_image: Trans to shader read image
+    Volumetric_draw_image->>HDR_draw_image: Upscale onto main image
+    HDR_draw_image-->>ImGui: Tonemap to LDR
+    ImGui->>Swapchain: Render editor GUI
+    HDR_draw_image-->>Swapchain: Tonemap to LDR (if not rendering into ImGui)
+    Swapchain->>Present: Present
+```

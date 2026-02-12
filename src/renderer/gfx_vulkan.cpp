@@ -20,7 +20,7 @@
 #include "ktxvulkan.h"
 // clang-format on
 
-#include "shader_creation/reflection_structs.h"
+#include "shader_creation/shader_creation.h"
 
 #include <array>
 #include <cassert>
@@ -209,36 +209,175 @@ struct Graphics::Impl
         VkImageLayout m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
     };
 
-    // @TODO: @THEA: delete this??
-    // /// Allocated image abstraction for vulkan renderer.
-    // class Allocated_image
-    // {
-    // public:
-    //     Allocated_image(Image&& image,
-    //                     VkImageView image_view,
-    //                     VmaAllocation allocation,
-    //                     VkExtent3D extent,
-    //                     VkFormat format)
-    //         : m_image(std::move(image))
-    //         , m_image_view(image_view)
-    //         , m_allocation(allocation)
-    //         , m_extent(extent)
-    //         , m_format(format)
-    //     {
-    //     }
+    /// Allocated image abstraction for vulkan renderer.
+    class Allocated_image
+    {
+    public:
+        static void set_vk_props(VkDevice device, VmaAllocator allocator)
+        {
+            s_device = device;
+            s_allocator = allocator;
+        }
 
-    //     Image& get_image()
-    //     {
-    //         return m_image;
-    //     }
+        static Allocated_image create_image_2d(VkFormat format,
+                                               VkExtent2D extent,
+                                               VkImageUsageFlags usage_flags)
+        {
+            if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)
+                throw std::runtime_error("Usage flags has depth stencil attachment.");
 
-    // private:
-    //     Image m_image;
-    //     VkImageView m_image_view;
-    //     VmaAllocation m_allocation;
-    //     VkExtent3D m_extent;
-    //     VkFormat m_format;
-    // };
+            return create_image(VK_IMAGE_TYPE_2D,
+                                VK_IMAGE_VIEW_TYPE_2D,
+                                format,
+                                VkExtent3D{ extent.width, extent.height, 1 },
+                                1,
+                                1,
+                                VK_SAMPLE_COUNT_1_BIT,
+                                VK_IMAGE_TILING_OPTIMAL,
+                                usage_flags,
+                                VK_IMAGE_ASPECT_COLOR_BIT);
+        }
+
+        static Allocated_image create_image_depth_buffer(VkExtent2D extent,
+                                                         VkImageUsageFlags usage_flags)
+        {
+            if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0)
+                throw std::runtime_error("Usage flags doesn't have depth stencil attachment.");
+
+            return create_image(VK_IMAGE_TYPE_2D,
+                                VK_IMAGE_VIEW_TYPE_2D,
+                                VK_FORMAT_D32_SFLOAT,
+                                VkExtent3D{ extent.width, extent.height, 1 },
+                                1,
+                                1,
+                                VK_SAMPLE_COUNT_1_BIT,
+                                VK_IMAGE_TILING_OPTIMAL,
+                                usage_flags,
+                                VK_IMAGE_ASPECT_DEPTH_BIT);
+        }
+
+        static Allocated_image create_image(VkImageType image_type,
+                                            VkImageViewType image_view_type,
+                                            VkFormat format,
+                                            VkExtent3D extent,
+                                            uint32_t mip_levels,
+                                            uint32_t array_layers,
+                                            VkSampleCountFlagBits msaa_samples,
+                                            VkImageTiling tiling,
+                                            VkImageUsageFlags usage_flags,
+                                            VkImageAspectFlags aspect_flags,
+                                            uint32_t view_base_mip_level = -1,
+                                            uint32_t view_mip_levels = -1,
+                                            uint32_t view_base_array_layer = -1,
+                                            uint32_t view_array_layers = -1)
+        {
+            VkResult err;
+
+            // Create image.
+            Allocated_image new_img;
+            {
+                VkImageCreateInfo img_info{
+                    .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+                    .pNext = nullptr,
+                    .imageType = image_type,
+                    .format = format,
+                    .extent = extent,
+                    .mipLevels = mip_levels,
+                    .arrayLayers = array_layers,
+                    .samples = msaa_samples,
+                    .tiling = tiling,
+                    .usage = usage_flags,
+                    .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+                    .queueFamilyIndexCount = 1,  // @TODO: learn about different queue families and sharing mode.
+                    .pQueueFamilyIndices = &s_graphics_queue_family_idx,
+                    .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+                };
+
+                VmaAllocationCreateInfo img_alloc_info{
+                    .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+                    .requiredFlags = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT),
+                };
+
+                VkImage temp_vk_image;  // @NOTE: lvalue needed for `vmaCreateImage()`.
+
+                err = vmaCreateImage(s_allocator,
+                                     &img_info,
+                                     &img_alloc_info,
+                                     &temp_vk_image,
+                                     &new_img.m_allocation,
+                                     nullptr);
+                if (err)
+                    throw std::runtime_error("Image creation failed.");
+                
+                new_img.m_image = Image(std::move(temp_vk_image));
+            }
+
+            // Create image view.
+            VkImageViewCreateInfo img_view_info{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .pNext = nullptr,
+                .image = new_img.m_image.get(),
+                .viewType = image_view_type,
+                .format = format,
+                // .components = ,  @CHECK: what is this? (I'm curious)
+                .subresourceRange = VkImageSubresourceRange{
+                    .aspectMask     = aspect_flags,
+                    .baseMipLevel   = (view_base_mip_level == -1 ? 0 : view_base_mip_level),
+                    .levelCount     = (view_mip_levels == -1 ? mip_levels : view_mip_levels),
+                    .baseArrayLayer = (view_base_array_layer == -1 ? 0 : view_base_array_layer),
+                    .layerCount     = (view_array_layers == -1 ? array_layers : view_array_layers),
+                },
+            };
+
+            err = vkCreateImageView(s_device,
+                                    &img_view_info,
+                                    s_allocator->GetAllocationCallbacks(),
+                                    &new_img.m_image_view);
+            if (err)
+                throw std::runtime_error("Image view creation failed.");
+
+            new_img.m_initialized = true;
+        }
+
+        void teardown()
+        {
+            vkDestroyImageView(s_device, m_image_view, s_allocator->GetAllocationCallbacks());
+            vmaDestroyImage(s_allocator, m_image.get(), m_allocation);
+        }
+
+        Image& get_image()
+        {
+            if (!m_initialized)
+                throw std::runtime_error("Uninitialized Allocated_image.");
+            return m_image;
+        }
+
+        VkImageView& get_image_view()
+        {
+            if (!m_initialized)
+                throw std::runtime_error("Uninitialized Allocated_image.");
+            return m_image_view;
+        }
+
+    private:
+        static VkDevice s_device;
+        static VmaAllocator s_allocator;
+        static uint32_t s_graphics_queue_family_idx;
+        static uint32_t s_async_compute_queue_family_idx;
+        static uint32_t s_transfer_queue_family_idx;
+
+        Allocated_image()
+            : m_image(Image{ nullptr })
+        {
+        }
+
+        bool m_initialized{ false };
+        Image m_image;
+        VkImageView m_image_view;
+        VmaAllocation m_allocation;
+        VkExtent3D m_extent;
+        VkFormat m_format;
+    };
 
     /// Holds Vulkan graphics initialization information.
     struct Vk_gfx_instance
@@ -387,6 +526,10 @@ struct Graphics::Impl
     };
     std::array<Frame_data, k_frame_overlap> frames;
 
+    /// HDR draw image (main geometry pipeline).
+    Allocated_image hdr_draw_image_color;
+    Allocated_image hdr_draw_image_depth;
+
 
     void init_vulkan_instance();
     void init_vulkan_window_surface();
@@ -397,8 +540,9 @@ struct Graphics::Impl
     void init_vulkan_retrieve_queues();
     void init_vulkan_create_cmd_structures();
     void init_vulkan_create_sync_structures();
-    void init_vulkan_allocate_descriptors();
+    void init_vulkan_create_descriptors();
     void init_vulkan_create_pipelines();
+    void init_vulkan_render_graph_resources();
     void init_vulkan_for_imgui();
 
 
@@ -424,11 +568,14 @@ struct Graphics::Impl
     class Descriptor_allocator
     {
     public:
+        /// Pool size ratios.
+        using Pool_size_ratio = std::pair<VkDescriptorType, float_t>;
+
         /// Initialize.
         void init_pool(VkDevice device,
                        VmaAllocator allocator,
                        uint32_t max_sets,
-                       std::vector<std::pair<VkDescriptorType, float_t>>&& size_ratios)
+                       std::vector<Pool_size_ratio>&& size_ratios)
         {
             m_device = device;
             m_allocator = allocator;
@@ -492,6 +639,10 @@ struct Graphics::Impl
         VmaAllocator m_allocator;
         VkDescriptorPool m_pool;
     };
+
+    Descriptor_allocator global_descriptor_allocator;
+    VkDescriptorSet draw_image_descriptors;
+    VkDescriptorSetLayout draw_image_descriptor_layout;
 
 
     /// Polls window for input events.
@@ -942,44 +1093,67 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
     }
 }
 
-void Graphics::Impl::init_vulkan_allocate_descriptors()
+void Graphics::Impl::init_vulkan_create_descriptors()
 {
-    // @TODO: figure out the descriptor sets vv below vv
-    // // Init allocator pool.
-    // std::vector<vk_desc::Descriptor_allocator::Pool_size_ratio> sizes{
-    //     { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
-    // };
+    std::vector<Descriptor_allocator::Pool_size_ratio> sizes{
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+    };
 
-    // out_descriptor_alloc.init_pool(device, 10, sizes);
+    global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
 
-    // // Build layout.
-    // vk_desc::Descriptor_layout_builder builder;
-    // builder.add_binding(0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE);
-    // out_descriptor_layout = builder.build(device, VK_SHADER_STAGE_COMPUTE_BIT);
+    // Descriptor layouts.
+    draw_image_descriptor_layout = build_descriptor_layout(
+        {
+            { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
+        },
+        VK_SHADER_STAGE_COMPUTE_BIT,
+        0);
 
-    // // Allocate descriptor set.
-    // out_descriptor_set = out_descriptor_alloc.allocate(device, out_descriptor_layout);
+    // Descriptors.
+    draw_image_descriptors = global_descriptor_allocator.allocate(draw_image_descriptor_layout);
 
-    // VkDescriptorImageInfo image_info{
-    //     .imageView = hdr_image_view,
-    //     .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-    // };
+    VkDescriptorImageInfo img_info{
+        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .imageView = hdr_draw_image_color.get_image_view(),
+    };
 
-    // VkWriteDescriptorSet image_write{
-    //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-    //     .pNext = nullptr,
-    //     .dstSet = out_descriptor_set,
-    //     .dstBinding = 0,
-    //     .descriptorCount = 1,
-    //     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-    //     .pImageInfo = &image_info,
-    // };
+    VkWriteDescriptorSet img_write{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .pNext = nullptr,
 
-    // vkUpdateDescriptorSets(device, 1, &image_write, 0, nullptr);
+        .dstSet = draw_image_descriptors,
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        .pImageInfo = &img_info,
+    };
+
+    vkUpdateDescriptorSets(gfx.device, 1, &img_write, 0, nullptr);
 }
 
 void Graphics::Impl::init_vulkan_create_pipelines()
 {}
+
+void Graphics::Impl::init_vulkan_render_graph_resources()
+{
+    {   // HDR draw image.
+        VkExtent2D extent{
+            .width = 400,
+            .height = 400,
+        };
+
+        hdr_draw_image_color = Allocated_image::create_image_2d(
+            VK_FORMAT_R16G16B16A16_SFLOAT,
+            extent,
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+        hdr_draw_image_depth =
+            Allocated_image::create_image_depth_buffer(extent,
+                                                       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    }
+}
 
 void Graphics::Impl::init_vulkan_for_imgui()
 {
@@ -1395,7 +1569,7 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
     m_pimpl->init_vulkan_retrieve_queues();
     m_pimpl->init_vulkan_create_cmd_structures();
     m_pimpl->init_vulkan_create_sync_structures();
-    m_pimpl->init_vulkan_allocate_descriptors();
+    m_pimpl->init_vulkan_create_descriptors();
     m_pimpl->init_vulkan_create_pipelines();
     m_pimpl->init_vulkan_for_imgui();
 }

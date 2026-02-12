@@ -146,3 +146,12 @@ https://docs.shader-slang.org/en/latest/external/slang/docs/user-guide/03-conven
 slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shaders/gradient.shadrefl -O2 -obfuscate assets_raw/shaders/gradient.slang > assets/shaders/gradient.shader
 
 slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.slang > assets/shaders/gradient.glsl
+
+
+- [ ] I want these to be reflected:
+    - [ ] Descriptor set layouts
+        - [ ] Pipeline layouts (kind of an extension of the descriptor set layouts)
+    > How can I connect descriptor sets to the descriptor set layouts and then to the pipelines??
+        > Expose these things as shader params?
+            > Create descriptor sets from the shader params in materials???
+    > Hardcode stuff for now!
