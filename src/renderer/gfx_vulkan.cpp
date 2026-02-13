@@ -6,8 +6,13 @@
 // clang-format off
 #include <vulkan/vulkan.h>
 #include <vulkan/vulkan_core.h>
-#define VMA_IMPLEMENTATION
-#include <vk_mem_alloc.h>
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#   define VMA_IMPLEMENTATION
+#   include <vk_mem_alloc.h>
+#pragma clang diagnostic pop
+
 #include <GLFW/glfw3.h>
 #include "VkBootstrap.h"
 
@@ -839,7 +844,8 @@ void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
 
         hdr_draw_image_depth = Vk_Image::Allocated_image::create_image_depth_buffer(
             extent,
-            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+            VK_IMAGE_USAGE_TRANSFER_DST_BIT |  // Transfer DST bit required bc no stencil buffer.
+                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     }
 }
 
@@ -1129,19 +1135,19 @@ void Graphics::Impl::clear_image(Vk_Image::Image& color_image, Vk_Image::Image& 
                          1,
                          &clear_range);
 
-    // // Clear depth image.
-    // VkClearDepthStencilValue clear_depth_value{
-    //     .depth = 0.0f,
-    // };
-    // VkImageSubresourceRange clear_depth_range =
-    //     Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
+    // Clear depth image.
+    VkClearDepthStencilValue clear_depth_value{
+        .depth = 0.0f,
+    };
+    VkImageSubresourceRange clear_depth_range =
+        Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    // vkCmdClearDepthStencilImage(cmd,
-    //                             depth_image.get(),
-    //                             VK_IMAGE_LAYOUT_GENERAL,
-    //                             &clear_depth_value,
-    //                             1,
-    //                             &clear_depth_range);
+    vkCmdClearDepthStencilImage(cmd,
+                                depth_image.get(),
+                                VK_IMAGE_LAYOUT_GENERAL,
+                                &clear_depth_value,
+                                1,
+                                &clear_depth_range);
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,

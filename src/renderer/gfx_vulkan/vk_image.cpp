@@ -5,8 +5,9 @@
 // clang-format off
 #include "vulkan/vulkan_core.h"
 #include <vk_mem_alloc.h>
-#include "vk_structs.h"
 // clang-format on
+
+#include "vk_structs.h"
 
 #include <stdexcept>
 
