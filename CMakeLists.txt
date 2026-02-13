@@ -173,6 +173,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_image.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_image.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_structs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/renderer.cpp
