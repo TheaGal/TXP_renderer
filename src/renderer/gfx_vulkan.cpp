@@ -925,8 +925,8 @@ void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
 
     {   // HDR draw image.
         VkExtent2D extent{
-            .width = 400,
-            .height = 400,
+            .width = 1280,  // @HARDCODE: @THEA: fix this.
+            .height = 720,
         };
 
         hdr_draw_image_color = Vk_Image::Allocated_image::create_image_2d(
@@ -1263,7 +1263,7 @@ void Graphics::Impl::draw_compute_thea_custom_hehehe()
                             0, nullptr);
 
     // "threadGroupSize": [16, 16, 1],
-    vkCmdDispatch(cmd, std::ceil(400.0 / 16.0), std::ceil(400.0 / 16.0), 1);
+    vkCmdDispatch(cmd, std::ceil(1280.0 / 16.0), std::ceil(720.0 / 16.0), 1);  // @HARDCODE: @THEA: fix this.
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
@@ -1328,7 +1328,7 @@ void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
         .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         .regionCount = 1,
         .pRegions = &blit_region,
-        .filter = VK_FILTER_LINEAR,
+        .filter = VK_FILTER_NEAREST,
     };
 
     vkCmdBlitImage2(cmd, &blit_info);

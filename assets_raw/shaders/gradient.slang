@@ -8,7 +8,8 @@ cbuffer Uniforms
 
 [shader("compute")]
 [numthreads(16, 16, 1)]
-void compute_main(uint3 thread_idx : SV_DispatchThreadID)
+void compute_main(uint3 thread_idx : SV_DispatchThreadID,
+                  uint3 local_thread_idx : SV_GroupThreadID)
 {
     uint x = thread_idx.x;
     uint y = thread_idx.y;
@@ -19,7 +20,7 @@ void compute_main(uint3 thread_idx : SV_DispatchThreadID)
     if (x < w && y < h)
     {
         half4 color = half4(0, 0, 0, 1);
-        if (x != 0 && y != 0)
+        if (local_thread_idx.x != 0 && local_thread_idx.y != 0)
         {
             color.x = half(x) / half(w);
             color.y = half(y) / half(h);

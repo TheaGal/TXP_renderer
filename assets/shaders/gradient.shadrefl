@@ -76,6 +76,18 @@
                             "scalarType": "uint32"
                         }
                     }
+                },
+                {
+                    "name": "local_thread_idx",
+                    "semanticName": "SV_GROUPTHREADID",
+                    "type": {
+                        "kind": "vector",
+                        "elementCount": 3,
+                        "elementType": {
+                            "kind": "scalar",
+                            "scalarType": "uint32"
+                        }
+                    }
                 }
             ],
             "threadGroupSize": [16, 16, 1],
