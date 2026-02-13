@@ -32,6 +32,7 @@
 #include <array>
 #include <cassert>
 #include <cerrno>
+#include <fstream>
 #include <functional>
 #include <iostream>
 #include <set>
@@ -217,6 +218,40 @@ struct Graphics::Impl
     Vk_Image::Allocated_image hdr_draw_image_depth;
 
 
+    /// Helper for loading shader module.
+    VkShaderModule load_shader_module(std::string const& fname)
+    {   // Open file.
+        std::ifstream f(fname, std::ios::ate | std::ios::binary);
+
+        if (!f.is_open())
+            throw std::runtime_error("Failed to open file: \"" + fname + "\"");
+
+        // Read file.
+        size_t file_size{ static_cast<size_t>(f.tellg()) };
+        std::vector<uint32_t> buffer(file_size / sizeof(uint32_t));
+
+        f.seekg(0);
+        f.read(reinterpret_cast<char*>(buffer.data()), file_size);
+
+        f.close();
+
+        // Create new shader module.
+        VkShaderModuleCreateInfo info{
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext = nullptr,
+            .codeSize = (buffer.size() * sizeof(uint32_t)),
+            .pCode = buffer.data(),
+        };
+
+        VkShaderModule shader_module;
+        VkResult err = vkCreateShaderModule(gfx.device, &info, nullptr, &shader_module);
+        if (err)
+            throw std::runtime_error("Create shader \"" + fname + "\" failed.");
+
+        return shader_module;
+    }
+
+
     void init_vulkan_instance();
     void init_vulkan_window_surface();
     void init_vulkan_build_device();
@@ -329,6 +364,8 @@ struct Graphics::Impl
     Descriptor_allocator global_descriptor_allocator;
     VkDescriptorSet draw_image_descriptors;
     VkDescriptorSetLayout draw_image_descriptor_layout;
+    VkPipeline draw_image_compute_pipeline;
+    VkPipelineLayout draw_image_compute_pipeline_layout;
 
 
     /// Polls window for input events.
@@ -489,6 +526,8 @@ void Graphics::Impl::init_vulkan_build_device()
     VkPhysicalDeviceVulkan12Features vulkan12_features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .pNext = nullptr,
+        // For `rgba16f` format.
+        .shaderFloat16 = VK_TRUE,
         // For non-uniform, dynamic arrays of textures in shaders.
         .descriptorIndexing = VK_TRUE,
         .shaderSampledImageArrayNonUniformIndexing = VK_TRUE,
@@ -785,6 +824,8 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
 
 void Graphics::Impl::init_vulkan_create_descriptors()
 {
+    // @TODO: @THEA: abstract this into the reflection-based version.
+
     std::vector<Descriptor_allocator::Pool_size_ratio> sizes{
         { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
     };
@@ -822,7 +863,56 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 }
 
 void Graphics::Impl::init_vulkan_create_pipelines()
-{}
+{
+    // @TODO: @THEA: abstract this into the reflection-based version.
+
+    VkResult err;
+
+    // Create pipeline layout.
+    VkPipelineLayoutCreateInfo pipeline_layout_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+        .pNext = nullptr,
+        .setLayoutCount = 1,
+        .pSetLayouts = &draw_image_descriptor_layout,
+        .pushConstantRangeCount = 0,
+        .pPushConstantRanges = nullptr,
+    };
+
+    err = vkCreatePipelineLayout(gfx.device,
+                                 &pipeline_layout_info,
+                                 nullptr,
+                                 &draw_image_compute_pipeline_layout);
+    if (err)
+        throw std::runtime_error("Failed to create pipeline layout.");
+
+    // Create pipeline.
+    VkShaderModule shader{ load_shader_module("assets/shaders/gradient.shader") };
+
+    VkPipelineShaderStageCreateInfo stage_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        .pNext = nullptr,
+        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+        .module = shader,
+        .pName = "compute_main",
+        // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
+    };
+
+    VkComputePipelineCreateInfo compute_pipeline_info{
+        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
+        .pNext = nullptr,
+        .stage = stage_info,
+        .layout = draw_image_compute_pipeline_layout,
+    };
+
+    err = vkCreateComputePipelines(gfx.device,
+                                   VK_NULL_HANDLE,
+                                   1,
+                                   &compute_pipeline_info,
+                                   nullptr,
+                                   &draw_image_compute_pipeline);
+    if (err)
+        throw std::runtime_error("Failed to create compute pipeline.");
+}
 
 void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
 {
