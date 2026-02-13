@@ -886,13 +886,13 @@ void Graphics::Impl::init_vulkan_create_pipelines()
         throw std::runtime_error("Failed to create pipeline layout.");
 
     // Create pipeline.
-    VkShaderModule shader{ load_shader_module("assets/shaders/gradient.shader") };
+    VkShaderModule shader_module{ load_shader_module("assets/shaders/gradient.shader") };
 
     VkPipelineShaderStageCreateInfo stage_info{
         .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
         .pNext = nullptr,
         .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-        .module = shader,
+        .module = shader_module,
         .pName = "compute_main",
         // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
     };
@@ -912,6 +912,9 @@ void Graphics::Impl::init_vulkan_create_pipelines()
                                    &draw_image_compute_pipeline);
     if (err)
         throw std::runtime_error("Failed to create compute pipeline.");
+
+    // Cleanup.
+    vkDestroyShaderModule(gfx.device, shader_module, nullptr);
 }
 
 void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
