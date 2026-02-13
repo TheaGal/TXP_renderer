@@ -32,6 +32,7 @@
 #include <array>
 #include <cassert>
 #include <cerrno>
+#include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -384,6 +385,7 @@ struct Graphics::Impl
     void start_new_frame();
 
     void clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image);
+    void draw_compute_thea_custom_hehehe();
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,
                     Vk_Image::Image& to_image,
@@ -1243,6 +1245,27 @@ void Graphics::Impl::clear_image(Vk_Image::Image& color_image, Vk_Image::Image& 
                                 &clear_depth_range);
 }
 
+void Graphics::Impl::draw_compute_thea_custom_hehehe()
+{
+    // @TODO: @THEA: abstract this into the reflection-based version.
+
+    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+
+    hdr_draw_image_color.get_image().transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);  // @THEA: @TEMP: this is @HARDCODE
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, draw_image_compute_pipeline);
+    vkCmdBindDescriptorSets(cmd,
+                            VK_PIPELINE_BIND_POINT_COMPUTE,
+                            draw_image_compute_pipeline_layout,
+                            0,
+                            1, &draw_image_descriptors,
+                            0, nullptr);
+
+    // "threadGroupSize": [16, 16, 1],
+    vkCmdDispatch(cmd, std::ceil(400.0 / 16.0), std::ceil(400.0 / 16.0), 1);
+}
+
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
                                 VkExtent3D from_extent,
                                 Vk_Image::Image& to_image,
@@ -1551,6 +1574,7 @@ void TXP::Graphics::render_opaque_geometry()
 {
     m_pimpl->clear_image(m_pimpl->hdr_draw_image_color.get_image(),
                          m_pimpl->hdr_draw_image_depth.get_image());
+    m_pimpl->draw_compute_thea_custom_hehehe();
 }
 
 void TXP::Graphics::render_clouds()

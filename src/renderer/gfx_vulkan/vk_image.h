@@ -20,6 +20,9 @@ class Image
 public:
     Image(VkImage img, VkImageAspectFlags aspect_mask);
 
+    /// Transitions the image to the `new_layout`.
+    /// @note even if the old and new layouts are the same, the pipeline barrier is still run for
+    ///       the sake of memory synchronization.
     void transition_to(VkCommandBuffer cmd, VkImageLayout new_layout);
 
     VkImage get();

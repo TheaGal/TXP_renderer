@@ -26,8 +26,7 @@ Image::Image(VkImage img, VkImageAspectFlags aspect_mask)
 
 void Image::transition_to(VkCommandBuffer cmd, VkImageLayout new_layout)
 {
-    if (m_current_layout == new_layout)
-        return;  // Cancel transition if same layout.
+    // @NOTE: even if the old and new layouts are the same, run the pipeline barrier.
 
     VkImageMemoryBarrier2 image_barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
