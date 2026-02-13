@@ -18,7 +18,7 @@ namespace Vk_Image
 class Image
 {
 public:
-    Image(VkImage img);
+    Image(VkImage img, VkImageAspectFlags aspect_mask);
 
     void transition_to(VkCommandBuffer cmd, VkImageLayout new_layout);
 
@@ -29,6 +29,7 @@ public:
 private:
     VkImage m_img;
     VkImageLayout m_current_layout{ VK_IMAGE_LAYOUT_UNDEFINED };
+    VkImageAspectFlags m_aspect_mask{ 0 };
 };
 
 /// Allocated image abstraction for vulkan renderer.
@@ -67,6 +68,8 @@ public:
     Image& get_image();
 
     VkImageView& get_image_view();
+
+    VkExtent3D get_extent();
 
 private:
     inline static VkDevice s_device;

@@ -221,9 +221,9 @@ struct Graphics::Impl
     void init_vulkan_retrieve_queues();
     void init_vulkan_create_cmd_structures();
     void init_vulkan_create_sync_structures();
+    void init_vulkan_render_graph_resources();
     void init_vulkan_create_descriptors();
     void init_vulkan_create_pipelines();
-    void init_vulkan_render_graph_resources();
     void init_vulkan_for_imgui();
 
 
@@ -341,7 +341,11 @@ struct Graphics::Impl
 
     void start_new_frame();
 
-    void clear_color_image();
+    void clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image);
+    void blit_image(Vk_Image::Image& from_image,
+                    VkExtent3D from_extent,
+                    Vk_Image::Image& to_image,
+                    VkExtent3D to_extent);
     void render_imgui();
     void present_frame_to_screen();
 
@@ -667,7 +671,7 @@ void Graphics::Impl::init_vulkan_build_swapchain()
         images.reserve(swapchain_imgs_val.size());
 
         for (auto img : swapchain_imgs_val)
-            images.emplace_back(img);
+            images.emplace_back(img, VK_IMAGE_ASPECT_COLOR_BIT);
         
         return images;
     })();
@@ -815,7 +819,7 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 void Graphics::Impl::init_vulkan_create_pipelines()
 {}
 
-void Graphics::Impl::init_vulkan_render_graph_resources()
+void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
 {
     Vk_Image::Allocated_image::set_vk_props(gfx.device, gfx.allocator);
 
@@ -829,6 +833,7 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
             VK_FORMAT_R16G16B16A16_SFLOAT,
             extent,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
@@ -1103,29 +1108,108 @@ void Graphics::Impl::start_new_frame()
     current_frame.graphics_queue_command_buffer.reset();
 }
 
-void Graphics::Impl::clear_color_image()
+void Graphics::Impl::clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image)
 {
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
-    auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
-
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
+    color_image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
+    depth_image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
 
-    // Clear image.
-    VkClearColorValue clear_value;
+    // Clear color image.
     float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
-    clear_value = { { 0.0f, 0.0f, flash * 0.5f, 1.0f } };
-    // clear_value = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    VkClearColorValue clear_value{ .float32 = { 0.0f, 0.0f, flash * 0.5f, 1.0f } };
     VkImageSubresourceRange clear_range =
         Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
 
     vkCmdClearColorImage(cmd,
-                         image.get(),
+                         color_image.get(),
                          VK_IMAGE_LAYOUT_GENERAL,
                          &clear_value,
                          1,
                          &clear_range);
+
+    // // Clear depth image.
+    // VkClearDepthStencilValue clear_depth_value{
+    //     .depth = 0.0f,
+    // };
+    // VkImageSubresourceRange clear_depth_range =
+    //     Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    // vkCmdClearDepthStencilImage(cmd,
+    //                             depth_image.get(),
+    //                             VK_IMAGE_LAYOUT_GENERAL,
+    //                             &clear_depth_value,
+    //                             1,
+    //                             &clear_depth_range);
+}
+
+void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
+                                VkExtent3D from_extent,
+                                Vk_Image::Image& to_image,
+                                VkExtent3D to_extent)
+{
+    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+
+    from_image.transition_to(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+    to_image.transition_to(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    // Blit image.
+    VkImageBlit2 blit_region{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2,
+        .pNext = nullptr,
+        .srcSubresource{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        },
+        .srcOffsets{
+            VkOffset3D{
+                .x = 0,
+                .y = 0,
+                .z = 0,
+            },
+            VkOffset3D{
+                .x = static_cast<int32_t>(from_extent.width),
+                .y = static_cast<int32_t>(from_extent.height),
+                .z = static_cast<int32_t>(from_extent.depth),
+            }
+        },
+        .dstSubresource{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = 0,
+            .baseArrayLayer = 0,
+            .layerCount = 1,
+        },
+        .dstOffsets{
+            VkOffset3D{
+                .x = 0,
+                .y = 0,
+                .z = 0,
+            },
+            VkOffset3D{
+                .x = static_cast<int32_t>(to_extent.width),
+                .y = static_cast<int32_t>(to_extent.height),
+                .z = static_cast<int32_t>(to_extent.depth),
+            }
+        },
+    };
+
+    VkBlitImageInfo2 blit_info{
+        .sType = VK_STRUCTURE_TYPE_BLIT_IMAGE_INFO_2,
+        .pNext = nullptr,
+        .srcImage = from_image.get(),
+        .srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        .dstImage = to_image.get(),
+        .dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .regionCount = 1,
+        .pRegions = &blit_region,
+        .filter = VK_FILTER_LINEAR,
+    };
+
+    vkCmdBlitImage2(cmd, &blit_info);
 }
 
 void Graphics::Impl::render_imgui()
@@ -1255,6 +1339,7 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
     m_pimpl->init_vulkan_retrieve_queues();
     m_pimpl->init_vulkan_create_cmd_structures();
     m_pimpl->init_vulkan_create_sync_structures();
+    m_pimpl->init_vulkan_render_graph_resources();
     m_pimpl->init_vulkan_create_descriptors();
     m_pimpl->init_vulkan_create_pipelines();
     m_pimpl->init_vulkan_for_imgui();
@@ -1365,7 +1450,8 @@ void TXP::Graphics::render_shadows()
 
 void TXP::Graphics::render_opaque_geometry()
 {
-    assert(false);
+    m_pimpl->clear_image(m_pimpl->hdr_draw_image_color.get_image(),
+                         m_pimpl->hdr_draw_image_depth.get_image());
 }
 
 void TXP::Graphics::render_clouds()
@@ -1390,8 +1476,13 @@ void TXP::Graphics::render_transparent_geometry()
 
 void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 {
-    // @INCOMPLETE: just to get the screen to show.
-    m_pimpl->clear_color_image();
+    auto const& swapchain_extent{ m_pimpl->gfx.swapchain_extent };
+    m_pimpl->blit_image(m_pimpl->hdr_draw_image_color.get_image(),
+                        m_pimpl->hdr_draw_image_color.get_extent(),
+                        m_pimpl->gfx.swapchain_images[m_pimpl->current_swapchain_image_idx],
+                        VkExtent3D{ .width = swapchain_extent.width,
+                                    .height = swapchain_extent.height,
+                                    .depth = 1 });
 }
 
 void TXP::Graphics::render_imgui()

@@ -2,8 +2,11 @@
 
 #include "vk_image.h"
 
+// clang-format off
+#include "vulkan/vulkan_core.h"
 #include <vk_mem_alloc.h>
 #include "vk_structs.h"
+// clang-format on
 
 #include <stdexcept>
 
@@ -14,8 +17,9 @@ namespace Vk_Image
 {
 
 /// class Image
-Image::Image(VkImage img)
+Image::Image(VkImage img, VkImageAspectFlags aspect_mask)
     : m_img(img)
+    , m_aspect_mask(aspect_mask)
 {
 }
 
@@ -23,10 +27,6 @@ void Image::transition_to(VkCommandBuffer cmd, VkImageLayout new_layout)
 {
     if (m_current_layout == new_layout)
         return;  // Cancel transition if same layout.
-
-    VkImageAspectFlags aspect_mask =
-        (new_layout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ? VK_IMAGE_ASPECT_DEPTH_BIT
-                                                                : VK_IMAGE_ASPECT_COLOR_BIT);
 
     VkImageMemoryBarrier2 image_barrier{
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
@@ -41,7 +41,7 @@ void Image::transition_to(VkCommandBuffer cmd, VkImageLayout new_layout)
         .newLayout = new_layout,
 
         .image = m_img,
-        .subresourceRange = Vk_Structs::txp_vk_image_subresource_range(aspect_mask),
+        .subresourceRange = Vk_Structs::txp_vk_image_subresource_range(m_aspect_mask),
     };
 
     VkDependencyInfo dep_info{
@@ -165,7 +165,9 @@ VkImageLayout Image::get_layout()
         if (err)
             throw std::runtime_error("Image creation failed.");
         
-        new_img.m_image = Image(std::move(temp_vk_image));
+        new_img.m_image = Image(std::move(temp_vk_image), aspect_flags);
+        new_img.m_format = format;
+        new_img.m_extent = extent;
     }
 
     // Create image view.
@@ -199,7 +201,7 @@ VkImageLayout Image::get_layout()
 
 /// Default ctor (uninitialized.)
 Allocated_image::Allocated_image()
-    : m_image(Image{ nullptr })
+    : m_image(Image{ nullptr, 0 })
 {
 }
 
@@ -221,6 +223,13 @@ VkImageView& Allocated_image::get_image_view()
     if (!m_initialized)
         throw std::runtime_error("Uninitialized Allocated_image.");
     return m_image_view;
+}
+
+VkExtent3D Allocated_image::get_extent()
+{
+    if (!m_initialized)
+        throw std::runtime_error("Uninitialized Allocated_image.");
+    return m_extent;
 }
 
 }  // namespace Vk_Structs

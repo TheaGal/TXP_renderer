@@ -77,7 +77,7 @@ void Renderer::run()
         // g.compute_transparent_geometry_culling();
 
         // g.render_shadows();
-        // g.render_opaque_geometry();
+        g.render_opaque_geometry();
         // g.render_clouds();
         // g.render_volumetric_light();
         // g.render_particles();
