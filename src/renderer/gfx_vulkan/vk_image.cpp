@@ -106,7 +106,7 @@ VkImageLayout Image::get_layout()
 
     // Query what depth format is supported -- at least one of below is required to be supported.
     static std::vector<VkFormat> s_format_list{ VK_FORMAT_D32_SFLOAT_S8_UINT,  // Prefer SFLOAT.
-                                                VK_FORMAT_D24_UNORM_S8_UINT };
+                                                VK_FORMAT_D24_UNORM_S8_UINT }; // Fixed-point is okay too ig ¯\_(ツ)_/¯
     VkFormat depth_format{ VK_FORMAT_UNDEFINED };
     for (auto const& format : s_format_list)
     {
