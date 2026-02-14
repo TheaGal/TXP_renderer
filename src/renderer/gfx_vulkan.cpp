@@ -824,6 +824,28 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
     }
 }
 
+void Graphics::Impl::init_vulkan_render_graph_resources()
+{
+    Vk_Image::Allocated_image::set_vk_props(gfx.physical_device, gfx.device, gfx.allocator);
+
+    {   // HDR draw image.
+        VkExtent2D extent{
+            .width = 1280,  // @HARDCODE: @THEA: fix this.
+            .height = 720,
+        };
+
+        hdr_draw_image_color = Vk_Image::Allocated_image::create_image_2d(
+            VK_FORMAT_R16G16B16A16_SFLOAT,
+            extent,
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+        hdr_draw_image_depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
+    }
+}
+
 void Graphics::Impl::init_vulkan_create_descriptors()
 {
     // @TODO: @THEA: abstract this into the reflection-based version.
@@ -917,28 +939,6 @@ void Graphics::Impl::init_vulkan_create_pipelines()
 
     // Cleanup.
     vkDestroyShaderModule(gfx.device, shader_module, nullptr);
-}
-
-void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
-{
-    Vk_Image::Allocated_image::set_vk_props(gfx.physical_device, gfx.device, gfx.allocator);
-
-    {   // HDR draw image.
-        VkExtent2D extent{
-            .width = 1280,  // @HARDCODE: @THEA: fix this.
-            .height = 720,
-        };
-
-        hdr_draw_image_color = Vk_Image::Allocated_image::create_image_2d(
-            VK_FORMAT_R16G16B16A16_SFLOAT,
-            extent,
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-        hdr_draw_image_depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
-    }
 }
 
 void Graphics::Impl::init_vulkan_for_imgui()
