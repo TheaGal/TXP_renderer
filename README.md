@@ -78,7 +78,7 @@ gantt
     title TXP renderer progress
     dateFormat YYYY/MM/DD
     section Texture and material system
-        Create shader pipeline from slang-reflection  : a1, 2026/02/08, 5d
+        Create shader pipeline from slang-reflection  : a1, 2026/02/08, 8d
         Bindlessly load all textures          : a2, after a1, 4d
         Material system                       : a3, after a2, 2d
         Material sets as swatches for models  : a4, after a8, 1d

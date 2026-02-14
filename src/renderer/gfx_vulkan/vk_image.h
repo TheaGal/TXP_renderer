@@ -8,6 +8,9 @@
 #include <vk_mem_alloc.h>
 // clang-format on
 
+#include <utility>
+#include <vector>
+
 
 namespace TXP
 {
@@ -23,7 +26,8 @@ public:
     /// Transitions the image to the `new_layout`.
     /// @note even if the old and new layouts are the same, the pipeline barrier is still run for
     ///       the sake of memory synchronization.
-    void transition_to(VkCommandBuffer cmd, VkImageLayout new_layout);
+    static void transition_to(VkCommandBuffer cmd,
+                              std::vector<std::pair<Image*, VkImageLayout>>&& new_layouts);
 
     VkImage get();
 
@@ -47,8 +51,7 @@ public:
                                            VkExtent2D extent,
                                            VkImageUsageFlags usage_flags);
 
-    static Allocated_image create_image_depth_buffer(VkExtent2D extent,
-                                                     VkImageUsageFlags usage_flags);
+    static Allocated_image create_image_depth_buffer(VkExtent2D extent);
 
     static Allocated_image create_image(VkImageType image_type,
                                         VkImageViewType image_view_type,

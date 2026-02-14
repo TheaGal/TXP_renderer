@@ -9,6 +9,7 @@
 
 #include "vk_structs.h"
 
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -25,37 +26,44 @@ Image::Image(VkImage img, VkImageAspectFlags aspect_mask)
 {
 }
 
-void Image::transition_to(VkCommandBuffer cmd, VkImageLayout new_layout)
+
+/*static*/ void Image::transition_to(VkCommandBuffer cmd,
+                                     std::vector<std::pair<Image*, VkImageLayout>>&& new_layouts)
 {
     // @NOTE: even if the old and new layouts are the same, run the pipeline barrier.
 
-    VkImageMemoryBarrier2 image_barrier{
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
-        .pNext = nullptr,
+    std::vector<VkImageMemoryBarrier2> image_barriers;
+    image_barriers.reserve(new_layouts.size());
 
-        .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-        .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
-        .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-        .dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
+    for (auto [img, new_layout] : new_layouts)
+        image_barriers.emplace_back(VkImageMemoryBarrier2{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+            .pNext = nullptr,
 
-        .oldLayout = m_current_layout,
-        .newLayout = new_layout,
+            .srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+            .srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+            .dstStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+            .dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT,
 
-        .image = m_img,
-        .subresourceRange = Vk_Structs::txp_vk_image_subresource_range(m_aspect_mask),
-    };
+            .oldLayout = img->m_current_layout,
+            .newLayout = new_layout,
+
+            .image = img->m_img,
+            .subresourceRange = Vk_Structs::txp_vk_image_subresource_range(img->m_aspect_mask),
+        });
 
     VkDependencyInfo dep_info{
         .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
         .pNext = nullptr,
 
-        .imageMemoryBarrierCount = 1,
-        .pImageMemoryBarriers = &image_barrier,
+        .imageMemoryBarrierCount = static_cast<uint32_t>(image_barriers.size()),
+        .pImageMemoryBarriers = image_barriers.data(),
     };
 
     vkCmdPipelineBarrier2(cmd, &dep_info);
 
-    m_current_layout = new_layout;
+    for (auto [img, new_layout] : new_layouts)
+        img->m_current_layout = new_layout;
 }
 
 VkImage Image::get()
@@ -98,13 +106,8 @@ VkImageLayout Image::get_layout()
                         VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
-/*static*/ Allocated_image Allocated_image::create_image_depth_buffer(VkExtent2D extent,
-                                                                      VkImageUsageFlags usage_flags)
-{
-    if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0)
-        throw std::runtime_error("Usage flags doesn't have depth stencil attachment.");
-
-    // Query what depth format is supported -- at least one of below is required to be supported.
+/*static*/ Allocated_image Allocated_image::create_image_depth_buffer(VkExtent2D extent)
+{   // Query what depth format is supported -- at least one of below is required to be supported.
     static std::vector<VkFormat> s_format_list{ VK_FORMAT_D32_SFLOAT_S8_UINT,  // Prefer SFLOAT.
                                                 VK_FORMAT_D24_UNORM_S8_UINT }; // Fixed-point is okay too ig ¯\_(ツ)_/¯
     VkFormat depth_format{ VK_FORMAT_UNDEFINED };
@@ -122,6 +125,13 @@ VkImageLayout Image::get_layout()
     if (depth_format == VK_FORMAT_UNDEFINED)
         throw std::runtime_error("This is a jank-ass video card and you should never get this error message.");
 
+    if (depth_format == VK_FORMAT_D24_UNORM_S8_UINT)
+    {
+        std::cout << "WARNING: fixed-point depth buffer, so z-fighting especially far away could "
+                     "be difficult to deal with!"
+                  << std::endl;
+    }
+
     // Create actual image.
     return create_image(VK_IMAGE_TYPE_2D,
                         VK_IMAGE_VIEW_TYPE_2D,
@@ -131,8 +141,9 @@ VkImageLayout Image::get_layout()
                         1,
                         VK_SAMPLE_COUNT_1_BIT,
                         VK_IMAGE_TILING_OPTIMAL,
-                        usage_flags,
-                        VK_IMAGE_ASPECT_DEPTH_BIT);
+                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
+                            VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+                        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
 }
 
 /*static*/ Allocated_image Allocated_image::create_image(VkImageType image_type,

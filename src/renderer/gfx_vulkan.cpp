@@ -937,10 +937,7 @@ void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-        hdr_draw_image_depth = Vk_Image::Allocated_image::create_image_depth_buffer(
-            extent,
-            VK_IMAGE_USAGE_TRANSFER_DST_BIT |  // Transfer DST bit required bc no stencil buffer.
-                VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+        hdr_draw_image_depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
     }
 }
 
@@ -1212,8 +1209,10 @@ void Graphics::Impl::clear_image(Vk_Image::Image& color_image, Vk_Image::Image& 
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    color_image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
-    depth_image.transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);
+    Vk_Image::Image::transition_to(
+        cmd,
+        { { &color_image, VK_IMAGE_LAYOUT_GENERAL },
+          { &depth_image, VK_IMAGE_LAYOUT_GENERAL } });
 
     // Clear color image.
     float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
@@ -1250,7 +1249,10 @@ void Graphics::Impl::draw_compute_thea_custom_hehehe()
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    hdr_draw_image_color.get_image().transition_to(cmd, VK_IMAGE_LAYOUT_GENERAL);  // @THEA: @TEMP: this is @HARDCODE
+
+    Vk_Image::Image::transition_to(
+        cmd,
+        { { &hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_GENERAL } });  // @THEA: @TEMP: this is @HARDCODE
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, draw_image_compute_pipeline);
     vkCmdBindDescriptorSets(cmd,
@@ -1272,8 +1274,9 @@ void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
     auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    from_image.transition_to(cmd, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-    to_image.transition_to(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    Vk_Image::Image::transition_to(cmd,
+                                   { { &from_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
+                                     { &to_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL } });
 
     // Blit image.
     VkImageBlit2 blit_region{
@@ -1340,7 +1343,7 @@ void Graphics::Impl::render_imgui()
 
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    image.transition_to(cmd, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+    Vk_Image::Image::transition_to(cmd, { { &image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL } });
 
     // Render imgui contents to image.
     VkRenderingAttachmentInfo color_attachment =
@@ -1373,7 +1376,7 @@ void Graphics::Impl::present_frame_to_screen()
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
     // Change image to present layout.
-    image.transition_to(cmd, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
+    Vk_Image::Image::transition_to(cmd, { { &image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
 
     // End recording command buffers.
     current_frame.graphics_queue_command_buffer.finish();
