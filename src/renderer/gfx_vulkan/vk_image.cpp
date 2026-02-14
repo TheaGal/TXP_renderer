@@ -10,6 +10,7 @@
 #include "vk_structs.h"
 
 #include <stdexcept>
+#include <vector>
 
 
 namespace TXP
@@ -69,8 +70,11 @@ VkImageLayout Image::get_layout()
 
 
 /// class Allocated_image
-/*static*/ void Allocated_image::set_vk_props(VkDevice device, VmaAllocator allocator)
+/*static*/ void Allocated_image::set_vk_props(VkPhysicalDevice physical_device,
+                                              VkDevice device,
+                                              VmaAllocator allocator)
 {
+    s_physical_device = physical_device;
     s_device = device;
     s_allocator = allocator;
 }
@@ -100,9 +104,28 @@ VkImageLayout Image::get_layout()
     if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) == 0)
         throw std::runtime_error("Usage flags doesn't have depth stencil attachment.");
 
+    // Query what depth format is supported -- at least one of below is required to be supported.
+    static std::vector<VkFormat> s_format_list{ VK_FORMAT_D32_SFLOAT_S8_UINT,  // Prefer SFLOAT.
+                                                VK_FORMAT_D24_UNORM_S8_UINT };
+    VkFormat depth_format{ VK_FORMAT_UNDEFINED };
+    for (auto const& format : s_format_list)
+    {
+        VkFormatProperties2 format_properties{ .sType = VK_STRUCTURE_TYPE_FORMAT_PROPERTIES_2 };
+        vkGetPhysicalDeviceFormatProperties2(s_physical_device, format, &format_properties);
+        if (format_properties.formatProperties.optimalTilingFeatures &
+            VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        {
+            depth_format = format;
+            break;
+        }
+    }
+    if (depth_format == VK_FORMAT_UNDEFINED)
+        throw std::runtime_error("This is a jank-ass video card and you should never get this error message.");
+
+    // Create actual image.
     return create_image(VK_IMAGE_TYPE_2D,
                         VK_IMAGE_VIEW_TYPE_2D,
-                        VK_FORMAT_D32_SFLOAT,
+                        depth_format,
                         VkExtent3D{ extent.width, extent.height, 1 },
                         1,
                         1,

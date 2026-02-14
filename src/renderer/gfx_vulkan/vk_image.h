@@ -39,7 +39,9 @@ private:
 class Allocated_image
 {
 public:
-    static void set_vk_props(VkDevice device, VmaAllocator allocator);
+    static void set_vk_props(VkPhysicalDevice physical_device,
+                             VkDevice device,
+                             VmaAllocator allocator);
 
     static Allocated_image create_image_2d(VkFormat format,
                                            VkExtent2D extent,
@@ -75,6 +77,7 @@ public:
     VkExtent3D get_extent();
 
 private:
+    inline static VkPhysicalDevice s_physical_device;
     inline static VkDevice s_device;
     inline static VmaAllocator s_allocator;
     inline static uint32_t s_graphics_queue_family_idx;

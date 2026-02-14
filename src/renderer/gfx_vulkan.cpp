@@ -921,7 +921,7 @@ void Graphics::Impl::init_vulkan_create_pipelines()
 
 void Graphics::Impl::init_vulkan_render_graph_resources()  // @TODO: rearrange.
 {
-    Vk_Image::Allocated_image::set_vk_props(gfx.device, gfx.allocator);
+    Vk_Image::Allocated_image::set_vk_props(gfx.physical_device, gfx.device, gfx.allocator);
 
     {   // HDR draw image.
         VkExtent2D extent{
@@ -1201,9 +1201,7 @@ void Graphics::Impl::start_new_frame()
                                 nullptr,
                                 &current_swapchain_image_idx);
     if (err)
-    {
         throw std::runtime_error("Acquire next swapchain image failed.");
-    }
 
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();
