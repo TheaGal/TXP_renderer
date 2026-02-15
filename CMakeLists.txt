@@ -42,9 +42,9 @@ endif()
 
 # Multithreaded build.
 set(CMAKE_BUILD_PARALLEL_LEVEL 16)
-if(MSVC)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-endif()
+# if(MSVC)  # @NOTE: this can cause errors so don't do this lol.  -Thea 2026/02/14
+#     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
+# endif()
 
 # Profiling.
 if(ENABLE_PROFILING)
