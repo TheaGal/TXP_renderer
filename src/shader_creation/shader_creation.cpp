@@ -6,6 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "nlohmann/detail/macro_scope.hpp"
@@ -16,8 +17,13 @@ using json = nlohmann::json;
 namespace
 {
 
+using namespace TXP::Shader_Creation;
+
 /// Base dir for shaders.
 static std::string s_shader_dir;
+
+/// Collection of loaded shader reflections.
+static std::unordered_map<std::string, Reflection::Shader_reflection> s_shader_name_to_reflection;
 
 }  // namespace
 
@@ -29,33 +35,46 @@ void TXP::Shader_Creation::set_shader_directory(std::string const& dir_path)
     s_shader_dir = dir_path;
 }
 
-void TXP::Shader_Creation::load_slang_reflection(std::string const& shader_name,
-                                                 bool is_compute_shader)
+void TXP::Shader_Creation::clear_slang_reflection_collection()
+{
+    s_shader_name_to_reflection.clear();
+}
+
+void TXP::Shader_Creation::load_slang_reflection_into_collection(std::string const& shader_name)
 {
     // Load the shader reflection.
     std::ifstream f{ s_shader_dir + shader_name + ".shadrefl" };
-    auto data = json::parse(f);
+    s_shader_name_to_reflection.emplace(shader_name, json::parse(f));
+}
 
-    std::vector<Reflection::Entry_point> const all_entry_points = data["entryPoints"];
-    std::vector<Reflection::Parameter> const all_parameters     = data["parameters"];
+void TXP::Shader_Creation::extract_stuff(std::string const& shader_name,
+                                         Shader_pipeline_type shader_type)
+{
+    auto shader_refl = s_shader_name_to_reflection.at(shader_name);
 
-    // Look for compute entrypoints.
+    // Look for shader entrypoints depending on the type.
     std::vector<Reflection::Entry_point const*> desired_eps;
     {
         std::vector<std::string> ep_stage_names;
-        if (is_compute_shader)
+
+        switch (shader_type)
         {
+        case SHAD_PIPE_TYPE_COMPUTE:
             ep_stage_names.emplace_back("compute");
-        }
-        else
-        {
+            break;
+
+        case SHAD_PIPE_TYPE_VERTEX_FRAGMENT:
             ep_stage_names.emplace_back("vertex");
             ep_stage_names.emplace_back("fragment");
+            break;
+
+        default:
+            throw std::runtime_error("Invalid Shader_pipeline_type.");
         }
 
         for (auto const& ep_stage_name : ep_stage_names)
         {
-            for (auto const& ep : all_entry_points)
+            for (auto const& ep : shader_refl.entryPoints)
             {
                 if (ep.stage == ep_stage_name)
                 {
@@ -68,8 +87,6 @@ void TXP::Shader_Creation::load_slang_reflection(std::string const& shader_name,
             throw std::runtime_error("Desired entry points not found.");
     }
 
-    std::cout << "Found entrypoint(s).\n";
-
     // Look for descriptor layouts.
     for (auto const ep : desired_eps)
     {
@@ -77,7 +94,7 @@ void TXP::Shader_Creation::load_slang_reflection(std::string const& shader_name,
         for (auto const& binding : ep->bindings)
         {   // Look for corresponding binding param.
             Reflection::Parameter const* binding_param{ nullptr };
-            for (auto const& param : all_parameters)
+            for (auto const& param : shader_refl.parameters)
             {
                 if (param.name == binding.name)
                 {

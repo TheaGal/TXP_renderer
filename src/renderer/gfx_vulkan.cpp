@@ -363,10 +363,11 @@ struct Graphics::Impl
     };
 
     Descriptor_allocator global_descriptor_allocator;
-    VkDescriptorSet draw_image_descriptors;
-    VkDescriptorSetLayout draw_image_descriptor_layout;
-    VkPipeline draw_image_compute_pipeline;
-    VkPipelineLayout draw_image_compute_pipeline_layout;
+
+    VkDescriptorSet draw_image_descriptors;               // 3rd (just has to be after 1st)
+    VkDescriptorSetLayout draw_image_descriptor_layout;   // 1st (multiple ones)
+    VkPipeline draw_image_compute_pipeline;               // 4th (just has to be after 2nd)
+    VkPipelineLayout draw_image_compute_pipeline_layout;  // 2nd
 
 
     /// Polls window for input events.
@@ -1495,19 +1496,23 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     std::cout << "Loaded all " << std::to_string(texture_assets.size()) << " textures.\n";
 
     // Collect required shaders.
-    std::set<std::string> shader_names;
+    std::set<std::pair<std::string, Shader_Creation::Shader_pipeline_type>> shader_names_and_types;
     for (auto const& mat_asset : material_assets)
-        shader_names.emplace(mat_asset.shader_name);
-    std::cout << "Found usage of " << std::to_string(shader_names.size())
+        shader_names_and_types.emplace(mat_asset.shader_name_and_type);
+    std::cout << "Found usage of " << std::to_string(shader_names_and_types.size())
               << " shaders." << std::endl;
 
     // Load shaders.
     Shader_Creation::set_shader_directory(shader_asset_dir);
-    for (auto const& shad_name : shader_names)
+    Shader_Creation::clear_slang_reflection_collection();
+    for (auto const& [shad_name, _] : shader_names_and_types)
+        Shader_Creation::load_slang_reflection_into_collection(shad_name);
+    for (auto const& [shad_name, shad_type] : shader_names_and_types)
     {
-        Shader_Creation::load_slang_reflection(shad_name, false);
+        Shader_Creation::extract_stuff(shad_name, shad_type);
     }
 
+    std::cout << "Loaded all " << std::to_string(shader_names_and_types.size()) << " shaders.\n";
 
     // Load materials.
     for (auto const& mat_asset : material_assets)

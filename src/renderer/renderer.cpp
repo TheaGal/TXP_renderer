@@ -114,14 +114,17 @@ void Renderer::add_texture(std::string const& texture_name, std::string const& f
     m_texture_assets.scoped_lock()->emplace_back(texture_name, texture_name + ".ktx2");
 }
 
-void Renderer::add_material(std::string const& material_name,
-                            std::string const& shader_name,
-                            std::unordered_map<std::string, std::string> const& shader_params)
+void Renderer::add_material(
+    std::string const& material_name,
+    std::pair<std::string, Shader_Creation::Shader_pipeline_type>&& shader_name_and_type,
+    std::unordered_map<std::string, std::string> const& shader_params)
 {
     if (!m_asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_material_assets.scoped_lock()->emplace_back(material_name, shader_name, shader_params);
+    m_material_assets.scoped_lock()->emplace_back(material_name,
+                                                  shader_name_and_type,
+                                                  shader_params);
 }
 
 void Renderer::add_material_set(std::string const& mat_set_name,

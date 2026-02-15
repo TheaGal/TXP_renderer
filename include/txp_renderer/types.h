@@ -1,8 +1,11 @@
 #pragma once
 
+#include "shader_creation/shader_creation.h"
+
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 
@@ -20,7 +23,7 @@ struct Texture_asset_create_info
 struct Material_asset_create_info
 {
     std::string material_name;
-    std::string shader_name;
+    std::pair<std::string, Shader_Creation::Shader_pipeline_type> shader_name_and_type;
     std::unordered_map<std::string, std::string> shader_params;
 };
 

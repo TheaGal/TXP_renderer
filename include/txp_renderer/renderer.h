@@ -1,5 +1,6 @@
 #pragma once
 
+#include "shader_creation/shader_creation.h"
 #include "txp_renderer/types.h"
 #include "mutex_wrapper/mutex_wrapper.h"
 
@@ -47,9 +48,10 @@ public:
                      std::string const& file_ext);
 
     /// Adds geometry material to renderer.
-    void add_material(std::string const& material_name,
-                      std::string const& shader_name,
-                      std::unordered_map<std::string, std::string> const& shader_params);
+    void add_material(
+        std::string const& material_name,
+        std::pair<std::string, Shader_Creation::Shader_pipeline_type>&& shader_name_and_type,
+        std::unordered_map<std::string, std::string> const& shader_params);
 
     /// Adds set of geometry material to renderer index.
     void add_material_set(std::string const& mat_set_name, std::vector<std::string>&& materials);

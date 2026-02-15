@@ -16,7 +16,9 @@ int32_t main()
                      "assets/models/" };
 
     r.add_texture("default_tex", ".ktx2");
-    r.add_material("default_mat", "default_shader", { { "texture0", "default_tex" } });
+    r.add_material("default_mat",
+                   { "default_shader", TXP::Shader_Creation::SHAD_PIPE_TYPE_VERTEX_FRAGMENT },
+                   { { "texture0", "default_tex" } });
     r.add_material_set("default_mat_set", { "default_mat" });
     r.add_model("default_model", ".glb");
 

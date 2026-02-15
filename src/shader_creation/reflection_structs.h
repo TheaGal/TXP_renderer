@@ -194,6 +194,17 @@ struct Parameter
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Parameter, name, binding, type);
 };
 
+/// Whole container.
+struct Shader_reflection
+{
+    std::vector<Entry_point> entryPoints;
+    std::vector<Parameter> parameters;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Shader_reflection,
+                                   entryPoints,
+                                   parameters);
+};
+
 }  // namespace Reflection
 }  // namespace Shader_Creation
 }  // namespace TXP
