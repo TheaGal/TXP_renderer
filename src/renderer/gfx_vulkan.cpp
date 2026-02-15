@@ -976,9 +976,14 @@ void Graphics::Impl::init_vulkan_for_imgui()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable keyboard controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable gamepad controls
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable docking
+
+    // @NOTE: disabled viewports due to performance loss and incorrect swapchain timing in current
+    //        ImGui code.  -Thea 2026/02/14
+    #if 0
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable multi-viewport / platform windows
     // io.ConfigViewportsNoAutoMerge = true;
     // io.ConfigViewportsNoTaskBarIcon = true;
+    #endif // 0
 
     // Setup dear ImGui style.
     ImGui::StyleColorsDark();
