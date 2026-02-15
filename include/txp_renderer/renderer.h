@@ -79,9 +79,9 @@ private:
     int32_t m_width;
     int32_t m_height;
 
-    std::string const& m_texture_asset_dir;
-    std::string const& m_shader_asset_dir;
-    std::string const& m_model_asset_dir;
+    std::string m_texture_asset_dir;
+    std::string m_shader_asset_dir;
+    std::string m_model_asset_dir;
 
     /// Able to register assets until assets are starting to be loaded into the GPU.
     std::atomic_bool m_asset_reg_window_open{ true };

@@ -1,6 +1,9 @@
 #pragma once
 
+#include <array>
 #include <string>
+#include <utility>
+#include <vector>
 
 
 namespace TXP
@@ -23,7 +26,47 @@ enum Shader_pipeline_type
     SHAD_PIPE_TYPE_VERTEX_FRAGMENT,
 };
 
-void extract_stuff(std::string const& shader_name, Shader_pipeline_type shader_type);
+struct Extracted_info
+{
+    enum Descriptor_type
+    {
+        TXP_SC_DESC_TYPE_SAMPLER = 0,
+        TXP_SC_DESC_TYPE_COMBINED_IMAGE_SAMPLER = 1,
+        TXP_SC_DESC_TYPE_SAMPLED_IMAGE = 2,
+        TXP_SC_DESC_TYPE_STORAGE_IMAGE = 3,
+        TXP_SC_DESC_TYPE_UNIFORM_TEXEL_BUFFER = 4,
+        TXP_SC_DESC_TYPE_STORAGE_TEXEL_BUFFER = 5,
+        TXP_SC_DESC_TYPE_UNIFORM_BUFFER = 6,
+        TXP_SC_DESC_TYPE_STORAGE_BUFFER = 7,
+        TXP_SC_DESC_TYPE_UNIFORM_BUFFER_DYNAMIC = 8,
+        TXP_SC_DESC_TYPE_STORAGE_BUFFER_DYNAMIC = 9,
+        TXP_SC_DESC_TYPE_INPUT_ATTACHMENT = 10,
+        TXP_SC_DESC_TYPE_INLINE_UNIFORM_BLOCK = 1000138000,
+        TXP_SC_DESC_TYPE_ACCELERATION_STRUCTURE_KHR = 1000150000,
+        TXP_SC_DESC_TYPE_ACCELERATION_STRUCTURE_NV = 1000165000,
+        TXP_SC_DESC_TYPE_SAMPLE_WEIGHT_IMAGE_QCOM = 1000440000,
+        TXP_SC_DESC_TYPE_BLOCK_MATCH_IMAGE_QCOM = 1000440001,
+        TXP_SC_DESC_TYPE_TENSOR_ARM = 1000460000,
+        TXP_SC_DESC_TYPE_MUTABLE_EXT = 1000351000,
+        TXP_SC_DESC_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV = 1000570000,
+    };
+
+    struct Descriptor_layout_info
+    {
+        std::vector<std::pair<uint32_t, Descriptor_type>> layout_bindings;
+    };
+
+    struct Entry_point
+    {
+        std::string entry_point_name;
+        std::array<uint32_t, 3> compute_thread_group_size;  // @NOTE: only valid in compute pipelines.
+        Descriptor_layout_info desc_layout_info;
+    };
+
+    std::vector<Entry_point> entry_points;
+};
+
+Extracted_info extract_stuff(std::string const& shader_name, Shader_pipeline_type shader_type);
 
 }  // namespace Shader_Creation
 }  // namespace TXP

@@ -9,14 +9,12 @@
 #include <unordered_map>
 #include <vector>
 
-#include "nlohmann/detail/macro_scope.hpp"
 #include "nlohmann/json.hpp"
 using json = nlohmann::json;
 
 
 namespace
 {
-
 using namespace TXP::Shader_Creation;
 
 /// Base dir for shaders.
@@ -47,8 +45,9 @@ void TXP::Shader_Creation::load_slang_reflection_into_collection(std::string con
     s_shader_name_to_reflection.emplace(shader_name, json::parse(f));
 }
 
-void TXP::Shader_Creation::extract_stuff(std::string const& shader_name,
-                                         Shader_pipeline_type shader_type)
+TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
+    std::string const& shader_name,
+    Shader_pipeline_type shader_type)
 {
     auto shader_refl = s_shader_name_to_reflection.at(shader_name);
 
@@ -87,10 +86,32 @@ void TXP::Shader_Creation::extract_stuff(std::string const& shader_name,
             throw std::runtime_error("Desired entry points not found.");
     }
 
+    // Extracting data.
+    Extracted_info extract_info;
+
     // Look for descriptor layouts.
+    extract_info.entry_points.reserve(desired_eps.size());
+
     for (auto const ep : desired_eps)
     {
-        std::vector<std::pair<uint32_t, json>> descriptor_bindings;
+        extract_info.entry_points.emplace_back();
+
+        // Entry point name.
+        extract_info.entry_points.back().entry_point_name = ep->name;
+
+        if (shader_type == SHAD_PIPE_TYPE_COMPUTE)
+        {   // Get the thread group size for compute shaders.
+            if (ep->threadGroupSize.size() == 3)
+                extract_info.entry_points.back().compute_thread_group_size = {
+                    static_cast<uint32_t>(ep->threadGroupSize[0]),
+                    static_cast<uint32_t>(ep->threadGroupSize[1]),
+                    static_cast<uint32_t>(ep->threadGroupSize[2]),
+                };
+            else
+                throw std::runtime_error(
+                    "Inappropriate size for compute shader thread group size config.");
+        }
+
         for (auto const& binding : ep->bindings)
         {   // Look for corresponding binding param.
             Reflection::Parameter const* binding_param{ nullptr };
@@ -105,12 +126,39 @@ void TXP::Shader_Creation::extract_stuff(std::string const& shader_name,
             if (binding_param == nullptr)
                 throw std::runtime_error("Corresponding binding param not found.");
 
-            // asdfasdf.
-            binding_param->type.kind;
+            // Create descriptor layout.
+            if (binding_param->type.elementType.kind != "struct")
+                throw std::runtime_error("Binding param's element type kind is not \"struct\".");
+
+            for (auto const& elem_type_field : binding_param->type.elementType.fields)
+            {
+                if (elem_type_field.binding.kind != "descriptorTableSlot")  // @THEA
+                    throw std::runtime_error("TODO: implement other stuff other than desc table slot!!!");
+
+                // Get descriptor binding index.
+                auto binding_idx{ static_cast<uint32_t>(elem_type_field.binding.index) };
+
+                // Get descriptor type.
+                Extracted_info::Descriptor_type descriptor_type;
+                if (elem_type_field.type.baseShape == "texture2D")
+                {
+                    if (elem_type_field.type.access == "write")
+                        descriptor_type = Extracted_info::TXP_SC_DESC_TYPE_STORAGE_IMAGE;
+                    else
+                        std::runtime_error("TODO: unimplemented.");
+                }
+                else
+                    std::runtime_error("TODO: unimplemented.");
+
+                // Add to layout list.
+                extract_info.entry_points.back().desc_layout_info.layout_bindings.emplace_back(
+                    binding_idx,
+                    descriptor_type);
+            }
         }
     }
 
-    std::cout << "Found compute entrypoint.\n";
+    std::cout << "Extracted descriptor layouts.\n";
 
 
 
@@ -124,4 +172,9 @@ void TXP::Shader_Creation::extract_stuff(std::string const& shader_name,
     // Type.
 
     // Bind position.
+
+
+
+
+    return extract_info;
 }

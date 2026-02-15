@@ -166,9 +166,9 @@ struct Container_var_layout
 struct Element_var_layout
 {
     Element_type type;
-    std::vector<Binding> bindings;
+    Binding binding;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Element_var_layout, type, bindings);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Element_var_layout, type, binding);
 };
 
 struct Param_type

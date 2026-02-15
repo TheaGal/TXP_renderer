@@ -16,11 +16,16 @@ int32_t main()
                      "assets/models/" };
 
     r.add_texture("default_tex", ".ktx2");
-    r.add_material("default_mat",
-                   { "default_shader", TXP::Shader_Creation::SHAD_PIPE_TYPE_VERTEX_FRAGMENT },
-                   { { "texture0", "default_tex" } });
+    // r.add_material("default_mat",  // @TODO: implement this later!!!
+    //                { "default_shader", TXP::Shader_Creation::SHAD_PIPE_TYPE_VERTEX_FRAGMENT },
+    //                { { "texture0", "default_tex" } });
+    r.add_material("__gradient_mat",
+                   { "gradient", TXP::Shader_Creation::SHAD_PIPE_TYPE_COMPUTE },
+                   { { "image", "__hdr_draw_image_color" } });
+    #if 0  // @TODO: implement later!!!!
     r.add_material_set("default_mat_set", { "default_mat" });
     r.add_model("default_model", ".glb");
+    #endif // 0  // @TODO: implement later!!!!
 
     auto ro0_key = r.create_render_obj({
         .layer      = TXP::RENDER_LAYER_DEFAULT,

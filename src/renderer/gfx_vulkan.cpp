@@ -635,12 +635,12 @@ void Graphics::Impl::init_vulkan_create_memory_allocator()
 
 void Graphics::Impl::select_vulkan_window_surface_format()
 {   // Check for WSI support.
-    VkBool32 res;
-    vkGetPhysicalDeviceSurfaceSupportKHR(gfx.physical_device, gfx.graphics_queue_family_idx, gfx.surface, &res);
-    if (res != VK_TRUE)
-    {
-        throw std::runtime_error("Error no WSI support on physical device.");
-    }
+    // VkBool32 res;
+    // vkGetPhysicalDeviceSurfaceSupportKHR(gfx.physical_device, gfx.graphics_queue_family_idx, gfx.surface, &res);
+    // if (res != VK_TRUE)
+    // {
+    //     throw std::runtime_error("Error no WSI support on physical device.");
+    // }
 
     // Select surface format.
     constexpr VkFormat request_surface_image_formats[]{ VK_FORMAT_B8G8R8A8_UNORM,
@@ -869,8 +869,8 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     draw_image_descriptors = global_descriptor_allocator.allocate(draw_image_descriptor_layout);
 
     VkDescriptorImageInfo img_info{
-        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
         .imageView = hdr_draw_image_color.get_image_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
     };
 
     VkWriteDescriptorSet img_write{

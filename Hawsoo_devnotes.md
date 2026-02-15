@@ -154,7 +154,19 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] I want these to be reflected:
     - [ ] Descriptor set layouts
-        - [ ] Pipeline layouts (kind of an extension of the descriptor set layouts)
+        - [x] Have the information for that in `extract_stuff()`
+        - [ ] It would be good to get a descriptor layout cache thing.
+    - [ ] Pipeline layouts (kind of an extension of the descriptor set layouts)
+        - [x] Have the information for that in `extract_stuff()`
+        - I think it should be enough, since there just needs to be the entrypoint name and the descriptor layout things and which descriptor layouts go to which pipeline layouts.
+    - [ ] Actual descriptor sets.
+        - [ ] Need to get material params working.
+            - Connect the textures and buffers and also just in general various parameters.
+                - There may need to be an extra layer for buffers of material params for things like indirect drawing and that kinda shit. Crazy stuff that may need to be deferred in the future and for now just have one material per material param?
+                    - In the future i def want to make it so that there's that extra abstraction.
+        - [ ] Connect the material param textures and buffers (convert from string to actual material handles).
+        - [ ] Create and update the descriptor sets (should just be needed once unless using a resizable texture).
+
     > How can I connect descriptor sets to the descriptor set layouts and then to the pipelines??
         > Expose these things as shader params?
             > Create descriptor sets from the shader params in materials???

@@ -45,12 +45,12 @@ void Renderer::run()
     // Load assets.
     m_asset_reg_window_open = false;
     g.load_assets(m_texture_asset_dir,
-                   m_shader_asset_dir,
-                   m_model_asset_dir,
-                   std::move(*m_texture_assets.scoped_lock()),
-                   std::move(*m_material_assets.scoped_lock()),
-                   std::move(*m_material_set_assets.scoped_lock()),
-                   std::move(*m_model_assets.scoped_lock()));
+                  m_shader_asset_dir,
+                  m_model_asset_dir,
+                  std::move(*m_texture_assets.scoped_lock()),
+                  std::move(*m_material_assets.scoped_lock()),
+                  std::move(*m_material_set_assets.scoped_lock()),
+                  std::move(*m_model_assets.scoped_lock()));
 
     // Render frames until shutdown flag is tripped.
     while (!m_shutdown_flag.load())
