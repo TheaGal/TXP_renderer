@@ -2,7 +2,7 @@
 
 #include <array>
 #include <string>
-#include <utility>
+#include <unordered_map>
 #include <vector>
 
 
@@ -51,9 +51,15 @@ struct Extracted_info
         TXP_SC_DESC_TYPE_PARTITIONED_ACCELERATION_STRUCTURE_NV = 1000570000,
     };
 
+    struct Descriptor_binding
+    {
+        uint32_t binding_idx;
+        Descriptor_type desc_type;
+    };
+
     struct Descriptor_layout_info
     {
-        std::vector<std::pair<uint32_t, Descriptor_type>> layout_bindings;
+        std::unordered_map<std::string, Descriptor_binding> shader_param_to_layout_binding;
     };
 
     struct Entry_point

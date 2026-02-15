@@ -1514,7 +1514,8 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
         Shader_Creation::load_slang_reflection_into_collection(shad_name);
     for (auto const& [shad_name, shad_type] : shader_names_and_types)
     {
-        Shader_Creation::extract_stuff(shad_name, shad_type);
+        auto shader_properties{ Shader_Creation::extract_stuff(shad_name, shad_type) };
+        
     }
 
     std::cout << "Loaded all " << std::to_string(shader_names_and_types.size()) << " shaders.\n";

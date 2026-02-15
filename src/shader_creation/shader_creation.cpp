@@ -89,9 +89,9 @@ TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
     // Extracting data.
     Extracted_info extract_info;
 
-    // Look for descriptor layouts.
     extract_info.entry_points.reserve(desired_eps.size());
 
+    // Look for descriptor layouts.
     for (auto const ep : desired_eps)
     {
         extract_info.entry_points.emplace_back();
@@ -150,10 +150,12 @@ TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
                 else
                     std::runtime_error("TODO: unimplemented.");
 
-                // Add to layout list.
-                extract_info.entry_points.back().desc_layout_info.layout_bindings.emplace_back(
-                    binding_idx,
-                    descriptor_type);
+                // Add to shader-param/layout list.
+                extract_info.entry_points.back()
+                    .desc_layout_info.shader_param_to_layout_binding.emplace(
+                        elem_type_field.name,
+                        Extracted_info::Descriptor_binding{ .binding_idx = binding_idx,
+                                                            .desc_type = descriptor_type });
             }
         }
     }
@@ -161,11 +163,8 @@ TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
     std::cout << "Extracted descriptor layouts.\n";
 
 
-
-
     // Extract vertex attributes.
 
-    // Extract parameters.
 
     // Name.
 
