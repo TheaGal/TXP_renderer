@@ -32,6 +32,10 @@ Image::Image(VkImage img, VkImageAspectFlags aspect_mask)
 {
     // @NOTE: even if the old and new layouts are the same, run the pipeline barrier.
 
+    // @TODO: in the future if there were no computes, or graphics draw operations, or blits, or
+    //        copies onto this image, if the layout doesn't change, then skip the transition bc it's
+    //        not needed.  -Thea 2026/02/15
+
     std::vector<VkImageMemoryBarrier2> image_barriers;
     image_barriers.reserve(new_layouts.size());
 

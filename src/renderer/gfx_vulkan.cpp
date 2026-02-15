@@ -280,9 +280,19 @@ struct Graphics::Impl
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
 
 
+    /// Descriptor binding types.
+    using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, VkDescriptorType>>;
+
+    /// Reflection data to descriptor bindings helper.
+    std::vector<Descriptor_binding_set_t> get_descriptor_binding_sets_from_shader_properties(
+        Shader_Creation::Extracted_info const& info,
+        Shader_Creation::Shader_pipeline_type type);
+
+    VkShaderStageFlags get_stage_flags_from_shader_type(Shader_Creation::Shader_pipeline_type type);
+
     /// Build descriptor layouts.
     VkDescriptorSetLayout build_descriptor_layout(
-        std::vector<std::pair<uint32_t, VkDescriptorType>>&& bindings,
+        Descriptor_binding_set_t&& bindings,
         VkShaderStageFlags shader_stages,
         VkDescriptorSetLayoutCreateFlags flags);
     
@@ -368,6 +378,16 @@ struct Graphics::Impl
     VkDescriptorSetLayout draw_image_descriptor_layout;   // 1st (multiple ones)
     VkPipeline draw_image_compute_pipeline;               // 4th (just has to be after 2nd)
     VkPipelineLayout draw_image_compute_pipeline_layout;  // 2nd
+
+    /// Adds shader pipelines.
+    struct Shader_pipeline
+    {
+        std::vector<VkDescriptorSetLayout> descriptor_layouts;
+        VkPipelineLayout pipeline_layout;
+        std::vector<VkDescriptorSet> descriptor_sets;
+        VkPipeline pipeline;
+    };
+    std::unordered_map<std::string, Shader_pipeline> shader_pipelines;
 
 
     /// Polls window for input events.
@@ -1114,8 +1134,54 @@ void Graphics::Impl::add_texture_entry(std::string const& texture_name,
 }
 
 
+std::vector<Graphics::Impl::Descriptor_binding_set_t> Graphics::Impl::
+    get_descriptor_binding_sets_from_shader_properties(Shader_Creation::Extracted_info const& info,
+                                                       Shader_Creation::Shader_pipeline_type type)
+{
+    auto stage_names = Shader_Creation::get_shader_pipeline_stage_names(type);
+
+    std::vector<Descriptor_binding_set_t> binding_sets;
+    binding_sets.reserve(stage_names.size());
+
+    for (auto const& stage_name : stage_names)
+    {
+        for (auto const& entry_pt : info.entry_points)
+            if (entry_pt.entry_point_stage == stage_name)
+            {   // Process this entry point.
+                binding_sets.emplace_back();
+
+                for (auto const& [_, desc_binding] :
+                     entry_pt.desc_layout_info.shader_param_to_layout_binding)
+                    binding_sets.back().emplace_back(desc_binding.binding_idx,
+                                                     VkDescriptorType(desc_binding.desc_type));
+
+                break;  // Goto next stage name.
+            }
+    }
+    if (stage_names.size() != binding_sets.size())
+        throw std::runtime_error("Count of binding set is mismatched from expected.");
+
+    return binding_sets;
+}
+
+VkShaderStageFlags Graphics::Impl::get_stage_flags_from_shader_type(
+    Shader_Creation::Shader_pipeline_type type)
+{
+    switch (type)
+    {
+    case Shader_Creation::SHAD_PIPE_TYPE_COMPUTE:
+        return VK_SHADER_STAGE_COMPUTE_BIT;
+
+    case Shader_Creation::SHAD_PIPE_TYPE_VERTEX_FRAGMENT:
+        return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    default:
+        throw std::runtime_error("Unsupported shader stage flag.");
+    }
+}
+
 VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
-    std::vector<std::pair<uint32_t, VkDescriptorType>>&& bindings,
+    Descriptor_binding_set_t&& bindings,
     VkShaderStageFlags shader_stages,
     VkDescriptorSetLayoutCreateFlags flags)
 {
@@ -1514,8 +1580,19 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
         Shader_Creation::load_slang_reflection_into_collection(shad_name);
     for (auto const& [shad_name, shad_type] : shader_names_and_types)
     {
+
+
+        // Extract shader properties.
         auto shader_properties{ Shader_Creation::extract_stuff(shad_name, shad_type) };
-        
+        auto binding_sets{ m_pimpl->get_descriptor_binding_sets_from_shader_properties(
+            shader_properties,
+            shad_type) };
+
+        // Create descriptor layouts.
+        for (auto& binding_set : binding_sets)
+            m_pimpl->build_descriptor_layout(std::move(binding_set),
+                                             m_pimpl->get_stage_flags_from_shader_type(shad_type),
+                                             0);
     }
 
     std::cout << "Loaded all " << std::to_string(shader_names_and_types.size()) << " shaders.\n";

@@ -171,3 +171,47 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         > Expose these things as shader params?
             > Create descriptor sets from the shader params in materials???
     > Hardcode stuff for now!
+
+- [ ] Perhaps no reflection?
+    - This is a lot harder than I had thought it would be.
+    - Really the only thing I was wanting reflection for was creating multiple material sets, but honestly that probably isn't even relevant? I'm taking the super-long way here aaaahhhh.
+    - Maybe the interface would be the same: input material name, shader involved, material params.
+        - Model's inside material names or material sets connect to material name.
+        - Shader is referenced.
+        - Material params defines the props set to the shader.
+    - Really this will only be used for vertex-fragment graphics pipeline shaders that will use the geometry.
+        - So I don't need to add support for compute shaders either!!!
+        - So then I feel like it really isn't necessary to even try to tackle this with reflection, especially since there's only going to be a handful of shaders:
+            - pbr-opaque
+            - pbr-transparent
+            - water (this might just be a specialty shader??)
+            - ???
+        - BUT!!!! it could be made easier for shaders to be made!
+            - Perhaps just inputting the wanted bindings for descriptor set layout and then calling it good there is all that's needed?
+                - The descriptor set layout can be made.
+                - The pipeline layout can be made.
+                - The pipeline can be made.
+
+                - Descriptor sets and push constants would have to be provided.
+                    - This could be made easier as well, using the pipeline layout information.
+
+                - Material params would manipulate buffers and such that the descriptor sets are using.
+
+                - Just everything being able to be bound with a simple `.bind(draw_func_lambda)` would be really nice.
+                    - transition involved images to ATTACHMENT, or SHADER_READ_ONLY. (do buffers have to be transitioned??)
+                    - bind pipeline.
+                    - attach descriptor sets
+                    - run `draw_func_lambda()` which could have a vkDraw or a vkIndirectDraw.
+                    - record what happened to relevant images for future transitions.
+
+
+
+    - Compute shaders can have a really simple interface too where you can set things up and then run `.compute()`, and it will:
+        - transition involved images to GENERAL (and buffers too?)
+        - bind pipeline
+        - attach descriptor sets
+        - dispatch compute shader (include params in `compute()` in case there's things like screen size, etc that's needed... or that can pull from an injected dependency?)
+        - record on relevant images (and buffers too?) what happened, so they know how to transition next if they do again.
+
+    - Mmmm I think reflection a little bit can be used! Just don't want to implement every single way this could be used and have the most flexible system everrrrr kinda thing.
+        - So asserting that the `thread_group_size` is the assumed size is important and reflection would help with that!

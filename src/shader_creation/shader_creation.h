@@ -26,6 +26,8 @@ enum Shader_pipeline_type
     SHAD_PIPE_TYPE_VERTEX_FRAGMENT,
 };
 
+std::vector<std::string> get_shader_pipeline_stage_names(Shader_pipeline_type shader_type);
+
 struct Extracted_info
 {
     enum Descriptor_type
@@ -65,6 +67,7 @@ struct Extracted_info
     struct Entry_point
     {
         std::string entry_point_name;
+        std::string entry_point_stage;
         std::array<uint32_t, 3> compute_thread_group_size;  // @NOTE: only valid in compute pipelines.
         Descriptor_layout_info desc_layout_info;
     };

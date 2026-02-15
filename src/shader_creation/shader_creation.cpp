@@ -45,6 +45,29 @@ void TXP::Shader_Creation::load_slang_reflection_into_collection(std::string con
     s_shader_name_to_reflection.emplace(shader_name, json::parse(f));
 }
 
+std::vector<std::string> TXP::Shader_Creation::get_shader_pipeline_stage_names(
+    Shader_pipeline_type shader_type)
+{
+    std::vector<std::string> ep_stage_names;
+
+    switch (shader_type)
+    {
+    case SHAD_PIPE_TYPE_COMPUTE:
+        ep_stage_names.emplace_back("compute");
+        break;
+
+    case SHAD_PIPE_TYPE_VERTEX_FRAGMENT:
+        ep_stage_names.emplace_back("vertex");
+        ep_stage_names.emplace_back("fragment");
+        break;
+
+    default:
+        throw std::runtime_error("Invalid Shader_pipeline_type.");
+    }
+
+    return ep_stage_names;
+}
+
 TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
     std::string const& shader_name,
     Shader_pipeline_type shader_type)
@@ -54,22 +77,7 @@ TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
     // Look for shader entrypoints depending on the type.
     std::vector<Reflection::Entry_point const*> desired_eps;
     {
-        std::vector<std::string> ep_stage_names;
-
-        switch (shader_type)
-        {
-        case SHAD_PIPE_TYPE_COMPUTE:
-            ep_stage_names.emplace_back("compute");
-            break;
-
-        case SHAD_PIPE_TYPE_VERTEX_FRAGMENT:
-            ep_stage_names.emplace_back("vertex");
-            ep_stage_names.emplace_back("fragment");
-            break;
-
-        default:
-            throw std::runtime_error("Invalid Shader_pipeline_type.");
-        }
+        std::vector<std::string> ep_stage_names = get_shader_pipeline_stage_names(shader_type);
 
         for (auto const& ep_stage_name : ep_stage_names)
         {
@@ -98,6 +106,7 @@ TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
 
         // Entry point name.
         extract_info.entry_points.back().entry_point_name = ep->name;
+        extract_info.entry_points.back().entry_point_stage = ep->stage;
 
         if (shader_type == SHAD_PIPE_TYPE_COMPUTE)
         {   // Get the thread group size for compute shaders.
