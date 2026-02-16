@@ -999,6 +999,8 @@ void Graphics::Impl::init_vulkan_for_imgui()
 
     // @NOTE: disabled viewports due to performance loss and incorrect swapchain timing in current
     //        ImGui code.  -Thea 2026/02/14
+    // @AMEND: also, on Linux, only X11 is supported for viewports. Wayland is not. So it's disabled
+    //         in the actual code for this functionality in wayland linux.  -Thea 2026/02/15
     #if 0
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable multi-viewport / platform windows
     // io.ConfigViewportsNoAutoMerge = true;

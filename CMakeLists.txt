@@ -80,7 +80,7 @@ endif()
 
 
 # Platform-specific dependencies.
-if(${CMAKE_SYSTEM_NAME} MATCHES "Windows|Darwin")
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows|Darwin|Linux")
     message("GFX Lib: Vulkan 1.3")
     set(GFX_LIB_DEFINITIONS
         TXP_GFX_BACKEND_VULKAN=1
