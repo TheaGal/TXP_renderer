@@ -56,7 +56,7 @@ set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cpp_glm/include  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/efsw/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastgltf/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui  # Header only.
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/json/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KTX-Software/lib/include
@@ -194,25 +194,25 @@ add_executable(${PROJECT_NAME}
     ${ASSET_DIR_FILES}
 
     # Dear ImGui implementation source files.
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends/imgui_impl_glfw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends/imgui_impl_glfw.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends/imgui_impl_vulkan.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/backends/imgui_impl_vulkan.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/backends/imgui_impl_glfw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/backends/imgui_impl_glfw.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/backends/imgui_impl_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/backends/imgui_impl_vulkan.h
 
     # Dear ImGui base source files.
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imconfig.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui_demo.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui_draw.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui_internal.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui_tables.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui_widgets.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imgui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imstb_rectpack.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imstb_textedit.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/imstb_truetype.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/misc/cpp/imgui_stdlib.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/imgui/misc/cpp/imgui_stdlib.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imconfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui_demo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui_draw.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui_internal.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui_tables.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui_widgets.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imgui.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imstb_rectpack.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imstb_textedit.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/imstb_truetype.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/misc/cpp/imgui_stdlib.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/misc/cpp/imgui_stdlib.h
 
     # ImGuizmo source files.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/ImGuizmo.cpp
