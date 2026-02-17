@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="VcsDirectoryMappings">
+    <mapping directory="" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/ImGuizmo" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/KTX-Software" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/KTX-Software/tests/cts" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/VulkanMemoryAllocator" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/cpp_glm" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/efsw" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/fastgltf" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/glfw" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/json" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/stb" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/stduuid" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/thea_imgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/tinyobjloader" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/tomlplusplus" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/third_party/vk-bootstrap" vcs="Git" />
+  </component>
+</project>
