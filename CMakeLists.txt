@@ -177,7 +177,11 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_image.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_structs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_structs.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h

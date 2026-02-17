@@ -1,0 +1,403 @@
+#pragma once
+
+#if TXP_GFX_BACKEND_VULKAN
+
+#include "gfx.h"
+
+// vv Must be in this order vv
+// clang-format off
+#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
+
+#include <vk_mem_alloc.h>
+
+#include <GLFW/glfw3.h>
+#include "VkBootstrap.h"
+
+#define KHRONOS_STATIC 1
+#include "ktx.h"
+#include "ktxvulkan.h"
+// clang-format on
+
+#include "gfx_vulkan/vk_image.h"
+
+#include <fstream>
+
+
+namespace TXP
+{
+
+struct Graphics::Impl
+{
+    Impl(std::string const& title, int32_t width, int32_t height)
+        : window_title(title)
+        , window_dims{ width, height }
+    {
+    }
+
+
+    std::string window_title;
+    GLFWwindow* window{ nullptr };
+
+    int32_t window_dims[2];
+    float_t monitor_scale{ 1.0f };
+
+
+    void init_glfw_no_api();
+    void init_window_props();
+    void init_window();
+
+
+    /// Holds Vulkan graphics initialization information.
+    struct Vk_gfx_instance
+    {
+        vkb::Instance vkb_instance;
+        vkb::Device vkb_device;
+
+    #if defined(__APPLE__)
+        // Apple lagging behind the standard and being a piece of shit wtf guys.  -Thea 2026/02/04
+        static constexpr bool k_feature_draw_indirect_count{ false };
+        static constexpr bool k_feature_minmax_sampler_filter{ false };
+    #else
+        static constexpr bool k_feature_draw_indirect_count{ true };
+        static constexpr bool k_feature_minmax_sampler_filter{ true };
+    #endif // defined(__APPLE__)
+
+        VkInstance instance;
+    #ifndef NDEBUG
+        VkDebugUtilsMessengerEXT debug_utils_messenger;
+    #endif
+        VkSurfaceKHR surface;
+        VkSurfaceFormatKHR surface_format;
+        VkPhysicalDevice physical_device;
+        VkPhysicalDeviceProperties physical_device_properties;
+        VkDevice device;
+
+        VmaAllocator allocator;
+
+        VkSwapchainKHR swapchain;
+        std::vector<Vk_Image::Image> swapchain_images;
+        std::vector<VkImageView> swapchain_image_views;
+        std::vector<VkSemaphore> swapchain_submit_semaphores;
+        VkFormat swapchain_image_format;
+        VkExtent2D swapchain_extent;
+
+        VkQueue graphics_queue;
+        uint32_t graphics_queue_family_idx;
+
+        VkQueue async_compute_queue;
+        uint32_t async_compute_queue_family_idx;
+
+        VkQueue transfer_queue;
+        uint32_t transfer_queue_family_idx;
+
+        VkPipelineCache pipeline_cache{ VK_NULL_HANDLE };  // Unused for now.
+
+        VkDescriptorPool imgui_desc_pool;
+    };
+    Vk_gfx_instance gfx;
+
+    /// Number of frames-in-flight.
+    static constexpr uint32_t k_frame_overlap{ 3 };
+
+    /// Command buffer abstraction for this vulkan renderer.
+    class Command_buffer
+    {
+    public:
+        /// Allocates command buffer.
+        void allocate(VkDevice device, VkCommandPool cmd_pool, bool is_primary_level)
+        {
+            VkCommandBufferAllocateInfo cmd_alloc_info{
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                .pNext = nullptr,
+                .commandPool = cmd_pool,
+                .level = (is_primary_level ? VK_COMMAND_BUFFER_LEVEL_PRIMARY
+                                           : VK_COMMAND_BUFFER_LEVEL_SECONDARY),
+                .commandBufferCount = 1,
+            };
+
+            VkResult err;
+
+            err = vkAllocateCommandBuffers(device, &cmd_alloc_info, &m_cmd);
+            if (err)
+            {
+                throw std::runtime_error("Vulkan command pool allocation failed for frame #");
+            }
+        }
+
+        /// Resets command buffer, causing initialization for the next `.get()` call.
+        void reset()
+        {
+            m_initialized = false;
+        }
+
+        /// Gets command buffer, initializing if needed.
+        VkCommandBuffer get()
+        {
+            if (!m_initialized)
+            {
+                VkResult err;
+
+                err = vkResetCommandBuffer(m_cmd, 0);
+                if (err)
+                {
+                    std::runtime_error("Reset command buffer failed.");
+                }
+
+                VkCommandBufferBeginInfo info{
+                    .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+                    .pNext = nullptr,
+                    .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+                    .pInheritanceInfo = nullptr,
+                };
+
+                //start the command buffer recording
+                err = vkBeginCommandBuffer(m_cmd, &info);
+                if (err)
+                {
+                    std::runtime_error("Begin command buffer failed.");
+                }
+
+                m_initialized = true;
+            }
+
+            return m_cmd;
+        }
+
+        /// Ends command buffer recording.
+        void finish()
+        {
+            VkResult err;
+
+            err = vkEndCommandBuffer(m_cmd);
+            if (err)
+            {
+                std::runtime_error("End command buffer failed.");
+            }
+        }
+
+    private:
+        bool m_initialized{ false };
+        VkCommandBuffer m_cmd;
+    };
+
+    /// Holds per-frame data.
+    struct Frame_data
+    {
+        VkCommandPool command_pool;
+        Command_buffer graphics_queue_command_buffer;
+        VkSemaphore acquire_nxt_img_semaphore;
+        VkFence render_fence;
+
+        // @TODO: figure out the vv below vv
+        // vk_buffer::Allocated_buffer camera_buffer;
+        // vk_buffer::GPU_geo_per_frame_buffer geo_per_frame_buffer;
+    };
+    std::array<Frame_data, k_frame_overlap> frames;
+
+    /// HDR draw image (main geometry pipeline).
+    Vk_Image::Allocated_image hdr_draw_image_color;
+    Vk_Image::Allocated_image hdr_draw_image_depth;
+
+
+    /// Helper for loading shader module.
+    VkShaderModule load_shader_module(std::string const& fname)
+    {   // Open file.
+        std::ifstream f(fname, std::ios::ate | std::ios::binary);
+
+        if (!f.is_open())
+            throw std::runtime_error("Failed to open file: \"" + fname + "\"");
+
+        // Read file.
+        size_t file_size{ static_cast<size_t>(f.tellg()) };
+        std::vector<uint32_t> buffer(file_size / sizeof(uint32_t));
+
+        f.seekg(0);
+        f.read(reinterpret_cast<char*>(buffer.data()), file_size);
+
+        f.close();
+
+        // Create new shader module.
+        VkShaderModuleCreateInfo info{
+            .sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+            .pNext = nullptr,
+            .codeSize = (buffer.size() * sizeof(uint32_t)),
+            .pCode = buffer.data(),
+        };
+
+        VkShaderModule shader_module;
+        VkResult err = vkCreateShaderModule(gfx.device, &info, nullptr, &shader_module);
+        if (err)
+            throw std::runtime_error("Create shader \"" + fname + "\" failed.");
+
+        return shader_module;
+    }
+
+
+    void init_vulkan_instance();
+    void init_vulkan_window_surface();
+    void init_vulkan_build_device();
+    void init_vulkan_create_memory_allocator();
+    void select_vulkan_window_surface_format();
+    void init_vulkan_build_swapchain();
+    void init_vulkan_retrieve_queues();
+    void init_vulkan_create_cmd_structures();
+    void init_vulkan_create_sync_structures();
+    void init_vulkan_render_graph_resources();
+    void init_vulkan_create_descriptors();
+    void init_vulkan_create_pipelines();
+    void init_vulkan_for_imgui();
+
+
+    /// Adds textures.
+    std::unordered_map<std::string, ktxVulkanTexture> texture_entries;  // @TODO: delete all ktx vk textures. (use `ktxVulkanTexture_Destruct()`)
+
+    ktxVulkanDeviceInfo ktx_vk_device_info;
+
+    void construct_ktx_vk_device_info();
+    void destruct_ktx_vk_device_info();
+
+    ktxVulkanTexture load_and_upload_texture(std::string const& fname);
+    void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
+
+
+    /// Descriptor binding types.
+    using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, VkDescriptorType>>;
+
+    /// Reflection data to descriptor bindings helper.
+    std::vector<Descriptor_binding_set_t> get_descriptor_binding_sets_from_shader_properties(
+        Shader_Creation::Extracted_info const& info,
+        Shader_Creation::Shader_pipeline_type type);
+
+    VkShaderStageFlags get_stage_flags_from_shader_type(Shader_Creation::Shader_pipeline_type type);
+
+    /// Build descriptor layouts.
+    VkDescriptorSetLayout build_descriptor_layout(
+        Descriptor_binding_set_t&& bindings,
+        VkShaderStageFlags shader_stages,
+        VkDescriptorSetLayoutCreateFlags flags);
+    
+    /// Allocate descriptors.
+    class Descriptor_allocator
+    {
+    public:
+        /// Pool size ratios.
+        using Pool_size_ratio = std::pair<VkDescriptorType, float_t>;
+
+        /// Initialize.
+        void init_pool(VkDevice device,
+                       VmaAllocator allocator,
+                       uint32_t max_sets,
+                       std::vector<Pool_size_ratio>&& size_ratios)
+        {
+            m_device = device;
+            m_allocator = allocator;
+
+            std::vector<VkDescriptorPoolSize> pool_sizes;
+            pool_sizes.reserve(size_ratios.size());
+
+            for (auto [ratio_type, ratio_size] : size_ratios)
+            {
+                pool_sizes.emplace_back(VkDescriptorPoolSize{
+                    .type = ratio_type,
+                    .descriptorCount = static_cast<uint32_t>(ratio_size * max_sets),
+                });
+            }
+
+            VkDescriptorPoolCreateInfo info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+                .pNext = nullptr,
+                .flags = 0,
+                .maxSets = max_sets,
+                .poolSizeCount = static_cast<uint32_t>(pool_sizes.size()),
+                .pPoolSizes = pool_sizes.data(),
+            };
+            vkCreateDescriptorPool(m_device, &info, nullptr, &m_pool);
+        }
+
+        /// Tears down pool.
+        void teardown_pool()
+        {
+            vkDestroyDescriptorPool(m_device, m_pool, nullptr);
+        }
+
+        /// Clears all allocated descriptors.
+        void clear_pool()
+        {
+            vkResetDescriptorPool(m_device, m_pool, 0);
+        }
+
+        /// Allocates a single descriptor set. Useful for per-frame descriptor sets.
+        VkDescriptorSet allocate(VkDescriptorSetLayout layout)
+        {
+            VkDescriptorSetAllocateInfo info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .pNext = nullptr,
+                .descriptorPool = m_pool,
+                .descriptorSetCount = 1,
+                .pSetLayouts = &layout,
+            };
+
+            VkDescriptorSet set;
+            VkResult err = vkAllocateDescriptorSets(m_device, &info, &set);
+
+            if (err)
+                throw std::runtime_error("Allocating descriptor set failed.");
+
+            return set;
+        }
+
+    private:
+        VkDevice m_device;
+        VmaAllocator m_allocator;
+        VkDescriptorPool m_pool;
+    };
+
+    Descriptor_allocator global_descriptor_allocator;
+
+    VkDescriptorSet draw_image_descriptors;               // 3rd (just has to be after 1st)
+    VkDescriptorSetLayout draw_image_descriptor_layout;   // 1st (multiple ones)
+    VkPipeline draw_image_compute_pipeline;               // 4th (just has to be after 2nd)
+    VkPipelineLayout draw_image_compute_pipeline_layout;  // 2nd
+
+    /// Adds shader pipelines.
+    struct Shader_pipeline
+    {
+        std::vector<VkDescriptorSetLayout> descriptor_layouts;
+        VkPipelineLayout pipeline_layout;
+        std::vector<VkDescriptorSet> descriptor_sets;
+        VkPipeline pipeline;
+    };
+    std::unordered_map<std::string, Shader_pipeline> shader_pipelines;
+
+
+    /// Polls window for input events.
+    void poll_input_events();
+
+    /// Callback for imgui draw.
+    std::function<void()> imgui_build_contents_callback;
+
+    void build_imgui_frame();
+
+
+    /// Index of current frame.
+    size_t current_frame_idx{ 0 };
+    uint32_t current_swapchain_image_idx;
+
+    void start_new_frame();
+
+    void clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image);
+    void draw_compute_thea_custom_hehehe();
+    void blit_image(Vk_Image::Image& from_image,
+                    VkExtent3D from_extent,
+                    Vk_Image::Image& to_image,
+                    VkExtent3D to_extent);
+    void render_imgui();
+    void present_frame_to_screen();
+
+    void wait_until_gpu_idle();
+};
+
+}  // namespace TXP
+
+#endif // TXP_GFX_BACKEND_VULKAN

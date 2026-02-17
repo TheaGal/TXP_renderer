@@ -1,6 +1,7 @@
 #include "txp_renderer/renderer.h"
 
 #include "gfx.h"
+#include "shader/shader_gradient.h"
 
 #include <atomic>
 #include <cassert>
@@ -42,6 +43,9 @@ void Renderer::run()
 {   // Setup renderer.
     Graphics g(m_title, m_width, m_height);
 
+    // Create shaders.
+    Shader::Shader_gradient shad_gradient{ g.get_impl() };
+
     // Load assets.
     m_asset_reg_window_open = false;
     g.load_assets(m_texture_asset_dir,
@@ -78,6 +82,7 @@ void Renderer::run()
 
         // g.render_shadows();
         g.render_opaque_geometry();
+        shad_gradient.compute(nullptr);
         // g.render_clouds();
         // g.render_volumetric_light();
         // g.render_particles();

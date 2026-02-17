@@ -78,8 +78,13 @@ public:
     /// Waits until GPU device is idle.
     void wait_until_gpu_idle();
 
-private:
+    /// Implementation struct.
     struct Impl;
+
+    /// Gets the implementation.
+    Impl* get_impl();
+
+private:
     std::unique_ptr<Impl> m_pimpl;
 };
 
