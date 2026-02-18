@@ -36,6 +36,8 @@ struct Shader_gradient::Impl
             refl_data.entryPoints.front().threadGroupSize[2] <= 0)
             std::runtime_error("Malformed shader data.");
 
+        compute_entry_point_name = refl_data.entryPoints.front().name;
+
         thread_grp_sizes.width  = refl_data.entryPoints.front().threadGroupSize[0];
         thread_grp_sizes.height = refl_data.entryPoints.front().threadGroupSize[1];
         thread_grp_sizes.depth  = refl_data.entryPoints.front().threadGroupSize[2];
@@ -108,7 +110,7 @@ struct Shader_gradient::Impl
             .pNext = nullptr,
             .stage = VK_SHADER_STAGE_COMPUTE_BIT,
             .module = shader_module,
-            .pName = "compute_main",
+            .pName = compute_entry_point_name.c_str(),
             // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
         };
 
@@ -137,6 +139,7 @@ struct Shader_gradient::Impl
     VkDevice device;
     Vk_Image::Allocated_image& hdr_draw_image_color;
 
+    std::string compute_entry_point_name;
     VkExtent3D thread_grp_sizes;
 
     /// Shader pipeline info for this shader.
