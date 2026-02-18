@@ -612,6 +612,7 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
 
+#if 0
     // Descriptor layouts.
     draw_image_descriptor_layout = build_descriptor_layout(
         {
@@ -640,12 +641,14 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     };
 
     vkUpdateDescriptorSets(gfx.device, 1, &img_write, 0, nullptr);
+#endif // 0
 }
 
 void Graphics::Impl::init_vulkan_create_pipelines()
 {
     // @TODO: @THEA: abstract this into the reflection-based version.
 
+#if 0
     VkResult err;
 
     // Create pipeline layout.
@@ -695,6 +698,7 @@ void Graphics::Impl::init_vulkan_create_pipelines()
 
     // Cleanup.
     vkDestroyShaderModule(gfx.device, shader_module, nullptr);
+#endif // 0
 }
 
 

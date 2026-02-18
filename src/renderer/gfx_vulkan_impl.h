@@ -365,11 +365,14 @@ struct Graphics::Impl
 
     Descriptor_allocator global_descriptor_allocator;
 
+#if 0
     VkDescriptorSet draw_image_descriptors;               // 3rd (just has to be after 1st)
     VkDescriptorSetLayout draw_image_descriptor_layout;   // 1st (multiple ones)
     VkPipeline draw_image_compute_pipeline;               // 4th (just has to be after 2nd)
     VkPipelineLayout draw_image_compute_pipeline_layout;  // 2nd
+#endif // 0
 
+#if 0
     /// Adds shader pipelines.
     struct Shader_pipeline
     {
@@ -379,6 +382,7 @@ struct Graphics::Impl
         VkPipeline pipeline;
     };
     std::unordered_map<std::string, Shader_pipeline> shader_pipelines;
+#endif // 0
 
 
     /// Polls window for input events.
