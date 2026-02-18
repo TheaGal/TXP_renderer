@@ -120,9 +120,7 @@ struct Graphics::Impl
 
             err = vkAllocateCommandBuffers(device, &cmd_alloc_info, &m_cmd);
             if (err)
-            {
                 throw std::runtime_error("Vulkan command pool allocation failed for frame #");
-            }
         }
 
         /// Resets command buffer, causing initialization for the next `.get()` call.
@@ -387,7 +385,6 @@ struct Graphics::Impl
     void start_new_frame();
 
     void clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image);
-    void draw_compute_thea_custom_hehehe();
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,
                     Vk_Image::Image& to_image,

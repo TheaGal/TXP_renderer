@@ -173,7 +173,6 @@ void TXP::Graphics::render_opaque_geometry()
 {
     m_pimpl->clear_image(m_pimpl->hdr_draw_image_color.get_image(),
                          m_pimpl->hdr_draw_image_depth.get_image());
-    // m_pimpl->draw_compute_thea_custom_hehehe();  @TEMP
 }
 
 void TXP::Graphics::render_clouds()
