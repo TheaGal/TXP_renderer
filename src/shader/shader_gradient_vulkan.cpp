@@ -1,12 +1,13 @@
-#include "shader_creation/shader_creation.h"
-#include <stdexcept>
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "shader_gradient.h"
 
+#include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
+#include "shader_creation/shader_creation.h"
 
 #include <memory>
+#include <stdexcept>
 
 
 namespace TXP
@@ -19,7 +20,7 @@ struct Shader_gradient::Impl
 {
     Impl(TXP::Graphics::Impl& graphics)
         : g(graphics)
-        , hdr_draw_image_color(g.hdr_draw_image_color.get_image())
+        , hdr_draw_image_color(g.hdr_draw_image_color)
     {
     #define WRAP_INTO_OWN_FUNC 1
     #if WRAP_INTO_OWN_FUNC
@@ -42,7 +43,7 @@ struct Shader_gradient::Impl
 
     TXP::Graphics::Impl& g;
 
-    Vk_Image::Image& hdr_draw_image_color;
+    Vk_Image::Allocated_image& hdr_draw_image_color;
 
     std::array<uint32_t, 3> thread_grp_sizes;
 };
@@ -64,7 +65,7 @@ void Shader_gradient::compute(void* param)
 
     Vk_Image::Image::transition_to(
         cmd,
-        { { &p.hdr_draw_image_color, VK_IMAGE_LAYOUT_GENERAL } });
+        { { &p.hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.g.draw_image_compute_pipeline);
     vkCmdBindDescriptorSets(cmd,
@@ -74,12 +75,14 @@ void Shader_gradient::compute(void* param)
                             1, &p.g.draw_image_descriptors,
                             0, nullptr);
 
+    auto const& extent{p.hdr_draw_image_color.get_extent()};
+
     vkCmdDispatch(cmd,
         #define WRAP_INTO_OWN_FUNC 1
         #if WRAP_INTO_OWN_FUNC
-                  (1280 + p.thread_grp_sizes[0] - 1) / p.thread_grp_sizes[0],
-                  (720 + p.thread_grp_sizes[1] - 1) / p.thread_grp_sizes[1],
-                  (1 + p.thread_grp_sizes[2] - 1) / p.thread_grp_sizes[2]);
+                  (extent.width + p.thread_grp_sizes[0] - 1) / p.thread_grp_sizes[0],
+                  (extent.height + p.thread_grp_sizes[1] - 1) / p.thread_grp_sizes[1],
+                  (extent.depth + p.thread_grp_sizes[2] - 1) / p.thread_grp_sizes[2]);
         #endif // WRAP_INTO_OWN_FUNC
 }
 
