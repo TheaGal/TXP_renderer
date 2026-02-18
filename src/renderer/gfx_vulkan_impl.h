@@ -21,7 +21,9 @@
 
 #include "gfx_vulkan/vk_image.h"
 
+#include <cmath>
 #include <fstream>
+#include <functional>
 
 
 namespace TXP
