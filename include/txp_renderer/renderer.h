@@ -27,7 +27,6 @@ public:
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
              std::string const& model_asset_dir);
-    ~Renderer();  // For pimpl.
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Render loop.

@@ -86,7 +86,6 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
               << " shaders." << std::endl;
 
     // Load shaders.
-    Shader_Creation::set_shader_directory(shader_asset_dir);
     Shader_Creation::clear_slang_reflection_collection();
     for (auto const& [shad_name, _] : shader_names_and_types)
         Shader_Creation::load_slang_reflection_into_collection(shad_name);
@@ -136,9 +135,9 @@ void TXP::Graphics::poll_input_events()
     m_pimpl->poll_input_events();
 }
 
-void TXP::Graphics::build_imgui_frame()
+void TXP::Graphics::build_imgui_contents()
 {
-    m_pimpl->build_imgui_frame();
+    m_pimpl->build_imgui_contents();
 }
 
 void TXP::Graphics::start_new_frame()

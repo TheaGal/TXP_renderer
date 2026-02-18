@@ -126,6 +126,28 @@ void Graphics::Impl::init_window()
     // glfwSetWindowIconifyCallback(m_window, window_iconify_callback);
 }
 
+
+Graphics::Impl::Frame_data& Graphics::Impl::get_current_frame()
+{
+    return frames[current_frame_idx % k_frame_overlap];
+}
+
+Vk_Image::Image& Graphics::Impl::get_current_swapchain_image()
+{
+    return gfx.swapchain_images[current_swapchain_image_idx];
+}
+
+VkImageView Graphics::Impl::get_current_swapchain_image_view()
+{
+    return gfx.swapchain_image_views[current_swapchain_image_idx];
+}
+
+VkSemaphore Graphics::Impl::get_current_swapchain_submit_semaphore()
+{
+    return gfx.swapchain_submit_semaphores[current_swapchain_image_idx];
+}
+
+
 void Graphics::Impl::init_vulkan_instance()
 {   // Build vulkan instance (targeting Vulkan 1.3).
     vkb::InstanceBuilder builder;
@@ -853,7 +875,7 @@ void Graphics::Impl::poll_input_events()
     glfwPollEvents();
 }
 
-void Graphics::Impl::build_imgui_frame()
+void Graphics::Impl::build_imgui_contents()
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -871,7 +893,7 @@ void Graphics::Impl::build_imgui_frame()
 
 void Graphics::Impl::start_new_frame()
 {   // Wait until GPU has finished rendering last frame (of current frame index).
-    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
+    auto& current_frame{ get_current_frame() };
 
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
@@ -904,8 +926,7 @@ void Graphics::Impl::start_new_frame()
 
 void Graphics::Impl::clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image)
 {
-    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
-    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+    auto cmd{ get_current_frame().graphics_queue_command_buffer.get() };
 
     Vk_Image::Image::transition_to(
         cmd,
@@ -945,8 +966,7 @@ void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
                                 Vk_Image::Image& to_image,
                                 VkExtent3D to_extent)
 {
-    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
-    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+    auto cmd{ get_current_frame().graphics_queue_command_buffer.get() };
 
     Vk_Image::Image::transition_to(cmd,
                                    { { &from_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL },
@@ -1011,17 +1031,15 @@ void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
 
 void Graphics::Impl::render_imgui()
 {
-    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
-    auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
-    auto image_view{ gfx.swapchain_image_views[current_swapchain_image_idx] };  // @TODO: make this `image_view` a param at some point.
+    auto cmd{ get_current_frame().graphics_queue_command_buffer.get() };
 
-    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
-
-    Vk_Image::Image::transition_to(cmd, { { &image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL } });
+    Vk_Image::Image::transition_to(
+        cmd,
+        { { &get_current_swapchain_image(), VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL } });
 
     // Render imgui contents to image.
     VkRenderingAttachmentInfo color_attachment =
-        Vk_Structs::txp_vk_attachment_info(image_view,
+        Vk_Structs::txp_vk_attachment_info(get_current_swapchain_image_view(),
                                            nullptr,
                                            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
     VkRenderingInfo render_info =
@@ -1044,13 +1062,13 @@ void Graphics::Impl::render_imgui()
 
 void Graphics::Impl::present_frame_to_screen()
 {
-    auto& current_frame{ frames[current_frame_idx % k_frame_overlap] };
-    auto& image{ gfx.swapchain_images[current_swapchain_image_idx] };  // @TODO: make this `image` a param at some point.
-
+    auto& current_frame{ get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
     // Change image to present layout.
-    Vk_Image::Image::transition_to(cmd, { { &image, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
+    Vk_Image::Image::transition_to(
+        cmd,
+        { { &get_current_swapchain_image(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
 
     // End recording command buffers.
     current_frame.graphics_queue_command_buffer.finish();
@@ -1059,9 +1077,7 @@ void Graphics::Impl::present_frame_to_screen()
     // Submit command buffer to queue.
     VkResult err;
 
-    VkSemaphore swapchain_submit_semaphore{
-        gfx.swapchain_submit_semaphores[current_swapchain_image_idx]
-    };
+    VkSemaphore swapchain_submit_semaphore{ get_current_swapchain_submit_semaphore() };
 
     VkCommandBufferSubmitInfo cmd_info{
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,

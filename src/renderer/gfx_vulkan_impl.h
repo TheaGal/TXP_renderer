@@ -195,6 +195,15 @@ struct Graphics::Impl
     };
     std::array<Frame_data, k_frame_overlap> frames;
 
+    /// Index of current frame.
+    size_t current_frame_idx{ 0 };
+    uint32_t current_swapchain_image_idx;
+
+    Frame_data& get_current_frame();
+    Vk_Image::Image& get_current_swapchain_image();
+    VkImageView get_current_swapchain_image_view();
+    VkSemaphore get_current_swapchain_submit_semaphore();
+
     /// HDR draw image (main geometry pipeline).
     Vk_Image::Allocated_image hdr_draw_image_color;
     Vk_Image::Allocated_image hdr_draw_image_depth;
@@ -378,12 +387,8 @@ struct Graphics::Impl
     /// Callback for imgui draw.
     std::function<void()> imgui_build_contents_callback;
 
-    void build_imgui_frame();
+    void build_imgui_contents();
 
-
-    /// Index of current frame.
-    size_t current_frame_idx{ 0 };
-    uint32_t current_swapchain_image_idx;
 
     void start_new_frame();
 

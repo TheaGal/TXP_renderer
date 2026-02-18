@@ -33,6 +33,14 @@ void TXP::Shader_Creation::set_shader_directory(std::string const& dir_path)
     s_shader_dir = dir_path;
 }
 
+Reflection::Shader_reflection TXP::Shader_Creation::read_slang_reflection(
+    std::string const& shader_name)
+{
+    // Load the shader reflection.
+    std::ifstream f{ s_shader_dir + shader_name + ".shadrefl" };
+    return json::parse(f);
+}
+
 void TXP::Shader_Creation::clear_slang_reflection_collection()
 {
     s_shader_name_to_reflection.clear();

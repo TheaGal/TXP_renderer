@@ -25,16 +25,17 @@ Renderer::Renderer(std::string const& title,
     , m_texture_asset_dir(texture_asset_dir)
     , m_shader_asset_dir(shader_asset_dir)
     , m_model_asset_dir(model_asset_dir)
-{
+{   // Ensure only one instance.
     static std::atomic_bool s_init{ false };
     bool expect_init{ false };
     if (!s_init.compare_exchange_strong(expect_init, true))
     {
         throw std::runtime_error("Only one `TXP::Renderer` may be created.");
     }
-}
 
-Renderer::~Renderer() = default;
+    // Small setup of auxiliary systems.
+    Shader_Creation::set_shader_directory(m_shader_asset_dir);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +71,7 @@ void Renderer::run()
         g.poll_input_events();
 
         // Build imgui for this frame.
-        g.build_imgui_frame();
+        g.build_imgui_contents();
 
         // Render One Frame.
         g.start_new_frame();

@@ -1,3 +1,5 @@
+#include "shader_creation/shader_creation.h"
+#include <stdexcept>
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "shader_gradient.h"
@@ -19,11 +21,30 @@ struct Shader_gradient::Impl
         : g(graphics)
         , hdr_draw_image_color(g.hdr_draw_image_color.get_image())
     {
+    #define WRAP_INTO_OWN_FUNC 1
+    #if WRAP_INTO_OWN_FUNC
+        auto refl_data = Shader_Creation::read_slang_reflection(k_name);
+
+        if (refl_data.entryPoints.size() != 1 ||
+            refl_data.entryPoints.front().stage != "compute" ||
+            refl_data.entryPoints.front().threadGroupSize.size() != 3 ||
+            refl_data.entryPoints.front().threadGroupSize[0] <= 0 ||
+            refl_data.entryPoints.front().threadGroupSize[1] <= 0 ||
+            refl_data.entryPoints.front().threadGroupSize[2] <= 0)
+            std::runtime_error("Malformed shader data.");
+
+        thread_grp_sizes[0] = refl_data.entryPoints.front().threadGroupSize[0];
+        thread_grp_sizes[1] = refl_data.entryPoints.front().threadGroupSize[1];
+        thread_grp_sizes[2] = refl_data.entryPoints.front().threadGroupSize[2];
+    #endif // WRAP_INTO_OWN_FUNC
     }
+
 
     TXP::Graphics::Impl& g;
 
     Vk_Image::Image& hdr_draw_image_color;
+
+    std::array<uint32_t, 3> thread_grp_sizes;
 };
 
 
@@ -39,10 +60,7 @@ void Shader_gradient::compute(void* param)
 {
     auto& p{ *m_pimpl };
 
-    // @TODO: create a get-current-frame func.
-    auto cmd{
-        p.g.frames[p.g.current_frame_idx % p.g.k_frame_overlap].graphics_queue_command_buffer.get()
-    };
+    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
 
     Vk_Image::Image::transition_to(
         cmd,
@@ -56,8 +74,13 @@ void Shader_gradient::compute(void* param)
                             1, &p.g.draw_image_descriptors,
                             0, nullptr);
 
-    // "threadGroupSize": [16, 16, 1],
-    vkCmdDispatch(cmd, std::ceil(1280.0 / 16.0), std::ceil(720.0 / 16.0), 1);
+    vkCmdDispatch(cmd,
+        #define WRAP_INTO_OWN_FUNC 1
+        #if WRAP_INTO_OWN_FUNC
+                  (1280 + p.thread_grp_sizes[0] - 1) / p.thread_grp_sizes[0],
+                  (720 + p.thread_grp_sizes[1] - 1) / p.thread_grp_sizes[1],
+                  (1 + p.thread_grp_sizes[2] - 1) / p.thread_grp_sizes[2]);
+        #endif // WRAP_INTO_OWN_FUNC
 }
 
 }  // namespace Shader

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "reflection_structs.h"
+
 #include <array>
 #include <cstdint>
 #include <string>
@@ -13,6 +15,8 @@ namespace Shader_Creation
 {
 
 void set_shader_directory(std::string const& dir_path);
+
+Reflection::Shader_reflection read_slang_reflection(std::string const& shader_name);
 
 void clear_slang_reflection_collection();
 

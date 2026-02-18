@@ -31,7 +31,7 @@ public:
     void poll_input_events();
 
     /// Builds one imgui frame using a callback and readies the frame for rendering.
-    void build_imgui_frame();
+    void build_imgui_contents();
 
     /// Acquires next render image for the frame. Will block until an image becomes available.
     void start_new_frame();
