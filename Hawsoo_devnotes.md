@@ -215,3 +215,11 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
     - Mmmm I think reflection a little bit can be used! Just don't want to implement every single way this could be used and have the most flexible system everrrrr kinda thing.
         - So asserting that the `thread_group_size` is the assumed size is important and reflection would help with that!
+
+    - [x] Did a partial implementation of this.
+
+
+- [ ] Get a hardcoded render pipeline for geometry going!!! (needed for prereq for "Perhaps no reflection?")
+    - [ ] Upload buffer for geometry.
+    - [ ] Create render pipeline.
+    - [ ] 

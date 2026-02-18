@@ -78,13 +78,15 @@ gantt
     title TXP renderer progress
     dateFormat YYYY/MM/DD
     section Texture and material system
-        Create shader pipeline from slang-reflection  : a1, 2026/02/08, 8d
-        Bindlessly load all textures          : a2, after a1, 4d
+        Create shader pipeline from slang-reflection  : a1, 2026/02/08, 10d
+        Create shader pipeline from slang-reflection Pt2  : a1_1, after a8, 3d
+        Bindlessly load all textures          : a2, after a1_1, 4d
         Material system                       : a3, after a2, 2d
-        Material sets as swatches for models  : a4, after a8, 1d
+        Material sets as swatches for models  : a4, after a3, 1d
     section Model system
-        Load 3D meshes (gltf/obj)         : a5, after a3, 3d
-        Material set from model tex names : a6, after a5, 1d
+        Load 3D meshes (gltf/obj)         : a5, after a1, 3d
+        Geometry pipeline shader          : a5_1, after a5, 2d
+        Material set from model tex names : a6, after a5_1, 1d
         Giant static model buffer         : a7, after a6, 2d
         Draw meshes with material system (use material set from model tex names)  : a8, after a7, 3d
     section Animation system
