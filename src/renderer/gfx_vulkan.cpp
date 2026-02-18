@@ -44,10 +44,12 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
     m_pimpl->init_vulkan_retrieve_queues();
     m_pimpl->init_vulkan_create_cmd_structures();
     m_pimpl->init_vulkan_create_sync_structures();
+    m_pimpl->init_vulkan_for_imgui();
     m_pimpl->init_vulkan_render_graph_resources();
+
+    // @TODO: @THEA: put these into their own shader render nodes.
     m_pimpl->init_vulkan_create_descriptors();
     m_pimpl->init_vulkan_create_pipelines();
-    m_pimpl->init_vulkan_for_imgui();
 }
 
 TXP::Graphics::~Graphics()

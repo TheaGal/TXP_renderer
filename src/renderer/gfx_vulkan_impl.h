@@ -243,10 +243,11 @@ struct Graphics::Impl
     void init_vulkan_retrieve_queues();
     void init_vulkan_create_cmd_structures();
     void init_vulkan_create_sync_structures();
+    void init_vulkan_for_imgui();
     void init_vulkan_render_graph_resources();
+    // @TODO: @THEA: put these into their own shader render nodes.
     void init_vulkan_create_descriptors();
     void init_vulkan_create_pipelines();
-    void init_vulkan_for_imgui();
 
 
     /// Adds textures.

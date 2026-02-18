@@ -469,6 +469,95 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
     }
 }
 
+void Graphics::Impl::init_vulkan_for_imgui()
+{
+    {   // Create descriptor pool.
+        VkDescriptorPoolSize pool_sizes[]{
+            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
+        };
+        VkDescriptorPoolCreateInfo pool_info{};
+        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+        pool_info.maxSets = 0;
+        for (VkDescriptorPoolSize& pool_size : pool_sizes)
+            pool_info.maxSets += pool_size.descriptorCount;
+        pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
+        pool_info.pPoolSizes = pool_sizes;
+
+        VkResult err;
+        err = vkCreateDescriptorPool(gfx.device,
+                                     &pool_info,
+                                     nullptr,
+                                     &gfx.imgui_desc_pool);
+        if (err)
+        {
+            throw std::runtime_error("Creating ImGui descriptor pool failed.");
+        }
+    }
+
+    // Setup dear ImGui context.
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable keyboard controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable gamepad controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable docking
+
+    // @NOTE: disabled viewports due to performance loss and incorrect swapchain timing in current
+    //        ImGui code.  -Thea 2026/02/14
+    // @AMEND: also, on Linux, only X11 is supported for viewports. Wayland is not. So it's disabled
+    //         in the actual code for this functionality in wayland linux.  -Thea 2026/02/15
+    #if 0
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable multi-viewport / platform windows
+    // io.ConfigViewportsNoAutoMerge = true;
+    // io.ConfigViewportsNoTaskBarIcon = true;
+    #endif // 0
+
+    // Setup dear ImGui style.
+    ImGui::StyleColorsDark();
+
+    // Setup scaling.
+    ImGuiStyle& style = ImGui::GetStyle();
+    style.ScaleAllSizes(monitor_scale);  // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
+    style.FontScaleDpi = monitor_scale;  // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
+    io.ConfigDpiScaleFonts = true;       // [Experimental] Automatically overwrite style.FontScaleDpi in Begin() when Monitor DPI changes. This will scale fonts but _NOT_ scale sizes/padding for now.
+    io.ConfigDpiScaleViewports = true;   // [Experimental] Scale Dear ImGui and Platform Windows when Monitor DPI changes.
+
+    // When viewports are enabled make window corners sharp and opaque.
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 0.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+    }
+
+    // Setup platform/renderer backends.
+    ImGui_ImplGlfw_InitForVulkan(window, true);
+    ImGui_ImplVulkan_InitInfo init_info{};
+    init_info.ApiVersion = VK_API_VERSION_1_3;
+    init_info.Instance = gfx.instance;
+    init_info.PhysicalDevice = gfx.physical_device;
+    init_info.Device = gfx.device;
+    init_info.QueueFamily = gfx.graphics_queue_family_idx;
+    init_info.Queue = gfx.graphics_queue;
+    init_info.PipelineCache = gfx.pipeline_cache;
+    init_info.DescriptorPool = gfx.imgui_desc_pool;
+    init_info.MinImageCount = static_cast<uint32_t>(gfx.swapchain_images.size());
+    init_info.ImageCount = static_cast<uint32_t>(gfx.swapchain_images.size());
+    init_info.Allocator = nullptr;
+    init_info.UseDynamicRendering = true;
+
+    VkPipelineRenderingCreateInfo pipe_rend_create_info{
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+        .colorAttachmentCount = 1,
+        .pColorAttachmentFormats = &gfx.swapchain_image_format,
+    };
+    init_info.PipelineInfoMain.PipelineRenderingCreateInfo = pipe_rend_create_info;
+    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+
+    ImGui_ImplVulkan_Init(&init_info);
+}
+
 void Graphics::Impl::init_vulkan_render_graph_resources()
 {
     Vk_Image::Allocated_image::set_vk_props(gfx.physical_device, gfx.device, gfx.allocator);
@@ -584,95 +673,6 @@ void Graphics::Impl::init_vulkan_create_pipelines()
 
     // Cleanup.
     vkDestroyShaderModule(gfx.device, shader_module, nullptr);
-}
-
-void Graphics::Impl::init_vulkan_for_imgui()
-{
-    {   // Create descriptor pool.
-        VkDescriptorPoolSize pool_sizes[]{
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
-        };
-        VkDescriptorPoolCreateInfo pool_info{};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 0;
-        for (VkDescriptorPoolSize& pool_size : pool_sizes)
-            pool_info.maxSets += pool_size.descriptorCount;
-        pool_info.poolSizeCount = static_cast<uint32_t>(IM_ARRAYSIZE(pool_sizes));
-        pool_info.pPoolSizes = pool_sizes;
-
-        VkResult err;
-        err = vkCreateDescriptorPool(gfx.device,
-                                     &pool_info,
-                                     nullptr,
-                                     &gfx.imgui_desc_pool);
-        if (err)
-        {
-            throw std::runtime_error("Creating ImGui descriptor pool failed.");
-        }
-    }
-
-    // Setup dear ImGui context.
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;  // Enable keyboard controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;   // Enable gamepad controls
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;      // Enable docking
-
-    // @NOTE: disabled viewports due to performance loss and incorrect swapchain timing in current
-    //        ImGui code.  -Thea 2026/02/14
-    // @AMEND: also, on Linux, only X11 is supported for viewports. Wayland is not. So it's disabled
-    //         in the actual code for this functionality in wayland linux.  -Thea 2026/02/15
-    #if 0
-    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;    // Enable multi-viewport / platform windows
-    // io.ConfigViewportsNoAutoMerge = true;
-    // io.ConfigViewportsNoTaskBarIcon = true;
-    #endif // 0
-
-    // Setup dear ImGui style.
-    ImGui::StyleColorsDark();
-
-    // Setup scaling.
-    ImGuiStyle& style = ImGui::GetStyle();
-    style.ScaleAllSizes(monitor_scale);  // Bake a fixed style scale. (until we have a solution for dynamic style scaling, changing this requires resetting Style + calling this again)
-    style.FontScaleDpi = monitor_scale;  // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this unnecessary. We leave both here for documentation purpose)
-    io.ConfigDpiScaleFonts = true;       // [Experimental] Automatically overwrite style.FontScaleDpi in Begin() when Monitor DPI changes. This will scale fonts but _NOT_ scale sizes/padding for now.
-    io.ConfigDpiScaleViewports = true;   // [Experimental] Scale Dear ImGui and Platform Windows when Monitor DPI changes.
-
-    // When viewports are enabled make window corners sharp and opaque.
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-    {
-        style.WindowRounding = 0.0f;
-        style.Colors[ImGuiCol_WindowBg].w = 1.0f;
-    }
-
-    // Setup platform/renderer backends.
-    ImGui_ImplGlfw_InitForVulkan(window, true);
-    ImGui_ImplVulkan_InitInfo init_info{};
-    init_info.ApiVersion = VK_API_VERSION_1_3;
-    init_info.Instance = gfx.instance;
-    init_info.PhysicalDevice = gfx.physical_device;
-    init_info.Device = gfx.device;
-    init_info.QueueFamily = gfx.graphics_queue_family_idx;
-    init_info.Queue = gfx.graphics_queue;
-    init_info.PipelineCache = gfx.pipeline_cache;
-    init_info.DescriptorPool = gfx.imgui_desc_pool;
-    init_info.MinImageCount = static_cast<uint32_t>(gfx.swapchain_images.size());
-    init_info.ImageCount = static_cast<uint32_t>(gfx.swapchain_images.size());
-    init_info.Allocator = nullptr;
-    init_info.UseDynamicRendering = true;
-
-    VkPipelineRenderingCreateInfo pipe_rend_create_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-        .colorAttachmentCount = 1,
-        .pColorAttachmentFormats = &gfx.swapchain_image_format,
-    };
-    init_info.PipelineInfoMain.PipelineRenderingCreateInfo = pipe_rend_create_info;
-    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-
-    ImGui_ImplVulkan_Init(&init_info);
 }
 
 
