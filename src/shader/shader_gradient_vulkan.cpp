@@ -103,7 +103,8 @@ struct Shader_gradient::Impl
             throw std::runtime_error("Failed to create pipeline layout.");
 
         // Create pipeline.
-        VkShaderModule shader_module{ g.load_shader_module("assets/shaders/gradient.shader") };
+        VkShaderModule shader_module{ g.load_shader_module(
+            Shader_Creation::get_shader_module_path(k_name)) };
 
         VkPipelineShaderStageCreateInfo stage_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,

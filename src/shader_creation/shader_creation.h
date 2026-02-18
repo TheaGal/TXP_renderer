@@ -18,6 +18,12 @@ void set_shader_directory(std::string const& dir_path);
 
 Reflection::Shader_reflection read_slang_reflection(std::string const& shader_name);
 
+std::string get_shader_module_path(std::string const& shader_name);
+
+
+// vv OLD vv ///////////////////////////////////////////////////////////////////////////////////////
+
+
 void clear_slang_reflection_collection();
 
 /// Loads slang reflection data for a shader.

@@ -41,6 +41,11 @@ Reflection::Shader_reflection TXP::Shader_Creation::read_slang_reflection(
     return json::parse(f);
 }
 
+std::string TXP::Shader_Creation::get_shader_module_path(std::string const& shader_name)
+{
+    return (s_shader_dir + shader_name + ".shader");
+}
+
 void TXP::Shader_Creation::clear_slang_reflection_collection()
 {
     s_shader_name_to_reflection.clear();
