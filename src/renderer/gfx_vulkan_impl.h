@@ -20,6 +20,7 @@
 // clang-format on
 
 #include "gfx_vulkan/vk_image.h"
+#include "render_object/render_model.h"
 
 #include <cmath>
 #include <fstream>
@@ -269,6 +270,13 @@ struct Graphics::Impl
 
     ktxVulkanTexture load_and_upload_texture(std::string const& fname);
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
+
+
+    /// Add models.
+    std::unordered_map<std::string, Render_model> model_entries;
+
+    void add_model_entry(std::string const& model_name, Render_model&& render_model);
+    void upload_model_entries_to_gpu();
 
 
     /// Descriptor binding types.

@@ -24,8 +24,9 @@ int32_t main()
                    { { "image", "__hdr_draw_image_color" } });
     #if 0  // @TODO: implement later!!!!
     r.add_material_set("default_mat_set", { "default_mat" });
-    r.add_model("default_model", ".glb");
     #endif // 0  // @TODO: implement later!!!!
+    r.add_model("probuilder_example", ".obj");
+    r.add_model("default_model", ".glb");
 
     auto ro0_key = r.create_render_obj({
         .layer      = TXP::RENDER_LAYER_DEFAULT,

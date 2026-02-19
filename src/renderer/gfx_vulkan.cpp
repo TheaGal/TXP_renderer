@@ -12,6 +12,7 @@
 
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
+#include "render_object/render_model.h"
 #include "shader_creation/shader_creation.h"
 
 #include <array>
@@ -93,8 +94,11 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     // Load models.
     for (auto const& mod_asset : model_assets)
     {
-
+        m_pimpl->add_model_entry(mod_asset.model_name,
+                                 load_model_from_disk(mod_asset.model_name, mod_asset.file_ext));
     }
+    m_pimpl->upload_model_entries_to_gpu();
+
     std::cout << "Loaded all " << std::to_string(model_assets.size()) << " models.\n";
 }
 

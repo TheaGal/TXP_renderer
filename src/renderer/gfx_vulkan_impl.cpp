@@ -786,6 +786,17 @@ void Graphics::Impl::add_texture_entry(std::string const& texture_name,
 }
 
 
+void Graphics::Impl::add_model_entry(std::string const& model_name, Render_model&& render_model)
+{
+    model_entries.emplace(model_name, std::move(render_model));
+}
+
+void Graphics::Impl::upload_model_entries_to_gpu()
+{
+    assert(false);
+}
+
+
 std::vector<Graphics::Impl::Descriptor_binding_set_t> Graphics::Impl::
     get_descriptor_binding_sets_from_shader_properties(Shader_Creation::Extracted_info const& info,
                                                        Shader_Creation::Shader_pipeline_type type)
