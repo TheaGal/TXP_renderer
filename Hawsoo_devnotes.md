@@ -221,6 +221,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] Get a hardcoded render pipeline for geometry going!!! (needed for prereq for "Perhaps no reflection?")
     - [x] Iron out the data structures.
+    - [ ] Load all models.
     - [ ] Upload buffer for geometry.
     - [ ] Create render pipeline.
     - [ ] 

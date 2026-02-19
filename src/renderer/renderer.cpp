@@ -1,6 +1,7 @@
 #include "txp_renderer/renderer.h"
 
 #include "gfx.h"
+#include "render_object/render_model.h"
 #include "shader/shader_gradient.h"
 
 #include <atomic>
@@ -35,6 +36,7 @@ Renderer::Renderer(std::string const& title,
 
     // Small setup of auxiliary systems.
     Shader_Creation::set_shader_directory(m_shader_asset_dir);
+    set_model_directory(m_model_asset_dir);
 }
 
 
@@ -50,8 +52,6 @@ void Renderer::run()
     // Load assets.
     m_asset_reg_window_open = false;
     g.load_assets(m_texture_asset_dir,
-                  m_shader_asset_dir,
-                  m_model_asset_dir,
                   std::move(*m_texture_assets.scoped_lock()),
                   std::move(*m_material_assets.scoped_lock()),
                   std::move(*m_material_set_assets.scoped_lock()),
