@@ -76,36 +76,6 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     m_pimpl->destruct_ktx_vk_device_info();
     std::cout << "Loaded all " << std::to_string(texture_assets.size()) << " textures.\n";
 
-    // Collect required shaders.
-    std::set<std::pair<std::string, Shader_Creation::Shader_pipeline_type>> shader_names_and_types;
-    for (auto const& mat_asset : material_assets)
-        shader_names_and_types.emplace(mat_asset.shader_name_and_type);
-    std::cout << "Found usage of " << std::to_string(shader_names_and_types.size())
-              << " shaders." << std::endl;
-
-    // Load shaders.
-    Shader_Creation::clear_slang_reflection_collection();
-    for (auto const& [shad_name, _] : shader_names_and_types)
-        Shader_Creation::load_slang_reflection_into_collection(shad_name);
-    for (auto const& [shad_name, shad_type] : shader_names_and_types)
-    {
-
-
-        // Extract shader properties.
-        auto shader_properties{ Shader_Creation::extract_stuff(shad_name, shad_type) };
-        auto binding_sets{ m_pimpl->get_descriptor_binding_sets_from_shader_properties(
-            shader_properties,
-            shad_type) };
-
-        // Create descriptor layouts.
-        for (auto& binding_set : binding_sets)
-            m_pimpl->build_descriptor_layout(std::move(binding_set),
-                                             m_pimpl->get_stage_flags_from_shader_type(shad_type),
-                                             0);
-    }
-
-    std::cout << "Loaded all " << std::to_string(shader_names_and_types.size()) << " shaders.\n";
-
     // Load materials.
     for (auto const& mat_asset : material_assets)
     {
