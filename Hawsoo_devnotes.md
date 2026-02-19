@@ -223,8 +223,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Iron out the data structures.
     - [ ] Load all models.
         - [x] stubs
-        - [ ] Actual load in.
+        - [x] Actual load in.
             - It should load in the static model, then the skinning data, then the material data.
+            - Animation data should also get loaded in.
+                - Should there be the animation re-recording as well?
+                    - I don't really think it was particularly important, and plus, having the animation speed change would be nice, but it would still need to be deterministic.
+        - [ ] Figure out how the data shuold get returned.
     - [ ] Upload buffer for geometry.
     - [ ] Create render pipeline.
     - [ ] 

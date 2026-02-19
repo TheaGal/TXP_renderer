@@ -141,6 +141,7 @@ endif()
 
 # Resource files inside ASSET_DIR.
 set(ASSET_DIR_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/simple_combat_char.glb
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
@@ -169,6 +170,10 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mutex_wrapper/mutex_wrapper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/deformed_render_model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_gltf_model.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_gltf_model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_obj_model.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_obj_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.h
