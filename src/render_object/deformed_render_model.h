@@ -2,6 +2,7 @@
 
 #include "cglm/mat4.h"
 #include "cglm/vec4.h"
+#include "vertex.h"
 
 #include <unordered_map>
 #include <vector>
@@ -9,13 +10,6 @@
 
 namespace TXP
 {
-
-/// Vertex-level deformation data to point to joint indices.
-struct Vertex_skin_data
-{
-    uint32_t joint_mat_idxs[4];
-    vec4     weights;
-};
 
 /// Joint within a hierarchy.
 struct Model_joint

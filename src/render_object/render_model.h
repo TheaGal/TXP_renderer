@@ -1,5 +1,7 @@
 #pragma once
 
+#include "vertex.h"
+
 #include <cassert>
 #include <cstdint>
 #include <vector>
@@ -7,6 +9,19 @@
 
 namespace TXP
 {
+
+/// Sets the asset directory for models.
+void set_model_directory(std::string const& dir_path);
+
+/// Bounding box.
+struct AA_bounding_box
+{
+    vec3 min;
+    vec3 max;
+
+    void reset();
+    void feed_position(vec3 position);
+};
 
 /// Set of data to define a static model.
 struct Static_model_data_set
@@ -36,5 +51,8 @@ struct Render_model
                (deformed_vertex_buffer_idx != (uint16_t)-1);
     }
 };
+
+/// Loads model.
+Render_model load_model_from_disk(std::string const& model_name, std::string const& file_ext);
 
 }  // namespace TXP
