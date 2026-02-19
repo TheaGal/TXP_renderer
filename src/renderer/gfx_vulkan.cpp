@@ -11,22 +11,12 @@
 // clang-format on
 
 #include "gfx_vulkan/vk_image.h"
-#include "gfx_vulkan/vk_structs.h"
 #include "render_object/render_model.h"
-#include "shader_creation/shader_creation.h"
 
-#include <array>
 #include <cassert>
 #include <cerrno>
-#include <cmath>
-#include <fstream>
-#include <functional>
 #include <iostream>
-#include <set>
-#include <sstream>
-#include <stdexcept>
 #include <string>
-#include <unordered_map>
 
 
 // class Graphics
