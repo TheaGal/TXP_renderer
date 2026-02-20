@@ -1,7 +1,7 @@
 #include "load_gltf_model.h"
 
 #include "cglm/cglm.h"
-#include "cglm/struct.h"
+#include "cglm/types-struct.h"
 #include "fastgltf/core.hpp"
 #include "fastgltf/math.hpp"
 #include "fastgltf/types.hpp"

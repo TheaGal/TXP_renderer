@@ -228,6 +228,11 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - Animation data should also get loaded in.
                 - Should there be the animation re-recording as well?
                     - I don't really think it was particularly important, and plus, having the animation speed change would be nice, but it would still need to be deterministic.
+                        - But hey, it was a system that worked. And idk if I wanna try to redesign a different system.
+                        - Ig I'll keep using it until it proves itself to be good or bad.
+                        - One way I could do an irregular framerate is to just have a float counter for the simulation thread, and if multiple frames are skipped over, just make sure to simulate for all the in-between frames.
+            - [ ] Create similar animation data.
+                - [ ] Load in animation data.
         - [ ] Figure out how the data shuold get returned.
     - [ ] Upload buffer for geometry.
     - [ ] Create render pipeline.
