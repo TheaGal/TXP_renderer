@@ -4,6 +4,8 @@ C++20 cross-platform renderer library.
 
 ## Usage
 
+> NOTE: wavefront OBJ files must have the file extension ".wobj" instead of ".obj".
+
 Below is a minimal example of setting up the renderer with 1 texture, 1 material, 1 material-set, 1 model.
 
 ```cpp

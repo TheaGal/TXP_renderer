@@ -141,6 +141,7 @@ endif()
 
 # Resource files inside ASSET_DIR.
 set(ASSET_DIR_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/probuilder_example.wobj
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/simple_combat_char.glb
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl

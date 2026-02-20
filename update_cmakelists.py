@@ -85,6 +85,7 @@ if __name__ == '__main__':
                         ')')
     # Resource files.
     RES_SEARCH_EXTENSIONS = ['ktx2',
+                             'wobj',  # wavefront obj files (it's .wobj bc well .obj makes the compiler think it's an object file (NOT GOOD))
                              'glb',
                              'gltf',
                              'shader',

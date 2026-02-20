@@ -40,7 +40,7 @@ void TXP::AA_bounding_box::feed_position(vec3 position)
 TXP::Render_model TXP::load_model_from_disk(std::string const& model_name,
                                             std::string const& file_ext)
 {
-    if (file_ext == ".obj")
+    if (file_ext == ".wobj")
     {
         return load_obj_model_from_disk(s_model_directory + model_name + file_ext);
     }
