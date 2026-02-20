@@ -28,7 +28,7 @@ int32_t main()
     r.add_material_set("default_mat_set", { "default_mat" });
     #endif // 0  // @TODO: implement later!!!!
     r.add_model("probuilder_example", ".wobj");
-    r.add_model("default_model", ".glb");
+    r.add_model("simple_combat_char", ".glb");
 
     auto ro0_key = r.create_render_obj({
         .layer      = TXP::RENDER_LAYER_DEFAULT,
