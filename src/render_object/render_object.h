@@ -37,8 +37,9 @@ struct Render_model_data_collection
     ~Render_model_data_collection();
 
     // @TODO: @CHECK: @THEA: change emplace funcs to void?
-    uint16_t emplace_static_model_data_set(std::string const& name, Static_model_data_set&& data);
-    uint16_t get_static_model_data_set(std::string const& name);
+    void emplace_static_model_data_set(std::string const& name, Static_model_data_set&& data);
+    uint16_t get_static_model_data_set_idx(std::string const& name) const;
+    Static_model_data_set const& get_static_model_data_set(uint16_t idx) const;
 
     uint16_t emplace_deformed_model_skin(std::string const& name, Deformed_model_skin&& data);
     uint16_t get_deformed_model_skin(std::string const& name);
@@ -54,7 +55,7 @@ struct Render_model_data_collection
 
     // Pimpl.
     struct Data;
-    std::unique_ptr<Data> data;
+    std::unique_ptr<Data> inner_data;
 };
 
 }  // namespace TXP
