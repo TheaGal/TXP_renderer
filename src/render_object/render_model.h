@@ -4,6 +4,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -54,7 +55,12 @@ struct Render_model
     }
 };
 
+// Forward declaration.
+struct Render_model_data_collection;
+
 /// Loads model.
-Render_model load_model_from_disk(std::string const& model_name, std::string const& file_ext);
+void load_model_from_disk(Render_model_data_collection& data_collection,
+                          std::string const& model_name,
+                          std::string const& file_ext);
 
 }  // namespace TXP

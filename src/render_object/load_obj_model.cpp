@@ -1,6 +1,7 @@
 #include "load_obj_model.h"
 
 #include "btglm.h"
+#include "render_model.h"
 #include "tiny_obj_loader.h"
 #include "vertex.h"
 
@@ -8,7 +9,9 @@
 #include <unordered_map>
 
 
-TXP::Render_model TXP::load_obj_model_from_disk(std::string const& fname)
+void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection,
+                                   std::string const& model_name,
+                                   std::string const& fname)
 {
     if (!std::filesystem::exists(fname) ||
         !std::filesystem::is_regular_file(fname))
@@ -170,6 +173,6 @@ TXP::Render_model TXP::load_obj_model_from_disk(std::string const& fname)
         meshes.emplace_back(std::move(indices));
     }
 
-    // @TODO: put return here.
-    assert(false);
+    // Place data into collection.
+    data_collection.emplace_static_model_data_set(model_name, std::move(new_static_model_data_set));
 }

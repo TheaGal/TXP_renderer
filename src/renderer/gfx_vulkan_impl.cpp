@@ -786,11 +786,6 @@ void Graphics::Impl::add_texture_entry(std::string const& texture_name,
 }
 
 
-void Graphics::Impl::add_model_entry(std::string const& model_name, Render_model&& render_model)
-{
-    model_entries.emplace(model_name, std::move(render_model));
-}
-
 void Graphics::Impl::upload_model_entries_to_gpu()
 {
     assert(false);

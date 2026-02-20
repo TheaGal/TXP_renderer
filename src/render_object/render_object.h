@@ -24,4 +24,37 @@ struct Render_object
     mat4 transform = GLM_MAT4_IDENTITY_INIT;
 };
 
+// Forward declarations for collection.
+struct Static_model_data_set;
+struct Deformed_model_skin;
+struct Deformed_model_animation_set;
+struct Material_set;
+
+/// Collection that holds pools of render data.
+struct Render_model_data_collection
+{
+    Render_model_data_collection();
+    ~Render_model_data_collection();
+
+    // @TODO: @CHECK: @THEA: change emplace funcs to void?
+    uint16_t emplace_static_model_data_set(std::string const& name, Static_model_data_set&& data);
+    uint16_t get_static_model_data_set(std::string const& name);
+
+    uint16_t emplace_deformed_model_skin(std::string const& name, Deformed_model_skin&& data);
+    uint16_t get_deformed_model_skin(std::string const& name);
+
+    uint16_t emplace_deformed_model_anim_set(std::string const& name, Deformed_model_animation_set&& data);
+    uint16_t get_deformed_model_anim_set(std::string const& name);
+
+    uint16_t emplace_deformed_vertex_buffer(std::string const& name, void* data);
+    uint16_t get_deformed_vertex_buffer(std::string const& name);
+
+    uint16_t emplace_material_set(std::string const& name, Material_set&& data);
+    uint16_t get_material_set(std::string const& name);
+
+    // Pimpl.
+    struct Data;
+    std::unique_ptr<Data> data;
+};
+
 }  // namespace TXP

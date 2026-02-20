@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render_object/render_object.h"
 #include "txp_renderer/types.h"
 
 #include <memory>
@@ -23,7 +24,8 @@ public:
                      std::vector<Texture_asset_create_info>&& texture_assets,
                      std::vector<Material_asset_create_info>&& material_assets,
                      std::vector<Material_set_asset_create_info>&& material_set_assets,
-                     std::vector<Model_asset_create_info>&& model_assets);
+                     std::vector<Model_asset_create_info>&& model_assets,
+                     Render_model_data_collection& render_model_data_collection);
 
     /// Polls for input events.
     void poll_input_events();

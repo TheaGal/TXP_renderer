@@ -1,11 +1,12 @@
 #include "load_gltf_model.h"
 
 #include "btglm.h"
+#include "deformed_render_model.h"
 #include "fastgltf/core.hpp"
 #include "fastgltf/math.hpp"
-#include "fastgltf/types.hpp"
 #include "fastgltf/tools.hpp"
-#include "render_object/deformed_render_model.h"
+#include "fastgltf/types.hpp"
+#include "render_model.h"
 #include "skeletal_animation.h"
 #include "txp_renderer/types.h"
 #include "vertex.h"
@@ -15,7 +16,9 @@
 #include <list>
 
 
-TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
+void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collection,
+                                    std::string const& model_name,
+                                    std::string const& fname)
 {
     if (!std::filesystem::exists(fname) ||
         !std::filesystem::is_regular_file(fname))
@@ -870,10 +873,13 @@ TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
 
         // Create animation.
         animations.emplace_back(std::ref(new_deformed_model_skin),
-                                  anim_name,
-                                  std::move(new_anim_frames));
+                                anim_name,
+                                std::move(new_anim_frames));
     }
 
-    // @TODO: return data here.
-    assert(false);
+    // Place data into collection.
+    data_collection.emplace_deformed_model_skin(model_name, std::move(new_deformed_model_skin));
+    data_collection.emplace_static_model_data_set(model_name, std::move(new_static_model_data_set));
+    data_collection.emplace_deformed_model_anim_set(model_name,
+                                                    std::move(new_deformed_model_anim_set));
 }

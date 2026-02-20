@@ -1,11 +1,15 @@
 #pragma once
 
-#include "render_model.h"
+#include "render_object/render_object.h"
+
+#include <string>
 
 
 namespace TXP
 {
 
-Render_model load_gltf_model_from_disk(std::string const& fname);
+void load_gltf_model_from_disk(Render_model_data_collection& data_collection,
+                               std::string const& model_name,
+                               std::string const& fname);
 
 }  // namespace TXP

@@ -37,16 +37,21 @@ void TXP::AA_bounding_box::feed_position(vec3 position)
 }
 
 
-TXP::Render_model TXP::load_model_from_disk(std::string const& model_name,
-                                            std::string const& file_ext)
+void TXP::load_model_from_disk(Render_model_data_collection& data_collection,
+                               std::string const& model_name,
+                               std::string const& file_ext)
 {
     if (file_ext == ".wobj")
     {
-        return load_obj_model_from_disk(s_model_directory + model_name + file_ext);
+        load_obj_model_from_disk(data_collection,
+                                 model_name,
+                                 s_model_directory + model_name + file_ext);
     }
     else if (file_ext == ".glb" || file_ext == ".gltf")
     {
-        return load_gltf_model_from_disk(s_model_directory + model_name + file_ext);
+        load_gltf_model_from_disk(data_collection,
+                                  model_name,
+                                  s_model_directory + model_name + file_ext);
     }
     else
     {

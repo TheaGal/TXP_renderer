@@ -273,10 +273,7 @@ struct Graphics::Impl
 
 
     /// Add models.
-    std::unordered_map<std::string, Render_model> model_entries;
-
-    void add_model_entry(std::string const& model_name, Render_model&& render_model);
-    void upload_model_entries_to_gpu();
+    void upload_model_entries_to_gpu();  // @TODO: @THEA: add some kind of collection of entries to upload here!
 
 
     /// Descriptor binding types.

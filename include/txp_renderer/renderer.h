@@ -1,5 +1,6 @@
 #pragma once
 
+#include "render_object/render_object.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/types.h"
 #include "mutex_wrapper/mutex_wrapper.h"
@@ -89,6 +90,9 @@ private:
     BT::Mutex_wrapper<std::vector<Material_asset_create_info>> m_material_assets;
     BT::Mutex_wrapper<std::vector<Material_set_asset_create_info>> m_material_set_assets;
     BT::Mutex_wrapper<std::vector<Model_asset_create_info>> m_model_assets;
+
+    /// Loaded information of model assets.
+    Render_model_data_collection m_render_model_data_collection;
 
     /// Flag for renderer to start shutdown process.
     std::atomic_bool m_shutdown_flag{ false };

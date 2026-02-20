@@ -7,7 +7,6 @@
 #include <atomic>
 #include <cassert>
 #include <iostream>
-#include <memory>
 #include <stdexcept>
 
 
@@ -55,7 +54,8 @@ void Renderer::run()
                   std::move(*m_texture_assets.scoped_lock()),
                   std::move(*m_material_assets.scoped_lock()),
                   std::move(*m_material_set_assets.scoped_lock()),
-                  std::move(*m_model_assets.scoped_lock()));
+                  std::move(*m_model_assets.scoped_lock()),
+                  m_render_model_data_collection);
 
     // Render frames until shutdown flag is tripped.
     while (!m_shutdown_flag.load())

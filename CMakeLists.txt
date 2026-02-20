@@ -193,6 +193,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_obj_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animator.cpp

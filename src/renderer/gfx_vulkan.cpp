@@ -55,7 +55,8 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
                                 std::vector<Texture_asset_create_info>&& texture_assets,
                                 std::vector<Material_asset_create_info>&& material_assets,
                                 std::vector<Material_set_asset_create_info>&& material_set_assets,
-                                std::vector<Model_asset_create_info>&& model_assets)
+                                std::vector<Model_asset_create_info>&& model_assets,
+                                Render_model_data_collection& render_model_data_collection)
 {   // Load textures.
     m_pimpl->construct_ktx_vk_device_info();
     for (auto const& tex_asset : texture_assets)
@@ -84,8 +85,9 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     // Load models.
     for (auto const& mod_asset : model_assets)
     {
-        m_pimpl->add_model_entry(mod_asset.model_name,
-                                 load_model_from_disk(mod_asset.model_name, mod_asset.file_ext));
+        load_model_from_disk(render_model_data_collection,
+                             mod_asset.model_name,
+                             mod_asset.file_ext);
     }
     m_pimpl->upload_model_entries_to_gpu();
 
