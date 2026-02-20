@@ -1,8 +1,6 @@
 #pragma once
 
-#include "nlohmann/detail/macro_scope.hpp"
-#include "nlohmann/json.hpp"
-using json = nlohmann::json;
+#include "btjson.h"
 
 #include <cstdint>
 #include <string>

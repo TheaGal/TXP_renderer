@@ -1,7 +1,6 @@
 #include "load_obj_model.h"
 
-#include "cglm/cglm.h"
-#include "cglm/types-struct.h"
+#include "btglm.h"
 #include "tiny_obj_loader.h"
 #include "vertex.h"
 

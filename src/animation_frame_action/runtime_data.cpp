@@ -1,9 +1,10 @@
 #include "runtime_data.h"
 
-#include "../hitbox_interactor/hitcapsule.h"
-#include "../renderer/animator_template.h"
-#include "../renderer/mesh.h"
-#include "../renderer/model_animator.h"
+#include "animation_driven_hitcapsule/hitcapsule.h"
+#include "render_object/animator_template.h"
+// #include "../renderer/mesh.h"
+#include "render_object/skeletal_animator.h"
+
 #include "btjson.h"
 #include "btlogger.h"
 
@@ -14,14 +15,13 @@
 
 
 // Controllable data.
-void BT::anim_frame_action::Runtime_controllable_data::Rising_edge_event
-    ::mark_rising_edge()
+void TXP::anim_frame_action::Runtime_controllable_data::Rising_edge_event::mark_rising_edge()
 {
     m_rising_edge_count++;
 }
 
-bool BT::anim_frame_action::Runtime_controllable_data::Rising_edge_event
-    ::check_if_rising_edge_occurred()
+bool TXP::anim_frame_action::Runtime_controllable_data::Rising_edge_event::
+    check_if_rising_edge_occurred()
 {
     if (m_rising_edge_count > 0)
     {
@@ -33,8 +33,8 @@ bool BT::anim_frame_action::Runtime_controllable_data::Rising_edge_event
         return false;
 }
 
-float_t BT::anim_frame_action::Runtime_controllable_data::Rising_edge_event
-    ::update_cooldown_and_fetch_val(float_t delta_time)
+float_t TXP::anim_frame_action::Runtime_controllable_data::Rising_edge_event::
+    update_cooldown_and_fetch_val(float_t delta_time)
 {
     auto cooldown_prev_copy{ m__dev_re_ocurred_cooldown };
     m__dev_re_ocurred_cooldown = glm_max(0.0f,
@@ -43,8 +43,8 @@ float_t BT::anim_frame_action::Runtime_controllable_data::Rising_edge_event
     return cooldown_prev_copy;
 }
 
-BT::anim_frame_action::Runtime_controllable_data::Controllable_data_type
-BT::anim_frame_action::Runtime_controllable_data::get_data_type(Controllable_data_label label)
+TXP::anim_frame_action::Runtime_controllable_data::Controllable_data_type TXP::anim_frame_action::
+    Runtime_controllable_data::get_data_type(Controllable_data_label label)
 {
     Controllable_data_type ctrl_data_type;
     if (label > INTERNAL__CTRL_DATA_LABEL_MARKER_BEGIN_FLOAT &&
@@ -70,32 +70,29 @@ BT::anim_frame_action::Runtime_controllable_data::get_data_type(Controllable_dat
     return ctrl_data_type;
 }
 
-BT::anim_frame_action::Runtime_controllable_data::Overridable_data<float_t>&
-BT::anim_frame_action::Runtime_controllable_data
-    ::get_float_data_handle(Controllable_data_label label)
+TXP::anim_frame_action::Runtime_controllable_data::Overridable_data<float_t>& TXP::
+    anim_frame_action::Runtime_controllable_data ::get_float_data_handle(
+        Controllable_data_label label)
 {
     assert(get_data_type(label) == CTRL_DATA_TYPE_FLOAT);
     return data_floats.at(label);
 }
 
-BT::anim_frame_action::Runtime_controllable_data::Overridable_data<bool>&
-BT::anim_frame_action::Runtime_controllable_data
-    ::get_bool_data_handle(Controllable_data_label label)
+TXP::anim_frame_action::Runtime_controllable_data::Overridable_data<bool>& TXP::anim_frame_action::
+    Runtime_controllable_data ::get_bool_data_handle(Controllable_data_label label)
 {
     assert(get_data_type(label) == CTRL_DATA_TYPE_BOOL);
     return data_bools.at(label);
 }
 
-BT::anim_frame_action::Runtime_controllable_data::Rising_edge_event&
-BT::anim_frame_action::Runtime_controllable_data
-    ::get_reeve_data_handle(Controllable_data_label label)
+TXP::anim_frame_action::Runtime_controllable_data::Rising_edge_event& TXP::anim_frame_action::
+    Runtime_controllable_data ::get_reeve_data_handle(Controllable_data_label label)
 {
     assert(get_data_type(label) == CTRL_DATA_TYPE_RISING_EDGE_EVENT);
     return data_reeves.at(label);
 }
 
-void BT::anim_frame_action::Runtime_controllable_data
-    ::clear_all_data_overrides()
+void TXP::anim_frame_action::Runtime_controllable_data::clear_all_data_overrides()
 {   // Populate the overridable data labels.
     static auto s_get_overridable_data_labels_fn = []() {
         std::vector<Controllable_data_label> overridable_data_labels;
@@ -145,7 +142,7 @@ void BT::anim_frame_action::Runtime_controllable_data
     }
 }
 
-void BT::anim_frame_action::Runtime_controllable_data::map_animator_to_control_regions(
+void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_regions(
     Model_animator const& animator,
     Runtime_data_controls const& data_controls)
 {
@@ -182,8 +179,7 @@ void BT::anim_frame_action::Runtime_controllable_data::map_animator_to_control_r
     }
 }
 
-void BT::anim_frame_action::Runtime_controllable_data
-    ::assign_hitcapsule_enabled_flags()
+void TXP::anim_frame_action::Runtime_controllable_data::assign_hitcapsule_enabled_flags()
 {
     static std::vector<Controllable_data_label> const s_all_hitcapsule_grp_data_labels{
         CTRL_DATA_LABEL_hitcapsule_group_0_enabled,
@@ -213,7 +209,7 @@ void BT::anim_frame_action::Runtime_controllable_data
     }
 }
 
-void BT::anim_frame_action::Runtime_controllable_data::update_hitcapsule_transforms(
+void TXP::anim_frame_action::Runtime_controllable_data::update_hitcapsule_transforms(
     mat4 base_transform,
     std::vector<mat4s> const& joint_matrices)
 {
@@ -230,10 +226,10 @@ void BT::anim_frame_action::Runtime_controllable_data::update_hitcapsule_transfo
 
 
 // Data controls.
-BT::anim_frame_action::Runtime_data_controls::Runtime_data_controls(std::string const& fname)
+TXP::anim_frame_action::Runtime_data_controls::Runtime_data_controls(std::string const& fname)
 {
     // Deserialize json into data.
-    data = Data(json_load_from_disk(fname));
+    data = Data(BT::json_load_from_disk(fname));
 
     // Check timeline regions are sorted.
     for (auto const& tmln : data.anim_frame_action_timelines)
@@ -257,9 +253,11 @@ BT::anim_frame_action::Runtime_data_controls::Runtime_data_controls(std::string 
         }
     }
 
+#if 0  // @THEA: @NOCHECKIN: FIX THIS AND MAKE SURE THAT THE MODEL EXISTS FROM THIS!!!!
     // Load model from bank.
     animated_model = Model_bank::get_model(data.animated_model_name);
     assert(animated_model != nullptr);
+#endif // 0
 
     // @TODO: @THEA: add some kind of string->bytecode "compilation" step right here (really only
     //               for optimization in the future of course).  -Thea 2025/01/10
@@ -267,25 +265,25 @@ BT::anim_frame_action::Runtime_data_controls::Runtime_data_controls(std::string 
 
 
 // Bank of data controls.
-void BT::anim_frame_action::Bank::emplace(std::string const& name,
-                                          Runtime_data_controls&& runtime_state)
+void TXP::anim_frame_action::Bank::emplace(std::string const& name,
+                                           Runtime_data_controls&& runtime_state)
 {
     s_runtime_states.emplace(name, std::move(runtime_state));
 }
 
-void BT::anim_frame_action::Bank::replace(std::string const& name,
-                                          Runtime_data_controls&& runtime_state)
+void TXP::anim_frame_action::Bank::replace(std::string const& name,
+                                           Runtime_data_controls&& runtime_state)
 {
     s_runtime_states.at(name) = std::move(runtime_state);
 }
 
-BT::anim_frame_action::Runtime_data_controls const&
-BT::anim_frame_action::Bank::get(std::string const& name)
+TXP::anim_frame_action::Runtime_data_controls const& TXP::anim_frame_action::Bank::get(
+    std::string const& name)
 {
     return s_runtime_states.at(name);
 }
 
-std::vector<std::string> BT::anim_frame_action::Bank::get_all_names()
+std::vector<std::string> TXP::anim_frame_action::Bank::get_all_names()
 {
     std::vector<std::string> all_names;
     all_names.reserve(s_runtime_states.size());

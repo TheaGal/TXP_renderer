@@ -1,6 +1,6 @@
 #include "render_model.h"
 
-#include "cglm/vec3.h"
+#include "btglm.h"
 #include "load_gltf_model.h"
 #include "load_obj_model.h"
 

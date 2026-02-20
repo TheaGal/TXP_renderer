@@ -38,6 +38,7 @@ struct Render_model
     uint16_t static_model_data_set_idx;
 
     uint16_t deformed_model_skin_idx{ (uint16_t)-1 };  // opt: -1 means non-deformed model.
+    uint16_t deformed_model_anim_set_idx{ (uint16_t)-1 };  // opt: -1 means non-deformed model.
     uint16_t deformed_vertex_buffer_idx{ (uint16_t)-1 };  // opt: -1 means non-deformed model.
 
     uint16_t default_material_set_idx;  // @NOTE: created from material names inside the model.

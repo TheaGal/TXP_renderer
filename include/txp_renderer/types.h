@@ -12,6 +12,12 @@
 namespace TXP
 {
 
+/// Frames per second all skeletal animations are imported as.
+constexpr float_t k_skeletal_anim_frames_per_second{ 60.0f };
+
+/// Tick interval for simulation thread.
+constexpr float_t k_simulation_delta_time{ 1.0f / k_skeletal_anim_frames_per_second };
+
 /// Information to create texture asset.
 struct Texture_asset_create_info
 {

@@ -167,8 +167,23 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer_public.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_driven_hitcapsule/hitcapsule.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_driven_hitcapsule/hitcapsule.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btglm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btjson.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btjson.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btlogger.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btlogger.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btservice_finder.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mutex_wrapper/mutex_wrapper.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template_types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/deformed_render_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_gltf_model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/load_gltf_model.h
@@ -177,6 +192,9 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/render_object.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animator.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/vertex.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan.cpp
@@ -245,6 +263,7 @@ target_include_directories(${PROJECT_NAME}
         ${CMAKE_CURRENT_SOURCE_DIR}/include
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib  # This is @TEMPORARY at least until bt_lib is made into its own library.
         ${DEPENDENCY_INCLUDE_DIRS}
         ${PLAT_SPECIFIC_INCLUDE_DIRS}
 )

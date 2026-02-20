@@ -1,7 +1,6 @@
 #pragma once
 
-#include "cglm/mat4.h"
-#include "cglm/vec4.h"
+#include "btglm.h"
 #include "vertex.h"
 
 #include <unordered_map>

@@ -1,5 +1,6 @@
 #include "shader_creation.h"
 
+#include "btjson.h"
 #include "reflection_structs.h"
 
 #include <fstream>
@@ -8,9 +9,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-
-#include "nlohmann/json.hpp"
-using json = nlohmann::json;
 
 
 namespace

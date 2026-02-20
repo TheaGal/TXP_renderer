@@ -1,4 +1,6 @@
 #include "txp_renderer_public.h"
+#define BT_SERVICE_FINDER_IMPLEMENTATION
+#include "btservice_finder.h"
 
 #include <iostream>
 #include <cstdint>

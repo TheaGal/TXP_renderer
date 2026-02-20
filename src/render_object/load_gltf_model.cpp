@@ -1,12 +1,13 @@
 #include "load_gltf_model.h"
 
-#include "cglm/cglm.h"
-#include "cglm/types-struct.h"
+#include "btglm.h"
 #include "fastgltf/core.hpp"
 #include "fastgltf/math.hpp"
 #include "fastgltf/types.hpp"
 #include "fastgltf/tools.hpp"
 #include "render_object/deformed_render_model.h"
+#include "skeletal_animation.h"
+#include "txp_renderer/types.h"
 #include "vertex.h"
 
 #include <algorithm>
@@ -144,6 +145,10 @@ TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
     auto& meshes{ new_static_model_data_set.meshes };
     auto& vertices{ new_static_model_data_set.vertices };
     auto& model_aabb{ new_static_model_data_set.model_aabb };
+
+    Deformed_model_animation_set new_deformed_model_anim_set;
+
+    auto& animations{ new_deformed_model_anim_set.animations };
 
     // Load skins.
     std::unordered_map<size_t, size_t> node_idx_to_model_joint_idx_map;  // @NOTE: Need for rest of loading procs.
@@ -534,15 +539,15 @@ TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
 #endif // OPENGL_SPECIFIC_STUFF
 
     // Load animations.
-    m_animations.clear();
-    m_animations.reserve(asset.animations.size());
+    animations.clear();
+    animations.reserve(asset.animations.size());
     for (auto& anim : asset.animations)
     {
         // Set anim name.
         std::string anim_name{ anim.name };
         if (anim_name.empty())
         {
-            anim_name = std::to_string(m_animations.size());
+            anim_name = std::to_string(animations.size());
         }
 
         // Extract glTF-style animation data.
@@ -696,7 +701,7 @@ TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
 
         // Convert glTF-style data to `Model_animator` data.
         constexpr float_t k_anim_frame_time{
-            1.0f / Model_joint_animation::k_frames_per_second };
+            1.0f / k_skeletal_anim_frames_per_second };
         float_t start_time{ std::numeric_limits<float_t>::max() };
         float_t end_time{ std::numeric_limits<float_t>::lowest() };
         uint32_t perceived_frames{ 0 };
@@ -724,7 +729,7 @@ TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
                 //                 "requirement is fulfilled.",
                 //                 fname.c_str(),
                 //                 anim_name.c_str(),
-                //                 Model_joint_animation::k_frames_per_second,
+                //                 k_skeletal_anim_frames_per_second,
                 //                 deviation);
                 // // @NOCHECKIN: Don't assert on this warning for now.
                 // // assert(false);  // Idk if you want an assert on this, but it's a heavier warning.
@@ -864,7 +869,7 @@ TXP::Render_model TXP::load_gltf_model_from_disk(std::string const& fname)
         }
 
         // Create animation.
-        m_animations.emplace_back(std::ref(new_deformed_model_skin),
+        animations.emplace_back(std::ref(new_deformed_model_skin),
                                   anim_name,
                                   std::move(new_anim_frames));
     }

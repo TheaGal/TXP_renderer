@@ -1,15 +1,9 @@
 #pragma once
 
-// #include "../hitbox_interactor/hitcapsule.h"
-
-// #include "btglm.h"
-#include "cglm/cglm.h"
-#include "cglm/types-struct.h"
-
-// #include "btjson.h"
-#include "nlohmann/detail/macro_scope.hpp"
-#include "nlohmann/json.hpp"
-using json = nlohmann::json;
+#include "animation_driven_hitcapsule/hitcapsule.h"
+#include "btglm.h"
+#include "btjson.h"
+#include "btuuid.h"
 
 #include <string>
 #include <unordered_map>
@@ -266,7 +260,7 @@ struct Runtime_data_controls
 {
     Runtime_data_controls(std::string const& fname);
 
-    Model const* animated_model{ nullptr };
+    // Model const* animated_model{ nullptr };  @TODO figure this out
 
     struct Data
     {
