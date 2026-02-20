@@ -9,6 +9,7 @@
 #include "render_object/deformed_render_model.h"
 #include "vertex.h"
 
+#include <algorithm>
 #include <filesystem>
 #include <list>
 

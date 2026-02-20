@@ -6,6 +6,7 @@
 #include "vertex.h"
 
 #include <filesystem>
+#include <unordered_map>
 
 
 TXP::Render_model TXP::load_obj_model_from_disk(std::string const& fname)
