@@ -231,9 +231,14 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
                         - But hey, it was a system that worked. And idk if I wanna try to redesign a different system.
                         - Ig I'll keep using it until it proves itself to be good or bad.
                         - One way I could do an irregular framerate is to just have a float counter for the simulation thread, and if multiple frames are skipped over, just make sure to simulate for all the in-between frames.
-            - [ ] Create similar animation data.
-                - [ ] Load in animation data.
-        - [ ] Figure out how the data shuold get returned.
+            - [x] Create similar animation data.
+                - [x] Load in animation data.
+        - [x] Figure out how the data shuold get returned.
+            - It just gets input into a data collection (pool-likes)
     - [ ] Upload buffer for geometry.
+        - [x] Set up the vertex offset stuff.
+        - [ ] (for static meshes) Combine the vertex and index buffers into one big one
+            > @NOTE: keep the vertices/indices so that physics engine can access it.
+        - [ ] Set all the `default_per_mesh_vertex_index_offset_set`s up.
     - [ ] Create render pipeline.
     - [ ] 

@@ -86,7 +86,7 @@ gantt
         Material system                       : a3, after a2, 2d
         Material sets as swatches for models  : a4, after a3, 1d
     section Model system
-        Load 3D meshes (gltf/obj)         : a5, after a1, 3d
+        Load 3D meshes (gltf/obj)         : a5, after a1, 4d
         Geometry pipeline shader          : a5_1, after a5, 2d
         Material set from model tex names : a6, after a5_1, 1d
         Giant static model buffer         : a7, after a6, 2d

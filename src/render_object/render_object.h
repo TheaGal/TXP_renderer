@@ -36,16 +36,20 @@ struct Render_model_data_collection
     Render_model_data_collection();
     ~Render_model_data_collection();
 
-    // @TODO: @CHECK: @THEA: change emplace funcs to void?
     void emplace_static_model_data_set(std::string const& name, Static_model_data_set&& data);
+    std::vector<std::string> get_static_model_data_set_name_list() const;
     uint16_t get_static_model_data_set_idx(std::string const& name) const;
     Static_model_data_set const& get_static_model_data_set(uint16_t idx) const;
 
-    uint16_t emplace_deformed_model_skin(std::string const& name, Deformed_model_skin&& data);
-    uint16_t get_deformed_model_skin(std::string const& name);
+    void emplace_deformed_model_skin(std::string const& name, Deformed_model_skin&& data);
+    std::vector<std::string> get_deformed_model_skin_name_list() const;
+    uint16_t get_deformed_model_skin_idx(std::string const& name) const;
+    Deformed_model_skin const& get_deformed_model_skin(uint16_t idx) const;
 
-    uint16_t emplace_deformed_model_anim_set(std::string const& name, Deformed_model_animation_set&& data);
-    uint16_t get_deformed_model_anim_set(std::string const& name);
+    void emplace_deformed_model_anim_set(std::string const& name, Deformed_model_animation_set&& data);
+    std::vector<std::string> get_deformed_model_anim_set_name_list() const;
+    uint16_t get_deformed_model_anim_set_idx(std::string const& name) const;
+    Deformed_model_animation_set const& get_deformed_model_anim_set(uint16_t idx) const;
 
     uint16_t emplace_deformed_vertex_buffer(std::string const& name, void* data);
     uint16_t get_deformed_vertex_buffer(std::string const& name);

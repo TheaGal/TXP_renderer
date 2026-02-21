@@ -1,6 +1,7 @@
 #include "load_gltf_model.h"
 
 #include "btglm.h"
+#include "btlogger.h"
 #include "deformed_render_model.h"
 #include "fastgltf/core.hpp"
 #include "fastgltf/math.hpp"
@@ -12,6 +13,7 @@
 #include "vertex.h"
 
 #include <algorithm>
+#include <cassert>
 #include <filesystem>
 #include <list>
 
@@ -24,10 +26,9 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         !std::filesystem::is_regular_file(fname))
     {
         // Exit early if this isn't a good fname.
-        throw std::runtime_error("FFFFFFFFFF");
-        // logger::printef(logger::ERROR, "\"%s\" does not exist or is not a file.", fname.c_str());
-        // assert(false);
-        // return;
+        BT_ERRORF("\"%s\" does not exist or is not a file.", fname.c_str());
+        assert(false);
+        return;
     }
 
     fastgltf::Asset asset;
@@ -43,13 +44,11 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         auto gltf_file{ fastgltf::MappedGltfFile::FromPath(fname) };
         if (!bool(gltf_file))
         {
-            throw std::runtime_error("FFFFFFFFFF");
-            // logger::printef(logger::ERROR,
-            //                 "Failed to open glTF file: %s (err msg: %s)",
-            //                 fname.c_str(),
-            //                 fastgltf::getErrorMessage(gltf_file.error()));
-            // assert(false);
-            // return;
+            BT_ERRORF("Failed to open glTF file: %s (err msg: %s)",
+                      fname.c_str(),
+                      fastgltf::getErrorMessage(gltf_file.error()));
+            assert(false);
+            return;
         }
 
         auto possible_asset{
@@ -58,13 +57,11 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                             k_gltf_options) };
         if (possible_asset.error() != fastgltf::Error::None)
         {
-            throw std::runtime_error("FFFFFFFFFF");
-            // logger::printef(logger::ERROR,
-            //                 "Failed to load glTF asset from file: %s (err msg: %s)",
-            //                 fname.c_str(),
-            //                 fastgltf::getErrorMessage(possible_asset.error()));
-            // assert(false);
-            // return;
+            BT_ERRORF("Failed to load glTF asset from file: %s (err msg: %s)",
+                      fname.c_str(),
+                      fastgltf::getErrorMessage(possible_asset.error()));
+            assert(false);
+            return;
         }
 
         asset = std::move(possible_asset.get());
@@ -160,11 +157,9 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
     if (asset.skins.size() > 1)
     {
-        throw std::runtime_error("FFFFFFFFFF");
-        // logger::printef(logger::WARN,
-        //                 "glTF asset has more than 1 skin when only 1 skin is supported. Skins: %lld",
-        //                 asset.skins.size());
-        // assert(false);  // For debug purposes.
+        BT_WARNF("glTF asset has more than 1 skin when only 1 skin is supported. Skins: %zu",
+                 asset.skins.size());
+        assert(false);  // For debug purposes.
     }
 
     bool first_skin_w_joints{ true };
@@ -203,10 +198,9 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     if (std::find(skin.joints.begin(), skin.joints.end(), child_node_idx)
                         == skin.joints.end())
                     {   // Child of the joint node is not a joint node.
-                        throw std::runtime_error("FFFFFFFFFF");
-                        // logger::printe(logger::ERROR, "Child of joint node is not a joint node.");
-                        // assert(false);
-                        // return;
+                        BT_ERROR("Child of joint node is not a joint node.");
+                        assert(false);
+                        return;
                     }
                     child_to_parent_map.emplace(child_node_idx, joint_node_idx);
                 }
@@ -456,9 +450,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
                     default:
                         // Component type for joint indices not supported.
-                        throw std::runtime_error("FJFJJFJFJF");
-                        // assert(false);
-                        // return;
+                        assert(false);
+                        return;
                 }
 
                 // Weights.
@@ -582,19 +575,17 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 new_data.interp_type = sampler.interpolation;
                 if (new_data.interp_type == fastgltf::AnimationInterpolation::Step)
                 {
-                    throw std::runtime_error("FFFFFFFFFF");
-                    // logger::printe(logger::WARN,
-                    //                "`Step` animation interpolation type not supported. May be "
-                    //                "supported in the future but for now it will just be imported as `Linear`.");
-                    // assert(false);
+                    BT_WARN(
+                        "`Step` animation interpolation type not supported. May be "
+                        "supported in the future but for now it will just be imported as "
+                        "`Linear`.");
+                    assert(false);
                 }
                 if (new_data.interp_type == fastgltf::AnimationInterpolation::CubicSpline)
                 {
-                    throw std::runtime_error("FFFFFFFFFF");
-                    // logger::printe(logger::ERROR,
-                    //                "`CubicSpline` animation interpolation type not supported.");
-                    // assert(false);
-                    // return;
+                    BT_ERROR("`CubicSpline` animation interpolation type not supported.");
+                    assert(false);
+                    return;
                 }
 
                 {   // Get `.times` (sampler input).
@@ -639,9 +630,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
                         default:
                             // Huh???
-                            throw std::runtime_error("FFFFFFFFFF");
-                            // assert(false);
-                            // return;
+                            assert(false);
+                            return;
                     }
                     // @NOTE: Please don't call me lazy but I just didn't want a big branch between
                     //   two `for` loops that would look pretty much the same  >.<
@@ -663,13 +653,11 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 {
                     if (prev_time >= time)
                     {
-                        throw std::runtime_error("FFFFFFFFFF");
-                        // logger::printef(logger::ERROR,
-                        //                 "Times are not sorted asc! prev: %.6f curr: %.6f",
-                        //                 prev_time,
-                        //                 time);
-                        // assert(false);
-                        // return;  // Abort loading.
+                        BT_ERRORF("Times are not sorted asc! prev: %.6f curr: %.6f",
+                                  prev_time,
+                                  time);
+                        assert(false);
+                        return;  // Abort loading.
                     }
                     prev_time = time;
                 }
@@ -695,11 +683,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
         if (animation_data_invalid)
         {   // Abort trying to import this animation and skip to next one.
-            throw std::runtime_error("FFFFFFFFFF");
-            // logger::printef(logger::WARN,
-            //                 "Animation data for anim \"%s\" is invalid. Skipping.",
-            //                 anim_name.c_str());
-            // continue;
+            BT_WARNF("Animation data for anim \"%s\" is invalid. Skipping.", anim_name.c_str());
+            continue;
         }
 
         // Convert glTF-style data to `Model_animator` data.
@@ -721,25 +706,32 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
             // Calculate the frames between the times.
             float_t num_frames_raw{ ((end_time - start_time) / k_anim_frame_time) + 1.0f };
-            float_t deviation{ num_frames_raw - std::roundf(num_frames_raw) };
-            if (abs(deviation) > 1e-6f)
-            {
-                throw std::runtime_error("FFFFFFFFFF");
-                // logger::printef(logger::WARN,
-                //                 "(model: \"%s\", anim_name: \"%s\") Animation length does not "
-                //                 "match the %.3f hz animation cutting requirement "
-                //                 "(deviation: %0.6f). Will extend animation clip until the cutting "
-                //                 "requirement is fulfilled.",
-                //                 fname.c_str(),
-                //                 anim_name.c_str(),
-                //                 k_skeletal_anim_frames_per_second,
-                //                 deviation);
-                // // @NOCHECKIN: Don't assert on this warning for now.
-                // // assert(false);  // Idk if you want an assert on this, but it's a heavier warning.
-            }
+            float_t num_frames_rounded{ std::roundf(num_frames_raw) };
+            float_t deviation{ num_frames_raw - num_frames_rounded };
+            float_t deviation_epsilon{ 1e-5f };
 
-            // Turn into perceived frames.
-            perceived_frames = std::ceilf(num_frames_raw);
+            if (abs(deviation) > deviation_epsilon)
+            {
+                BT_WARNF(
+                    "(model: \"%s\", anim_name: \"%s\") Animation length does not "
+                    "match the %.3f hz animation cutting requirement "
+                    "(deviation: %0.9f, epsilon: %0.9f). Will extend animation clip until the cutting "
+                    "requirement is fulfilled.",
+                    fname.c_str(),
+                    anim_name.c_str(),
+                    k_skeletal_anim_frames_per_second,
+                    deviation,
+                    deviation_epsilon);
+
+                assert(false);  // Idk if you want an assert on this, but it's a heavier warning.
+
+                // Round up to turn into perceived frames.
+                perceived_frames = std::ceilf(num_frames_raw);
+            }
+            else
+            {   // Use rounded value as perceived frames.
+                perceived_frames = num_frames_rounded;
+            }
         }
 
         std::vector<Model_joint_animation_frame> new_anim_frames;
@@ -815,9 +807,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
                                 default:
                                     // Huh?
-                                    throw std::runtime_error("FFFFFFFFFF");
-                                    // assert(false);
-                                    // return;
+                                    assert(false);
+                                    return;
                             }
 
                             found_sample = true;

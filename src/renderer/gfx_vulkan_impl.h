@@ -21,6 +21,7 @@
 
 #include "gfx_vulkan/vk_image.h"
 #include "render_object/render_model.h"
+#include "render_object/render_object.h"
 
 #include <cmath>
 #include <fstream>
@@ -273,7 +274,7 @@ struct Graphics::Impl
 
 
     /// Add models.
-    void upload_model_entries_to_gpu();  // @TODO: @THEA: add some kind of collection of entries to upload here!
+    void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
 
 
     /// Descriptor binding types.

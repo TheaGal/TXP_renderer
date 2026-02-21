@@ -27,6 +27,7 @@
 
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
+#include "render_object/render_model.h"
 #include "shader_creation/shader_creation.h"
 
 #include <array>
@@ -786,8 +787,22 @@ void Graphics::Impl::add_texture_entry(std::string const& texture_name,
 }
 
 
-void Graphics::Impl::upload_model_entries_to_gpu()
-{
+void Graphics::Impl::upload_model_entries_to_gpu(
+    Render_model_data_collection& data_collection)
+{   // Get static model information.
+    std::vector<std::string> static_model_names =
+        data_collection.get_static_model_data_set_name_list();
+
+    std::vector<Static_model_data_set const*> static_models;
+    static_models.reserve(static_model_names.size());
+
+    for (auto const& name : static_model_names)
+        static_models.emplace_back(&data_collection.get_static_model_data_set(
+            data_collection.get_static_model_data_set_idx(name)));
+
+    // Transform to singular static model.
+
+
     assert(false);
 }
 

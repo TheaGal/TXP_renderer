@@ -89,7 +89,7 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
                              mod_asset.model_name,
                              mod_asset.file_ext);
     }
-    m_pimpl->upload_model_entries_to_gpu();
+    m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
 
     std::cout << "Loaded all " << std::to_string(model_assets.size()) << " models.\n";
 }
