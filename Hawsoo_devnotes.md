@@ -221,7 +221,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] Get a hardcoded render pipeline for geometry going!!! (needed for prereq for "Perhaps no reflection?")
     - [x] Iron out the data structures.
-    - [ ] Load all models.
+    - [x] Load all models.
         - [x] stubs
         - [x] Actual load in.
             - It should load in the static model, then the skinning data, then the material data.
@@ -240,5 +240,6 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [ ] (for static meshes) Combine the vertex and index buffers into one big one
             > @NOTE: keep the vertices/indices so that physics engine can access it.
         - [ ] Set all the `default_per_mesh_vertex_index_offset_set`s up.
+        - [ ] Load it up onto staging buffer and upload to gpu (for static meshes).
     - [ ] Create render pipeline.
     - [ ] 
