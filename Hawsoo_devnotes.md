@@ -237,9 +237,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - It just gets input into a data collection (pool-likes)
     - [ ] Upload buffer for geometry.
         - [x] Set up the vertex offset stuff.
-        - [ ] (for static meshes) Combine the vertex and index buffers into one big one
+        - [x] (for static meshes) Combine the vertex and index buffers into one big one
             > @NOTE: keep the vertices/indices so that physics engine can access it.
-        - [ ] Set all the `default_per_mesh_vertex_index_offset_set`s up.
+        - [x] Set all the `default_per_mesh_vertex_index_offset_set`s up.
         - [ ] Load it up onto staging buffer and upload to gpu (for static meshes).
     - [ ] Create render pipeline.
     - [ ] 

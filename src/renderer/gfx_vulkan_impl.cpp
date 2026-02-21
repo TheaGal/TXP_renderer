@@ -28,6 +28,7 @@
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "render_object/render_model.h"
+#include "render_object/vertex.h"
 #include "shader_creation/shader_creation.h"
 
 #include <array>
@@ -793,16 +794,60 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     std::vector<std::string> static_model_names =
         data_collection.get_static_model_data_set_name_list();
 
-    std::vector<Static_model_data_set const*> static_models;
+    std::vector<Static_model_data_set*> static_models;
     static_models.reserve(static_model_names.size());
 
     for (auto const& name : static_model_names)
-        static_models.emplace_back(&data_collection.get_static_model_data_set(
-            data_collection.get_static_model_data_set_idx(name)));
+        static_models.emplace_back(
+            const_cast<Static_model_data_set*>(&data_collection.get_static_model_data_set(
+                data_collection.get_static_model_data_set_idx(name))));
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // Transform to singular static model.
 
+    // Reserve space for vertices and indices.
+    size_t vertex_count{ 0 };
+    size_t index_count{ 0 };
 
+    for (auto model : static_models)
+    {
+        // @NOTE: using `vertex_count` for offset since that is the base of the vertex index.
+        model->vertex_index_offset = vertex_count;
+
+        vertex_count += model->vertices.size();
+
+        for (size_t i = 0; i < model->meshes.size(); i++)
+        {   // Mark where to start in index buffer for this mesh.
+            model->first_index_offsets[i] = index_count;
+
+            index_count += model->meshes[i].indices.size();
+        }
+    }
+
+    // Copy vertices and indices.
+    std::vector<Vertex> combined_vertices(vertex_count);
+    std::vector<uint32_t> combined_indices(index_count);
+
+    vertex_count = 0;
+    index_count = 0;
+
+    for (auto model : static_models)
+    {
+        std::memcpy(combined_vertices.data() + vertex_count,
+                    model->vertices.data(),
+                    model->vertices.size() * sizeof(Vertex));
+        vertex_count += model->vertices.size();
+
+        for (auto const& mesh : model->meshes)
+        {
+            std::memcpy(combined_indices.data() + index_count,
+                        mesh.indices.data(),
+                        mesh.indices.size() * sizeof(uint32_t));
+            index_count += mesh.indices.size();
+        }
+    }
+
+    // Upload to GPU.
     assert(false);
 }
 
