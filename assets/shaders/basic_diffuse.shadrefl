@@ -38,18 +38,6 @@
                 },
                 "uniformStride": 64
             }
-        },
-        {
-            "name": "k_error_color",
-            "binding": {"kind": "uniform", "offset": "unbounded", "size": 16, "elementStride": 4},
-            "type": {
-                "kind": "vector",
-                "elementCount": 4,
-                "elementType": {
-                    "kind": "scalar",
-                    "scalarType": "float32"
-                }
-            }
         }
     ],
     "entryPoints": [
@@ -224,10 +212,6 @@
                 {
                     "name": "model_transforms",
                     "binding": {"kind": "uniform", "offset": 0, "size": "unbounded", "elementStride": 64}
-                },
-                {
-                    "name": "k_error_color",
-                    "binding": {"kind": "uniform", "offset": "unbounded", "size": 16, "elementStride": 4}
                 }
             ]
         },
@@ -349,10 +333,6 @@
                 {
                     "name": "model_transforms",
                     "binding": {"kind": "uniform", "offset": 0, "size": "unbounded", "elementStride": 64}
-                },
-                {
-                    "name": "k_error_color",
-                    "binding": {"kind": "uniform", "offset": "unbounded", "size": 16, "elementStride": 4}
                 }
             ]
         }

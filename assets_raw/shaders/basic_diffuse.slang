@@ -28,8 +28,6 @@ struct VS_output
     uint32_t basic_lighting;
 };
 
-constexpr float4 k_error_color = float4(1, 0, 1, 1);
-
 
 [shader("vertex")]
 VS_output vertex_main(VS_input input,
@@ -59,6 +57,8 @@ VS_output vertex_main(VS_input input,
 [shader("fragment")]
 float4 fragment_main(VS_output input)
 {
+    constexpr float4 k_error_color = float4(1, 0, 1, 1);
+
     if (input.basic_lighting == 0)
     {
         // @TODO: implement.
@@ -79,6 +79,6 @@ float4 fragment_main(VS_output input)
         return float4(diffuse * color.rgb + specular, 1.0);
     }
 
-    // Error: invalid value.
+    // Error: invalid `basic_lighting` value.
     return k_error_color;
 }
