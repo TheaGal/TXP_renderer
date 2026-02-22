@@ -235,11 +235,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
                 - [x] Load in animation data.
         - [x] Figure out how the data shuold get returned.
             - It just gets input into a data collection (pool-likes)
-    - [ ] Upload buffer for geometry.
+    - [x] Upload buffer for geometry.
         - [x] Set up the vertex offset stuff.
         - [x] (for static meshes) Combine the vertex and index buffers into one big one
             > @NOTE: keep the vertices/indices so that physics engine can access it.
         - [x] Set all the `default_per_mesh_vertex_index_offset_set`s up.
-        - [ ] Load it up onto staging buffer and upload to gpu (for static meshes).
+        - [x] Load it up ~~onto staging buffer~~ and upload to gpu (for static meshes).
+            > Turns out with rebar/sam in today's word staging buffer isn't necessary! (according to _How to Vulkan in 2026_)
     - [ ] Create render pipeline.
     - [ ] 
