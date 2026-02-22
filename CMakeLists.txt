@@ -144,6 +144,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/probuilder_example.mtl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/probuilder_example.wobj
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/simple_combat_char.glb
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
@@ -208,6 +210,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
