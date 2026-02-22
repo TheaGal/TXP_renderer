@@ -26,6 +26,7 @@
 #include <cmath>
 #include <fstream>
 #include <functional>
+#include <stdexcept>
 
 
 namespace TXP
@@ -272,10 +273,76 @@ struct Graphics::Impl
     ktxVulkanTexture load_and_upload_texture(std::string const& fname);
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
 
+    // @TODO: @THEA: move this over to a vk-buffers!!!
+    class Allocated_buffer
+    {
+    public:
+        /// Creates buffer.
+        void create(VmaAllocator allocator,
+                    VkDeviceSize buffer_size,
+                    VkBufferUsageFlags buffer_usage_flags,
+                    VmaAllocationCreateFlags buffer_allocation_flags)
+        {
+            m_used_allocator = allocator;
+
+            VkBufferCreateInfo buffer_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+                                            .size = buffer_size,
+                                            .usage = buffer_usage_flags };
+            VmaAllocationCreateInfo buffer_alloc_info{ .flags = buffer_allocation_flags,
+                                                       .usage = VMA_MEMORY_USAGE_AUTO };
+            VkResult err = vmaCreateBuffer(m_used_allocator,
+                                           &buffer_info,
+                                           &buffer_alloc_info,
+                                           &m_buffer,
+                                           &m_buffer_allocation,
+                                           &m_buffer_allocation_info);
+            if (err)
+                throw std::runtime_error("Creation of buffer failed.");
+        }
+
+        /// Destroys the created buffer.
+        void destroy()
+        {
+            vmaDestroyBuffer(m_used_allocator, m_buffer, m_buffer_allocation);
+        }
+
+        VkBuffer const& get_buffer() const
+        {
+            return m_buffer;
+        }
+
+        /// Gets the `.pMappedData` pointer.
+        void* get_p_mapped_data()
+        {
+            return m_buffer_allocation_info.pMappedData;
+        }
+
+    private:
+        VmaAllocator m_used_allocator;
+        VkBuffer m_buffer;
+        VmaAllocation m_buffer_allocation;
+        VmaAllocationInfo m_buffer_allocation_info;
+    };
 
     /// Add models.
     void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
 
+    struct Model_buffer
+    {
+        Allocated_buffer vertex_index_buffer;  // Vertex part first, index part second.
+        VkDeviceSize offset_to_index_buffer;
+
+        void bind(VkCommandBuffer cmd)
+        {
+            VkDeviceSize offset{ 0 };
+            vkCmdBindVertexBuffers(cmd, 0, 1, &vertex_index_buffer.get_buffer(), &offset);
+            vkCmdBindIndexBuffer(cmd,
+                                 vertex_index_buffer.get_buffer(),
+                                 offset_to_index_buffer,
+                                 VK_INDEX_TYPE_UINT32);
+        }
+    };
+    Model_buffer combined_static_model;
 
     /// Descriptor binding types.
     using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, VkDescriptorType>>;

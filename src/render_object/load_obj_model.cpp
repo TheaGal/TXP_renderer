@@ -112,6 +112,7 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
     auto& meshes{ new_static_model_data_set.meshes };
     auto& vertices{ new_static_model_data_set.vertices };
     auto& model_aabb{ new_static_model_data_set.model_aabb };
+    auto& first_index_offsets{ new_static_model_data_set.first_index_offsets };
 
     // Transform vertices into model structure.
     vertices.clear();
@@ -158,6 +159,8 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
     // Transform indices into mesh structures.
     meshes.clear();
     meshes.reserve(shapes.size());
+
+    first_index_offsets.reserve(meshes.size());  // @NOTE: reserved now for memory continuity on heap.
 
     for (auto& shape : shapes)
     {

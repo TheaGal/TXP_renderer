@@ -145,6 +145,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     auto& meshes{ new_static_model_data_set.meshes };
     auto& vertices{ new_static_model_data_set.vertices };
     auto& model_aabb{ new_static_model_data_set.model_aabb };
+    auto& first_index_offsets{ new_static_model_data_set.first_index_offsets };
 
     Deformed_model_animation_set new_deformed_model_anim_set;
 
@@ -351,7 +352,10 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     meshes.clear();
     meshes.reserve(num_meshes);  // @NOTE: Reserve prevents calling dtor() which messes up the meshes.
 
+    first_index_offsets.reserve(meshes.size());  // @NOTE: reserved now for memory continuity on heap.
+
     for (auto& mesh : asset.meshes)
+    {
         for (auto& primitive : mesh.primitives)
         {   // Load vertices.
             // Find all wanted accessors.
@@ -495,6 +499,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             // Create mesh in model.
             meshes.emplace_back(std::move(indices));
         }
+    }
 
 #define OPENGL_SPECIFIC_STUFF 0
 #if OPENGL_SPECIFIC_STUFF

@@ -816,11 +816,11 @@ void Graphics::Impl::upload_model_entries_to_gpu(
 
         vertex_count += model->vertices.size();
 
-        for (size_t i = 0; i < model->meshes.size(); i++)
+        for (auto& mesh : model->meshes)
         {   // Mark where to start in index buffer for this mesh.
-            model->first_index_offsets[i] = index_count;
+            model->first_index_offsets.emplace_back(index_count);
 
-            index_count += model->meshes[i].indices.size();
+            index_count += mesh.indices.size();
         }
     }
 
@@ -848,7 +848,30 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     }
 
     // Upload to GPU.
-    assert(false);
+    // @REF: using method from "https://howtovulkan.com/#loading-meshes" instead of staging buffers.
+    //         -Thea 2026/02/21
+    VkDeviceSize vertex_buf_size{ sizeof(Vertex) * combined_vertices.size() };
+    VkDeviceSize index_buf_size{ sizeof(uint32_t) * combined_indices.size() };
+
+    combined_static_model.vertex_index_buffer.create(
+        gfx.allocator,
+        vertex_buf_size + index_buf_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+            VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+    combined_static_model.offset_to_index_buffer = vertex_buf_size;
+
+    void* p_mapped_data{ combined_static_model.vertex_index_buffer.get_p_mapped_data() };
+    auto offset_to_idx_buf{ combined_static_model.offset_to_index_buffer };
+
+    std::memcpy(p_mapped_data,
+                combined_vertices.data(),
+                vertex_buf_size);
+    std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
+                combined_indices.data(),
+                index_buf_size);
 }
 
 
