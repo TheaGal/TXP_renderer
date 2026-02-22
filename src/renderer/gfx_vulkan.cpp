@@ -10,12 +10,12 @@
 #include <vulkan/vulkan_core.h>
 // clang-format on
 
+#include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
 #include "render_object/render_model.h"
 
 #include <cassert>
 #include <cerrno>
-#include <iostream>
 #include <string>
 
 
@@ -66,21 +66,21 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
             m_pimpl->load_and_upload_texture(texture_asset_dir + tex_asset.ktx2_fname));
     }
     m_pimpl->destruct_ktx_vk_device_info();
-    std::cout << "Loaded all " << std::to_string(texture_assets.size()) << " textures.\n";
+    BT_TRACEF("Loaded all %zu textures.", texture_assets.size());
 
     // Load materials.
     for (auto const& mat_asset : material_assets)
     {
 
     }
-    std::cout << "Loaded all " << std::to_string(material_assets.size()) << " materials.\n";
+    BT_TRACEF("Loaded all %zu materials.", material_assets.size());
 
     // Load material sets.
     for (auto const& mat_set_asset : material_set_assets)
     {
 
     }
-    std::cout << "Loaded all " << std::to_string(material_set_assets.size()) << " material sets.\n";
+    BT_TRACEF("Loaded all %zu material sets.", material_set_assets.size());
 
     // Load models.
     for (auto const& mod_asset : model_assets)
@@ -89,9 +89,10 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
                              mod_asset.model_name,
                              mod_asset.file_ext);
     }
-    m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
+    BT_TRACEF("Loaded all %zu models.", model_assets.size());
 
-    std::cout << "Loaded all " << std::to_string(model_assets.size()) << " models.\n";
+    m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
+    BT_TRACE("Uploaded combined model to GPU.");
 }
 
 void TXP::Graphics::poll_input_events()
