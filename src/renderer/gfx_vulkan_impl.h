@@ -263,7 +263,14 @@ struct Graphics::Impl
 
 
     /// Adds textures.
-    std::unordered_map<std::string, ktxVulkanTexture> texture_entries;  // @TODO: delete all ktx vk textures. (use `ktxVulkanTexture_Destruct()`)
+    struct Texture_entry
+    {
+        ktxVulkanTexture texture;
+        VkImageView image_view;
+        VkSampler sampler;
+        size_t gpu_idx;
+    };
+    std::unordered_map<std::string, Texture_entry> texture_entries;  // @TODO: delete all ktx vk textures. (use `ktxVulkanTexture_Destruct()`)  Also delete all image views and samplers.
 
     ktxVulkanDeviceInfo ktx_vk_device_info;
 

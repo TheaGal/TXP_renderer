@@ -2,6 +2,7 @@
 
 #include "shader_basic_diffuse.h"
 
+#include "btlogger.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader_creation/shader_creation.h"
@@ -43,6 +44,86 @@ struct Shader_basic_diffuse::Impl
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Descriptors.
+
+        // Create all-texture descriptor image infos.
+        all_texture_infos.reserve(g.texture_entries.size());
+
+        if (g.texture_entries.size() > 16)
+        {
+            BT_ERRORF(
+                "Texture entries exceeded macOS limit of maxPerStageDescritorSamplers: %zu. At "
+                "this point, separate out the COMBINED_IMAGE_SAMPLERS thingies into sampled images "
+                "and samplers. Change this error message to just error when the number of samplers "
+                "goes over whatever the device limit is, or 16, whichever is smaller.",
+                g.texture_entries.size());
+            assert(false);
+            throw std::runtime_error("Too many samplers.");
+        }
+        if (g.texture_entries.size() > 256)
+        {
+            BT_ERRORF(
+                "Texture entries exceeded macOS limit of maxPerStageDescritorSampledImages: %zu. "
+                "At this point, you need to make a material-sampledimage-sampler batcher that can "
+                "handle the sampler and sampledimage device limits. Once you make this, uncap the "
+                "sampler limit from the random 16 limit. Also, change this error message to error "
+                "if the sampled image size exceeds device limits once you implement the batcher "
+                "system. Good luck, future Thea!!",
+                g.texture_entries.size());
+            assert(false);
+            throw std::runtime_error("Too many sampled images.");
+        }
+
+        size_t texture_entry_i{ 0 };
+        for (auto& [name, entry] : g.texture_entries)
+        {
+            VkResult err;
+
+            // Create texture sampler.
+            VkSamplerCreateInfo sampler_info{
+                .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+                .magFilter = VK_FILTER_LINEAR,
+                .minFilter = VK_FILTER_LINEAR,
+                .mipmapMode = (entry.texture.levelCount == 1 ? VK_SAMPLER_MIPMAP_MODE_NEAREST
+                                                             : VK_SAMPLER_MIPMAP_MODE_LINEAR),
+                .anisotropyEnable = VK_TRUE,  // @TODO: put this into a setting!
+                .maxAnisotropy = 8.0f,  // 8 is a widely supported value for max anisotropy.  @TODO: put this into a setting!
+                .maxLod = (float)entry.texture.levelCount,
+            };
+
+            err = vkCreateSampler(g.gfx.device, &sampler_info, nullptr, &entry.sampler);
+            if (err)
+                throw std::runtime_error("Failed to create VK sampler.");
+
+            // Create texture image view.
+            VkImageViewCreateInfo image_view_info{
+                .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                .pNext = nullptr,
+                .image = entry.texture.image,
+                .viewType = entry.texture.viewType,
+                .format = entry.texture.imageFormat,
+                .subresourceRange{
+                    .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                    .baseMipLevel = 0,
+                    .levelCount = entry.texture.levelCount,
+                    .baseArrayLayer = 0,
+                    .layerCount = entry.texture.layerCount,
+                },
+            };
+
+            err = vkCreateImageView(g.gfx.device, &image_view_info, nullptr, &entry.image_view);
+            if (err)
+                throw std::runtime_error("Failed to create VK image view.");
+
+            // Create descriptor.
+            VkDescriptorImageInfo desc_image_info{
+                .sampler = entry.sampler,
+                .imageView = entry.image_view,
+                .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            };
+
+            entry.gpu_idx = texture_entry_i;
+            texture_entry_i++;
+        }
 
         // Descriptor layouts.
         shader_pipeline.descriptor_layout = g.build_descriptor_layout(
@@ -145,6 +226,13 @@ struct Shader_basic_diffuse::Impl
         VkDescriptorSet descriptor_set;
         VkDescriptorSetLayout descriptor_layout;
     } shader_pipeline;
+
+    // @THEA: @NOCHECKIN: the vv below vv needs to get promoted to be created at the same time as the ktxtextures get loaded!!!!
+#define WRAP_INTO_OWN_FUNC 1
+#if WRAP_INTO_OWN_FUNC
+    /// Descriptor set for `textures`.
+    std::vector<VkDescriptorImageInfo> all_texture_infos;
+#endif // WRAP_INTO_OWN_FUNC
 };
 
 
