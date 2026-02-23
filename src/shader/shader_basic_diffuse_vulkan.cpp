@@ -28,19 +28,13 @@ struct Shader_basic_diffuse::Impl
     #if WRAP_INTO_OWN_FUNC
         auto refl_data = Shader_Creation::read_slang_reflection(k_name);
 
-        if (refl_data.entryPoints.size() != 1 ||
-            refl_data.entryPoints.front().stage != "compute" ||
-            refl_data.entryPoints.front().threadGroupSize.size() != 3 ||
-            refl_data.entryPoints.front().threadGroupSize[0] <= 0 ||
-            refl_data.entryPoints.front().threadGroupSize[1] <= 0 ||
-            refl_data.entryPoints.front().threadGroupSize[2] <= 0)
+        if (refl_data.entryPoints.size() != 2 ||
+            refl_data.entryPoints[0].stage != "vertex" ||
+            refl_data.entryPoints[0].stage != "fragment")
             std::runtime_error("Malformed shader data.");
 
-        compute_entry_point_name = refl_data.entryPoints.front().name;
-
-        thread_grp_sizes.width  = refl_data.entryPoints.front().threadGroupSize[0];
-        thread_grp_sizes.height = refl_data.entryPoints.front().threadGroupSize[1];
-        thread_grp_sizes.depth  = refl_data.entryPoints.front().threadGroupSize[2];
+        vertex_entry_point_name = refl_data.entryPoints[0].name;
+        fragment_entry_point_name = refl_data.entryPoints[1].name;
     #endif // WRAP_INTO_OWN_FUNC
 
 
@@ -140,8 +134,8 @@ struct Shader_basic_diffuse::Impl
     VkDevice device;
     Vk_Image::Allocated_image& hdr_draw_image_color;
 
-    std::string compute_entry_point_name;
-    VkExtent3D thread_grp_sizes;
+    std::string vertex_entry_point_name;
+    std::string fragment_entry_point_name;
 
     /// Shader pipeline info for this shader.
     struct Shader_pipeline

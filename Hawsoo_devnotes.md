@@ -152,7 +152,7 @@ slangc -lang slang -profile glsl_460 -target spirv -reflection-json assets/shade
 slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.slang > assets/shaders/gradient.glsl
 
 
-- [ ] I want these to be reflected:
+- [ ] ~~I want these to be reflected:~~
     - [ ] Descriptor set layouts
         - [x] Have the information for that in `extract_stuff()`
         - [ ] It would be good to get a descriptor layout cache thing.
@@ -243,4 +243,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Load it up ~~onto staging buffer~~ and upload to gpu (for static meshes).
             > Turns out with rebar/sam in today's word staging buffer isn't necessary! (according to _How to Vulkan in 2026_)
     - [ ] Create render pipeline.
+        - [x] Create shader.
+        - [x] Look back at previous project (solanine-vulkan) to see how dynamic image arrays worked.
+        - [ ] Implement descriptor set layouts.
+        - [ ] implement per-frame vkbufferdeviceaddress for the `Environment_data` as a push-constant (see https://howtovulkan.com/#graphics-pipeline)
+            - see also https://howtovulkan.com/#shader-data-buffers
     - [ ] 

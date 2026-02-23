@@ -41,5 +41,7 @@ if __name__ == '__main__':
 
         if proc_shader_compile.returncode == 0:
             print((' ' * max(0, COMPILE_STR_COLUMN_LENGTH - len(compile_str))) + 'SUCCESS!')
+            if len(proc_shader_compile.stdout) > 0:
+                print(f'\n    {proc_shader_compile.stdout}')
         else:
             print(f'\n    {proc_shader_compile.stderr}')

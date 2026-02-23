@@ -2,7 +2,7 @@
     "parameters": [
         {
             "name": "textures",
-            "binding": {"kind": "descriptorTableSlot", "index": 1},
+            "binding": {"kind": "descriptorTableSlot", "index": 0},
             "type": {
                 "kind": "array",
                 "elementCount": 0,
@@ -22,21 +22,30 @@
             }
         },
         {
-            "name": "model_transforms",
-            "binding": {"kind": "uniform", "offset": 0, "size": "unbounded", "elementStride": 64},
+            "name": "model_transform_set",
+            "binding": {"kind": "descriptorTableSlot", "index": 1},
             "type": {
-                "kind": "array",
-                "elementCount": 0,
-                "elementType": {
-                    "kind": "matrix",
-                    "rowCount": 4,
-                    "columnCount": 4,
-                    "elementType": {
-                        "kind": "scalar",
-                        "scalarType": "float32"
-                    }
-                },
-                "uniformStride": 64
+                "kind": "resource",
+                "baseShape": "structuredBuffer",
+                "resultType": {
+                    "kind": "struct",
+                    "name": "Model_transform_set",
+                    "fields": [
+                        {
+                            "name": "transform",
+                            "type": {
+                                "kind": "matrix",
+                                "rowCount": 4,
+                                "columnCount": 4,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "binding": {"kind": "uniform", "offset": 0, "size": 64, "elementStride": 0}
+                        }
+                    ]
+                }
             }
         }
     ],
@@ -207,11 +216,11 @@
             "bindings": [
                 {
                     "name": "textures",
-                    "binding": {"kind": "descriptorTableSlot", "index": 1}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
                 },
                 {
-                    "name": "model_transforms",
-                    "binding": {"kind": "uniform", "offset": 0, "size": "unbounded", "elementStride": 64}
+                    "name": "model_transform_set",
+                    "binding": {"kind": "descriptorTableSlot", "index": 1}
                 }
             ]
         },
@@ -328,11 +337,11 @@
             "bindings": [
                 {
                     "name": "textures",
-                    "binding": {"kind": "descriptorTableSlot", "index": 1}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
                 },
                 {
-                    "name": "model_transforms",
-                    "binding": {"kind": "uniform", "offset": 0, "size": "unbounded", "elementStride": 64}
+                    "name": "model_transform_set",
+                    "binding": {"kind": "descriptorTableSlot", "index": 1}
                 }
             ]
         }

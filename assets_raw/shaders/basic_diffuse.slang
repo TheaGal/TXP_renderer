@@ -7,7 +7,12 @@ struct VS_input
 
 Sampler2D textures[];
 
-float4x4 model_transforms[];
+struct Model_transform_set
+{
+    float4x4 transform;
+};
+
+StructuredBuffer<Model_transform_set> model_transform_set;
 
 struct Environment_data
 {
@@ -34,7 +39,7 @@ VS_output vertex_main(VS_input input,
                       uniform Environment_data* env_data,
                       uint instance_index : SV_VulkanInstanceID)
 {
-    float4x4 model_mat = model_transforms[instance_index];
+    float4x4 model_mat = model_transform_set[instance_index].transform;
 
     VS_output output;
     output.pos = mul(env_data->projection,
@@ -64,7 +69,7 @@ float4 fragment_main(VS_output input)
         // @TODO: implement.
         return k_error_color;
     }
-    if (input.basic_lighting == 1)
+    else if (input.basic_lighting == 1)
     {
         // Phong lighting.
         float3 N = normalize(input.normal);
