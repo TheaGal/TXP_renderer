@@ -263,11 +263,18 @@ VkImageView& Allocated_image::get_image_view()
     return m_image_view;
 }
 
-VkExtent3D Allocated_image::get_extent()
+VkExtent3D Allocated_image::get_extent() const
 {
     if (!m_initialized)
         throw std::runtime_error("Uninitialized Allocated_image.");
     return m_extent;
+}
+
+VkFormat Allocated_image::get_format() const
+{
+    if (!m_initialized)
+        throw std::runtime_error("Uninitialized Allocated_image.");
+    return m_format;
 }
 
 }  // namespace Vk_Structs

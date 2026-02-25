@@ -53,7 +53,7 @@ struct Shader_gradient::Impl
         // Descriptor layouts.
         shader_pipeline.descriptor_layout = g.build_descriptor_layout(
             {
-                { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
+                { 0, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
             },
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);

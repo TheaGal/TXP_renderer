@@ -203,6 +203,7 @@ struct Graphics::Impl
     uint32_t current_swapchain_image_idx;
 
     Frame_data& get_current_frame();
+    uint32_t get_current_frame_idx();
     Vk_Image::Image& get_current_swapchain_image();
     VkImageView get_current_swapchain_image_view();
     VkSemaphore get_current_swapchain_submit_semaphore();
@@ -351,8 +352,16 @@ struct Graphics::Impl
     };
     Model_buffer combined_static_model;
 
+    /// Descriptor type information.
+    struct Descriptor_type_info
+    {
+        VkDescriptorType descriptor_type;
+        bool use_variable_descriptor_count_binding_flag{ false };
+        uint32_t variable_descriptor_count;
+    };
+
     /// Descriptor binding types.
-    using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, VkDescriptorType>>;
+    using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, Descriptor_type_info>>;
 
     /// Reflection data to descriptor bindings helper.
     std::vector<Descriptor_binding_set_t> get_descriptor_binding_sets_from_shader_properties(
@@ -423,6 +432,31 @@ struct Graphics::Impl
             VkDescriptorSetAllocateInfo info{
                 .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
                 .pNext = nullptr,
+                .descriptorPool = m_pool,
+                .descriptorSetCount = 1,
+                .pSetLayouts = &layout,
+            };
+
+            VkDescriptorSet set;
+            VkResult err = vkAllocateDescriptorSets(m_device, &info, &set);
+
+            if (err)
+                throw std::runtime_error("Allocating descriptor set failed.");
+
+            return set;
+        }
+
+        /// Allocates a descriptor set with variable descriptor count information.
+        VkDescriptorSet allocate(VkDescriptorSetLayout layout, uint32_t variable_descriptor_count)
+        {
+            VkDescriptorSetVariableDescriptorCountAllocateInfo variable_desc_count_info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO,
+                .descriptorSetCount = 1,
+                .pDescriptorCounts = &variable_descriptor_count,
+            };
+            VkDescriptorSetAllocateInfo info{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                .pNext = &variable_desc_count_info,
                 .descriptorPool = m_pool,
                 .descriptorSetCount = 1,
                 .pSetLayouts = &layout,

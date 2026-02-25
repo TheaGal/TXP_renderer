@@ -7,19 +7,17 @@ struct VS_input
 
 Sampler2D textures[];
 
-struct Model_transform_set
-{
-    float4x4 transform;
-};
-
-StructuredBuffer<Model_transform_set> model_transform_set;
-
 struct Environment_data
 {
     float4x4 projection;
     float4x4 view;
     float4 light_pos;
     uint32_t basic_lighting;
+};
+
+struct Model_transform_set
+{
+    float4x4 transforms[65535];
 };
 
 struct VS_output
@@ -37,9 +35,10 @@ struct VS_output
 [shader("vertex")]
 VS_output vertex_main(VS_input input,
                       uniform Environment_data* env_data,
+                      uniform Model_transform_set* model_transform_set,
                       uint instance_index : SV_VulkanInstanceID)
 {
-    float4x4 model_mat = model_transform_set[instance_index].transform;
+    float4x4 model_mat = model_transform_set->transforms[instance_index];
 
     VS_output output;
     output.pos = mul(env_data->projection,

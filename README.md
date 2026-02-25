@@ -71,6 +71,23 @@ For Win64, macOS, and Linux, this renderer uses Vulkan 1.3 (MacOS being thru Mol
 For other platforms, it is not planned yet.
 
 
+## Memory usage
+
+Below is a breakdown of the fixed costs of memory with this renderer (assuming a 1920x1080 resolution).
+
+```mermaid
+pie
+    title Fixed Memory Costs at 1080p
+    "HDR draw image (rgba16f)"             :   16588800
+    "HDR draw image (d32s8)"               :   10368000
+    "struct Environment_data (x3)"         :        444
+    "struct Model_transform_set (x3)"      :   12582720
+    "MipMapped 1k textures (rgba8) (x256)" : 2147483648
+    "Remaining of 3GB of VRAM"             : 1034201860
+```
+
+
+
 ## Progress
 
 Below is a chart showing the timeline of tasks.
@@ -87,7 +104,7 @@ gantt
         Material sets as swatches for models  : a4, after a3, 1d
     section Model system
         完 Load 3D meshes (gltf/obj)         : a5, after a1, 4d
-        中 Geometry pipeline shader          : a5_1, after a5, 2d
+        中 Geometry pipeline shader          : a5_1, after a5, 3d
         Material set from model tex names : a6, after a5_1, 1d
         Giant static model buffer         : a7, after a6, 2d
         Draw meshes with material system (use material set from model tex names)  : a8, after a7, 3d

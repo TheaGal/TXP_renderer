@@ -247,6 +247,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Look back at previous project (solanine-vulkan) to see how dynamic image arrays worked.
         - [ ] Implement descriptor set layouts.
             - [x] created a future-catch message to create a material batcher if the texture limit is exceeded.
+            - [x] create the combined image sampler descriptor.
+            - [ ] create the model transforms buffer.
+                - Perhaps it could be just a maximum of the 65535 model transforms?
+                - 4 * 16 * 65535 = 4,194,240 (4MB)
+                - That times 3 = 12MB
+                    - We could have 12MB be allotted for model transforms.
         - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
         - [ ] Split out the `load_assets()` func so that it's in this order:
             1. load textures, create all-texture descriptor.

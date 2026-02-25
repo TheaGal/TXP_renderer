@@ -77,7 +77,9 @@ public:
 
     VkImageView& get_image_view();
 
-    VkExtent3D get_extent();
+    VkExtent3D get_extent() const;
+
+    VkFormat get_format() const;
 
 private:
     inline static VkPhysicalDevice s_physical_device;

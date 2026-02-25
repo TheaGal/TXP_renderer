@@ -8,6 +8,7 @@
 #include "shader_creation/shader_creation.h"
 #include "vulkan/vulkan_core.h"
 
+#include <cstddef>
 #include <memory>
 #include <stdexcept>
 
@@ -17,6 +18,13 @@ namespace TXP
 namespace Shader
 {
 
+/// Struct for push constants.
+struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
+{
+    VkDeviceAddress environment_data_dev_addr;
+    VkDeviceAddress model_transform_set_dev_addr;
+};
+
 // struct Shader_basic_diffuse::Impl
 struct Shader_basic_diffuse::Impl
 {
@@ -24,6 +32,7 @@ struct Shader_basic_diffuse::Impl
         : g(graphics)
         , device(g.gfx.device)
         , hdr_draw_image_color(g.hdr_draw_image_color)
+        , hdr_draw_image_depth(g.hdr_draw_image_depth)
     {
     #define WRAP_INTO_OWN_FUNC 1
     #if WRAP_INTO_OWN_FUNC
@@ -73,7 +82,9 @@ struct Shader_basic_diffuse::Impl
             throw std::runtime_error("Too many sampled images.");
         }
 
-        size_t texture_entry_i{ 0 };
+        std::vector<VkDescriptorImageInfo> desc_img_infos;
+        desc_img_infos.reserve(g.texture_entries.size());
+
         for (auto& [name, entry] : g.texture_entries)
         {
             VkResult err;
@@ -87,7 +98,7 @@ struct Shader_basic_diffuse::Impl
                                                              : VK_SAMPLER_MIPMAP_MODE_LINEAR),
                 .anisotropyEnable = VK_TRUE,  // @TODO: put this into a setting!
                 .maxAnisotropy = 8.0f,  // 8 is a widely supported value for max anisotropy.  @TODO: put this into a setting!
-                .maxLod = (float)entry.texture.levelCount,
+                .maxLod = static_cast<float>(entry.texture.levelCount),
             };
 
             err = vkCreateSampler(g.gfx.device, &sampler_info, nullptr, &entry.sampler);
@@ -115,45 +126,45 @@ struct Shader_basic_diffuse::Impl
                 throw std::runtime_error("Failed to create VK image view.");
 
             // Create descriptor.
-            VkDescriptorImageInfo desc_image_info{
+            VkDescriptorImageInfo desc_img_info{
                 .sampler = entry.sampler,
                 .imageView = entry.image_view,
                 .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             };
 
-            entry.gpu_idx = texture_entry_i;
-            texture_entry_i++;
+            entry.gpu_idx = desc_img_infos.size();
+            desc_img_infos.emplace_back(std::move(desc_img_info));
         }
 
         // Descriptor layouts.
-        shader_pipeline.descriptor_layout = g.build_descriptor_layout(
+        using Descriptor_type_info = Graphics::Impl::Descriptor_type_info;
+
+        shader_pipeline.textures_descriptor_layout = g.build_descriptor_layout(
             {
-                { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
+                { 0,
+                  Descriptor_type_info{ .descriptor_type =
+                                            VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                        .use_variable_descriptor_count_binding_flag = true,
+                                        .variable_descriptor_count =
+                                            static_cast<uint32_t>(g.texture_entries.size()) } },
             },
-            VK_SHADER_STAGE_COMPUTE_BIT,
+            VK_SHADER_STAGE_FRAGMENT_BIT,
             0);
 
         // Descriptors.
-        shader_pipeline.descriptor_set =
-            g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
+        shader_pipeline.textures_descriptor_set =
+            g.global_descriptor_allocator.allocate(shader_pipeline.textures_descriptor_layout,
+                                                   static_cast<uint32_t>(g.texture_entries.size()));
 
-        VkDescriptorImageInfo img_info{
-            .imageView = hdr_draw_image_color.get_image_view(),
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-        };
-
-        VkWriteDescriptorSet img_write{
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
-
-            .dstSet = shader_pipeline.descriptor_set,
-            .dstBinding = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &img_info,
-        };
-
-        vkUpdateDescriptorSets(device, 1, &img_write, 0, nullptr);
+        VkWriteDescriptorSet imgs_write{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                         .dstSet = shader_pipeline.textures_descriptor_set,
+                                         .dstBinding = 0,
+                                         .descriptorCount =
+                                             static_cast<uint32_t>(g.texture_entries.size()),
+                                         .descriptorType =
+                                             VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                         .pImageInfo = desc_img_infos.data() };
+        vkUpdateDescriptorSets(device, 1, &imgs_write, 0, nullptr);
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Pipeline.
@@ -161,13 +172,16 @@ struct Shader_basic_diffuse::Impl
         VkResult err;
 
         // Create pipeline layout.
+        VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
+                                                 .size =
+                                                     sizeof(Shader_basic_diffuse_push_constants) };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .setLayoutCount = 1,
-            .pSetLayouts = &shader_pipeline.descriptor_layout,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr,
+            .pSetLayouts = &shader_pipeline.textures_descriptor_layout,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &push_constant_range,
         };
 
         err = vkCreatePipelineLayout(device,
@@ -178,31 +192,126 @@ struct Shader_basic_diffuse::Impl
             throw std::runtime_error("Failed to create pipeline layout.");
 
         // Create pipeline.
+        VkVertexInputBindingDescription vertex_binding{ .binding = 0,
+                                                        .stride = sizeof(Vertex),
+                                                        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
+        std::vector<VkVertexInputAttributeDescription> vertex_attributes{
+            { .location = 0,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32B32_SFLOAT,
+              .offset = offsetof(Vertex, position_x) },
+            { .location = 1,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32B32_SFLOAT,
+              .offset = offsetof(Vertex, normal_x) },
+            { .location = 2,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32_SFLOAT,
+              .offset = offsetof(Vertex, uv_x) },
+        };
+        VkPipelineVertexInputStateCreateInfo vertex_input_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = &vertex_binding,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertex_attributes.size()),
+            .pVertexAttributeDescriptions = vertex_attributes.data(),
+        };
+
+        VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+        };
+
         VkShaderModule shader_module{ g.load_shader_module(
             Shader_Creation::get_shader_module_path(k_name)) };
 
-        VkPipelineShaderStageCreateInfo stage_info{
+        std::vector<VkPipelineShaderStageCreateInfo> stage_infos;
+        stage_infos.reserve(2);
+
+        stage_infos.emplace_back(VkPipelineShaderStageCreateInfo{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
-            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
+            .stage = VK_SHADER_STAGE_VERTEX_BIT,
             .module = shader_module,
-            .pName = compute_entry_point_name.c_str(),
+            .pName = vertex_entry_point_name.c_str(),
             // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
+        });
+        stage_infos.emplace_back(VkPipelineShaderStageCreateInfo{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+            .pNext = nullptr,
+            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+            .module = shader_module,
+            .pName = fragment_entry_point_name.c_str(),
+            // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
+        });
+
+        VkPipelineViewportStateCreateInfo viewport_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+            .viewportCount = 1,
+            .scissorCount = 1,
+        };
+        std::vector<VkDynamicState> dynamic_states{ VK_DYNAMIC_STATE_VIEWPORT,
+                                                    VK_DYNAMIC_STATE_SCISSOR, };
+        VkPipelineDynamicStateCreateInfo dynamic_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+            .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
+            .pDynamicStates = dynamic_states.data(),
         };
 
-        VkComputePipelineCreateInfo compute_pipeline_info{
-            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-            .pNext = nullptr,
-            .stage = stage_info,
+        VkPipelineDepthStencilStateCreateInfo depth_stencil_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
+            .depthTestEnable = VK_TRUE,
+            .depthWriteEnable = VK_TRUE,
+            .depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL,
+        };
+
+        std::vector<VkFormat> color_attachment_formats{
+            hdr_draw_image_color.get_format(),
+        };
+        VkPipelineRenderingCreateInfo dynamic_rendering_info{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
+            .colorAttachmentCount = static_cast<uint32_t>(color_attachment_formats.size()),
+            .pColorAttachmentFormats = color_attachment_formats.data(),
+            .depthAttachmentFormat = hdr_draw_image_depth.get_format(),
+        };
+
+        VkPipelineColorBlendAttachmentState blend_attachment{ .colorWriteMask = 0xf, };
+        VkPipelineColorBlendStateCreateInfo color_blend_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+            .attachmentCount = 1,
+            .pAttachments = &blend_attachment,
+        };
+        VkPipelineRasterizationStateCreateInfo rasterization_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .lineWidth = 1.0f,
+        };
+        VkPipelineMultisampleStateCreateInfo multisample_state{
+            .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+            .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+        };
+
+        VkGraphicsPipelineCreateInfo graphics_pipeline_info{
+            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+            .pNext = &dynamic_rendering_info,
+            .stageCount = static_cast<uint32_t>(stage_infos.size()),
+            .pStages = stage_infos.data(),
+            .pVertexInputState = &vertex_input_state,
+            .pInputAssemblyState = &input_assembly_state,
+            .pViewportState = &viewport_state,
+            .pRasterizationState = &rasterization_state,
+            .pMultisampleState = &multisample_state,
+            .pDepthStencilState = &depth_stencil_state,
+            .pColorBlendState = &color_blend_state,
+            .pDynamicState = &dynamic_state,
             .layout = shader_pipeline.pipeline_layout,
         };
 
-        err = vkCreateComputePipelines(device,
-                                       VK_NULL_HANDLE,
-                                       1,
-                                       &compute_pipeline_info,
-                                       nullptr,
-                                       &shader_pipeline.pipeline);
+        err = vkCreateGraphicsPipelines(device,
+                                        VK_NULL_HANDLE,
+                                        1,
+                                        &graphics_pipeline_info,
+                                        nullptr,
+                                        &shader_pipeline.pipeline);
         if (err)
             throw std::runtime_error("Failed to create compute pipeline.");
 
@@ -214,6 +323,7 @@ struct Shader_basic_diffuse::Impl
     TXP::Graphics::Impl& g;
     VkDevice device;
     Vk_Image::Allocated_image& hdr_draw_image_color;
+    Vk_Image::Allocated_image& hdr_draw_image_depth;
 
     std::string vertex_entry_point_name;
     std::string fragment_entry_point_name;
@@ -223,8 +333,8 @@ struct Shader_basic_diffuse::Impl
     {
         VkPipeline pipeline;
         VkPipelineLayout pipeline_layout;
-        VkDescriptorSet descriptor_set;
-        VkDescriptorSetLayout descriptor_layout;
+        VkDescriptorSet textures_descriptor_set;
+        VkDescriptorSetLayout textures_descriptor_layout;
     } shader_pipeline;
 
     // @THEA: @NOCHECKIN: the vv below vv needs to get promoted to be created at the same time as the ktxtextures get loaded!!!!
@@ -252,14 +362,15 @@ void Shader_basic_diffuse::compute(void* param)
 
     Vk_Image::Image::transition_to(
         cmd,
-        { { &p.hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
+        { { &p.hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
+          { &p.hdr_draw_image_depth.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.shader_pipeline.pipeline);
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
     vkCmdBindDescriptorSets(cmd,
-                            VK_PIPELINE_BIND_POINT_COMPUTE,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
                             p.shader_pipeline.pipeline_layout,
                             0,
-                            1, &p.shader_pipeline.descriptor_set,
+                            1, &p.shader_pipeline.textures_descriptor_set,
                             0, nullptr);
 
     // @TODO: move this into a real function.

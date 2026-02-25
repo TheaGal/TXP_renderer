@@ -25,6 +25,7 @@
 #include "ktxvulkan.h"
 // clang-format on
 
+#include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "render_object/render_model.h"
@@ -132,6 +133,11 @@ void Graphics::Impl::init_window()
 Graphics::Impl::Frame_data& Graphics::Impl::get_current_frame()
 {
     return frames[current_frame_idx % k_frame_overlap];
+}
+
+uint32_t Graphics::Impl::get_current_frame_idx()
+{
+    return (current_frame_idx % k_frame_overlap);
 }
 
 Vk_Image::Image& Graphics::Impl::get_current_swapchain_image()
@@ -613,94 +619,12 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     };
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
-
-#if 0
-    // Descriptor layouts.
-    draw_image_descriptor_layout = build_descriptor_layout(
-        {
-            { 0, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
-        },
-        VK_SHADER_STAGE_COMPUTE_BIT,
-        0);
-
-    // Descriptors.
-    draw_image_descriptors = global_descriptor_allocator.allocate(draw_image_descriptor_layout);
-
-    VkDescriptorImageInfo img_info{
-        .imageView = hdr_draw_image_color.get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-    };
-
-    VkWriteDescriptorSet img_write{
-        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        .pNext = nullptr,
-
-        .dstSet = draw_image_descriptors,
-        .dstBinding = 0,
-        .descriptorCount = 1,
-        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        .pImageInfo = &img_info,
-    };
-
-    vkUpdateDescriptorSets(gfx.device, 1, &img_write, 0, nullptr);
-#endif // 0
 }
 
 void Graphics::Impl::init_vulkan_create_pipelines()
 {
     // @TODO: @THEA: abstract this into the reflection-based version.
-
-#if 0
-    VkResult err;
-
-    // Create pipeline layout.
-    VkPipelineLayoutCreateInfo pipeline_layout_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
-        .pNext = nullptr,
-        .setLayoutCount = 1,
-        .pSetLayouts = &draw_image_descriptor_layout,
-        .pushConstantRangeCount = 0,
-        .pPushConstantRanges = nullptr,
-    };
-
-    err = vkCreatePipelineLayout(gfx.device,
-                                 &pipeline_layout_info,
-                                 nullptr,
-                                 &draw_image_compute_pipeline_layout);
-    if (err)
-        throw std::runtime_error("Failed to create pipeline layout.");
-
-    // Create pipeline.
-    VkShaderModule shader_module{ load_shader_module("assets/shaders/gradient.shader") };
-
-    VkPipelineShaderStageCreateInfo stage_info{
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
-        .pNext = nullptr,
-        .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-        .module = shader_module,
-        .pName = "compute_main",
-        // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
-    };
-
-    VkComputePipelineCreateInfo compute_pipeline_info{
-        .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
-        .pNext = nullptr,
-        .stage = stage_info,
-        .layout = draw_image_compute_pipeline_layout,
-    };
-
-    err = vkCreateComputePipelines(gfx.device,
-                                   VK_NULL_HANDLE,
-                                   1,
-                                   &compute_pipeline_info,
-                                   nullptr,
-                                   &draw_image_compute_pipeline);
-    if (err)
-        throw std::runtime_error("Failed to create compute pipeline.");
-
-    // Cleanup.
-    vkDestroyShaderModule(gfx.device, shader_module, nullptr);
-#endif // 0
+    // @TODO: delete this function.
 }
 
 
@@ -932,27 +856,57 @@ VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
     std::vector<VkDescriptorSetLayoutBinding> layout_bindings;
     layout_bindings.reserve(bindings.size());
 
+    // Optional: variable descriptor count binding.
+    uint32_t num_variable_descriptor_count_bindings{ 0 };
+    VkDescriptorBindingFlags desc_variable_flag;
+    VkDescriptorSetLayoutBindingFlagsCreateInfo desc_binding_flags_info;
+
     for (auto [bind_idx, descriptor_type] : bindings)
     {
         layout_bindings.emplace_back(VkDescriptorSetLayoutBinding{
             .binding = bind_idx,
-            .descriptorType = descriptor_type,
-            .descriptorCount = 1,
+            .descriptorType = descriptor_type.descriptor_type,
+            .descriptorCount = (!descriptor_type.use_variable_descriptor_count_binding_flag
+                                    ? 1
+                                    : descriptor_type.variable_descriptor_count),
             .stageFlags = shader_stages,
         });
+
+        // Optional: variable descriptor count binding.
+        if (descriptor_type.use_variable_descriptor_count_binding_flag)
+        {
+            desc_variable_flag = VK_DESCRIPTOR_BINDING_VARIABLE_DESCRIPTOR_COUNT_BIT;
+            desc_binding_flags_info = VkDescriptorSetLayoutBindingFlagsCreateInfo{
+                .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO,
+                .bindingCount = 1,
+                .pBindingFlags = &desc_variable_flag
+            };
+
+            num_variable_descriptor_count_bindings++;
+        }
     }
 
-    VkDescriptorSetLayoutCreateInfo info{
+    // Failsafe.
+    if (num_variable_descriptor_count_bindings > 1)
+    {
+        BT_ERRORF(
+            "Unable to support more than 1 variable descriptor count binding. Num registered: %u",
+            num_variable_descriptor_count_bindings);
+        throw std::runtime_error("Unsupported operation. Add support for this.");  // @THEA: also I don't know how to support multiple of these lol.
+    }
+
+    VkDescriptorSetLayoutCreateInfo layout_info{
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
-        .pNext = nullptr,
+        .pNext = (num_variable_descriptor_count_bindings == 0 ? nullptr : &desc_binding_flags_info),
         .flags = flags,
         .bindingCount = static_cast<uint32_t>(layout_bindings.size()),
         .pBindings = layout_bindings.data(),
     };
 
+    // Create descriptor set layout.
     VkDescriptorSetLayout layout;
     VkResult err = vkCreateDescriptorSetLayout(gfx.device,
-                                               &info,
+                                               &layout_info,
                                                nullptr,
                                                &layout);
 
