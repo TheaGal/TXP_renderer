@@ -365,6 +365,16 @@ void Shader_basic_diffuse::compute(void* param)
         { { &p.hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
           { &p.hdr_draw_image_depth.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
 
+    VkViewport viewport{ .width = static_cast<float>(p.hdr_draw_image_color.get_extent().width),
+                         .height = static_cast<float>(p.hdr_draw_image_color.get_extent().height),
+                         .minDepth = 0.0f,
+                         .maxDepth = 1.0f };
+    vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+    VkRect2D scissor{ .extent{ .width = p.hdr_draw_image_color.get_extent().width,
+                               .height = p.hdr_draw_image_color.get_extent().height } };
+    vkCmdSetScissor(cmd, 0, 1, &scissor);
+
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
     vkCmdBindDescriptorSets(cmd,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
@@ -373,19 +383,23 @@ void Shader_basic_diffuse::compute(void* param)
                             1, &p.shader_pipeline.textures_descriptor_set,
                             0, nullptr);
 
-    // @TODO: move this into a real function.
-    static auto const k_cmd_dispatch_fn =
-        [](VkCommandBuffer cmd, VkExtent3D dispatch_thread_sizes, VkExtent3D thread_group_sizes) {
-            vkCmdDispatch(cmd,
-                          (dispatch_thread_sizes.width + thread_group_sizes.width - 1) /
-                              thread_group_sizes.width,
-                          (dispatch_thread_sizes.height + thread_group_sizes.height - 1) /
-                              thread_group_sizes.height,
-                          (dispatch_thread_sizes.depth + thread_group_sizes.depth - 1) /
-                              thread_group_sizes.depth);
+    p.g.combined_static_model.bind(cmd);
+
+    Shader_basic_diffuse_push_constants todo_make_this_for_each_frame_in_gfx_impl;  // @THEA: @TODO
+    vkCmdPushConstants(cmd,
+                       p.shader_pipeline.pipeline_layout,
+                       VK_SHADER_STAGE_VERTEX_BIT,
+                       0,
+                       sizeof(Shader_basic_diffuse_push_constants),
+                       &todo_make_this_for_each_frame_in_gfx_impl);
+
+    // @TODO: @THEA: this needs to be some kind of draw function for certain meshes that want to be drawn by this shader.
+    static auto const k_cmd_draw_fn =
+        [](VkCommandBuffer cmd) {
+            vkCmdDrawIndexed(cmd, 4224, 1, 0, 0, 0);  // @HACK: first uploaded model has 4224 idxs
         };
 
-    k_cmd_dispatch_fn(cmd, p.hdr_draw_image_color.get_extent(), p.thread_grp_sizes);
+    k_cmd_draw_fn(cmd);
 }
 
 }  // namespace Shader
