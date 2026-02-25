@@ -354,7 +354,7 @@ Shader_basic_diffuse::Shader_basic_diffuse(void* graphics)
 
 Shader_basic_diffuse::~Shader_basic_diffuse() = default;
 
-void Shader_basic_diffuse::compute(void* param)
+void Shader_basic_diffuse::draw(void* param)
 {
     auto& p{ *m_pimpl };
 
