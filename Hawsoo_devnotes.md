@@ -248,6 +248,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [ ] Implement descriptor set layouts.
             - [x] created a future-catch message to create a material batcher if the texture limit is exceeded.
             - [x] create the combined image sampler descriptor.
+            - [x] create shader pipeline object.
             - [x] Ichiou: for the draw() cmd for basic-diffuse shader.
             - [ ] Create the environment data buffer (per-frame).
                 - [x] Added it as an allocated buffer in per-frame data.
