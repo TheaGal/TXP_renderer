@@ -248,11 +248,19 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [ ] Implement descriptor set layouts.
             - [x] created a future-catch message to create a material batcher if the texture limit is exceeded.
             - [x] create the combined image sampler descriptor.
-            - [ ] create the model transforms buffer.
+            - [x] Ichiou: for the draw() cmd for basic-diffuse shader.
+            - [ ] Create the environment data buffer (per-frame).
+                - [x] Added it as an allocated buffer in per-frame data.
+                - [x] Use the buffer's device address in shader.
+                - [ ] Create the buffer with a proper size.
+            - [ ] create the model transforms buffer (per-frame).
                 - Perhaps it could be just a maximum of the 65535 model transforms?
                 - 4 * 16 * 65535 = 4,194,240 (4MB)
                 - That times 3 = 12MB
                     - We could have 12MB be allotted for model transforms.
+                - [x] Added it as an allocated buffer in per-frame data.
+                - [x] Use the buffer's device address in shader.
+                - [ ] Create the buffer with a proper size.
         - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
         - [ ] Split out the `load_assets()` func so that it's in this order:
             1. load textures, create all-texture descriptor.

@@ -358,7 +358,8 @@ void Shader_basic_diffuse::draw(void* param)
 {
     auto& p{ *m_pimpl };
 
-    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
+    auto& current_frame{ p.g.get_current_frame() };
+    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
     Vk_Image::Image::transition_to(
         cmd,
@@ -385,13 +386,17 @@ void Shader_basic_diffuse::draw(void* param)
 
     p.g.combined_static_model.bind(cmd);
 
-    Shader_basic_diffuse_push_constants todo_make_this_for_each_frame_in_gfx_impl;  // @THEA: @TODO
+    Shader_basic_diffuse_push_constants push_consts{
+        .environment_data_dev_addr = current_frame.environment_data_buffer.get_device_address(),
+        .model_transform_set_dev_addr =
+            current_frame.model_transform_set_buffer.get_device_address(),
+    };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
                        VK_SHADER_STAGE_VERTEX_BIT,
                        0,
                        sizeof(Shader_basic_diffuse_push_constants),
-                       &todo_make_this_for_each_frame_in_gfx_impl);
+                       &push_consts);
 
     // @TODO: @THEA: this needs to be some kind of draw function for certain meshes that want to be drawn by this shader.
     static auto const k_cmd_draw_fn =

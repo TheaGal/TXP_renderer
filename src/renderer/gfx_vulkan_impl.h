@@ -184,6 +184,75 @@ struct Graphics::Impl
         VkCommandBuffer m_cmd;
     };
 
+    // @TODO: @THEA: move this over to a vk-buffers!!!
+    class Allocated_buffer
+    {
+    public:
+        /// Creates buffer.
+        void create(VkDevice device,
+                    VmaAllocator allocator,
+                    VkDeviceSize buffer_size,
+                    VkBufferUsageFlags buffer_usage_flags,
+                    VmaAllocationCreateFlags buffer_allocation_flags)
+        {
+            m_used_allocator = allocator;
+
+            VkBufferCreateInfo buffer_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+                                            .size = buffer_size,
+                                            .usage = buffer_usage_flags };
+            VmaAllocationCreateInfo buffer_alloc_info{ .flags = buffer_allocation_flags,
+                                                       .usage = VMA_MEMORY_USAGE_AUTO };
+            VkResult err = vmaCreateBuffer(m_used_allocator,
+                                           &buffer_info,
+                                           &buffer_alloc_info,
+                                           &m_buffer,
+                                           &m_buffer_allocation,
+                                           &m_buffer_allocation_info);
+            if (err)
+                throw std::runtime_error("Creation of buffer failed.");
+
+            if (buffer_usage_flags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
+            {
+                VkBufferDeviceAddressInfo buffer_bda_info{
+                    .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
+                    .buffer = m_buffer,
+                };
+                m_device_address = vkGetBufferDeviceAddress(device, &buffer_bda_info);
+            }
+        }
+
+        /// Destroys the created buffer.
+        void destroy()
+        {
+            vmaDestroyBuffer(m_used_allocator, m_buffer, m_buffer_allocation);
+        }
+
+        VkBuffer const& get_buffer() const
+        {
+            return m_buffer;
+        }
+
+        /// Gets the `.pMappedData` pointer.
+        void* get_p_mapped_data()
+        {
+            return m_buffer_allocation_info.pMappedData;
+        }
+
+        /// Gets the buffer device address, if it was initialized with that.
+        VkDeviceAddress get_device_address() const
+        {
+            return m_device_address;
+        }
+
+    private:
+        VmaAllocator m_used_allocator;
+        VkBuffer m_buffer;
+        VmaAllocation m_buffer_allocation;
+        VmaAllocationInfo m_buffer_allocation_info;
+        VkDeviceAddress m_device_address{ 0xdeadbeef };
+    };
+
+
     /// Holds per-frame data.
     struct Frame_data
     {
@@ -192,9 +261,8 @@ struct Graphics::Impl
         VkSemaphore acquire_nxt_img_semaphore;
         VkFence render_fence;
 
-        // @TODO: figure out the vv below vv
-        // vk_buffer::Allocated_buffer camera_buffer;
-        // vk_buffer::GPU_geo_per_frame_buffer geo_per_frame_buffer;
+        Allocated_buffer environment_data_buffer;
+        Allocated_buffer model_transform_set_buffer;
     };
     std::array<Frame_data, k_frame_overlap> frames;
 
@@ -280,57 +348,6 @@ struct Graphics::Impl
 
     ktxVulkanTexture load_and_upload_texture(std::string const& fname);
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
-
-    // @TODO: @THEA: move this over to a vk-buffers!!!
-    class Allocated_buffer
-    {
-    public:
-        /// Creates buffer.
-        void create(VmaAllocator allocator,
-                    VkDeviceSize buffer_size,
-                    VkBufferUsageFlags buffer_usage_flags,
-                    VmaAllocationCreateFlags buffer_allocation_flags)
-        {
-            m_used_allocator = allocator;
-
-            VkBufferCreateInfo buffer_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-                                            .size = buffer_size,
-                                            .usage = buffer_usage_flags };
-            VmaAllocationCreateInfo buffer_alloc_info{ .flags = buffer_allocation_flags,
-                                                       .usage = VMA_MEMORY_USAGE_AUTO };
-            VkResult err = vmaCreateBuffer(m_used_allocator,
-                                           &buffer_info,
-                                           &buffer_alloc_info,
-                                           &m_buffer,
-                                           &m_buffer_allocation,
-                                           &m_buffer_allocation_info);
-            if (err)
-                throw std::runtime_error("Creation of buffer failed.");
-        }
-
-        /// Destroys the created buffer.
-        void destroy()
-        {
-            vmaDestroyBuffer(m_used_allocator, m_buffer, m_buffer_allocation);
-        }
-
-        VkBuffer const& get_buffer() const
-        {
-            return m_buffer;
-        }
-
-        /// Gets the `.pMappedData` pointer.
-        void* get_p_mapped_data()
-        {
-            return m_buffer_allocation_info.pMappedData;
-        }
-
-    private:
-        VmaAllocator m_used_allocator;
-        VkBuffer m_buffer;
-        VmaAllocation m_buffer_allocation;
-        VmaAllocationInfo m_buffer_allocation_info;
-    };
 
     /// Add models.
     void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);

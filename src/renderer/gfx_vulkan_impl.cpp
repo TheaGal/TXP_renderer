@@ -778,6 +778,7 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     VkDeviceSize index_buf_size{ sizeof(uint32_t) * combined_indices.size() };
 
     combined_static_model.vertex_index_buffer.create(
+        gfx.device,
         gfx.allocator,
         vertex_buf_size + index_buf_size,
         VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
