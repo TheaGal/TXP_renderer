@@ -5,6 +5,7 @@
 #include "btglm.h"
 #include "btlogger.h"
 #include "renderer/gfx_vulkan/vk_image.h"
+#include "renderer/gfx_vulkan/vk_structs.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader_creation/shader_creation.h"
 #include "vulkan/vulkan_core.h"
@@ -400,11 +401,32 @@ void Shader_basic_diffuse::draw(void* param)
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
+    // Ready images.
     Vk_Image::Image::transition_to(
         cmd,
         { { &p.hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
           { &p.hdr_draw_image_depth.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
 
+#define WRAP_INTO_OWN_FUNC 1
+#if WRAP_INTO_OWN_FUNC
+    // Begin rendering.
+    VkRenderingAttachmentInfo color_attachment =
+        Vk_Structs::txp_vk_attachment_info(p.hdr_draw_image_color.get_image_view(),
+                                           nullptr,
+                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    VkRenderingAttachmentInfo depth_attachment =
+        Vk_Structs::txp_vk_attachment_info(p.hdr_draw_image_depth.get_image_view(),
+                                           nullptr,
+                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
+        VkExtent2D{ .width = p.hdr_draw_image_color.get_extent().width,
+                    .height = p.hdr_draw_image_color.get_extent().height },
+        &color_attachment,
+        &depth_attachment);
+    vkCmdBeginRendering(cmd, &render_info);
+#endif // WRAP_INTO_OWN_FUNC
+
+    // Render.
     VkViewport viewport{ .width = static_cast<float>(p.hdr_draw_image_color.get_extent().width),
                          .height = static_cast<float>(p.hdr_draw_image_color.get_extent().height),
                          .minDepth = 0.0f,
@@ -444,6 +466,12 @@ void Shader_basic_diffuse::draw(void* param)
         };
 
     k_cmd_draw_fn(cmd);
+
+#define WRAP_INTO_OWN_FUNC 1
+#if WRAP_INTO_OWN_FUNC
+    // End rendering.
+    vkCmdEndRendering(cmd);
+#endif // WRAP_INTO_OWN_FUNC
 }
 
 }  // namespace Shader
