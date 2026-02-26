@@ -616,6 +616,7 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 
     std::vector<Descriptor_allocator::Pool_size_ratio> sizes{
         { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
     };
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
