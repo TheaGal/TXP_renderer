@@ -269,7 +269,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             4. load material sets
             5. load models, create material sets from models' information.
         - [x] Add combined image sampler to descriptor pool.
-        - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
-        - [ ] implement per-frame vkbufferdeviceaddress for the `Environment_data` as a push-constant (see https://howtovulkan.com/#graphics-pipeline)
+        - [x] implement per-frame vkbufferdeviceaddress for the `Environment_data` as a push-constant (see https://howtovulkan.com/#graphics-pipeline)
             - see also https://howtovulkan.com/#shader-data-buffers
+        - [ ] Fix renderpass error.
+        - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
     - [ ] 
