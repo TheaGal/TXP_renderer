@@ -2,6 +2,7 @@
 
 #include "shader_basic_diffuse.h"
 
+#include "btglm.h"
 #include "btlogger.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
@@ -17,6 +18,21 @@ namespace TXP
 {
 namespace Shader
 {
+
+/// Struct for Environment_data.
+struct GPU_environment_data
+{
+    mat4 projection;
+    mat4 view;
+    vec4 light_pos;
+    uint32_t basic_lighting;
+};
+
+/// Struct for Model_transform_set.
+struct GPU_model_transform_set
+{
+    mat4 transforms[65535];
+};
 
 /// Struct for push constants.
 struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
@@ -50,6 +66,29 @@ struct Shader_basic_diffuse::Impl
 
         // @TODO: for vv below vv pull out the `build_Descriptor_layout()` and
         //        `load_shader_module()` functions.
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Buffers.
+        for (auto& frame : g.frames)
+        {
+            frame.environment_data_buffer.create(
+                g.gfx.device,
+                g.gfx.allocator,
+                sizeof(GPU_environment_data),
+                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                    VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+            frame.model_transform_set_buffer.create(
+                g.gfx.device,
+                g.gfx.allocator,
+                sizeof(GPU_model_transform_set),
+                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                    VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Descriptors.
