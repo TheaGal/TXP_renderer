@@ -51,12 +51,8 @@ TXP::Graphics::~Graphics()
     assert(false);
 }
 
-void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
-                                std::vector<Texture_asset_create_info>&& texture_assets,
-                                std::vector<Material_asset_create_info>&& material_assets,
-                                std::vector<Material_set_asset_create_info>&& material_set_assets,
-                                std::vector<Model_asset_create_info>&& model_assets,
-                                Render_model_data_collection& render_model_data_collection)
+void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
+                                        std::vector<Texture_asset_create_info>&& texture_assets)
 {   // Load textures.
     m_pimpl->construct_ktx_vk_device_info();
     for (auto const& tex_asset : texture_assets)
@@ -67,8 +63,12 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
     }
     m_pimpl->destruct_ktx_vk_device_info();
     BT_TRACEF("Loaded all %zu textures.", texture_assets.size());
+}
 
-    // Load materials.
+void TXP::Graphics::load_material_assets(
+    std::vector<Material_asset_create_info>&& material_assets,
+    std::vector<Material_set_asset_create_info>&& material_set_assets)
+{   // Load materials.
     for (auto const& mat_asset : material_assets)
     {
 
@@ -81,8 +81,11 @@ void TXP::Graphics::load_assets(std::string const& texture_asset_dir,
 
     }
     BT_TRACEF("Loaded all %zu material sets.", material_set_assets.size());
+}
 
-    // Load models.
+void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
+                                      Render_model_data_collection& render_model_data_collection)
+{   // Load models.
     for (auto const& mod_asset : model_assets)
     {
         load_model_from_disk(render_model_data_collection,

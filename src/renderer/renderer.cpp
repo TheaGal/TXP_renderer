@@ -46,18 +46,21 @@ void Renderer::run()
 {   // Setup renderer.
     Graphics g(m_title, m_width, m_height);
 
+    m_asset_reg_window_open = false;
+
+    // Load textures.
+    g.load_texture_assets(m_texture_asset_dir, std::move(*m_texture_assets.scoped_lock()));
+
     // Create shaders.
     Shader::Shader_gradient shad_gradient{ g.get_impl() };
     Shader::Shader_basic_diffuse shad_basic_diffuse{ g.get_impl() };
 
-    // Load assets.
-    m_asset_reg_window_open = false;
-    g.load_assets(m_texture_asset_dir,
-                  std::move(*m_texture_assets.scoped_lock()),
-                  std::move(*m_material_assets.scoped_lock()),
-                  std::move(*m_material_set_assets.scoped_lock()),
-                  std::move(*m_model_assets.scoped_lock()),
-                  m_render_model_data_collection);
+    // Load materials (and material sets).
+    g.load_material_assets(std::move(*m_material_assets.scoped_lock()),
+                           std::move(*m_material_set_assets.scoped_lock()));
+
+    // Load models.
+    g.load_model_assets(std::move(*m_model_assets.scoped_lock()), m_render_model_data_collection);
 
     // Render frames until shutdown flag is tripped.
     while (!m_shutdown_flag.load())

@@ -262,7 +262,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
                 - [x] Added it as an allocated buffer in per-frame data.
                 - [x] Use the buffer's device address in shader.
                 - [x] Create the buffer with a proper size.
-        - [ ] Split out the `load_assets()` func so that it's in this order:
+        - [x] Split out the `load_assets()` func so that it's in this order:
             1. load textures, create all-texture descriptor.
             2. construct shaders
             3. load materials
