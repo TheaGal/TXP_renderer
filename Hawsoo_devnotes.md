@@ -245,30 +245,30 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [ ] Create render pipeline.
         - [x] Create shader.
         - [x] Look back at previous project (solanine-vulkan) to see how dynamic image arrays worked.
-        - [ ] Implement descriptor set layouts.
+        - [x] Implement descriptor set layouts.
             - [x] created a future-catch message to create a material batcher if the texture limit is exceeded.
             - [x] create the combined image sampler descriptor.
             - [x] create shader pipeline object.
             - [x] Ichiou: for the draw() cmd for basic-diffuse shader.
-            - [ ] Create the environment data buffer (per-frame).
+            - [x] Create the environment data buffer (per-frame).
                 - [x] Added it as an allocated buffer in per-frame data.
                 - [x] Use the buffer's device address in shader.
-                - [ ] Create the buffer with a proper size.
-            - [ ] create the model transforms buffer (per-frame).
+                - [x] Create the buffer with a proper size.
+            - [x] create the model transforms buffer (per-frame).
                 - Perhaps it could be just a maximum of the 65535 model transforms?
                 - 4 * 16 * 65535 = 4,194,240 (4MB)
                 - That times 3 = 12MB
                     - We could have 12MB be allotted for model transforms.
                 - [x] Added it as an allocated buffer in per-frame data.
                 - [x] Use the buffer's device address in shader.
-                - [ ] Create the buffer with a proper size.
-        - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
+                - [x] Create the buffer with a proper size.
         - [ ] Split out the `load_assets()` func so that it's in this order:
             1. load textures, create all-texture descriptor.
             2. construct shaders
             3. load materials
             4. load material sets
             5. load models, create material sets from models' information.
+        - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
         - [ ] implement per-frame vkbufferdeviceaddress for the `Environment_data` as a push-constant (see https://howtovulkan.com/#graphics-pipeline)
             - see also https://howtovulkan.com/#shader-data-buffers
     - [ ] 

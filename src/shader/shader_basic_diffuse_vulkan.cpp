@@ -290,7 +290,7 @@ struct Shader_basic_diffuse::Impl
             .scissorCount = 1,
         };
         std::vector<VkDynamicState> dynamic_states{ VK_DYNAMIC_STATE_VIEWPORT,
-                                                    VK_DYNAMIC_STATE_SCISSOR, };
+                                                    VK_DYNAMIC_STATE_SCISSOR };
         VkPipelineDynamicStateCreateInfo dynamic_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
             .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
@@ -352,7 +352,7 @@ struct Shader_basic_diffuse::Impl
                                         nullptr,
                                         &shader_pipeline.pipeline);
         if (err)
-            throw std::runtime_error("Failed to create compute pipeline.");
+            throw std::runtime_error("Failed to create graphics pipeline.");
 
         // Cleanup.
         vkDestroyShaderModule(device, shader_module, nullptr);

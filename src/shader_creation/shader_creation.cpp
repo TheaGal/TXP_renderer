@@ -146,11 +146,14 @@ TXP::Shader_Creation::Extracted_info TXP::Shader_Creation::extract_stuff(
             if (binding_param == nullptr)
                 throw std::runtime_error("Corresponding binding param not found.");
 
+            // Parse inner `elementType`.
+            Reflection::Field_type binding_param_type_elementType = binding_param->type.elementType;
+
             // Create descriptor layout.
-            if (binding_param->type.elementType.kind != "struct")
+            if (binding_param_type_elementType.kind != "struct")
                 throw std::runtime_error("Binding param's element type kind is not \"struct\".");
 
-            for (auto const& elem_type_field : binding_param->type.elementType.fields)
+            for (auto const& elem_type_field : binding_param_type_elementType.fields)
             {
                 if (elem_type_field.binding.kind != "descriptorTableSlot")  // @THEA
                     throw std::runtime_error("TODO: implement other stuff other than desc table slot!!!");

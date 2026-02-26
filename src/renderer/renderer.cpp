@@ -2,6 +2,7 @@
 
 #include "gfx.h"
 #include "render_object/render_model.h"
+#include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
 
 #include <atomic>
@@ -47,6 +48,7 @@ void Renderer::run()
 
     // Create shaders.
     Shader::Shader_gradient shad_gradient{ g.get_impl() };
+    Shader::Shader_basic_diffuse shad_basic_diffuse{ g.get_impl() };
 
     // Load assets.
     m_asset_reg_window_open = false;
@@ -84,6 +86,7 @@ void Renderer::run()
         // g.render_shadows();
         g.render_opaque_geometry();
         shad_gradient.compute(nullptr);
+        shad_basic_diffuse.draw(nullptr);
         // g.render_clouds();
         // g.render_volumetric_light();
         // g.render_particles();

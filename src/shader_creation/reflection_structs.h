@@ -73,9 +73,14 @@ struct Struct_field
     Field_type type;
     std::string stage;
     Binding binding;
-    std::string semanticName;
+    std::string semanticName;  // Not necessary for every field.
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Struct_field, name, type, stage, binding, semanticName);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Struct_field,
+                                                name,
+                                                type,
+                                                stage,
+                                                binding,
+                                                semanticName);
 };
 
 NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE_WITH_DEFAULT(Field_type,
@@ -169,25 +174,25 @@ struct Element_var_layout
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Element_var_layout, type, binding);
 };
 
-struct Param_type
-{
-    std::string kind;
-    Element_type elementType;
-    Container_var_layout containerVarLayout;
-    Element_var_layout elementVarLayout;
+// struct Param_type
+// {
+//     std::string kind;
+//     Element_type elementType;
+//     Container_var_layout containerVarLayout;
+//     Element_var_layout elementVarLayout;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Param_type,
-                                   kind,
-                                   elementType,
-                                   containerVarLayout,
-                                   elementVarLayout);
-};
+//     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Param_type,
+//                                    kind,
+//                                    elementType,
+//                                    containerVarLayout,
+//                                    elementVarLayout);
+// };
 
 struct Parameter
 {
     std::string name;
     Binding binding;
-    Param_type type;
+    Field_type type;
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Parameter, name, binding, type);
 };
