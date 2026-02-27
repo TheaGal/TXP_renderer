@@ -28,6 +28,7 @@
 #include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
+#include "input_handler/input_handler.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "shader_creation/shader_creation.h"
@@ -41,6 +42,66 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+
+
+namespace
+{
+
+// Helper pointers for GLFW callbacks.
+static TXP::Input::Input_handler s_input_handler;
+
+// GLFW window callbacks.
+static void key_callback(GLFWwindow* window,
+                         int32_t key,
+                         int32_t scancode,
+                         int32_t action,
+                         int32_t mods)
+{
+    s_input_handler.keyboard_event(key, action == GLFW_PRESS, action == GLFW_REPEAT);
+}
+
+static void mouse_button_callback(GLFWwindow* window,
+                                  int32_t button,
+                                  int32_t action,
+                                  int32_t mods)
+{
+    s_input_handler.mouse_button_event(button, action == GLFW_PRESS);
+}
+
+static void cursor_position_callback(GLFWwindow* window,
+                                     double_t xpos,
+                                     double_t ypos)
+{
+    s_input_handler.cursor_position_event(xpos, ypos);
+}
+
+static void scroll_callback(GLFWwindow* window,
+                            double_t xoffset,
+                            double_t yoffset)
+{
+    s_input_handler.scroll_event(xoffset, yoffset);
+}
+
+static void window_focus_callback(GLFWwindow* window,
+                                  int32_t focused)
+{
+    s_input_handler.window_focus_event(focused == GLFW_TRUE);
+}
+
+static void window_iconify_callback(GLFWwindow* window,
+                                    int32_t iconified)
+{
+    s_input_handler.window_iconify_event(iconified == GLFW_TRUE);
+}
+
+static void window_resize_callback(GLFWwindow* window,
+                                   int32_t width,
+                                   int32_t height)
+{
+    s_input_handler.window_resize_event(width, height);
+}
+
+}  // namespace
 
 
 namespace TXP
