@@ -172,7 +172,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             > Create descriptor sets from the shader params in materials???
     > Hardcode stuff for now!
 
-- [ ] Perhaps no reflection?
+- [x] Perhaps no reflection?
     - This is a lot harder than I had thought it would be.
     - Really the only thing I was wanting reflection for was creating multiple material sets, but honestly that probably isn't even relevant? I'm taking the super-long way here aaaahhhh.
     - Maybe the interface would be the same: input material name, shader involved, material params.
@@ -219,7 +219,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Did a partial implementation of this.
 
 
-- [ ] Get a hardcoded render pipeline for geometry going!!! (needed for prereq for "Perhaps no reflection?")
+- [x] Get a hardcoded render pipeline for geometry going!!! (needed for prereq for "Perhaps no reflection?")
     - [x] Iron out the data structures.
     - [x] Load all models.
         - [x] stubs
@@ -242,7 +242,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Set all the `default_per_mesh_vertex_index_offset_set`s up.
         - [x] Load it up ~~onto staging buffer~~ and upload to gpu (for static meshes).
             > Turns out with rebar/sam in today's word staging buffer isn't necessary! (according to _How to Vulkan in 2026_)
-    - [ ] Create render pipeline.
+    - [x] Create render pipeline.
         - [x] Create shader.
         - [x] Look back at previous project (solanine-vulkan) to see how dynamic image arrays worked.
         - [x] Implement descriptor set layouts.
@@ -272,5 +272,17 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] implement per-frame vkbufferdeviceaddress for the `Environment_data` as a push-constant (see https://howtovulkan.com/#graphics-pipeline)
             - see also https://howtovulkan.com/#shader-data-buffers
         - [x] Fix renderpass error.
-        - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
-    - [ ] 
+        - [ ] ~~Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.~~
+            - Defer for later refactoring.
+
+
+## Detour: add camera controls.
+
+- [ ] Implement camera controls.
+    - 
+
+
+## Refactor.
+
+- [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
+- [ ] Create functions for things noted to create a function in.
