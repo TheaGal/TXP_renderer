@@ -26,12 +26,14 @@
 // clang-format on
 
 #include "btlogger.h"
+#include "btservice_finder.h"
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "input_handler/input_handler.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "shader_creation/shader_creation.h"
+#include "txp_renderer/renderer.h"
 
 #include <array>
 #include <cassert>
@@ -48,7 +50,7 @@ namespace
 {
 
 // Helper pointers for GLFW callbacks.
-static TXP::Input::Input_handler s_input_handler;
+static TXP::Input::Input_handler* s_input_handler{ nullptr };
 
 // GLFW window callbacks.
 static void key_callback(GLFWwindow* window,
@@ -57,7 +59,10 @@ static void key_callback(GLFWwindow* window,
                          int32_t action,
                          int32_t mods)
 {
-    s_input_handler.keyboard_event(key, action == GLFW_PRESS, action == GLFW_REPEAT);
+    s_input_handler->keyboard_event(key,
+                                    action == GLFW_PRESS || action == GLFW_REPEAT,
+                                    action == GLFW_REPEAT,
+                                    mods);
 }
 
 static void mouse_button_callback(GLFWwindow* window,
@@ -65,40 +70,50 @@ static void mouse_button_callback(GLFWwindow* window,
                                   int32_t action,
                                   int32_t mods)
 {
-    s_input_handler.mouse_button_event(button, action == GLFW_PRESS);
+    s_input_handler->mouse_button_event(button, action == GLFW_PRESS, mods);
 }
 
 static void cursor_position_callback(GLFWwindow* window,
                                      double_t xpos,
                                      double_t ypos)
 {
-    s_input_handler.cursor_position_event(xpos, ypos);
+    s_input_handler->cursor_position_event(xpos, ypos);
 }
 
 static void scroll_callback(GLFWwindow* window,
                             double_t xoffset,
                             double_t yoffset)
 {
-    s_input_handler.scroll_event(xoffset, yoffset);
+    s_input_handler->scroll_event(xoffset, yoffset);
+}
+
+static void joystick_callback(int32_t jid, int32_t event)
+{
+    s_input_handler->gamepad_connect_event(jid, event == GLFW_CONNECTED);
 }
 
 static void window_focus_callback(GLFWwindow* window,
                                   int32_t focused)
 {
-    s_input_handler.window_focus_event(focused == GLFW_TRUE);
+    s_input_handler->window_focus_event(focused == GLFW_TRUE);
 }
 
 static void window_iconify_callback(GLFWwindow* window,
                                     int32_t iconified)
 {
-    s_input_handler.window_iconify_event(iconified == GLFW_TRUE);
+    s_input_handler->window_iconify_event(iconified == GLFW_TRUE);
 }
 
 static void window_resize_callback(GLFWwindow* window,
                                    int32_t width,
                                    int32_t height)
 {
-    s_input_handler.window_resize_event(width, height);
+    s_input_handler->window_resize_event(width, height);
+}
+
+static void window_close_callback(GLFWwindow* window)
+{
+    BT::service_finder::find_service<TXP::Renderer>().shutdown_loop();
 }
 
 }  // namespace
@@ -177,17 +192,24 @@ void Graphics::Impl::init_window()
     // @TODO: add window icon here.
 
 
-    glfwShowWindow(window);
+    // Window callbacks.
+    // @NOTE: With key callbacks etc that's also used by Imgui, Imgui
+    //   chains these callbacks so they don't get lost.
+    s_input_handler = &BT::service_finder::find_service<Input::Input_handler>();
+    if (s_input_handler == nullptr)
+        throw std::runtime_error("No Input_handler service found.");
 
-    // // Window callbacks.
-    // // @NOTE: With key callbacks etc that's also used by Imgui, Imgui
-    // //   chains these callbacks so they don't get lost.
-    // glfwSetKeyCallback(m_window, key_callback);
-    // glfwSetMouseButtonCallback(m_window, mouse_button_callback);
-    // glfwSetCursorPosCallback(m_window, cursor_position_callback);
-    // glfwSetScrollCallback(m_window, scroll_callback);
-    // glfwSetWindowFocusCallback(m_window, window_focus_callback);
-    // glfwSetWindowIconifyCallback(m_window, window_iconify_callback);
+    glfwSetKeyCallback(window, key_callback);
+    glfwSetMouseButtonCallback(window, mouse_button_callback);
+    glfwSetCursorPosCallback(window, cursor_position_callback);
+    glfwSetScrollCallback(window, scroll_callback);
+    glfwSetJoystickCallback(joystick_callback);
+    glfwSetWindowFocusCallback(window, window_focus_callback);
+    glfwSetWindowIconifyCallback(window, window_iconify_callback);
+    glfwSetWindowCloseCallback(window, window_close_callback);
+
+    // Finish.
+    glfwShowWindow(window);
 }
 
 

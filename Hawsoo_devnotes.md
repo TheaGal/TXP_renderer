@@ -279,7 +279,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 ## Detour: add camera controls.
 
 - [ ] Implement camera controls.
-    - 
+    - [x] Implement input handles for glfw window.
 
 
 ## Refactor.

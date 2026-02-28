@@ -1,6 +1,7 @@
+#include "input_handler/input_handler.h"  // @TODO: put in public folder.
 #include "txp_renderer_public.h"
 #define BT_SERVICE_FINDER_IMPLEMENTATION
-#include "btservice_finder.h"
+#include "btservice_finder.h"  // @TODO: put in public folder.
 
 #include <iostream>
 #include <cstdint>
@@ -10,6 +11,8 @@
 
 int32_t main()
 {
+    TXP::Input::Input_handler input_handler;
+
     TXP::Renderer r{ "My renderer test!",
                      1280,
                      720,

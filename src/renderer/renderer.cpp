@@ -1,5 +1,6 @@
 #include "txp_renderer/renderer.h"
 
+#include "btservice_finder.h"
 #include "gfx.h"
 #include "render_object/render_model.h"
 #include "shader/shader_basic_diffuse.h"
@@ -37,6 +38,9 @@ Renderer::Renderer(std::string const& title,
     // Small setup of auxiliary systems.
     Shader_Creation::set_shader_directory(m_shader_asset_dir);
     set_model_directory(m_model_asset_dir);
+
+    // Add self as service.
+    BT_SERVICE_FINDER_ADD_SERVICE(Renderer, this);
 }
 
 

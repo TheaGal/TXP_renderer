@@ -184,6 +184,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btservice_finder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mutex_wrapper/mutex_wrapper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template.h
