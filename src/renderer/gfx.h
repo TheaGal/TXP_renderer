@@ -2,6 +2,7 @@
 
 #include "render_object/render_object.h"
 #include "txp_renderer/types.h"
+#include "types.h"
 
 #include <memory>
 #include <string>
@@ -31,10 +32,13 @@ public:
     void poll_input_events();
 
     /// Builds one imgui frame using a callback and readies the frame for rendering.
-    void build_imgui_contents();
+    void build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes);
+
+    /// Sets render view sizes for hdr draw images.
+    void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
     /// Acquires next render image for the frame. Will block until an image becomes available.
-    void start_new_frame();
+    void* start_new_frame(size_t rend_view_idx);
 
     /// .
     void compute_light_culling();
@@ -50,9 +54,6 @@ public:
 
     /// .
     void render_shadows();
-
-    /// .
-    void render_opaque_geometry();
 
     /// .
     void render_clouds();

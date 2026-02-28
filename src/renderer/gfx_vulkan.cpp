@@ -13,6 +13,7 @@
 #include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
 #include "render_object/render_model.h"
+#include "types.h"
 
 #include <cassert>
 #include <cerrno>
@@ -103,14 +104,14 @@ void TXP::Graphics::poll_input_events()
     m_pimpl->poll_input_events();
 }
 
-void TXP::Graphics::build_imgui_contents()
+void TXP::Graphics::build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes)
 {
-    m_pimpl->build_imgui_contents();
+    m_pimpl->build_imgui_contents(out_rend_view_sizes);
 }
 
-void TXP::Graphics::start_new_frame()
+void* TXP::Graphics::start_new_frame(size_t rend_view_idx)
 {
-    m_pimpl->start_new_frame();
+    return m_pimpl->start_new_frame(rend_view_idx);
 }
 
 void TXP::Graphics::compute_light_culling()

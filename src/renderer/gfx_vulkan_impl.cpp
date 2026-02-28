@@ -34,6 +34,7 @@
 #include "render_object/vertex.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/renderer.h"
+#include "types.h"
 
 #include <array>
 #include <cassert>
@@ -44,6 +45,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 
 namespace
@@ -1007,7 +1009,7 @@ void Graphics::Impl::poll_input_events()
     glfwPollEvents();
 }
 
-void Graphics::Impl::build_imgui_contents()
+void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -1023,7 +1025,7 @@ void Graphics::Impl::build_imgui_contents()
     ImGui::Render();
 }
 
-void Graphics::Impl::start_new_frame()
+void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
 {   // Wait until GPU has finished rendering last frame (of current frame index).
     auto& current_frame{ get_current_frame() };
 

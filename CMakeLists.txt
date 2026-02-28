@@ -184,6 +184,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btservice_finder.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mutex_wrapper/mutex_wrapper.h
@@ -219,6 +220,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/types.h
 )
 
 # Executable build.

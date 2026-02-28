@@ -1,5 +1,6 @@
 #pragma once
 
+#include "camera/camera.h"
 #include "render_object/render_object.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/types.h"
@@ -96,6 +97,9 @@ private:
 
     /// Flag for renderer to start shutdown process.
     std::atomic_bool m_shutdown_flag{ false };
+
+    /// Camera for renderer and any other threads that desire to access it.
+    Camera m_camera;
 };
 
 }  // namespace TXP

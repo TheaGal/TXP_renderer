@@ -27,9 +27,7 @@ int32_t main()
     r.add_material("__gradient_mat",
                    { "gradient", TXP::Shader_Creation::SHAD_PIPE_TYPE_COMPUTE },
                    { { "image", "__hdr_draw_image_color" } });
-    #if 0  // @TODO: implement later!!!!
     r.add_material_set("default_mat_set", { "default_mat" });
-    #endif // 0  // @TODO: implement later!!!!
     r.add_model("probuilder_example", ".wobj");
     r.add_model("simple_combat_char", ".glb");
 

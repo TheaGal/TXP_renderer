@@ -22,11 +22,13 @@
 #include "gfx_vulkan/vk_image.h"
 #include "render_object/render_model.h"
 #include "render_object/render_object.h"
+#include "types.h"
 
 #include <cmath>
 #include <fstream>
 #include <functional>
 #include <stdexcept>
+#include <vector>
 
 
 namespace TXP
@@ -522,10 +524,10 @@ struct Graphics::Impl
     /// Callback for imgui draw.
     std::function<void()> imgui_build_contents_callback;
 
-    void build_imgui_contents();
+    void build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes);
 
 
-    void start_new_frame();
+    void* start_new_frame(size_t rend_view_idx);
 
     void clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image);
     void blit_image(Vk_Image::Image& from_image,

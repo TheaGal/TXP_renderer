@@ -5,6 +5,7 @@
 #include "render_object/render_model.h"
 #include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
+#include "types.h"
 
 #include <atomic>
 #include <cassert>
@@ -78,26 +79,51 @@ void Renderer::run()
 
         // Poll for input events.
         g.poll_input_events();
+        m_camera.update();
 
         // Build imgui for this frame.
-        g.build_imgui_contents();
+        std::vector<Render_view_size> render_view_sizes;
+        g.build_imgui_contents(render_view_sizes);
 
-        // Render One Frame.
-        g.start_new_frame();
+        // Set render view sizes.
+        g.set_render_view_sizes(render_view_sizes);
+        m_camera.set_render_view_sizes(render_view_sizes);
 
-        // g.compute_light_culling();
-        // g.compute_shadow_culling();
-        // g.compute_opaque_geometry_culling();
-        // g.compute_transparent_geometry_culling();
+        if (auto main_cam_matrix{ m_camera.calc_main_cam_matrix() }; main_cam_matrix.has_value())
+        {   // Main camera view.
+            auto render_frame{ g.start_new_frame(0) };
 
-        // g.render_shadows();
-        g.render_opaque_geometry();
-        shad_gradient.compute(nullptr);
-        shad_basic_diffuse.draw(nullptr);
-        // g.render_clouds();
-        // g.render_volumetric_light();
-        // g.render_particles();
-        // g.render_transparent_geometry();
+            // g.compute_light_culling();
+            // g.compute_shadow_culling();
+            // g.compute_opaque_geometry_culling();
+            // g.compute_transparent_geometry_culling();
+
+            // g.render_shadows(render_frame);
+            shad_gradient.compute(render_frame, nullptr);
+            shad_basic_diffuse.draw(render_frame, nullptr);
+            // g.render_clouds();
+            // g.render_volumetric_light();
+            // g.render_particles();
+            // g.render_transparent_geometry();
+        }
+        else
+        {
+            throw std::runtime_error("Main render view must exist.");
+        }
+
+        size_t render_view_idx{ 1 };
+        for (auto const& cam_matrix : m_camera.calc_editor_cam_matrices())
+        {   // Editor camera view(s).
+            auto render_frame{ g.start_new_frame(render_view_idx) };
+
+            // g.render_shadows(render_frame);
+            shad_gradient.compute(render_frame, nullptr);
+            shad_basic_diffuse.draw(render_frame, nullptr);
+            // g.render_particles();
+            // g.render_transparent_geometry();
+
+            render_view_idx++;
+        }
 
         g.render_hdr_to_ldr_postprocessing();
         g.render_imgui();
