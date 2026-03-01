@@ -1,6 +1,8 @@
 #if TXP_GFX_BACKEND_VULKAN
 
+// clang-format off
 #include "shader_gradient.h"
+// clang-format on
 
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
@@ -22,7 +24,6 @@ struct Shader_gradient::Impl
     Impl(TXP::Graphics::Impl& graphics)
         : g(graphics)
         , device(g.gfx.device)
-        , hdr_draw_image_color(g.hdr_draw_image_color)
     {
     #define WRAP_INTO_OWN_FUNC 1
     #if WRAP_INTO_OWN_FUNC
@@ -63,7 +64,7 @@ struct Shader_gradient::Impl
             g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
 
         VkDescriptorImageInfo img_info{
-            .imageView = hdr_draw_image_color.get_image_view(),
+            .imageView = g.render_view_hdr_images[0].color.get_image_view(),
             .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
         };
 
@@ -138,7 +139,6 @@ struct Shader_gradient::Impl
 
     TXP::Graphics::Impl& g;
     VkDevice device;
-    Vk_Image::Allocated_image& hdr_draw_image_color;
 
     std::string compute_entry_point_name;
     VkExtent3D thread_grp_sizes;
@@ -170,7 +170,7 @@ void Shader_gradient::compute(void* render_frame)
 
     Vk_Image::Image::transition_to(
         cmd,
-        { { &p.hdr_draw_image_color.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
+        { { &p.g.render_view_hdr_images[0].color.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.shader_pipeline.pipeline);
     vkCmdBindDescriptorSets(cmd,
@@ -192,7 +192,7 @@ void Shader_gradient::compute(void* render_frame)
                               thread_group_sizes.depth);
         };
 
-    k_cmd_dispatch_fn(cmd, p.hdr_draw_image_color.get_extent(), p.thread_grp_sizes);
+    k_cmd_dispatch_fn(cmd, p.g.render_view_hdr_images[0].color.get_extent(), p.thread_grp_sizes);
 }
 
 }  // namespace Shader

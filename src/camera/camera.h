@@ -28,9 +28,7 @@ public:
         mat4 view;
     };
 
-    std::optional<Cam_matrix> calc_main_cam_matrix() const;
-
-    std::vector<Cam_matrix> calc_editor_cam_matrices() const;
+    std::vector<Cam_matrix> calc_cam_matrices() const;
 
 private:
     struct Editor_cam_state

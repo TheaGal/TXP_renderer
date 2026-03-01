@@ -279,9 +279,12 @@ struct Graphics::Impl
     VkSemaphore get_current_swapchain_submit_semaphore();
 
     /// HDR draw image (main geometry pipeline).
-    Vk_Image::Allocated_image hdr_draw_image_color;
-    Vk_Image::Allocated_image hdr_draw_image_depth;
-
+    struct Render_view_hdr_image
+    {
+        Vk_Image::Allocated_image color;
+        Vk_Image::Allocated_image depth;
+    };
+    std::vector<Render_view_hdr_image> render_view_hdr_images;
 
     /// Helper for loading shader module.
     VkShaderModule load_shader_module(std::string const& fname)
@@ -328,9 +331,7 @@ struct Graphics::Impl
     void init_vulkan_create_sync_structures();
     void init_vulkan_for_imgui();
     void init_vulkan_render_graph_resources();
-    // @TODO: @THEA: put these into their own shader render nodes.
     void init_vulkan_create_descriptors();
-    void init_vulkan_create_pipelines();
 
 
     /// Adds textures.
@@ -525,6 +526,9 @@ struct Graphics::Impl
     std::function<void()> imgui_build_contents_callback;
 
     void build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes);
+
+    /// Sets render view sizes and rebuilds any needed render views if changed.
+    void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
 
     void* start_new_frame(size_t rend_view_idx);

@@ -677,13 +677,29 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
 {
     Vk_Image::Allocated_image::set_vk_props(gfx.physical_device, gfx.device, gfx.allocator);
 
-    {   // HDR draw image.
+    std::vector<Render_view_size> const default_rend_view_sizes{
+        Render_view_size{ .width = 1280, .height = 720 }
+    };
+
+#define PUT_THIS_INTO_ITS_OWN_FUNC 1
+#if PUT_THIS_INTO_ITS_OWN_FUNC
+
+    render_view_hdr_images.resize(default_rend_view_sizes.size());
+    for (size_t i = 0; i < render_view_hdr_images.size(); i++)
+    {
+        auto& hdr_image{ render_view_hdr_images[i] };
+        auto const& rend_view_size{ default_rend_view_sizes[i] };
+
+        if (rend_view_size.width <= 0 || rend_view_size.height <= 0)
+            throw std::runtime_error("Invalid render view size.");
+
+        // HDR draw image.
         VkExtent2D extent{
-            .width = 1280,  // @HARDCODE: @THEA: fix this.
-            .height = 720,
+            .width = static_cast<uint32_t>(rend_view_size.width),
+            .height = static_cast<uint32_t>(rend_view_size.height),
         };
 
-        hdr_draw_image_color = Vk_Image::Allocated_image::create_image_2d(
+        hdr_image.color = Vk_Image::Allocated_image::create_image_2d(
             VK_FORMAT_R16G16B16A16_SFLOAT,
             extent,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -691,8 +707,10 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-        hdr_draw_image_depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
+        hdr_image.depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
     }
+
+#endif // PUT_THIS_INTO_ITS_OWN_FUNC
 }
 
 void Graphics::Impl::init_vulkan_create_descriptors()
@@ -706,13 +724,6 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
 }
-
-void Graphics::Impl::init_vulkan_create_pipelines()
-{
-    // @TODO: @THEA: abstract this into the reflection-based version.
-    // @TODO: delete this function.
-}
-
 
 void Graphics::Impl::construct_ktx_vk_device_info()
 {
@@ -1023,6 +1034,12 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
 
     // Convert to render instructions.
     ImGui::Render();
+}
+
+void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
+{
+    // @TODO: rebuild the hdr draw image list.
+    assert(false);
 }
 
 void* Graphics::Impl::start_new_frame(size_t rend_view_idx)

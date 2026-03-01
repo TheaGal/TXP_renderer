@@ -89,43 +89,39 @@ void Renderer::run()
         g.set_render_view_sizes(render_view_sizes);
         m_camera.set_render_view_sizes(render_view_sizes);
 
-        if (auto main_cam_matrix{ m_camera.calc_main_cam_matrix() }; main_cam_matrix.has_value())
-        {   // Main camera view.
-            auto render_frame{ g.start_new_frame(0) };
-
-            // g.compute_light_culling();
-            // g.compute_shadow_culling();
-            // g.compute_opaque_geometry_culling();
-            // g.compute_transparent_geometry_culling();
-
-            // g.render_shadows(render_frame);
-            shad_gradient.compute(render_frame);
-            shad_basic_diffuse.draw(render_frame);
-            // g.render_clouds();
-            // g.render_volumetric_light();
-            // g.render_particles();
-            // g.render_transparent_geometry();
-        }
-        else
+        size_t render_view_idx{ 0 };
+        for (auto const& cam_matrix : m_camera.calc_cam_matrices())
         {
-            throw std::runtime_error("Main render view must exist.");
-        }
+            bool main_cam_matrix{ render_view_idx == 0 };
 
-        size_t render_view_idx{ 1 };
-        for (auto const& cam_matrix : m_camera.calc_editor_cam_matrices())
-        {   // Editor camera view(s).
             auto render_frame{ g.start_new_frame(render_view_idx) };
 
-            // g.render_shadows(render_frame);
+            if (main_cam_matrix)
+            {
+                // g.compute_light_culling();
+                // g.compute_shadow_culling();
+                // g.compute_opaque_geometry_culling();
+                // g.compute_transparent_geometry_culling();
+            }
 
-            shad_gradient.compute(render_frame);
+            // g.render_shadows(render_frame);
+            shad_gradient.compute(render_frame);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
             shad_basic_diffuse.draw(render_frame);
-            
+
+            if (main_cam_matrix)
+            {
+                // g.render_clouds();
+                // g.render_volumetric_light();
+            }
 
             // g.render_particles();
             // g.render_transparent_geometry();
 
             render_view_idx++;
+        }
+        if (render_view_idx == 0)
+        {
+            throw std::runtime_error("Main render view must exist.");
         }
 
         g.render_hdr_to_ldr_postprocessing();

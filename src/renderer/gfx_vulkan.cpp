@@ -16,7 +16,6 @@
 #include "types.h"
 
 #include <cassert>
-#include <cerrno>
 #include <string>
 
 
@@ -38,10 +37,7 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
     m_pimpl->init_vulkan_create_sync_structures();
     m_pimpl->init_vulkan_for_imgui();
     m_pimpl->init_vulkan_render_graph_resources();
-
-    // @TODO: @THEA: put these into their own shader render nodes.
     m_pimpl->init_vulkan_create_descriptors();
-    m_pimpl->init_vulkan_create_pipelines();
 }
 
 TXP::Graphics::~Graphics()
@@ -109,6 +105,11 @@ void TXP::Graphics::build_imgui_contents(std::vector<Render_view_size>& out_rend
     m_pimpl->build_imgui_contents(out_rend_view_sizes);
 }
 
+void TXP::Graphics::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
+{
+    m_pimpl->set_render_view_sizes(rend_view_sizes);
+}
+
 void* TXP::Graphics::start_new_frame(size_t rend_view_idx)
 {
     return m_pimpl->start_new_frame(rend_view_idx);
@@ -161,9 +162,13 @@ void TXP::Graphics::render_transparent_geometry()
 
 void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 {
+    // @TEMPORARY: this is only for the main image, and this is simply to get the hdr image into the
+    //             background of swapchain.
+    // @TODO: only do this if no imgui. If yes imgui, have this be tonemapped into ldr and then get
+    //        into an imgui image.
     auto const& swapchain_extent{ m_pimpl->gfx.swapchain_extent };
-    m_pimpl->blit_image(m_pimpl->hdr_draw_image_color.get_image(),
-                        m_pimpl->hdr_draw_image_color.get_extent(),
+    m_pimpl->blit_image(m_pimpl->render_view_hdr_images[0].color.get_image(),
+                        m_pimpl->render_view_hdr_images[0].color.get_extent(),
                         m_pimpl->gfx.swapchain_images[m_pimpl->current_swapchain_image_idx],
                         VkExtent3D{ .width = swapchain_extent.width,
                                     .height = swapchain_extent.height,
