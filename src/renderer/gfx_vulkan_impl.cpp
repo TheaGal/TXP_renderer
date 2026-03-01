@@ -1026,36 +1026,42 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
 }
 
 void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
-{   // Wait until GPU has finished rendering last frame (of current frame index).
-    auto& current_frame{ get_current_frame() };
+{
+    if (rend_view_idx == 0)
+    {   // Wait until GPU has finished rendering last frame (of current frame index).
+        auto& current_frame{ get_current_frame() };
 
-    constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
+        constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
-    VkResult err;
-    err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
-    if (err)
-    {
-        throw std::runtime_error("wait for render fence timed out.");
+        VkResult err;
+        err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
+        if (err)
+        {
+            throw std::runtime_error("wait for render fence timed out.");
+        }
+
+        err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
+        if (err)
+        {
+            throw std::runtime_error("reset render fence failed.");
+        }
+
+        // Request image from swapchain.
+        err = vkAcquireNextImageKHR(gfx.device,
+                                    gfx.swapchain,
+                                    k_10sec_as_ns,
+                                    current_frame.acquire_nxt_img_semaphore,
+                                    nullptr,
+                                    &current_swapchain_image_idx);
+        if (err)
+            throw std::runtime_error("Acquire next swapchain image failed.");
+
+        // Reset command buffers.
+        current_frame.graphics_queue_command_buffer.reset();
     }
 
-    err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
-    if (err)
-    {
-        throw std::runtime_error("reset render fence failed.");
-    }
-
-    // Request image from swapchain.
-    err = vkAcquireNextImageKHR(gfx.device,
-                                gfx.swapchain,
-                                k_10sec_as_ns,
-                                current_frame.acquire_nxt_img_semaphore,
-                                nullptr,
-                                &current_swapchain_image_idx);
-    if (err)
-        throw std::runtime_error("Acquire next swapchain image failed.");
-
-    // Reset command buffers.
-    current_frame.graphics_queue_command_buffer.reset();
+    // @TODO: return the corresponding render_frame.
+    assert(false);
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
