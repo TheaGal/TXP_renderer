@@ -280,6 +280,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] Implement camera controls.
     - [x] Implement input handles for glfw window.
+    - [x] Split out the hdr color/depth image into multiple render views (ichiou).
     - [ ] Update the camera.
 
 - [ ] .
