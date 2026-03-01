@@ -139,12 +139,6 @@ void TXP::Graphics::render_shadows()
     assert(false);
 }
 
-void TXP::Graphics::render_opaque_geometry()
-{
-    m_pimpl->clear_image(m_pimpl->hdr_draw_image_color.get_image(),
-                         m_pimpl->hdr_draw_image_depth.get_image());
-}
-
 void TXP::Graphics::render_clouds()
 {
     assert(false);

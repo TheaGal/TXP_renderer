@@ -99,8 +99,8 @@ void Renderer::run()
             // g.compute_transparent_geometry_culling();
 
             // g.render_shadows(render_frame);
-            shad_gradient.compute(render_frame, nullptr);
-            shad_basic_diffuse.draw(render_frame, nullptr);
+            shad_gradient.compute(render_frame);
+            shad_basic_diffuse.draw(render_frame);
             // g.render_clouds();
             // g.render_volumetric_light();
             // g.render_particles();
@@ -117,8 +117,11 @@ void Renderer::run()
             auto render_frame{ g.start_new_frame(render_view_idx) };
 
             // g.render_shadows(render_frame);
-            shad_gradient.compute(render_frame, nullptr);
-            shad_basic_diffuse.draw(render_frame, nullptr);
+
+            shad_gradient.compute(render_frame);
+            shad_basic_diffuse.draw(render_frame);
+            
+
             // g.render_particles();
             // g.render_transparent_geometry();
 

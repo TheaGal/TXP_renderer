@@ -162,7 +162,7 @@ Shader_gradient::Shader_gradient(void* graphics)
 
 Shader_gradient::~Shader_gradient() = default;
 
-void Shader_gradient::compute(void* param)
+void Shader_gradient::compute(void* render_frame)
 {
     auto& p{ *m_pimpl };
 

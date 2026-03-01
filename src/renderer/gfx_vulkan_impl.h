@@ -529,7 +529,6 @@ struct Graphics::Impl
 
     void* start_new_frame(size_t rend_view_idx);
 
-    void clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image);
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,
                     Vk_Image::Image& to_image,

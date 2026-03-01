@@ -15,7 +15,7 @@ public:
     Shader_gradient(void* graphics);
     ~Shader_gradient();
 
-    void compute(void* param);
+    void compute(void* render_frame);
 
 private:
     static constexpr char const* k_name{ "gradient" };

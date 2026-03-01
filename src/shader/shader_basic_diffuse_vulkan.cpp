@@ -394,7 +394,7 @@ Shader_basic_diffuse::Shader_basic_diffuse(void* graphics)
 
 Shader_basic_diffuse::~Shader_basic_diffuse() = default;
 
-void Shader_basic_diffuse::draw(void* param)
+void Shader_basic_diffuse::draw(void* render_frame)
 {
     auto& p{ *m_pimpl };
 
@@ -410,13 +410,19 @@ void Shader_basic_diffuse::draw(void* param)
 #define WRAP_INTO_OWN_FUNC 1
 #if WRAP_INTO_OWN_FUNC
     // Begin rendering.
+    VkClearValue color_clear_value{
+        .color{ .float32{ 0, 0, 0, 1 } },
+    };
     VkRenderingAttachmentInfo color_attachment =
         Vk_Structs::txp_vk_attachment_info(p.hdr_draw_image_color.get_image_view(),
-                                           nullptr,
+                                           &color_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    VkClearValue depth_clear_value{
+        .depthStencil{ .depth = 1.0f, .stencil = 0 },
+    };
     VkRenderingAttachmentInfo depth_attachment =
         Vk_Structs::txp_vk_attachment_info(p.hdr_draw_image_depth.get_image_view(),
-                                           nullptr,
+                                           &depth_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
         VkExtent2D{ .width = p.hdr_draw_image_color.get_extent().width,

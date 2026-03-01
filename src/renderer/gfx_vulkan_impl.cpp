@@ -1058,43 +1058,6 @@ void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
     current_frame.graphics_queue_command_buffer.reset();
 }
 
-void Graphics::Impl::clear_image(Vk_Image::Image& color_image, Vk_Image::Image& depth_image)
-{
-    auto cmd{ get_current_frame().graphics_queue_command_buffer.get() };
-
-    Vk_Image::Image::transition_to(
-        cmd,
-        { { &color_image, VK_IMAGE_LAYOUT_GENERAL },
-          { &depth_image, VK_IMAGE_LAYOUT_GENERAL } });
-
-    // Clear color image.
-    float_t flash = std::abs(std::sin(current_frame_idx / 120.f));
-    VkClearColorValue clear_value{ .float32 = { 0.0f, 0.0f, flash * 0.5f, 1.0f } };
-    VkImageSubresourceRange clear_range =
-        Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_COLOR_BIT);
-
-    vkCmdClearColorImage(cmd,
-                         color_image.get(),
-                         VK_IMAGE_LAYOUT_GENERAL,
-                         &clear_value,
-                         1,
-                         &clear_range);
-
-    // Clear depth image.
-    VkClearDepthStencilValue clear_depth_value{
-        .depth = 0.0f,
-    };
-    VkImageSubresourceRange clear_depth_range =
-        Vk_Structs::txp_vk_image_subresource_range(VK_IMAGE_ASPECT_DEPTH_BIT);
-
-    vkCmdClearDepthStencilImage(cmd,
-                                depth_image.get(),
-                                VK_IMAGE_LAYOUT_GENERAL,
-                                &clear_depth_value,
-                                1,
-                                &clear_depth_range);
-}
-
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
                                 VkExtent3D from_extent,
                                 Vk_Image::Image& to_image,
