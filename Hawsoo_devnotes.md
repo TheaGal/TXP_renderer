@@ -285,7 +285,10 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Render-view recreation functionality.
     - [x] Include environmental buffer creation/recreation in.
     - [x] move creation of model transform set buffer to gfx-vulkan.
-    - [ ] Upload camera matrices to environmental buffer.
+    - [ ] Split out getting render view for the frame and render view from the acquiring swapchain image fence. (define `g.wait_until_can_start_next_frame();`)
+    - [ ] Upload camera matrices to environmental buffer (before running any shaders).
+        - [ ] Define `g.set_render_view(cam_matrix.projection, cam_matrix.view);`
+    - [ ] Rename `Render_view_hdr_image` to `Render_view` and `render_view_hdr_images` to `render_views`.
     - [ ] Update the camera.
 
 - [ ] .

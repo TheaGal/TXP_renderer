@@ -99,6 +99,8 @@ void Renderer::run()
 
             auto render_frame{ g.start_new_frame(render_view_idx) };
 
+            g.set_render_view(cam_matrix.projection, cam_matrix.view);
+
             if (main_cam_matrix)
             {
                 // g.compute_light_culling();
