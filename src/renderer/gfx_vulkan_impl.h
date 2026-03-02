@@ -281,6 +281,7 @@ struct Graphics::Impl
     /// HDR draw image (main geometry pipeline).
     struct Render_view_hdr_image
     {
+        size_t render_view_idx;
         Vk_Image::Allocated_image color;
         Vk_Image::Allocated_image depth;
     };

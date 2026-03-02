@@ -682,6 +682,19 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
     };
 
     set_render_view_sizes(default_rend_view_sizes);
+
+    // Create model transform set buffer.
+    for (auto& frame : frames)
+    {
+        frame.model_transform_set_buffer.create(
+            gfx.device,
+            gfx.allocator,
+            sizeof(gpu_type::Model_transform_set),
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+    }
 }
 
 void Graphics::Impl::init_vulkan_create_descriptors()
@@ -1070,13 +1083,15 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         // Environment data buffers.
         env_data_buffer.create(gfx.device,
                                gfx.allocator,
-                               sizeof(GPU_environment_data),
+                               sizeof(gpu_type::Environment_data),
                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
                                    VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
         // HDR draw image.
+        hdr_image.render_view_idx = i;
+
         VkExtent2D extent{
             .width = static_cast<uint32_t>(rend_view_size.width),
             .height = static_cast<uint32_t>(rend_view_size.height),

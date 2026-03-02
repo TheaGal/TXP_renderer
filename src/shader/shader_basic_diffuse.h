@@ -15,7 +15,7 @@ public:
     Shader_basic_diffuse(void* graphics);
     ~Shader_basic_diffuse();
 
-    void draw(void* render_frame);
+    void draw(void* render_view_param);
 
 private:
     static constexpr char const* k_name{ "basic_diffuse" };

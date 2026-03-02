@@ -11,6 +11,24 @@
 
 namespace TXP
 {
+namespace gpu_type
+{
+
+struct Environment_data
+{
+    mat4 projection;
+    mat4 view;
+    vec4 light_pos;
+    uint32_t basic_lighting;
+};
+
+struct Model_transform_set
+{
+    mat4 transforms[65535];
+};
+
+}  // namespace gpu_type
+
 
 /// Renderer backend with implementation depending on the platform using preprocessor macros in the
 /// .cpp source file to differentiate the different implementations.

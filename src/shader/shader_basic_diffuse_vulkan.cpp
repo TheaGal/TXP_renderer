@@ -23,21 +23,6 @@ namespace TXP
 namespace Shader
 {
 
-/// Struct for Environment_data.
-struct GPU_environment_data
-{
-    mat4 projection;
-    mat4 view;
-    vec4 light_pos;
-    uint32_t basic_lighting;
-};
-
-/// Struct for Model_transform_set.
-struct GPU_model_transform_set
-{
-    mat4 transforms[65535];
-};
-
 /// Struct for push constants.
 struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
 {
@@ -68,29 +53,6 @@ struct Shader_basic_diffuse::Impl
 
         // @TODO: for vv below vv pull out the `build_Descriptor_layout()` and
         //        `load_shader_module()` functions.
-
-        ////////////////////////////////////////////////////////////////////////////////////////////
-        // Buffers.
-        for (auto& frame : g.frames)
-        {
-            frame.environment_data_buffer.create(
-                g.gfx.device,
-                g.gfx.allocator,
-                sizeof(GPU_environment_data),
-                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                    VMA_ALLOCATION_CREATE_MAPPED_BIT);
-
-            frame.model_transform_set_buffer.create(
-                g.gfx.device,
-                g.gfx.allocator,
-                sizeof(GPU_model_transform_set),
-                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                    VMA_ALLOCATION_CREATE_MAPPED_BIT);
-        }
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Descriptors.
@@ -393,12 +355,12 @@ Shader_basic_diffuse::Shader_basic_diffuse(void* graphics)
 
 Shader_basic_diffuse::~Shader_basic_diffuse() = default;
 
-void Shader_basic_diffuse::draw(void* render_frame)
+void Shader_basic_diffuse::draw(void* render_view_param)
 {
     auto& p{ *m_pimpl };
 
-    auto& render_view_hdr_image{ *static_cast<Graphics::Impl::Render_view_hdr_image*>(
-        render_frame) };
+    auto& render_view{ *static_cast<Graphics::Impl::Render_view_hdr_image*>(
+        render_view_param) };
 
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
@@ -406,8 +368,8 @@ void Shader_basic_diffuse::draw(void* render_frame)
     // Ready images.
     Vk_Image::Image::transition_to(
         cmd,
-        { { &render_view_hdr_image.color.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
-          { &render_view_hdr_image.depth.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
+        { { &render_view.color.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
+          { &render_view.depth.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
 
 #define WRAP_INTO_OWN_FUNC 1
 #if WRAP_INTO_OWN_FUNC
@@ -416,35 +378,33 @@ void Shader_basic_diffuse::draw(void* render_frame)
         .color{ .float32{ 0, 0, 0, 1 } },
     };
     VkRenderingAttachmentInfo color_attachment =
-        Vk_Structs::txp_vk_attachment_info(render_view_hdr_image.color.get_image_view(),
+        Vk_Structs::txp_vk_attachment_info(render_view.color.get_image_view(),
                                            &color_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     VkClearValue depth_clear_value{
         .depthStencil{ .depth = 1.0f, .stencil = 0 },
     };
     VkRenderingAttachmentInfo depth_attachment =
-        Vk_Structs::txp_vk_attachment_info(render_view_hdr_image.depth.get_image_view(),
+        Vk_Structs::txp_vk_attachment_info(render_view.depth.get_image_view(),
                                            &depth_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
-        VkExtent2D{ .width = render_view_hdr_image.color.get_extent().width,
-                    .height = render_view_hdr_image.color.get_extent().height },
+        VkExtent2D{ .width = render_view.color.get_extent().width,
+                    .height = render_view.color.get_extent().height },
         &color_attachment,
         &depth_attachment);
     vkCmdBeginRendering(cmd, &render_info);
 #endif // WRAP_INTO_OWN_FUNC
 
     // Render.
-    VkViewport viewport{ .width =
-                             static_cast<float>(render_view_hdr_image.color.get_extent().width),
-                         .height =
-                             static_cast<float>(render_view_hdr_image.color.get_extent().height),
+    VkViewport viewport{ .width = static_cast<float>(render_view.color.get_extent().width),
+                         .height = static_cast<float>(render_view.color.get_extent().height),
                          .minDepth = 0.0f,
                          .maxDepth = 1.0f };
     vkCmdSetViewport(cmd, 0, 1, &viewport);
 
-    VkRect2D scissor{ .extent{ .width = render_view_hdr_image.color.get_extent().width,
-                               .height = render_view_hdr_image.color.get_extent().height } };
+    VkRect2D scissor{ .extent{ .width = render_view.color.get_extent().width,
+                               .height = render_view.color.get_extent().height } };
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
@@ -458,7 +418,9 @@ void Shader_basic_diffuse::draw(void* render_frame)
     p.g.combined_static_model.bind(cmd);
 
     Shader_basic_diffuse_push_constants push_consts{
-        .environment_data_dev_addr = current_frame.environment_data_buffer.get_device_address(),
+        .environment_data_dev_addr =
+            current_frame.environment_data_buffers[render_view.render_view_idx]
+                .get_device_address(),
         .model_transform_set_dev_addr =
             current_frame.model_transform_set_buffer.get_device_address(),
     };

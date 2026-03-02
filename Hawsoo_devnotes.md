@@ -283,6 +283,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Split out the hdr color/depth image into multiple render views (ichiou).
     - [x] Calc camera matrices.
     - [x] Render-view recreation functionality.
+    - [x] Include environmental buffer creation/recreation in.
+    - [x] move creation of model transform set buffer to gfx-vulkan.
     - [ ] Upload camera matrices to environmental buffer.
     - [ ] Update the camera.
 
