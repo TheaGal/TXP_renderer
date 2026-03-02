@@ -1014,9 +1014,34 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 {
     size_t prev_size{ render_view_hdr_images.size() };
 
+    bool is_gpu_idle{ false };  // Wait until GPU idle if any mutation.
+
+    auto& current_frame{ get_current_frame() };
+
+    // Destroy render views if shrinking number render view sizes.
+    for (size_t i = rend_view_sizes.size(); i < prev_size; i++)
+    {
+        if (!is_gpu_idle)
+        {
+            wait_until_gpu_idle();
+            is_gpu_idle = true;
+        }
+
+        current_frame.environment_data_buffers[i].destroy();
+
+        auto& hdr_image{ render_view_hdr_images[i] };
+        hdr_image.color.teardown();
+        hdr_image.depth.teardown();
+    }
+
+    // Resize.
+    current_frame.environment_data_buffers.resize(rend_view_sizes.size());
     render_view_hdr_images.resize(rend_view_sizes.size());
+
+    // Create new/changed render views.
     for (size_t i = 0; i < render_view_hdr_images.size(); i++)
     {
+        auto& env_data_buffer{ current_frame.environment_data_buffers[i] };
         auto& hdr_image{ render_view_hdr_images[i] };
         auto const& rend_view_size{ rend_view_sizes[i] };
 
@@ -1030,9 +1055,26 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
                 continue;  // Skip this image since nothing has changed.
 
             // Destroy image since this has changed.
+            if (!is_gpu_idle)
+            {
+                wait_until_gpu_idle();
+                is_gpu_idle = true;
+            }
+
+            env_data_buffer.destroy();
+
             hdr_image.color.teardown();
             hdr_image.depth.teardown();
         }
+
+        // Environment data buffers.
+        env_data_buffer.create(gfx.device,
+                               gfx.allocator,
+                               sizeof(GPU_environment_data),
+                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                   VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                                   VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
         // HDR draw image.
         VkExtent2D extent{
@@ -1056,6 +1098,7 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
 void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
 {
+    // @THEA: @TODO: Put vv this vv into `g.wait_until_can_start_next_frame();`
     if (rend_view_idx == 0)
     {   // Wait until GPU has finished rendering last frame (of current frame index).
         auto& current_frame{ get_current_frame() };
@@ -1088,6 +1131,7 @@ void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
         // Reset command buffers.
         current_frame.graphics_queue_command_buffer.reset();
     }
+    // @THEA: @TODO: Put ^^ this ^^ into `g.wait_until_can_start_next_frame();`
 
     return &render_view_hdr_images[rend_view_idx];
 }

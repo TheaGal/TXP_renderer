@@ -85,6 +85,9 @@ void Renderer::run()
         std::vector<Render_view_size> render_view_sizes;
         g.build_imgui_contents(render_view_sizes);
 
+        // Wait until can start rendering.
+        g.wait_until_can_start_next_frame();
+
         // Set render view sizes.
         g.set_render_view_sizes(render_view_sizes);
         m_camera.set_render_view_sizes(render_view_sizes);

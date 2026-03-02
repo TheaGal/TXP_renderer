@@ -263,7 +263,7 @@ struct Graphics::Impl
         VkSemaphore acquire_nxt_img_semaphore;
         VkFence render_fence;
 
-        Allocated_buffer environment_data_buffer;
+        std::vector<Allocated_buffer> environment_data_buffers;  // Matches number of render views.
         Allocated_buffer model_transform_set_buffer;
     };
     std::array<Frame_data, k_frame_overlap> frames;
