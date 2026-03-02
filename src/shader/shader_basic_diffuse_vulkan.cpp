@@ -397,7 +397,8 @@ void Shader_basic_diffuse::draw(void* render_frame)
 {
     auto& p{ *m_pimpl };
 
-    auto& render_view_hdr_image{ *static_cast<Graphics::Impl::Render_view_hdr_image*>(render_frame) };
+    auto& render_view_hdr_image{ *static_cast<Graphics::Impl::Render_view_hdr_image*>(
+        render_frame) };
 
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };

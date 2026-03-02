@@ -681,36 +681,7 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
         Render_view_size{ .width = 1280, .height = 720 }
     };
 
-#define PUT_THIS_INTO_ITS_OWN_FUNC 1
-#if PUT_THIS_INTO_ITS_OWN_FUNC
-
-    render_view_hdr_images.resize(default_rend_view_sizes.size());
-    for (size_t i = 0; i < render_view_hdr_images.size(); i++)
-    {
-        auto& hdr_image{ render_view_hdr_images[i] };
-        auto const& rend_view_size{ default_rend_view_sizes[i] };
-
-        if (rend_view_size.width <= 0 || rend_view_size.height <= 0)
-            throw std::runtime_error("Invalid render view size.");
-
-        // HDR draw image.
-        VkExtent2D extent{
-            .width = static_cast<uint32_t>(rend_view_size.width),
-            .height = static_cast<uint32_t>(rend_view_size.height),
-        };
-
-        hdr_image.color = Vk_Image::Allocated_image::create_image_2d(
-            VK_FORMAT_R16G16B16A16_SFLOAT,
-            extent,
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-                VK_IMAGE_USAGE_STORAGE_BIT |
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-
-        hdr_image.depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
-    }
-
-#endif // PUT_THIS_INTO_ITS_OWN_FUNC
+    set_render_view_sizes(default_rend_view_sizes);
 }
 
 void Graphics::Impl::init_vulkan_create_descriptors()
@@ -1034,12 +1005,53 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
 
     // Convert to render instructions.
     ImGui::Render();
+
+    // @TEMPORARY: there should be different render views that can show up.
+    out_rend_view_sizes.emplace_back(Render_view_size{ .width = 1280, .height = 720 });
 }
 
 void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
-    // @TODO: rebuild the hdr draw image list.
-    assert(false);
+    size_t prev_size{ render_view_hdr_images.size() };
+
+    render_view_hdr_images.resize(rend_view_sizes.size());
+    for (size_t i = 0; i < render_view_hdr_images.size(); i++)
+    {
+        auto& hdr_image{ render_view_hdr_images[i] };
+        auto const& rend_view_size{ rend_view_sizes[i] };
+
+        if (rend_view_size.width <= 0 || rend_view_size.height <= 0)
+            throw std::runtime_error("Invalid render view size.");
+
+        if (i < prev_size)
+        {
+            if (rend_view_size.width == hdr_image.color.get_extent().width &&
+                rend_view_size.height == hdr_image.color.get_extent().height)
+                continue;  // Skip this image since nothing has changed.
+
+            // Destroy image since this has changed.
+            hdr_image.color.teardown();
+            hdr_image.depth.teardown();
+        }
+
+        // HDR draw image.
+        VkExtent2D extent{
+            .width = static_cast<uint32_t>(rend_view_size.width),
+            .height = static_cast<uint32_t>(rend_view_size.height),
+        };
+
+        hdr_image.color = Vk_Image::Allocated_image::create_image_2d(
+            VK_FORMAT_R16G16B16A16_SFLOAT,
+            extent,
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+
+        hdr_image.depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
+    }
+    if (render_view_hdr_images.empty())
+        throw std::runtime_error("Render-view HDR image list must not be empty.");
 }
 
 void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
@@ -1077,8 +1089,7 @@ void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
         current_frame.graphics_queue_command_buffer.reset();
     }
 
-    // @TODO: return the corresponding render_frame.
-    assert(false);
+    return &render_view_hdr_images[rend_view_idx];
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
