@@ -110,9 +110,14 @@ void TXP::Graphics::set_render_view_sizes(std::vector<Render_view_size> const& r
     m_pimpl->set_render_view_sizes(rend_view_sizes);
 }
 
-void* TXP::Graphics::start_new_frame(size_t rend_view_idx)
+void TXP::Graphics::set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view)
 {
-    return m_pimpl->start_new_frame(rend_view_idx);
+    m_pimpl->set_render_view_camera(render_view_idx, camera_projection, camera_view);
+}
+
+void* TXP::Graphics::get_render_view(size_t rend_view_idx)
+{
+    return m_pimpl->get_render_view(rend_view_idx);
 }
 
 void TXP::Graphics::compute_light_culling()
@@ -178,6 +183,11 @@ void TXP::Graphics::render_hdr_to_ldr_postprocessing()
 void TXP::Graphics::render_imgui()
 {
     m_pimpl->render_imgui();
+}
+
+void TXP::Graphics::start_next_frame()
+{
+    m_pimpl->start_next_frame();
 }
 
 void TXP::Graphics::present_frame_to_screen()

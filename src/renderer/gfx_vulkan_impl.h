@@ -531,8 +531,12 @@ struct Graphics::Impl
     /// Sets render view sizes and rebuilds any needed render views if changed.
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
+    /// Sets render view camera information in the environmental buffer.
+    void set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view);
 
-    void* start_new_frame(size_t rend_view_idx);
+
+    void start_next_frame();
+    void* get_render_view(size_t rend_view_idx);
 
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,

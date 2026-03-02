@@ -55,8 +55,11 @@ public:
     /// Sets render view sizes for hdr draw images.
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
-    /// Acquires next render image for the frame. Will block until an image becomes available.
-    void* start_new_frame(size_t rend_view_idx);
+    /// Sets GPU camera properties for a render view.
+    void set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view);
+
+    /// Gets render view data for a render view.
+    void* get_render_view(size_t rend_view_idx);
 
     /// .
     void compute_light_culling();
@@ -90,6 +93,9 @@ public:
 
     /// Renders collected immediate-mode GUI commands to LDR present surface.
     void render_imgui();
+
+    /// Waits until GPU can use next frame resources, then starts a new frame.
+    void start_next_frame();
 
     /// Presents rendered frame to screen.
     void present_frame_to_screen();

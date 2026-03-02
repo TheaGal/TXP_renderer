@@ -86,7 +86,7 @@ void Renderer::run()
         g.build_imgui_contents(render_view_sizes);
 
         // Wait until can start rendering.
-        g.wait_until_can_start_next_frame();
+        g.start_next_frame();
 
         // Set render view sizes.
         g.set_render_view_sizes(render_view_sizes);
@@ -97,9 +97,11 @@ void Renderer::run()
         {
             bool main_cam_matrix{ render_view_idx == 0 };
 
-            auto render_frame{ g.start_new_frame(render_view_idx) };
+            auto render_view{ g.get_render_view(render_view_idx) };
 
-            g.set_render_view(cam_matrix.projection, cam_matrix.view);
+            g.set_render_view_camera(render_view_idx,
+                                     const_cast<vec4*>(cam_matrix.projection),
+                                     const_cast<vec4*>(cam_matrix.view));
 
             if (main_cam_matrix)
             {
@@ -109,9 +111,9 @@ void Renderer::run()
                 // g.compute_transparent_geometry_culling();
             }
 
-            // g.render_shadows(render_frame);
-            shad_gradient.compute(render_frame);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
-            shad_basic_diffuse.draw(render_frame);
+            // g.render_shadows(render_view);
+            shad_gradient.compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
+            shad_basic_diffuse.draw(render_view);
 
             if (main_cam_matrix)
             {

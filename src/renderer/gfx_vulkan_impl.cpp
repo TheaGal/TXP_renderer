@@ -1111,43 +1111,49 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         throw std::runtime_error("Render-view HDR image list must not be empty.");
 }
 
-void* Graphics::Impl::start_new_frame(size_t rend_view_idx)
+void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
+                                            mat4 camera_projection,
+                                            mat4 camera_view)
 {
-    // @THEA: @TODO: Put vv this vv into `g.wait_until_can_start_next_frame();`
-    if (rend_view_idx == 0)
-    {   // Wait until GPU has finished rendering last frame (of current frame index).
-        auto& current_frame{ get_current_frame() };
+    // @TODO
+    assert(false);
+}
 
-        constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
+void Graphics::Impl::start_next_frame()
+{   // Wait until GPU has finished rendering last frame (of current frame index).
+    auto& current_frame{ get_current_frame() };
 
-        VkResult err;
-        err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
-        if (err)
-        {
-            throw std::runtime_error("wait for render fence timed out.");
-        }
+    constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
-        err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
-        if (err)
-        {
-            throw std::runtime_error("reset render fence failed.");
-        }
-
-        // Request image from swapchain.
-        err = vkAcquireNextImageKHR(gfx.device,
-                                    gfx.swapchain,
-                                    k_10sec_as_ns,
-                                    current_frame.acquire_nxt_img_semaphore,
-                                    nullptr,
-                                    &current_swapchain_image_idx);
-        if (err)
-            throw std::runtime_error("Acquire next swapchain image failed.");
-
-        // Reset command buffers.
-        current_frame.graphics_queue_command_buffer.reset();
+    VkResult err;
+    err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
+    if (err)
+    {
+        throw std::runtime_error("wait for render fence timed out.");
     }
-    // @THEA: @TODO: Put ^^ this ^^ into `g.wait_until_can_start_next_frame();`
 
+    err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
+    if (err)
+    {
+        throw std::runtime_error("reset render fence failed.");
+    }
+
+    // Request image from swapchain.
+    err = vkAcquireNextImageKHR(gfx.device,
+                                gfx.swapchain,
+                                k_10sec_as_ns,
+                                current_frame.acquire_nxt_img_semaphore,
+                                nullptr,
+                                &current_swapchain_image_idx);
+    if (err)
+        throw std::runtime_error("Acquire next swapchain image failed.");
+
+    // Reset command buffers.
+    current_frame.graphics_queue_command_buffer.reset();
+}
+
+void* Graphics::Impl::get_render_view(size_t rend_view_idx)
+{
     return &render_view_hdr_images[rend_view_idx];
 }
 
