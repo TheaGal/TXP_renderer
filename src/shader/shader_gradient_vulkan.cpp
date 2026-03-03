@@ -64,7 +64,7 @@ struct Shader_gradient::Impl
             g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
 
         VkDescriptorImageInfo img_info{
-            .imageView = g.render_view_hdr_images[0].color.get_image_view(),
+            .imageView = g.render_views[0].color_image.get_image_view(),
             .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
         };
 
@@ -170,7 +170,7 @@ void Shader_gradient::compute(void* render_frame)
 
     Vk_Image::Image::transition_to(
         cmd,
-        { { &p.g.render_view_hdr_images[0].color.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
+        { { &p.g.render_views[0].color_image.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.shader_pipeline.pipeline);
     vkCmdBindDescriptorSets(cmd,
@@ -192,7 +192,7 @@ void Shader_gradient::compute(void* render_frame)
                               thread_group_sizes.depth);
         };
 
-    k_cmd_dispatch_fn(cmd, p.g.render_view_hdr_images[0].color.get_extent(), p.thread_grp_sizes);
+    k_cmd_dispatch_fn(cmd, p.g.render_views[0].color_image.get_extent(), p.thread_grp_sizes);
 }
 
 }  // namespace Shader

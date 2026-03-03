@@ -269,13 +269,13 @@ struct Shader_basic_diffuse::Impl
         };
 
         std::vector<VkFormat> color_attachment_formats{
-            g.render_view_hdr_images[0].color.get_format(),
+            g.render_views[0].color_image.get_format(),
         };
         VkPipelineRenderingCreateInfo dynamic_rendering_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
             .colorAttachmentCount = static_cast<uint32_t>(color_attachment_formats.size()),
             .pColorAttachmentFormats = color_attachment_formats.data(),
-            .depthAttachmentFormat = g.render_view_hdr_images[0].depth.get_format(),
+            .depthAttachmentFormat = g.render_views[0].depth_image.get_format(),
         };
 
         VkPipelineColorBlendAttachmentState blend_attachment{ .colorWriteMask = 0xf, };
@@ -359,8 +359,7 @@ void Shader_basic_diffuse::draw(void* render_view_param)
 {
     auto& p{ *m_pimpl };
 
-    auto& render_view{ *static_cast<Graphics::Impl::Render_view_hdr_image*>(
-        render_view_param) };
+    auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
 
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
@@ -368,8 +367,8 @@ void Shader_basic_diffuse::draw(void* render_view_param)
     // Ready images.
     Vk_Image::Image::transition_to(
         cmd,
-        { { &render_view.color.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
-          { &render_view.depth.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
+        { { &render_view.color_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
+          { &render_view.depth_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
 
 #define WRAP_INTO_OWN_FUNC 1
 #if WRAP_INTO_OWN_FUNC
@@ -378,33 +377,33 @@ void Shader_basic_diffuse::draw(void* render_view_param)
         .color{ .float32{ 0, 0, 0, 1 } },
     };
     VkRenderingAttachmentInfo color_attachment =
-        Vk_Structs::txp_vk_attachment_info(render_view.color.get_image_view(),
+        Vk_Structs::txp_vk_attachment_info(render_view.color_image.get_image_view(),
                                            &color_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     VkClearValue depth_clear_value{
         .depthStencil{ .depth = 1.0f, .stencil = 0 },
     };
     VkRenderingAttachmentInfo depth_attachment =
-        Vk_Structs::txp_vk_attachment_info(render_view.depth.get_image_view(),
+        Vk_Structs::txp_vk_attachment_info(render_view.depth_image.get_image_view(),
                                            &depth_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
-        VkExtent2D{ .width = render_view.color.get_extent().width,
-                    .height = render_view.color.get_extent().height },
+        VkExtent2D{ .width = render_view.color_image.get_extent().width,
+                    .height = render_view.color_image.get_extent().height },
         &color_attachment,
         &depth_attachment);
     vkCmdBeginRendering(cmd, &render_info);
 #endif // WRAP_INTO_OWN_FUNC
 
     // Render.
-    VkViewport viewport{ .width = static_cast<float>(render_view.color.get_extent().width),
-                         .height = static_cast<float>(render_view.color.get_extent().height),
+    VkViewport viewport{ .width = static_cast<float>(render_view.color_image.get_extent().width),
+                         .height = static_cast<float>(render_view.color_image.get_extent().height),
                          .minDepth = 0.0f,
                          .maxDepth = 1.0f };
     vkCmdSetViewport(cmd, 0, 1, &viewport);
 
-    VkRect2D scissor{ .extent{ .width = render_view.color.get_extent().width,
-                               .height = render_view.color.get_extent().height } };
+    VkRect2D scissor{ .extent{ .width = render_view.color_image.get_extent().width,
+                               .height = render_view.color_image.get_extent().height } };
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);

@@ -172,8 +172,8 @@ void TXP::Graphics::render_hdr_to_ldr_postprocessing()
     // @TODO: only do this if no imgui. If yes imgui, have this be tonemapped into ldr and then get
     //        into an imgui image.
     auto const& swapchain_extent{ m_pimpl->gfx.swapchain_extent };
-    m_pimpl->blit_image(m_pimpl->render_view_hdr_images[0].color.get_image(),
-                        m_pimpl->render_view_hdr_images[0].color.get_extent(),
+    m_pimpl->blit_image(m_pimpl->render_views[0].color_image.get_image(),
+                        m_pimpl->render_views[0].color_image.get_extent(),
                         m_pimpl->gfx.swapchain_images[m_pimpl->current_swapchain_image_idx],
                         VkExtent3D{ .width = swapchain_extent.width,
                                     .height = swapchain_extent.height,

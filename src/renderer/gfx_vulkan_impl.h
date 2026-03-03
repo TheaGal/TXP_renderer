@@ -263,7 +263,9 @@ struct Graphics::Impl
         VkSemaphore acquire_nxt_img_semaphore;
         VkFence render_fence;
 
+        /// This environment data buffer list needs to be per-frame but also per-renderview.
         std::vector<Allocated_buffer> environment_data_buffers;  // Matches number of render views.
+
         Allocated_buffer model_transform_set_buffer;
     };
     std::array<Frame_data, k_frame_overlap> frames;
@@ -278,14 +280,14 @@ struct Graphics::Impl
     VkImageView get_current_swapchain_image_view();
     VkSemaphore get_current_swapchain_submit_semaphore();
 
-    /// HDR draw image (main geometry pipeline).
-    struct Render_view_hdr_image
+    /// Holds per-renderview data (that is not also per-frame).
+    struct Render_view_data
     {
         size_t render_view_idx;
-        Vk_Image::Allocated_image color;
-        Vk_Image::Allocated_image depth;
+        Vk_Image::Allocated_image color_image;
+        Vk_Image::Allocated_image depth_image;
     };
-    std::vector<Render_view_hdr_image> render_view_hdr_images;
+    std::vector<Render_view_data> render_views;
 
     /// Helper for loading shader module.
     VkShaderModule load_shader_module(std::string const& fname)

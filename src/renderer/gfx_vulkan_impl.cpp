@@ -1035,7 +1035,7 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         }
     };
 
-    size_t prev_render_views_size{ render_view_hdr_images.size() };
+    size_t prev_render_views_size{ render_views.size() };
 
     auto& current_frame{ get_current_frame() };
     size_t prev_env_data_buffers_size{ current_frame.environment_data_buffers.size() };
@@ -1045,9 +1045,9 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
     {
         ensure_gpu_idle_fn();
 
-        auto& hdr_image{ render_view_hdr_images[i] };
-        hdr_image.color.teardown();
-        hdr_image.depth.teardown();
+        auto& render_view{ render_views[i] };
+        render_view.color_image.teardown();
+        render_view.depth_image.teardown();
     }
 
     // Destroy environment data buffers if shrinking its list's size.
@@ -1058,13 +1058,13 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
     }
 
     // Resize.
-    render_view_hdr_images.resize(rend_view_sizes.size());
+    render_views.resize(rend_view_sizes.size());
     current_frame.environment_data_buffers.resize(rend_view_sizes.size());
 
     // Create new/changed render views.
-    for (size_t i = 0; i < render_view_hdr_images.size(); i++)
+    for (size_t i = 0; i < render_views.size(); i++)
     {
-        auto& hdr_image{ render_view_hdr_images[i] };
+        auto& render_view{ render_views[i] };
         auto const& rend_view_size{ rend_view_sizes[i] };
 
         if (rend_view_size.width <= 0 || rend_view_size.height <= 0)
@@ -1072,25 +1072,25 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
         if (i < prev_render_views_size)
         {
-            if (rend_view_size.width == hdr_image.color.get_extent().width &&
-                rend_view_size.height == hdr_image.color.get_extent().height)
+            if (rend_view_size.width == render_view.color_image.get_extent().width &&
+                rend_view_size.height == render_view.color_image.get_extent().height)
                 continue;  // Skip this image since nothing has changed.
 
             // Destroy image since this has changed.
             ensure_gpu_idle_fn();
-            hdr_image.color.teardown();
-            hdr_image.depth.teardown();
+            render_view.color_image.teardown();
+            render_view.depth_image.teardown();
         }
 
         // HDR draw image.
-        hdr_image.render_view_idx = i;
+        render_view.render_view_idx = i;
 
         VkExtent2D extent{
             .width = static_cast<uint32_t>(rend_view_size.width),
             .height = static_cast<uint32_t>(rend_view_size.height),
         };
 
-        hdr_image.color = Vk_Image::Allocated_image::create_image_2d(
+        render_view.color_image = Vk_Image::Allocated_image::create_image_2d(
             VK_FORMAT_R16G16B16A16_SFLOAT,
             extent,
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
@@ -1098,10 +1098,10 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
                 VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-        hdr_image.depth = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
+        render_view.depth_image = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
     }
-    if (render_view_hdr_images.empty())
-        throw std::runtime_error("Render-view HDR image list must not be empty.");
+    if (render_views.empty())
+        throw std::runtime_error("Render-view list must not be empty.");
 
     // Create new environment data buffers.
     for (size_t i = 0; i < current_frame.environment_data_buffers.size(); i++)
@@ -1170,7 +1170,7 @@ void Graphics::Impl::start_next_frame()
 
 void* Graphics::Impl::get_render_view(size_t rend_view_idx)
 {
-    return &render_view_hdr_images[rend_view_idx];
+    return &render_views[rend_view_idx];
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,

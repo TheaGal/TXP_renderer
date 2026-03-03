@@ -290,7 +290,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Define `g.set_render_view(cam_matrix.projection, cam_matrix.view);`
         - [x] Set actual environment buffer information.
         - [x] Fix env data buffers not getting created after first frame (render view hdr images were getting in the way).
-    - [ ] Rename `Render_view_hdr_image` to `Render_view` and `render_view_hdr_images` to `render_views`.
+    - [x] Rename `Render_view_hdr_image` to `Render_view` and `render_view_hdr_images` to `render_views`.
+        - Compile did exit 0 👍
     - [ ] Update the camera.
 
 - [ ] .
