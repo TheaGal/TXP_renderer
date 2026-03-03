@@ -12,7 +12,7 @@ struct Environment_data
     float4x4 projection;
     float4x4 view;
     float4 light_pos;
-    uint32_t basic_lighting;
+    uint32_t lighting_mode;
 };
 
 struct Model_transform_set
@@ -28,7 +28,7 @@ struct VS_output
     float3 view_vec;
     float3 light_vec;
     uint32_t instance_index;
-    uint32_t basic_lighting;
+    uint32_t lighting_mode;
 };
 
 
@@ -51,7 +51,7 @@ VS_output vertex_main(VS_input input,
     output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
     output.uv = input.uv;
     output.instance_index = instance_index;
-    output.basic_lighting = env_data->basic_lighting;
+    output.lighting_mode = env_data->lighting_mode;
 
     // Calculate view vectors required for lighting.
     float4 frag_pos = mul(mul(env_data->view, model_mat), float4(input.pos.xyz, 1.0));
@@ -66,26 +66,30 @@ float4 fragment_main(VS_output input)
 {
     constexpr float4 k_error_color = float4(1, 0, 1, 1);
 
-    // if (input.basic_lighting == 0)  // @THEA: @NOCHECKIN: commented out this code temporarily for testing the fragment shader.
-    // {
-    //     // @TODO: implement.
-    //     return k_error_color;
-    // }
-    // else if (input.basic_lighting == 1)
-    // {
-    //     // Phong lighting.
-    //     float3 N = normalize(input.normal);
-    //     float3 L = normalize(input.light_vec);
-    //     float3 V = normalize(input.view_vec);
-    //     float3 R = reflect(-L, N);
-    //     float3 diffuse = max(dot(N, L), 0.0025);
-    //     float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
+    if (input.lighting_mode == 0)
+    {   // PBR.
+        // @TODO: implement.
+        return k_error_color;
+    }
+    else if (input.lighting_mode == 1)
+    {   // Phong lighting.
+        float3 N = normalize(input.normal);
+        float3 L = normalize(input.light_vec);
+        float3 V = normalize(input.view_vec);
+        float3 R = reflect(-L, N);
+        float3 diffuse = max(dot(N, L), 0.0025);
+        float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
         
-    //     // Sample from texture.
-    //     float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
-    //     return float4(diffuse * color.rgb + specular, 1.0);
-    // }
+        // Sample from texture.
+        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+        return float4(diffuse * color.rgb + specular, 1.0);
+    }
+    else if (input.lighting_mode == 2)
+    {   // Unlit sample from texture.
+        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+        return float4(color.rgb, 1.0);
+    }
 
-    // Error: invalid `basic_lighting` value.
+    // Error: invalid `lighting_mode` value.
     return k_error_color;
 }

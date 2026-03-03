@@ -19,7 +19,11 @@ struct Environment_data
     mat4 projection;
     mat4 view;
     vec4 light_pos;
-    uint32_t basic_lighting;
+
+    static constexpr uint32_t k_lighting_mode_full        = 0;
+    static constexpr uint32_t k_lighting_mode_basic_lit   = 1;
+    static constexpr uint32_t k_lighting_mode_basic_unlit = 2;
+    uint32_t lighting_mode;
 };
 
 struct Model_transform_set
