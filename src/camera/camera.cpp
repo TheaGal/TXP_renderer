@@ -97,12 +97,13 @@ std::vector<Camera::Cam_matrix> Camera::calc_cam_matrices() const
             glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
         }
 
-        vec3 cam_position{  // @TODO: @THEA: figure out how to convert real to float here!!
+        vec3 cam_position{  // @TODO: figure out how to convert real to float here!!
             cam.position.x,
             cam.position.y,
             cam.position.z,
         };
-        if (glm_vec3_max(cam_position) > 5000.0f)
+        if (glm_vec3_max(cam_position) > 2500.0f ||
+            glm_vec3_min(cam_position) < -2500.0f)  // @NOTE: this is a forced crash to ensure that I work on this issue someday in the future.  -Thea 2026/03/03
             throw std::runtime_error(
                 "@THEA: you need to figure out origin shifting for the camera position. It's "
                 "degraded too much at this point.");
