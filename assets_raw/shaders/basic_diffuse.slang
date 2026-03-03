@@ -63,25 +63,25 @@ float4 fragment_main(VS_output input)
 {
     constexpr float4 k_error_color = float4(1, 0, 1, 1);
 
-    if (input.basic_lighting == 0)
-    {
-        // @TODO: implement.
-        return k_error_color;
-    }
-    else if (input.basic_lighting == 1)
-    {
-        // Phong lighting.
-        float3 N = normalize(input.normal);
-        float3 L = normalize(input.light_vec);
-        float3 V = normalize(input.view_vec);
-        float3 R = reflect(-L, N);
-        float3 diffuse = max(dot(N, L), 0.0025);
-        float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
+    // if (input.basic_lighting == 0)  // @THEA: @NOCHECKIN: commented out this code temporarily for testing the fragment shader.
+    // {
+    //     // @TODO: implement.
+    //     return k_error_color;
+    // }
+    // else if (input.basic_lighting == 1)
+    // {
+    //     // Phong lighting.
+    //     float3 N = normalize(input.normal);
+    //     float3 L = normalize(input.light_vec);
+    //     float3 V = normalize(input.view_vec);
+    //     float3 R = reflect(-L, N);
+    //     float3 diffuse = max(dot(N, L), 0.0025);
+    //     float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
         
-        // Sample from texture.
-        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
-        return float4(diffuse * color.rgb + specular, 1.0);
-    }
+    //     // Sample from texture.
+    //     float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+    //     return float4(diffuse * color.rgb + specular, 1.0);
+    // }
 
     // Error: invalid `basic_lighting` value.
     return k_error_color;

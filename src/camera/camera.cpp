@@ -55,7 +55,7 @@ void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_vie
 void Camera::update()
 {
     // @TODO: use input to control camera.
-    assert(false);
+    // assert(false);  // @THEA: @NOCHECKIN: revert this commented out and replace it with camera controls asap.
 }
 
 std::vector<Camera::Cam_matrix> Camera::calc_cam_matrices() const
