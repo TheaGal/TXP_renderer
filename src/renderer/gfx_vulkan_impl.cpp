@@ -32,6 +32,7 @@
 #include "input_handler/input_handler.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
+#include "renderer/gfx.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/renderer.h"
 #include "types.h"
@@ -1025,69 +1026,61 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
 
 void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
-    size_t prev_size{ render_view_hdr_images.size() };
-
     bool is_gpu_idle{ false };  // Wait until GPU idle if any mutation.
-
-    auto& current_frame{ get_current_frame() };
-
-    // Destroy render views if shrinking number render view sizes.
-    for (size_t i = rend_view_sizes.size(); i < prev_size; i++)
-    {
+    auto ensure_gpu_idle_fn = [this, &is_gpu_idle]() {
         if (!is_gpu_idle)
         {
             wait_until_gpu_idle();
             is_gpu_idle = true;
         }
+    };
 
-        current_frame.environment_data_buffers[i].destroy();
+    size_t prev_render_views_size{ render_view_hdr_images.size() };
+
+    auto& current_frame{ get_current_frame() };
+    size_t prev_env_data_buffers_size{ current_frame.environment_data_buffers.size() };
+
+    // Destroy render views if shrinking its list's size.
+    for (size_t i = rend_view_sizes.size(); i < prev_render_views_size; i++)
+    {
+        ensure_gpu_idle_fn();
 
         auto& hdr_image{ render_view_hdr_images[i] };
         hdr_image.color.teardown();
         hdr_image.depth.teardown();
     }
 
+    // Destroy environment data buffers if shrinking its list's size.
+    for (size_t i = rend_view_sizes.size(); i < prev_env_data_buffers_size; i++)
+    {
+        ensure_gpu_idle_fn();
+        current_frame.environment_data_buffers[i].destroy();
+    }
+
     // Resize.
-    current_frame.environment_data_buffers.resize(rend_view_sizes.size());
     render_view_hdr_images.resize(rend_view_sizes.size());
+    current_frame.environment_data_buffers.resize(rend_view_sizes.size());
 
     // Create new/changed render views.
     for (size_t i = 0; i < render_view_hdr_images.size(); i++)
     {
-        auto& env_data_buffer{ current_frame.environment_data_buffers[i] };
         auto& hdr_image{ render_view_hdr_images[i] };
         auto const& rend_view_size{ rend_view_sizes[i] };
 
         if (rend_view_size.width <= 0 || rend_view_size.height <= 0)
             throw std::runtime_error("Invalid render view size.");
 
-        if (i < prev_size)
+        if (i < prev_render_views_size)
         {
             if (rend_view_size.width == hdr_image.color.get_extent().width &&
                 rend_view_size.height == hdr_image.color.get_extent().height)
                 continue;  // Skip this image since nothing has changed.
 
             // Destroy image since this has changed.
-            if (!is_gpu_idle)
-            {
-                wait_until_gpu_idle();
-                is_gpu_idle = true;
-            }
-
-            env_data_buffer.destroy();
-
+            ensure_gpu_idle_fn();
             hdr_image.color.teardown();
             hdr_image.depth.teardown();
         }
-
-        // Environment data buffers.
-        env_data_buffer.create(gfx.device,
-                               gfx.allocator,
-                               sizeof(gpu_type::Environment_data),
-                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                                   VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                                   VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
         // HDR draw image.
         hdr_image.render_view_idx = i;
@@ -1109,14 +1102,37 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
     }
     if (render_view_hdr_images.empty())
         throw std::runtime_error("Render-view HDR image list must not be empty.");
+
+    // Create new environment data buffers.
+    for (size_t i = 0; i < current_frame.environment_data_buffers.size(); i++)
+    {
+        auto& env_data_buffer{ current_frame.environment_data_buffers[i] };
+
+        if (i < prev_env_data_buffers_size)
+            continue;  // Skip this buffer since nothing has changed.
+
+        // Environment data buffers.
+        env_data_buffer.create(gfx.device,
+                               gfx.allocator,
+                               sizeof(gpu_type::Environment_data),
+                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                               VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                                   VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                                   VMA_ALLOCATION_CREATE_MAPPED_BIT);
+    }
+    if (current_frame.environment_data_buffers.empty())
+        throw std::runtime_error("Environment data buffer list must not be empty.");
 }
 
 void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
                                             mat4 camera_projection,
                                             mat4 camera_view)
 {
-    // @TODO
-    assert(false);
+    auto& env_data{ *static_cast<gpu_type::Environment_data*>(
+        get_current_frame().environment_data_buffers[render_view_idx].get_p_mapped_data()) };
+
+    glm_mat4_copy(camera_projection, env_data.projection);
+    glm_mat4_copy(camera_view, env_data.view);
 }
 
 void Graphics::Impl::start_next_frame()
