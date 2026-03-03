@@ -32,7 +32,7 @@ void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_vie
         {   // New camera state needs to be initialized.
             if (i == 0)
             {   // Default for main state.
-                cam_state.position = { 0.0, 0.0, -10.0 };
+                cam_state.position = { 0.0, 1.0, -10.0 };
                 cam_state.view_direction = { 0.0f, 0.0f, 1.0f };
                 cam_state.is_ortho = false;
                 cam_state.ortho_size = 10.0f;

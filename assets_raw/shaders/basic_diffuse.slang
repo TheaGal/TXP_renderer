@@ -42,9 +42,12 @@ VS_output vertex_main(VS_input input,
 
     VS_output output;
     output.pos = mul(env_data->projection,
-                     mul(env_data->view,
-                         mul(model_mat,
-                             float4(input.pos.xyz, 1.0))));
+                     mul(env_data->view,  // @NOCHECKIN: @THEA: omitted model mat so that could see a render (since all model mats are 0 right now).
+                             float4(input.pos.xyz, 1.0)));
+    // output.pos = mul(env_data->projection,  // @THEA: commented out since model_mat not implemented yet!!!
+    //                  mul(env_data->view,
+    //                      mul(model_mat,
+    //                          float4(input.pos.xyz, 1.0))));
     output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
     output.uv = input.uv;
     output.instance_index = instance_index;
