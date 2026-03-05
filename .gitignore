@@ -12,3 +12,4 @@ compile_commands.json
 
 # Get this macOS shit OUTTA HERE
 .DS_Store
+xcode_build/

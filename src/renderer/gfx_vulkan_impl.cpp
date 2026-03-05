@@ -1146,10 +1146,7 @@ void Graphics::Impl::set_directional_light(size_t render_view_idx,
     glm_vec3_copy(direction, env_data.directional_light.direction_xyz_intensity_w);
     env_data.directional_light.direction_xyz_intensity_w[3] = intensity;
 
-    env_data.directional_light.color =
-        ((static_cast<uint32_t>(glm_clamp_zo(color[0]) * 255.0f) << 24) |
-         (static_cast<uint32_t>(glm_clamp_zo(color[1]) * 255.0f) << 16) |
-         (static_cast<uint32_t>(glm_clamp_zo(color[2]) * 255.0f) << 8));
+    glm_vec3_copy(color, env_data.directional_light.color);
 
     // @NOCHECKIN: this is supposed to be a different func!
     env_data.lighting_mode = 1;

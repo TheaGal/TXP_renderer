@@ -17,7 +17,7 @@ namespace gpu_type
 struct Directional_light
 {
     vec4 direction_xyz_intensity_w;
-    uint32_t color;  // r,g,b each take 1 byte. last byte unknown atm.
+    vec4 color;
 };
 
 struct Environment_data

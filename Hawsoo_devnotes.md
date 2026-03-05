@@ -307,7 +307,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         >      light_intensity
         > uint32_t rgb encoded into 3 bytes, last byte unknown for now.
     - [x] do ichiou
-    - [ ] Figure out why not working. Padding issue maybe?
+    - [x] Figure out why not working. Padding issue maybe?
+        - Seems like padding issue, but just changed the uint32_t to vec4... and that fixed it?
+    - [ ] It appears that there's an issue with the memory here: [image](20260305_vertex_buffer_capture.png)
 
 
 

@@ -10,7 +10,7 @@ Sampler2D textures[];
 struct Directional_light
 {
     float4 direction_xyz_intensity_w;
-    uint32_t color;  // r,g,b each take 1 byte. last byte unknown atm.
+    float4 color;
 };
 
 struct Environment_data
@@ -87,8 +87,11 @@ float4 fragment_main(VS_output input)
         float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
         
         // Sample from texture.
-        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
-        return float4(diffuse * color.rgb + specular, 1.0);
+        // float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+        float3 color = float3(0.5, 0.5, 0.5);
+        // return float4(diffuse * color.rgb + specular, 1.0);
+        // return float4(color.rgb + specular, 1.0);
+        return float4((N * 0.5 + float3(0.5)), 1.0);
     }
     else if (input.lighting_mode == 2)
     {   // Unlit sample from texture.
