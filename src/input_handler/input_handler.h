@@ -10,6 +10,62 @@ namespace TXP
 namespace Input
 {
 
+/// Modifiers for keyboard and mouse events.
+struct Modifier_bits
+{
+    int32_t modbits{ 0 };
+
+    // Mod bits funcs.
+    bool has_shift();
+    bool has_control();
+    bool has_alt();
+    bool has_super();
+    bool has_capslock();
+    bool has_numlock();
+};
+
+/// State of a keyboard key.
+struct Keyboard_key_state
+{
+    bool pressed{ false };
+    bool repeat{ false };
+    Modifier_bits modbits;
+    size_t last_event_tick{ 0 };
+};
+
+/// State of a mouse button.
+struct Mouse_button_state
+{
+    bool pressed{ false };
+    Modifier_bits modbits;
+    size_t last_event_tick{ 0 };
+};
+
+/// State of the cursor.
+struct Cursor_pos_state
+{
+    double_t xpos{ 0.0 };
+    double_t ypos{ 0.0 };
+    bool valid{ false };
+};
+
+/// State of scrolling.
+struct Scroll_state
+{
+    double_t xoffset{ 0.0 };
+    double_t yoffset{ 0.0 };
+};
+
+/// State of a window.
+struct Window_state
+{
+    bool focused{ false };
+    bool iconified{ false };
+    int32_t size[2]{ -1, -1 };
+    size_t last_event_tick{ 0 };
+};
+
+
 /// Service for handling input from the input context (i.e. the window in desktop OSs).
 class Input_handler
 {
@@ -25,6 +81,12 @@ public:
     void window_focus_event(bool focused);
     void window_iconify_event(bool iconified);
     void window_resize_event(int32_t width, int32_t height);
+
+    Keyboard_key_state const& get_keyboard_key_state(int32_t key) const;
+    Mouse_button_state const& get_mouse_button_state(int32_t button) const;
+    Cursor_pos_state const& get_cursor_pos_state() const;
+    Scroll_state const& get_scroll_state() const;
+    Window_state const& get_window_state() const;
 
 private:
     struct Impl;

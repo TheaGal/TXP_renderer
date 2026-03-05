@@ -16,78 +16,45 @@ struct Input_handler::Impl
 {
     size_t event_tick{ 0 };
 
-    struct Modifier_bits
-    {
-        int32_t modbits{ 0 };
-
-        // Mod bits funcs.
-        bool has_shift()
-        {
-            return static_cast<bool>(modbits & GLFW_MOD_SHIFT);
-        }
-        bool has_control()
-        {
-            return static_cast<bool>(modbits & GLFW_MOD_CONTROL);
-        }
-        bool has_alt()
-        {
-            return static_cast<bool>(modbits & GLFW_MOD_ALT);
-        }
-        bool has_super()
-        {
-            return static_cast<bool>(modbits & GLFW_MOD_SUPER);
-        }
-        bool has_capslock()
-        {
-            return static_cast<bool>(modbits & GLFW_MOD_CAPS_LOCK);
-        }
-        bool has_numlock()
-        {
-            return static_cast<bool>(modbits & GLFW_MOD_NUM_LOCK);
-        }
-    };
-
-    struct Keyboard_key_state
-    {
-        bool pressed{ false };
-        bool repeat{ false };
-        Modifier_bits modbits;
-        size_t last_event_tick{ 0 };
-    };
-
     std::unordered_map<int32_t, Keyboard_key_state> keyboard_key_states_map;
-
-    struct Mouse_button_state
-    {
-        bool pressed{ false };
-        Modifier_bits modbits;
-        size_t last_event_tick{ 0 };
-    };
 
     std::unordered_map<int32_t, Mouse_button_state> mouse_button_states_map;
 
-    struct Cursor_pos_state
-    {
-        double_t xpos{ 0.0 };
-        double_t ypos{ 0.0 };
-    } cursor_pos_state;
+    Cursor_pos_state cursor_pos_state;
 
-    struct Scroll_state
-    {
-        double_t xoffset{ 0.0 };
-        double_t yoffset{ 0.0 };
-    } scroll_state;
+    Scroll_state scroll_state;
 
     std::unordered_map<int32_t, std::string> connected_gamepads_jid_to_name_map;
 
-    struct Window_state
-    {
-        bool focused{ false };
-        bool iconified{ false };
-        int32_t size[2]{ -1, -1 };
-        size_t last_event_tick{ 0 };
-    } window_state;
+    Window_state window_state;
 };
+
+
+// Mod bits funcs.
+bool Modifier_bits::has_shift()
+{
+    return static_cast<bool>(modbits & GLFW_MOD_SHIFT);
+}
+bool Modifier_bits::has_control()
+{
+    return static_cast<bool>(modbits & GLFW_MOD_CONTROL);
+}
+bool Modifier_bits::has_alt()
+{
+    return static_cast<bool>(modbits & GLFW_MOD_ALT);
+}
+bool Modifier_bits::has_super()
+{
+    return static_cast<bool>(modbits & GLFW_MOD_SUPER);
+}
+bool Modifier_bits::has_capslock()
+{
+    return static_cast<bool>(modbits & GLFW_MOD_CAPS_LOCK);
+}
+bool Modifier_bits::has_numlock()
+{
+    return static_cast<bool>(modbits & GLFW_MOD_NUM_LOCK);
+}
 
 
 // class Input_handler
@@ -123,6 +90,7 @@ void Input_handler::cursor_position_event(double_t xpos, double_t ypos)
     m_pimpl->cursor_pos_state = {
         .xpos = xpos,
         .ypos = ypos,
+        .valid = true,
     };
 }
 
@@ -169,6 +137,31 @@ void Input_handler::window_resize_event(int32_t width, int32_t height)
     m_pimpl->window_state.size[0] = width;
     m_pimpl->window_state.size[1] = height;
     m_pimpl->window_state.last_event_tick = ++m_pimpl->event_tick;
+}
+
+Keyboard_key_state const& Input_handler::get_keyboard_key_state(int32_t key) const
+{
+    return m_pimpl->keyboard_key_states_map[key];
+}
+
+Mouse_button_state const& Input_handler::get_mouse_button_state(int32_t button) const
+{
+    return m_pimpl->mouse_button_states_map[button];
+}
+
+Cursor_pos_state const& Input_handler::get_cursor_pos_state() const
+{
+    return m_pimpl->cursor_pos_state;
+}
+
+Scroll_state const& Input_handler::get_scroll_state() const
+{
+    return m_pimpl->scroll_state;
+}
+
+Window_state const& Input_handler::get_window_state() const
+{
+    return m_pimpl->window_state;
 }
 
 }  // namespace Input

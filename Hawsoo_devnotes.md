@@ -292,7 +292,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Fix env data buffers not getting created after first frame (render view hdr images were getting in the way).
     - [x] Rename `Render_view_hdr_image` to `Render_view` and `render_view_hdr_images` to `render_views`.
         - Compile did exit 0 👍
-    - [ ] Update the camera.
+    - [x] Update the camera.
+    - [x] Figure out why the camera snaps to a certain angle for the first delta.
+        - It turns out it was an invalid 0,0 state that was the default from glfw.
 
 - [ ] .
 

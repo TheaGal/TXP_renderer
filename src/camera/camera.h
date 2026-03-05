@@ -1,6 +1,7 @@
 #pragma once
 
 #include "btglm.h"
+#include "input_handler/input_handler.h"
 #include "types.h"
 
 #include <vector>
@@ -8,10 +9,6 @@
 
 namespace TXP
 {
-namespace Input
-{
-class Input_handler;
-}  // namespace Input
 
 /// Camera service.
 class Camera
@@ -33,6 +30,9 @@ public:
 
 private:
     Input::Input_handler& m_input_handler;
+    Input::Cursor_pos_state m_prev_cursor_state;
+
+    float_t m_input_sensitivity{ 0.1f };
 
     struct Camera_state
     {
