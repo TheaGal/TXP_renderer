@@ -18,7 +18,7 @@ public:
 
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
-    void update();
+    void update(float_t delta_time);
 
     struct Cam_matrix
     {
@@ -32,7 +32,8 @@ private:
     Input::Input_handler& m_input_handler;
     Input::Cursor_pos_state m_prev_cursor_state;
 
-    float_t m_input_sensitivity{ 0.1f };
+    float_t m_look_sensitivity{ 0.1f };
+    float_t m_fly_speed{ 20.0f };
 
     struct Camera_state
     {

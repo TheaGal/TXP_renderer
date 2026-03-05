@@ -53,7 +53,7 @@ void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_vie
     }
 }
 
-void Camera::update()
+void Camera::update(float_t delta_time)
 {
     size_t camera_idx{ 0 };  // @HARDCODE
     if (camera_idx >= m_camera_states.size())
@@ -62,10 +62,12 @@ void Camera::update()
     auto& camera{ m_camera_states[camera_idx] };
 
     // Get input.
-    auto w_key_state{ m_input_handler.get_keyboard_key_state(BT_KEY_W) };
-    auto a_key_state{ m_input_handler.get_keyboard_key_state(BT_KEY_A) };
-    auto s_key_state{ m_input_handler.get_keyboard_key_state(BT_KEY_S) };
-    auto d_key_state{ m_input_handler.get_keyboard_key_state(BT_KEY_D) };
+    auto key_w_state{ m_input_handler.get_keyboard_key_state(BT_KEY_W) };
+    auto key_a_state{ m_input_handler.get_keyboard_key_state(BT_KEY_A) };
+    auto key_s_state{ m_input_handler.get_keyboard_key_state(BT_KEY_S) };
+    auto key_d_state{ m_input_handler.get_keyboard_key_state(BT_KEY_D) };
+    auto key_e_state{ m_input_handler.get_keyboard_key_state(BT_KEY_E) };
+    auto key_q_state{ m_input_handler.get_keyboard_key_state(BT_KEY_Q) };
     auto cursor_state{ m_input_handler.get_cursor_pos_state() };
 
     // Calc delta.
@@ -78,11 +80,12 @@ void Camera::update()
         cursor_delta.ypos = 0;
     }
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // Move camera with camera delta.
     vec2 cooked_cam_delta;
     glm_vec2_scale(
         vec2{ static_cast<float_t>(cursor_delta.xpos), static_cast<float_t>(cursor_delta.ypos) },
-        m_input_sensitivity,
+        m_look_sensitivity,
         cooked_cam_delta);
 
     vec3 world_up{ 0.0f, 1.0f, 0.0f };
@@ -120,36 +123,37 @@ void Camera::update()
     // @NOTE: Need a normalization step at the end to prevent float inaccuracy over time.
     glm_vec3_normalize(camera.view_direction.raw);
 
-
-
-
-
-
-
-
-#if 0
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Move camera position with keys.
     vec2 cooked_mvt;
-    glm_vec2_scale(vec2{ input_state.move.x.val, input_state.move.y.val },
-                   capture_fly.speed * delta_time,
-                   cooked_mvt);
+    glm_vec2_scale(
+        vec2{ key_d_state.pressed == key_a_state.pressed ? 0.0f
+                                                         : (key_d_state.pressed ? 1.0f : -1.0f),
+              key_w_state.pressed == key_s_state.pressed ? 0.0f
+                                                         : (key_w_state.pressed ? 1.0f : -1.0f) },
+        m_fly_speed * delta_time,
+        cooked_mvt);
 
-    glm_vec3_muladds(camera.view_direction,
-                     cooked_mvt[1],
-                     camera.position);
-    glm_vec3_muladds(facing_direction_right,
-                     cooked_mvt[0],
-                     camera.position);
+    vec3 cam_delta_f;
+    glm_vec3_scale(camera.view_direction.raw, cooked_mvt[1], cam_delta_f);
+    rvec3 cam_delta_r;
+    cam_delta_r[0] = cam_delta_f[0];
+    cam_delta_r[1] = cam_delta_f[1];
+    cam_delta_r[2] = cam_delta_f[2];
+    btglm_rvec3_add(camera.position.raw, cam_delta_r, camera.position.raw);
 
-    // Update camera position with input.
-    camera.position[1] +=
-        input_state.le_move_world_y_axis.val * capture_fly.speed * delta_time;
-#endif // 0
+    glm_vec3_scale(facing_direction_right, cooked_mvt[0], cam_delta_f);
+    cam_delta_r[0] = cam_delta_f[0];
+    cam_delta_r[1] = cam_delta_f[1];
+    cam_delta_r[2] = cam_delta_f[2];
+    btglm_rvec3_add(camera.position.raw, cam_delta_r, camera.position.raw);
 
+    // Moving camera along Y-axis directly.
+    camera.position.y +=
+        (key_e_state.pressed == key_q_state.pressed ? 0.0f : (key_e_state.pressed ? 1.0f : -1.0f)) *
+        m_fly_speed * delta_time;
 
-
-
-
-
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update previous state.
     m_prev_cursor_state = cursor_state;
 }

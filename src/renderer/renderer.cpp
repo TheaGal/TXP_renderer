@@ -1,6 +1,7 @@
 #include "txp_renderer/renderer.h"
 
 #include "btservice_finder.h"
+#include "bttimer.h"
 #include "gfx.h"
 #include "render_object/render_model.h"
 #include "shader/shader_basic_diffuse.h"
@@ -67,9 +68,17 @@ void Renderer::run()
     // Load models.
     g.load_model_assets(std::move(*m_model_assets.scoped_lock()), m_render_model_data_collection);
 
+    // Timer.
+    BT::Timer main_timer;
+    main_timer.start_timer();
+
     // Render frames until shutdown flag is tripped.
     while (!m_shutdown_flag.load())
-    {   // Process render object destroy requests.
+    {
+        BT::logger::notify_start_new_mainloop_iteration();
+        float_t delta_time{ main_timer.calc_delta_time() };
+
+        // Process render object destroy requests.
 
         // Process render object create requests.
 
@@ -79,7 +88,7 @@ void Renderer::run()
 
         // Poll for input events.
         g.poll_input_events();
-        m_camera.update();
+        m_camera.update(delta_time);
 
         // Build imgui for this frame.
         std::vector<Render_view_size> render_view_sizes;
