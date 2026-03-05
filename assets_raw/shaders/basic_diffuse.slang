@@ -7,11 +7,17 @@ struct VS_input
 
 Sampler2D textures[];
 
+struct Directional_light
+{
+    float4 direction_xyz_intensity_w;
+    uint32_t color;  // r,g,b each take 1 byte. last byte unknown atm.
+};
+
 struct Environment_data
 {
     float4x4 projection;
     float4x4 view;
-    float4 light_pos;
+    Directional_light directional_light;
     uint32_t lighting_mode;
 };
 
@@ -56,7 +62,7 @@ VS_output vertex_main(VS_input input,
     // Calculate view vectors required for lighting.
     float4 frag_pos = mul(mul(env_data->view, model_mat), float4(input.pos.xyz, 1.0));
     output.view_vec = -frag_pos.xyz;
-    output.light_vec = env_data->light_pos.xyz - frag_pos.xyz;
+    output.light_vec = env_data->directional_light.direction_xyz_intensity_w.xyz - frag_pos.xyz;
     return output;
 }
 

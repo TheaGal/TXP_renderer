@@ -1135,6 +1135,26 @@ void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
     glm_mat4_copy(camera_view, env_data.view);
 }
 
+void Graphics::Impl::set_directional_light(size_t render_view_idx,
+                                           vec3 direction,
+                                           vec3 color,
+                                           float_t intensity)
+{
+    auto& env_data{ *static_cast<gpu_type::Environment_data*>(
+        get_current_frame().environment_data_buffers[render_view_idx].get_p_mapped_data()) };
+
+    glm_vec3_copy(direction, env_data.directional_light.direction_xyz_intensity_w);
+    env_data.directional_light.direction_xyz_intensity_w[3] = intensity;
+
+    env_data.directional_light.color =
+        ((static_cast<uint32_t>(glm_clamp_zo(color[0]) * 255.0f) << 24) |
+         (static_cast<uint32_t>(glm_clamp_zo(color[1]) * 255.0f) << 16) |
+         (static_cast<uint32_t>(glm_clamp_zo(color[2]) * 255.0f) << 8));
+
+    // @NOCHECKIN: this is supposed to be a different func!
+    env_data.lighting_mode = 1;
+}
+
 void Graphics::Impl::start_next_frame()
 {   // Wait until GPU has finished rendering last frame (of current frame index).
     auto& current_frame{ get_current_frame() };

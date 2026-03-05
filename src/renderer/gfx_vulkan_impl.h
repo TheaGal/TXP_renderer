@@ -536,6 +536,12 @@ struct Graphics::Impl
     /// Sets render view camera information in the environmental buffer.
     void set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view);
 
+    /// Sets render view directional light information in the environmental buffer.
+    void set_directional_light(size_t render_view_idx,
+                               vec3 direction,
+                               vec3 color,
+                               float_t intensity);
+
 
     void start_next_frame();
     void* get_render_view(size_t rend_view_idx);

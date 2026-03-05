@@ -111,6 +111,10 @@ void Renderer::run()
             g.set_render_view_camera(render_view_idx,
                                      const_cast<vec4*>(cam_matrix.projection),
                                      const_cast<vec4*>(cam_matrix.view));
+            g.set_directional_light(render_view_idx,
+                                    vec3{ 0.742781, 0.557086, 0.371391 },  // @HARDCODE
+                                    vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
+                                    10.0f);
 
             if (main_cam_matrix)
             {
@@ -144,8 +148,6 @@ void Renderer::run()
         g.render_imgui();
 
         g.present_frame_to_screen();
-
-        std::cout << "RENDERED ONE FRAME" << std::endl;
     }
 
     // Wait until GPU is idle before destruction.

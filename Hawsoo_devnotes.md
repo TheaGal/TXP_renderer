@@ -278,7 +278,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 ## Detour: add camera controls.
 
-- [ ] Implement camera controls.
+- [x] Implement camera controls.
     - [x] Implement input handles for glfw window.
     - [x] Split out the hdr color/depth image into multiple render views (ichiou).
     - [x] Calc camera matrices.
@@ -296,7 +296,19 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Figure out why the camera snaps to a certain angle for the first delta.
         - It turns out it was an invalid 0,0 state that was the default from glfw.
 
-- [ ] .
+
+## Load materials.
+
+- [ ] Include light direction information in environment buffer.
+    - Here's how to structure the information (for directional light):
+        > vec4 dir.x
+        >      dir.y
+        >      dir.z
+        >      light_intensity
+        > uint32_t rgb encoded into 3 bytes, last byte unknown for now.
+    - [x] do ichiou
+    - [ ] Figure out why not working. Padding issue maybe?
+
 
 
 ## Refactor.

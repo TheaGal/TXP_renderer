@@ -115,6 +115,14 @@ void TXP::Graphics::set_render_view_camera(size_t render_view_idx, mat4 camera_p
     m_pimpl->set_render_view_camera(render_view_idx, camera_projection, camera_view);
 }
 
+void TXP::Graphics::set_directional_light(size_t render_view_idx,
+                                          vec3 direction,
+                                          vec3 color,
+                                          float_t intensity)
+{
+    m_pimpl->set_directional_light(render_view_idx, direction, color, intensity);
+}
+
 void* TXP::Graphics::get_render_view(size_t rend_view_idx)
 {
     return m_pimpl->get_render_view(rend_view_idx);

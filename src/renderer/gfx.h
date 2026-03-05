@@ -14,11 +14,17 @@ namespace TXP
 namespace gpu_type
 {
 
+struct Directional_light
+{
+    vec4 direction_xyz_intensity_w;
+    uint32_t color;  // r,g,b each take 1 byte. last byte unknown atm.
+};
+
 struct Environment_data
 {
     mat4 projection;
     mat4 view;
-    vec4 light_pos;
+    Directional_light directional_light;
 
     static constexpr uint32_t k_lighting_mode_full        = 0;
     static constexpr uint32_t k_lighting_mode_basic_lit   = 1;
@@ -61,6 +67,12 @@ public:
 
     /// Sets GPU camera properties for a render view.
     void set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view);
+
+    /// Sets GPU directional light properties for a render view.
+    void set_directional_light(size_t render_view_idx,
+                               vec3 direction,
+                               vec3 color,
+                               float_t intensity);
 
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);

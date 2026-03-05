@@ -105,9 +105,9 @@ gantt
     section Model system
         完 Load 3D meshes (gltf/obj)         : a5, after a1, 4d
         完 Geometry pipeline shader          : a5_1, after a5, 5d
-        中 Camera controls                  : a5_2, after a5_1, 6d
-        Material set from model tex names : a6, after a5_2, 1d
-        Giant static model buffer         : a7, after a6, 2d
+        完 Camera controls                  : a5_2, after a5_1, 6d
+        中 Material set from model tex names : a6, after a5_2, 1d
+        完 Giant static model buffer         : a7, after a6, 2d
         Draw meshes with material system (use material set from model tex names)  : a8, after a7, 3d
     section Animation system
         Load .btafa and .btanitor to model : a9, after m1, 3d
