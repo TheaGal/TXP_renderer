@@ -299,7 +299,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 ## Load materials.
 
-- [ ] Include light direction information in environment buffer.
+- [x] Include light direction information in environment buffer.
     - Here's how to structure the information (for directional light):
         > vec4 dir.x
         >      dir.y
@@ -309,7 +309,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] do ichiou
     - [x] Figure out why not working. Padding issue maybe?
         - Seems like padding issue, but just changed the uint32_t to vec4... and that fixed it?
-    - [ ] It appears that there's an issue with the memory here: [image](20260305_vertex_buffer_capture.png)
+    - [x] It appears that there's an issue with the memory here: [image](20260305_vertex_buffer_capture.png)
+        - Turns out that the UV coords were getting written to the normal slot, and also normal directions were getting multiplied by the model matrix (which is 0 rn due to the previous error).
 
 
 

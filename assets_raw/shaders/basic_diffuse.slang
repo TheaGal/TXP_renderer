@@ -54,7 +54,8 @@ VS_output vertex_main(VS_input input,
     //                  mul(env_data->view,
     //                      mul(model_mat,
     //                          float4(input.pos.xyz, 1.0))));
-    output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
+    output.normal = input.normal;
+    // output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
     output.uv = input.uv;
     output.instance_index = instance_index;
     output.lighting_mode = env_data->lighting_mode;
@@ -78,20 +79,20 @@ float4 fragment_main(VS_output input)
         return k_error_color;
     }
     else if (input.lighting_mode == 1)
-    {   // Phong lighting.
+    {   // Thea-Phong lighting.
         float3 N = normalize(input.normal);
         float3 L = normalize(input.light_vec);
         float3 V = normalize(input.view_vec);
         float3 R = reflect(-L, N);
-        float3 diffuse = max(dot(N, L), 0.0025);
+        float3 diffuse = max(dot(N, L) * 0.5 + 0.5, 0.0025);
         float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
         
         // Sample from texture.
         // float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
-        float3 color = float3(0.5, 0.5, 0.5);
-        // return float4(diffuse * color.rgb + specular, 1.0);
+        float3 color = float3(0.8);
+        return float4(diffuse * color.rgb + float3(0.2) + specular, 1.0);
         // return float4(color.rgb + specular, 1.0);
-        return float4((N * 0.5 + float3(0.5)), 1.0);
+        // return float4(N, 1.0);
     }
     else if (input.lighting_mode == 2)
     {   // Unlit sample from texture.

@@ -43,7 +43,7 @@ struct Vertex
     /// Handle of vec2 for UV attribute.
     float_t* uv_vec2()
     {
-        return &normal_x;
+        return &uv_x;
     }
 };
 
