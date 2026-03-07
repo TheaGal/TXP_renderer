@@ -881,53 +881,6 @@ void Graphics::Impl::upload_model_entries_to_gpu(
                 index_buf_size);
 }
 
-
-std::vector<Graphics::Impl::Descriptor_binding_set_t> Graphics::Impl::
-    get_descriptor_binding_sets_from_shader_properties(Shader_Creation::Extracted_info const& info,
-                                                       Shader_Creation::Shader_pipeline_type type)
-{
-    auto stage_names = Shader_Creation::get_shader_pipeline_stage_names(type);
-
-    std::vector<Descriptor_binding_set_t> binding_sets;
-    binding_sets.reserve(stage_names.size());
-
-    for (auto const& stage_name : stage_names)
-    {
-        for (auto const& entry_pt : info.entry_points)
-            if (entry_pt.entry_point_stage == stage_name)
-            {   // Process this entry point.
-                binding_sets.emplace_back();
-
-                for (auto const& [_, desc_binding] :
-                     entry_pt.desc_layout_info.shader_param_to_layout_binding)
-                    binding_sets.back().emplace_back(desc_binding.binding_idx,
-                                                     VkDescriptorType(desc_binding.desc_type));
-
-                break;  // Goto next stage name.
-            }
-    }
-    if (stage_names.size() != binding_sets.size())
-        throw std::runtime_error("Count of binding set is mismatched from expected.");
-
-    return binding_sets;
-}
-
-VkShaderStageFlags Graphics::Impl::get_stage_flags_from_shader_type(
-    Shader_Creation::Shader_pipeline_type type)
-{
-    switch (type)
-    {
-    case Shader_Creation::SHAD_PIPE_TYPE_COMPUTE:
-        return VK_SHADER_STAGE_COMPUTE_BIT;
-
-    case Shader_Creation::SHAD_PIPE_TYPE_VERTEX_FRAGMENT:
-        return VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-    default:
-        throw std::runtime_error("Unsupported shader stage flag.");
-    }
-}
-
 VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
     Descriptor_binding_set_t&& bindings,
     VkShaderStageFlags shader_stages,

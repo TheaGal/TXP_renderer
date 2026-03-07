@@ -386,13 +386,6 @@ struct Graphics::Impl
     /// Descriptor binding types.
     using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, Descriptor_type_info>>;
 
-    /// Reflection data to descriptor bindings helper.
-    std::vector<Descriptor_binding_set_t> get_descriptor_binding_sets_from_shader_properties(
-        Shader_Creation::Extracted_info const& info,
-        Shader_Creation::Shader_pipeline_type type);
-
-    VkShaderStageFlags get_stage_flags_from_shader_type(Shader_Creation::Shader_pipeline_type type);
-
     /// Build descriptor layouts.
     VkDescriptorSetLayout build_descriptor_layout(
         Descriptor_binding_set_t&& bindings,

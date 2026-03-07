@@ -86,13 +86,10 @@ float4 fragment_main(VS_output input)
         float3 R = reflect(-L, N);
         float3 diffuse = max(dot(N, L) * 0.5 + 0.5, 0.0025);
         float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
-        
+
         // Sample from texture.
-        // float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
-        float3 color = float3(0.8);
-        return float4(diffuse * color.rgb + float3(0.2) + specular, 1.0);
-        // return float4(color.rgb + specular, 1.0);
-        // return float4(N, 1.0);
+        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+        return float4(diffuse * color.rgb + specular, 1.0);
     }
     else if (input.lighting_mode == 2)
     {   // Unlit sample from texture.
