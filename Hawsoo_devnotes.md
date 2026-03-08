@@ -315,6 +315,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [ ] Get shader params into the basic shader.
     - [x] remove the shader type requirement for the public interface. Only shader name requeired.
     - [x] MISC: do a bunch of cleanup lol
+    - [x] build ifc
+    - [x] get material params into list
+    - [ ] create buffer for material param sets
+    - [ ] create buffer for per-instance data collection
+    - [ ] add in model transforms for the instances.
+        - [ ] Perhaps at this point use the render objects?
 
 
 ## Refactor.
