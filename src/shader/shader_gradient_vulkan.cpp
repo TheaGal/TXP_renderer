@@ -4,6 +4,7 @@
 #include "shader_gradient.h"
 // clang-format on
 
+#include "btlogger.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader_creation/shader_creation.h"
@@ -161,6 +162,14 @@ Shader_gradient::Shader_gradient(void* graphics)
 }
 
 Shader_gradient::~Shader_gradient() = default;
+
+void Shader_gradient::make_material(
+    std::string const& material_name,
+    std::unordered_map<std::string, std::string> const& shader_params)
+{
+    // Do nothing.
+    BT_WARN("This material has no shader params.");
+}
 
 void Shader_gradient::compute(void* render_frame)
 {

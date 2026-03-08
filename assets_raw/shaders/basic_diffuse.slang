@@ -5,8 +5,6 @@ struct VS_input
     float2 uv;
 };
 
-Sampler2D textures[];
-
 struct Directional_light
 {
     float4 direction_xyz_intensity_w;
@@ -21,9 +19,32 @@ struct Environment_data
     uint32_t lighting_mode;
 };
 
+struct Per_instance_data
+{
+    uint32_t model_transform_set_idx;
+    uint32_t material_param_set_idx;
+};
+
+struct Per_instance_data_collection
+{
+    Per_instance_data per_instance_datas[65535];
+};
+
 struct Model_transform_set
 {
     float4x4 transforms[65535];
+};
+
+Sampler2D textures[];
+
+struct Material_param_set
+{
+    uint32_t texture0_idx;
+};
+
+struct Material_param_set_collection
+{
+    Material_param_set material_param_sets[256];
 };
 
 struct VS_output
@@ -41,7 +62,9 @@ struct VS_output
 [shader("vertex")]
 VS_output vertex_main(VS_input input,
                       uniform Environment_data* env_data,
+                      uniform Per_instance_data_collection* per_instance_data_collection,
                       uniform Model_transform_set* model_transform_set,
+                      uniform Material_param_set_collection* material_param_set_collection,
                       uint instance_index : SV_VulkanInstanceID)
 {
     float4x4 model_mat = model_transform_set->transforms[instance_index];

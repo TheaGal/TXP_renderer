@@ -68,7 +68,9 @@ void TXP::Graphics::load_material_assets(
 {   // Load materials.
     for (auto const& mat_asset : material_assets)
     {
-
+        assert(false);
+        // @TODO: move this to renderer.cpp (stuff the params into the shaders at that level.)
+        // @TODO: also ensure that the materials for the shaders are also owned by the shaders (but idk how that's gonna all work out yet tbh).
     }
     BT_TRACEF("Loaded all %zu materials.", material_assets.size());
 

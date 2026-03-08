@@ -1,6 +1,8 @@
 #pragma once
 
 #include <memory>
+#include <string>
+#include <unordered_map>
 
 
 namespace TXP
@@ -12,14 +14,17 @@ namespace Shader
 class Shader_gradient
 {
 public:
+    static constexpr char const* k_name{ "gradient" };
+
     Shader_gradient(void* graphics);
     ~Shader_gradient();
+
+    void make_material(std::string const& material_name,
+                       std::unordered_map<std::string, std::string> const& shader_params);
 
     void compute(void* render_frame);
 
 private:
-    static constexpr char const* k_name{ "gradient" };
-
     struct Impl;
     std::unique_ptr<Impl> m_pimpl;
 };

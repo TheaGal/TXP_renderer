@@ -16,18 +16,35 @@
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 
 
 namespace TXP
 {
 namespace Shader
 {
+namespace gpu_type
+{
+
+struct Material_param_set
+{
+    uint32_t texture0_idx;
+};
+
+struct Material_param_set_collection
+{
+    Material_param_set material_param_sets[256];
+};
+
+}  // namespace gpu_type
 
 /// Struct for push constants.
 struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
 {
     VkDeviceAddress environment_data_dev_addr;
+    VkDeviceAddress per_instance_data_collection_dev_addr;
     VkDeviceAddress model_transform_set_dev_addr;
+    VkDeviceAddress material_param_set_collection_dev_addr;
 };
 
 // struct Shader_basic_diffuse::Impl
@@ -338,6 +355,13 @@ struct Shader_basic_diffuse::Impl
         VkDescriptorSetLayout textures_descriptor_layout;
     } shader_pipeline;
 
+    /// Parameters for a material.
+    struct Material_param_set
+    {
+        uint32_t texture0_idx;
+    };
+    std::unordered_map<std::string, Material_param_set> material_name_to_params_map;
+
     // @THEA: @NOCHECKIN: the vv below vv needs to get promoted to be created at the same time as the ktxtextures get loaded!!!!
 #define WRAP_INTO_OWN_FUNC 1
 #if WRAP_INTO_OWN_FUNC
@@ -354,6 +378,28 @@ Shader_basic_diffuse::Shader_basic_diffuse(void* graphics)
 }
 
 Shader_basic_diffuse::~Shader_basic_diffuse() = default;
+
+void Shader_basic_diffuse::make_material(
+    std::string const& material_name,
+    std::unordered_map<std::string, std::string> const& shader_params)
+{
+    Impl::Material_param_set new_param_set;
+
+    for (auto& [param_key, param_val] : shader_params)
+    {
+        if (param_key == "texture0")
+        {
+            new_param_set.texture0_idx = 123123;  // @TODO: implement!
+            assert(false);
+        }
+        else
+            BT_WARNF("Unknown shader param: %s", param_key.c_str());
+    }
+    if (shader_params.size() != 1)
+        throw std::runtime_error("Wrong number of shader params.");
+
+    m_pimpl->material_name_to_params_map.emplace(material_name, std::move(new_param_set));
+}
 
 void Shader_basic_diffuse::draw(void* render_view_param)
 {

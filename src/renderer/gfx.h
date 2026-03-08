@@ -32,6 +32,17 @@ struct Environment_data
     uint32_t lighting_mode;
 };
 
+struct Per_instance_data
+{
+    uint32_t model_transform_set_idx;
+    uint32_t material_param_set_idx;
+};
+
+struct Per_instance_data_collection
+{
+    Per_instance_data per_instance_datas[65535];
+};
+
 struct Model_transform_set
 {
     mat4 transforms[65535];

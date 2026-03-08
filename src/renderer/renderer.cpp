@@ -58,11 +58,24 @@ void Renderer::run()
     g.load_texture_assets(m_texture_asset_dir, std::move(*m_texture_assets.scoped_lock()));
 
     // Create shaders.
+    // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
+    //                enough of an interface.
     Shader::Shader_gradient shad_gradient{ g.get_impl() };
     Shader::Shader_basic_diffuse shad_basic_diffuse{ g.get_impl() };
 
-    // Load materials (and material sets).
-    g.load_material_assets(std::move(*m_material_assets.scoped_lock()),
+    // Insert material params.
+    auto material_assets{ m_material_assets.scoped_lock() };
+    for (auto const& mat_asset : *material_assets)
+    {   // Find shader.
+        // clang-format off
+        if      (mat_asset.shader_name == shad_gradient.k_name)       shad_gradient.make_material(mat_asset.material_name, mat_asset.shader_params);
+        else if (mat_asset.shader_name == shad_basic_diffuse.k_name)  shad_basic_diffuse.make_material(mat_asset.material_name, mat_asset.shader_params);
+        else throw std::runtime_error("Unknown shader name");
+        // clang-format on
+    }
+
+    // Load materials/material sets.
+    g.load_material_assets(std::move(*material_assets),
                            std::move(*m_material_set_assets.scoped_lock()));
 
     // Load models.
