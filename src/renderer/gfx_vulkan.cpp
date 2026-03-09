@@ -10,6 +10,7 @@
 #include <vulkan/vulkan_core.h>
 // clang-format on
 
+#include "btdatecheck.h"
 #include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
 #include "render_object/render_model.h"
@@ -65,7 +66,11 @@ void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
 void TXP::Graphics::load_material_assets(
     std::vector<Material_asset_create_info>&& material_assets,
     std::vector<Material_set_asset_create_info>&& material_set_assets)
-{   // Load materials.
+{
+    BT::date_deadline(2026, 3, 10);
+    return;
+
+    // Load materials.
     for (auto const& mat_asset : material_assets)
     {
         assert(false);

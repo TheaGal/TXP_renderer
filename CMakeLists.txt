@@ -176,6 +176,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btdatecheck.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btdatecheck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btglm.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btjson.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btjson.h
