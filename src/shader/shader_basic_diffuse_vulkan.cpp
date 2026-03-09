@@ -7,6 +7,7 @@
 #include "btglm.h"
 #include "btlogger.h"
 #include "renderer/gfx.h"
+#include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan/vk_structs.h"
 #include "renderer/gfx_vulkan_impl.h"
@@ -361,6 +362,7 @@ struct Shader_basic_diffuse::Impl
         uint32_t texture0_idx;
     };
     std::unordered_map<std::string, Material_param_set> material_name_to_params_map;
+    Vk_Buffer::Allocated_buffer material_param_set_collection_buffer;
 
     // @THEA: @NOCHECKIN: the vv below vv needs to get promoted to be created at the same time as the ktxtextures get loaded!!!!
 #define WRAP_INTO_OWN_FUNC 1
@@ -466,8 +468,12 @@ void Shader_basic_diffuse::draw(void* render_view_param)
         .environment_data_dev_addr =
             current_frame.environment_data_buffers[render_view.render_view_idx]
                 .get_device_address(),
+        .per_instance_data_collection_dev_addr =
+            current_frame.per_instance_data_collection_buffer.get_device_address(),
         .model_transform_set_dev_addr =
             current_frame.model_transform_set_buffer.get_device_address(),
+        .material_param_set_collection_dev_addr =
+            p.material_param_set_collection_buffer.get_device_address(),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,

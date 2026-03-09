@@ -210,6 +210,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/vertex.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_buffer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_buffer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_image.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_image.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan/vk_structs.cpp

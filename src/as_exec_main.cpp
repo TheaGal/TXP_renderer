@@ -20,9 +20,7 @@ int32_t main()
                      "assets/models/" };
 
     r.add_texture("default_tex", ".ktx2");
-    r.add_material("default_mat",
-                   "default_shader",
-                   { { "texture0", "default_tex" } });
+    r.add_material("default_mat", "basic_diffuse", { { "texture0", "default_tex" } });
     r.add_material("__gradient_mat", "gradient", { { "image", "__hdr_draw_image_color" } });
     r.add_material_set("default_mat_set", { "default_mat" });
     r.add_model("probuilder_example", ".wobj");

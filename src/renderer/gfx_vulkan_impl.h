@@ -22,6 +22,7 @@
 #include "gfx_vulkan/vk_image.h"
 #include "render_object/render_model.h"
 #include "render_object/render_object.h"
+#include "renderer/gfx_vulkan/vk_buffer.h"
 #include "types.h"
 
 #include <cmath>
@@ -186,74 +187,6 @@ struct Graphics::Impl
         VkCommandBuffer m_cmd;
     };
 
-    // @TODO: @THEA: move this over to a vk-buffers!!!
-    class Allocated_buffer
-    {
-    public:
-        /// Creates buffer.
-        void create(VkDevice device,
-                    VmaAllocator allocator,
-                    VkDeviceSize buffer_size,
-                    VkBufferUsageFlags buffer_usage_flags,
-                    VmaAllocationCreateFlags buffer_allocation_flags)
-        {
-            m_used_allocator = allocator;
-
-            VkBufferCreateInfo buffer_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-                                            .size = buffer_size,
-                                            .usage = buffer_usage_flags };
-            VmaAllocationCreateInfo buffer_alloc_info{ .flags = buffer_allocation_flags,
-                                                       .usage = VMA_MEMORY_USAGE_AUTO };
-            VkResult err = vmaCreateBuffer(m_used_allocator,
-                                           &buffer_info,
-                                           &buffer_alloc_info,
-                                           &m_buffer,
-                                           &m_buffer_allocation,
-                                           &m_buffer_allocation_info);
-            if (err)
-                throw std::runtime_error("Creation of buffer failed.");
-
-            if (buffer_usage_flags & VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT)
-            {
-                VkBufferDeviceAddressInfo buffer_bda_info{
-                    .sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO,
-                    .buffer = m_buffer,
-                };
-                m_device_address = vkGetBufferDeviceAddress(device, &buffer_bda_info);
-            }
-        }
-
-        /// Destroys the created buffer.
-        void destroy()
-        {
-            vmaDestroyBuffer(m_used_allocator, m_buffer, m_buffer_allocation);
-        }
-
-        VkBuffer const& get_buffer() const
-        {
-            return m_buffer;
-        }
-
-        /// Gets the `.pMappedData` pointer.
-        void* get_p_mapped_data()
-        {
-            return m_buffer_allocation_info.pMappedData;
-        }
-
-        /// Gets the buffer device address, if it was initialized with that.
-        VkDeviceAddress get_device_address() const
-        {
-            return m_device_address;
-        }
-
-    private:
-        VmaAllocator m_used_allocator;
-        VkBuffer m_buffer;
-        VmaAllocation m_buffer_allocation;
-        VmaAllocationInfo m_buffer_allocation_info;
-        VkDeviceAddress m_device_address{ 0xdeadbeef };
-    };
-
 
     /// Holds per-frame data.
     struct Frame_data
@@ -264,9 +197,10 @@ struct Graphics::Impl
         VkFence render_fence;
 
         /// This environment data buffer list needs to be per-frame but also per-renderview.
-        std::vector<Allocated_buffer> environment_data_buffers;  // Matches number of render views.
+        std::vector<Vk_Buffer::Allocated_buffer> environment_data_buffers;  // Matches number of render views.
 
-        Allocated_buffer model_transform_set_buffer;
+        Vk_Buffer::Allocated_buffer per_instance_data_collection_buffer;
+        Vk_Buffer::Allocated_buffer model_transform_set_buffer;
     };
     std::array<Frame_data, k_frame_overlap> frames;
 
@@ -360,7 +294,7 @@ struct Graphics::Impl
 
     struct Model_buffer
     {
-        Allocated_buffer vertex_index_buffer;  // Vertex part first, index part second.
+        Vk_Buffer::Allocated_buffer vertex_index_buffer;  // Vertex part first, index part second.
         VkDeviceSize offset_to_index_buffer;
 
         void bind(VkCommandBuffer cmd)

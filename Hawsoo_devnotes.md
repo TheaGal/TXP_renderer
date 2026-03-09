@@ -317,8 +317,13 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] MISC: do a bunch of cleanup lol
     - [x] build ifc
     - [x] get material params into list
+    - [x] move allocated buffer to its own thingy
     - [ ] create buffer for material param sets
+        - [ ] create buffer
+        - [x] add buffer to the device address list.
     - [ ] create buffer for per-instance data collection
+        - [ ] create buffer
+        - [x] add buffer to the device address list.
     - [ ] add in model transforms for the instances.
         - [ ] Perhaps at this point use the render objects?
 

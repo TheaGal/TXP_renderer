@@ -97,7 +97,7 @@ private:
     VkFormat m_format;
 };
 
-}  // namespace Vk_Structs
+}  // namespace Vk_Image
 }  // namespace TXP
 
 #endif // TXP_GFX_BACKEND_VULKAN
