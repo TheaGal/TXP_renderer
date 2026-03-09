@@ -318,6 +318,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] build ifc
     - [x] get material params into list
     - [x] move allocated buffer to its own thingy
+    - [x] correct assignment of texture idx.
     - [ ] create buffer for material param sets
         - [ ] create buffer
         - [x] add buffer to the device address list.

@@ -391,8 +391,7 @@ void Shader_basic_diffuse::make_material(
     {
         if (param_key == "texture0")
         {
-            new_param_set.texture0_idx = 123123;  // @TODO: implement!
-            assert(false);
+            new_param_set.texture0_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
         }
         else
             BT_WARNF("Unknown shader param: %s", param_key.c_str());
