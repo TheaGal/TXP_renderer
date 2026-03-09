@@ -44,7 +44,7 @@ struct Material_param_set
 
 struct Material_param_set_collection
 {
-    Material_param_set material_param_sets[256];
+    Material_param_set material_param_sets[];
 };
 
 struct VS_output

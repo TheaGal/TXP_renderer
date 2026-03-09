@@ -319,8 +319,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] get material params into list
     - [x] move allocated buffer to its own thingy
     - [x] correct assignment of texture idx.
-    - [ ] create buffer for material param sets
-        - [ ] create buffer
+    - [x] trigger build material param collections.
+    - [x] create buffer for material param sets
+        - [x] create buffer
         - [x] add buffer to the device address list.
     - [ ] create buffer for per-instance data collection
         - [ ] create buffer

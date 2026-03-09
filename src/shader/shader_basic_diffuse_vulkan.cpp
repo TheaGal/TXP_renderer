@@ -15,6 +15,7 @@
 #include "vulkan/vulkan_core.h"
 
 #include <cstddef>
+#include <cstring>
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
@@ -27,14 +28,10 @@ namespace Shader
 namespace gpu_type
 {
 
+/// Material parameters for this shader.
 struct Material_param_set
 {
     uint32_t texture0_idx;
-};
-
-struct Material_param_set_collection
-{
-    Material_param_set material_param_sets[256];
 };
 
 }  // namespace gpu_type
@@ -54,6 +51,7 @@ struct Shader_basic_diffuse::Impl
     Impl(TXP::Graphics::Impl& graphics)
         : g(graphics)
         , device(g.gfx.device)
+        , allocator(g.gfx.allocator)
     {
     #define WRAP_INTO_OWN_FUNC 1
     #if WRAP_INTO_OWN_FUNC
@@ -343,6 +341,7 @@ struct Shader_basic_diffuse::Impl
 
     TXP::Graphics::Impl& g;
     VkDevice device;
+    VmaAllocator allocator;
 
     std::string vertex_entry_point_name;
     std::string fragment_entry_point_name;
@@ -356,12 +355,8 @@ struct Shader_basic_diffuse::Impl
         VkDescriptorSetLayout textures_descriptor_layout;
     } shader_pipeline;
 
-    /// Parameters for a material.
-    struct Material_param_set
-    {
-        uint32_t texture0_idx;
-    };
-    std::unordered_map<std::string, Material_param_set> material_name_to_params_map;
+    // Parameters for a material.
+    std::unordered_map<std::string, gpu_type::Material_param_set> material_name_to_params_map;
     Vk_Buffer::Allocated_buffer material_param_set_collection_buffer;
 
     // @THEA: @NOCHECKIN: the vv below vv needs to get promoted to be created at the same time as the ktxtextures get loaded!!!!
@@ -385,7 +380,7 @@ void Shader_basic_diffuse::make_material(
     std::string const& material_name,
     std::unordered_map<std::string, std::string> const& shader_params)
 {
-    Impl::Material_param_set new_param_set;
+    gpu_type::Material_param_set new_param_set;
 
     for (auto& [param_key, param_val] : shader_params)
     {
@@ -400,6 +395,28 @@ void Shader_basic_diffuse::make_material(
         throw std::runtime_error("Wrong number of shader params.");
 
     m_pimpl->material_name_to_params_map.emplace(material_name, std::move(new_param_set));
+}
+
+void Shader_basic_diffuse::build_material_collection()
+{   // Create buffer.
+    m_pimpl->material_param_set_collection_buffer.create(
+        m_pimpl->device,
+        m_pimpl->allocator,
+        sizeof(gpu_type::Material_param_set) * m_pimpl->material_name_to_params_map.size(),
+        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+            VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+    // Upload data.
+    char* buffer_addr{ static_cast<char*>(
+        m_pimpl->material_param_set_collection_buffer.get_p_mapped_data()) };
+
+    for (auto const& [_, mat_params] : m_pimpl->material_name_to_params_map)
+    {
+        std::memcpy(buffer_addr, &mat_params, sizeof(mat_params));
+        buffer_addr += sizeof(mat_params);
+    }
 }
 
 void Shader_basic_diffuse::draw(void* render_view_param)

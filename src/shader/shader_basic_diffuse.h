@@ -21,6 +21,7 @@ public:
 
     void make_material(std::string const& material_name,
                        std::unordered_map<std::string, std::string> const& shader_params);
+    void build_material_collection();
 
     void draw(void* render_view_param);
 

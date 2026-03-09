@@ -171,6 +171,12 @@ void Shader_gradient::make_material(
     BT_WARN("This material has no shader params.");
 }
 
+void Shader_gradient::build_material_collection()
+{
+    // Do nothing.
+    BT_TRACE("Shader_gradient has no material collection.");
+}
+
 void Shader_gradient::compute(void* render_frame)
 {
     auto& p{ *m_pimpl };

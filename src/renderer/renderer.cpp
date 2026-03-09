@@ -74,6 +74,10 @@ void Renderer::run()
         // clang-format on
     }
 
+    // Trigger build material param collections in shaders.
+    shad_gradient.build_material_collection();
+    shad_basic_diffuse.build_material_collection();
+
     // Load materials/material sets.
     g.load_material_assets(std::move(*material_assets),
                            std::move(*m_material_set_assets.scoped_lock()));
