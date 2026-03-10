@@ -323,11 +323,25 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] create buffer for material param sets
         - [x] create buffer
         - [x] add buffer to the device address list.
+    - [x] Import EnTT.
+    - [x] Make render object a EnTT component.
+    - [ ] add in model transforms for the instances.
+        - Perhaps at this point use the render objects?
+            - yeah i think it's time.
+        - [x] Add sample render object configs.
+        - [x] Add/remove render objects from these configs.
+        - [ ] Write all render objects into the per-instance buffer with the respective transform information too.
+            - [x] Think: should transform info be handled from the Render_object_config struct now?
+                - I think that interpolation will have to be held onto by the renderer information.
+                - Perhaps the information from the ecs registry should only be accessed once per tick frame?
+                    - And then the interpolation points would be copied over just once every tick frame.
+                > ^^ THIS ^^ is how it should get implemented.
+
+            - .
+            
     - [ ] create buffer for per-instance data collection
         - [ ] create buffer
         - [x] add buffer to the device address list.
-    - [ ] add in model transforms for the instances.
-        - [ ] Perhaps at this point use the render objects?
 
 
 ## Refactor.

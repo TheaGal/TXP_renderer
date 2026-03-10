@@ -106,9 +106,12 @@ gantt
         完 Load 3D meshes (gltf/obj)         : a5, after a1, 4d
         完 Geometry pipeline shader          : a5_1, after a5, 5d
         完 Camera controls                  : a5_2, after a5_1, 6d
-        Material set from model tex names : a6, after a8, 1d
+        Material set from model tex names : a6, after a14, 1d
         完 Giant static model buffer         : a7, after a5_2, 2d
-        中 Draw meshes with material system  : a8, after a7, 3d
+        完 Draw meshes with material system (Pt1)  : a8, after a7, 3d
+        Draw meshes with material system (Pt2)  : a14, after a13, 2d
+    section ECS integration
+        中 Create ECS-based render objs : a13, after a8, 3d
     section Animation system
         Load .btafa and .btanitor to model : a9, after m1, 3d
         Compute shader of static mesh into skinned mesh in its own buffer : a10, after a9, 4d

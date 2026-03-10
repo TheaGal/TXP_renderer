@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nlohmann/detail/macro_scope.hpp"
 #include "shader_creation/shader_creation.h"
 
 #include <cstdint>
@@ -50,6 +51,10 @@ struct Model_asset_create_info
 /// Key to access editing render objects.
 using pool_key_t = std::uint32_t;
 
+/// If pool key is set to this, the renderer will process this render object (effectively
+/// creating/recreating a render object).
+constexpr pool_key_t k_pool_key_process_flag{ 0 };
+
 /// Bitmask for filtering layers to render.
 enum Render_layer : uint16_t
 {
@@ -61,8 +66,8 @@ enum Render_layer : uint16_t
     RENDER_LAYER_LEVEL_EDITOR = 0b0000'0000'0000'0100,
 };
 
-/// Config for creating a render object.
-struct Render_obj_create_config
+/// Config for a render object (to be used as ECS component).
+struct Render_object_config
 {
     Render_layer layer;
     std::string model_name;
@@ -75,7 +80,25 @@ struct Render_obj_create_config
     {
         std::string animator_template;
         std::string anim_frame_action_control;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(Animated_create_config,
+                                       animator_template,
+                                       anim_frame_action_control);
     } deform_config;
+
+    // ^^ Optional ^^ / vv Set up by Renderer vv
+
+    struct Renderer_owned_data
+    {
+        pool_key_t pool_key{ k_pool_key_process_flag };
+    } renderer_owned_data;
+
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Render_object_config,
+                                   layer,
+                                   model_name,
+                                   material_set,
+                                   deform_config);
 };
 
 }  // namespace TXP

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "camera/camera.h"
-#include "render_object/render_object.h"
-#include "shader_creation/shader_creation.h"
-#include "txp_renderer/types.h"
+#include "entt/entity/fwd.hpp"
 #include "mutex_wrapper/mutex_wrapper.h"
+#include "render_object/render_object.h"
+#include "txp_renderer/types.h"
 
 #include <atomic>
 #include <cstdint>
@@ -23,7 +23,8 @@ namespace TXP
 class Renderer
 {
 public:
-    Renderer(std::string const& title,
+    Renderer(entt::registry& ecs_registry,
+             std::string const& title,
              int32_t width,
              int32_t height,
              std::string const& texture_asset_dir,
@@ -60,14 +61,17 @@ public:
     void add_model(std::string const& model_name,
                    std::string const& file_ext);
 
+#define POSSIBLY_REMOVE_THIS_LETS_SEE 0
+#if POSSIBLY_REMOVE_THIS_LETS_SEE
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Render object lifetime.
 
     /// Creates render object.
-    pool_key_t create_render_obj(Render_obj_create_config&& config);
+    pool_key_t create_render_obj(Render_object_config&& config);
 
     /// Destroys render object.
     void destroy_render_obj(pool_key_t key);
+#endif // POSSIBLY_REMOVE_THIS_LETS_SEE
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Animator controls.
@@ -75,6 +79,8 @@ public:
     // @TODO.
 
 private:
+    entt::registry& m_ecs_registry;
+
     std::string m_title;
     int32_t m_width;
     int32_t m_height;

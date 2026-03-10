@@ -2,28 +2,34 @@
 
 #include "btservice_finder.h"
 #include "bttimer.h"
+#include "entt/entity/registry.hpp"
 #include "gfx.h"
 #include "render_object/render_model.h"
+#include "render_object/render_object.h"
 #include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
+#include "txp_renderer/types.h"
 #include "types.h"
 
 #include <atomic>
 #include <cassert>
 #include <iostream>
 #include <stdexcept>
+#include <unordered_map>
 
 
 namespace TXP
 {
 
-Renderer::Renderer(std::string const& title,
+Renderer::Renderer(entt::registry& ecs_registry,
+                   std::string const& title,
                    int32_t width,
                    int32_t height,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir)
-    : m_title(title)
+    : m_ecs_registry(ecs_registry)
+    , m_title(title)
     , m_width(width)
     , m_height(height)
     , m_texture_asset_dir(texture_asset_dir)
@@ -89,19 +95,84 @@ void Renderer::run()
     BT::Timer main_timer;
     main_timer.start_timer();
 
+    // List of render objects.
+    std::vector<Render_object> render_object_list;
+
     // Render frames until shutdown flag is tripped.
     while (!m_shutdown_flag.load())
     {
         BT::logger::notify_start_new_mainloop_iteration();
         float_t delta_time{ main_timer.calc_delta_time() };
 
-        // Process render object destroy requests.
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Process render object changes.
+        // @TODO: put this into its own func.
 
-        // Process render object create requests.
+        // Mark all as stale.
+        for (auto& rend_obj : render_object_list)
+        {
+            rend_obj.is_stale = true;
+        }
+
+        // Add new render objects and mark existing render objects as non-stale.
+        auto rend_obj_cfg_view = m_ecs_registry.view<TXP::Render_object_config>();
+        for (auto ecs_entity : rend_obj_cfg_view)
+        {
+            auto& rend_obj_cfg = rend_obj_cfg_view.get<TXP::Render_object_config>(ecs_entity);
+            auto& rend_owned_data = rend_obj_cfg.renderer_owned_data;
+
+            if (rend_owned_data.pool_key == k_pool_key_process_flag)
+            {   // Need to create new render object.
+                rend_obj_cfg.renderer_owned_data.pool_key = render_object_list.size();
+                render_object_list.emplace_back(Render_object{
+                    .layer = rend_obj_cfg.layer,
+                    .render_model_idx = 123,
+                    .material_set_idx = 456,
+                });
+            }
+            else
+            {   // Mark as non-stale.
+                render_object_list[rend_obj_cfg.renderer_owned_data.pool_key].is_stale = false;
+            }
+        }
+
+        // Delete stale render objects.
+        std::unordered_map<int32_t, int32_t> old_to_new_idx_map;
+        old_to_new_idx_map.reserve(rend_obj_cfg_view.size());
+
+        for (auto i = static_cast<int32_t>(render_object_list.size()) - 1; i >= 0; i--)
+        {
+            if (render_object_list[i].is_stale)
+            {
+                render_object_list.erase(render_object_list.begin() + i);
+            }
+            else
+            {
+                old_to_new_idx_map.emplace(i, old_to_new_idx_map.size());
+            }
+        }
+        for (auto& [_, new_idx] : old_to_new_idx_map)
+        {   // Flip since last loop was iterating backwards.
+            new_idx = (old_to_new_idx_map.size() - 1 - new_idx);
+        }
+
+        // Apply new pool keys.
+        for (auto ecs_entity : rend_obj_cfg_view)
+        {
+            auto& rend_obj_cfg = rend_obj_cfg_view.get<TXP::Render_object_config>(ecs_entity);
+
+            rend_obj_cfg.renderer_owned_data.pool_key =
+                old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);
+        }
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Update renderer-timed things.
 
         // Update animator timers (renderer-profile).
+        // @TODO
 
         // Calculate animator joints.
+        // @TODO
 
         // Poll for input events.
         g.poll_input_events();
@@ -219,14 +290,16 @@ void Renderer::add_model(std::string const& model_name,
 }
 
 
+#if POSSIBLY_REMOVE_THIS_LETS_SEE
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Render object lifetime.
-pool_key_t Renderer::create_render_obj(Render_obj_create_config&& config)
+pool_key_t Renderer::create_render_obj(Render_object_config&& config)
 {
     return 0;
 }
 
 void Renderer::destroy_render_obj(pool_key_t key)
 {}
+#endif // POSSIBLY_REMOVE_THIS_LETS_SEE
 
 }  // namespace TXP
