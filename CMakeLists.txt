@@ -55,6 +55,7 @@ endif()
 set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/cpp_glm/include  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/efsw/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/entt/src  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastgltf/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo
@@ -176,6 +177,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/bt_lib_version_check.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btdatecheck.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btdatecheck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btglm.h
