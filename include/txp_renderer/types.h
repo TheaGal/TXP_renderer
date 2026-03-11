@@ -1,5 +1,6 @@
 #pragma once
 
+#include "btglm.h"
 #include "nlohmann/detail/macro_scope.hpp"
 #include "shader_creation/shader_creation.h"
 
@@ -72,6 +73,8 @@ struct Render_object_config
     Render_layer layer;
     std::string model_name;
 
+    mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
+
     // ^^ Required ^^ / vv Optional vv
 
     std::string material_set;
@@ -97,6 +100,7 @@ struct Render_object_config
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Render_object_config,
                                    layer,
                                    model_name,
+                                   transform,
                                    material_set,
                                    deform_config);
 };

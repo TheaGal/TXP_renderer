@@ -336,8 +336,13 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
                 - Perhaps the information from the ecs registry should only be accessed once per tick frame?
                     - And then the interpolation points would be copied over just once every tick frame.
                 > ^^ THIS ^^ is how it should get implemented.
+            - [x] Added some of ^^ this ^^ implementation as a TODO.
 
-            - .
+            - [x] Copy correct transforms over.
+
+            - [ ] write model transform buffer.
+            - [ ] write material param set idx buffer.
+
             
     - [ ] create buffer for per-instance data collection
         - [ ] create buffer

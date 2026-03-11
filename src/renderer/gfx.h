@@ -88,6 +88,9 @@ public:
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);
 
+    /// Sets GPU per-instance data from list of render objects.
+    void set_render_object_per_instance_data(std::vector<Render_object> const& rend_obj_list);
+
     /// .
     void compute_light_culling();
 

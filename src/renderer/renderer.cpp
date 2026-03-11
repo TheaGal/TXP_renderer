@@ -13,7 +13,6 @@
 
 #include <atomic>
 #include <cassert>
-#include <iostream>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -107,6 +106,11 @@ void Renderer::run()
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Process render object changes.
         // @TODO: put this into its own func.
+        // @TODO: process this once per tick (e.g. 1/60th second) (i.e. at the same rate as the
+        //        simulation loop)
+
+        bool appended_render_object{ false };
+        bool removed_render_object{ false };
 
         // Mark all as stale.
         for (auto& rend_obj : render_object_list)
@@ -134,6 +138,11 @@ void Renderer::run()
             {   // Mark as non-stale.
                 render_object_list[rend_obj_cfg.renderer_owned_data.pool_key].is_stale = false;
             }
+
+            // Update transform.
+            // @TODO: adding interpolation here (i.e. just copying both the a->b transforms).
+            glm_mat4_copy(rend_obj_cfg.transform.raw,
+                          render_object_list[rend_obj_cfg.renderer_owned_data.pool_key].transform);
         }
 
         // Delete stale render objects.
@@ -145,6 +154,7 @@ void Renderer::run()
             if (render_object_list[i].is_stale)
             {
                 render_object_list.erase(render_object_list.begin() + i);
+                removed_render_object = true;
             }
             else
             {
@@ -189,6 +199,10 @@ void Renderer::run()
         g.set_render_view_sizes(render_view_sizes);
         m_camera.set_render_view_sizes(render_view_sizes);
 
+        // Set per-instance data from render objects.
+        g.set_render_object_per_instance_data(render_object_list);
+
+        // Render for each render view.
         size_t render_view_idx{ 0 };
         for (auto const& cam_matrix : m_camera.calc_cam_matrices())
         {

@@ -135,6 +135,12 @@ void* TXP::Graphics::get_render_view(size_t rend_view_idx)
     return m_pimpl->get_render_view(rend_view_idx);
 }
 
+void TXP::Graphics::set_render_object_per_instance_data(
+    std::vector<Render_object> const& rend_obj_list)
+{
+    m_pimpl->set_render_object_per_instance_data(rend_obj_list);
+}
+
 void TXP::Graphics::compute_light_culling()
 {
     assert(false);

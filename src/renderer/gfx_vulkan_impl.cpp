@@ -1105,6 +1105,29 @@ void Graphics::Impl::set_directional_light(size_t render_view_idx,
     env_data.lighting_mode = 1;
 }
 
+void Graphics::Impl::set_render_object_per_instance_data(
+    std::vector<Render_object> const& rend_obj_list)
+{
+    size_t num_instances{ std::min(rend_obj_list.size(), static_cast<size_t>(65535)) };  // @HARDCODE: comes from shader.
+
+    auto per_inst_data_ptr = static_cast<gpu_type::Per_instance_data*>(
+        get_current_frame().per_instance_data_collection_buffer.get_p_mapped_data());
+    for (size_t i = 0; i < num_instances; i++)
+    {
+        per_inst_data_ptr->material_param_set_idx = 123123;  // Use .material_set_idx to access the material set, then use the idx of the mesh to access the material param set's idx.
+        per_inst_data_ptr->model_transform_set_idx = 1213123;  // Assign a model transform for the model, and then assign that index for the model_transform_set_idx here!
+
+        // @NOTE: it would also be good to note that the draw lists might be good to build right
+        //        here. There are a bunch of assignments to mesh indices and stuff going aorund
+        //        here, and to calc it again would likely be a pain, so storing the information here
+        //        in memory, separated by shader would be good. Or even just storing that
+        //        information into each shader and the draw lists/batches are built in a different
+        //        point in time!  -Thea 2026/03/11
+    }
+
+    assert(false);  // @TODO: implement!
+}
+
 void Graphics::Impl::start_next_frame()
 {   // Wait until GPU has finished rendering last frame (of current frame index).
     auto& current_frame{ get_current_frame() };
