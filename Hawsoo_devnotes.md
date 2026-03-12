@@ -312,7 +312,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] It appears that there's an issue with the memory here: [image](20260305_vertex_buffer_capture.png)
         - Turns out that the UV coords were getting written to the normal slot, and also normal directions were getting multiplied by the model matrix (which is 0 rn due to the previous error).
 
-- [ ] Get shader params into the basic shader.
+- [x] Get shader params into the basic shader.
     - [x] remove the shader type requirement for the public interface. Only shader name requeired.
     - [x] MISC: do a bunch of cleanup lol
     - [x] build ifc
@@ -330,7 +330,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - yeah i think it's time.
         - [x] Add sample render object configs.
         - [x] Add/remove render objects from these configs.
-        - [ ] Write all render objects into the per-instance buffer with the respective transform information too.
+        - [x] Write all render objects into the per-instance buffer with the respective transform information too.
             - [x] Think: should transform info be handled from the Render_object_config struct now?
                 - I think that interpolation will have to be held onto by the renderer information.
                 - Perhaps the information from the ecs registry should only be accessed once per tick frame?
@@ -341,13 +341,29 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - [x] Copy correct transforms over.
 
             - [x] write model transform buffer.
-            - [ ] write material param set idx buffer.
+            - [d] write material param set idx buffer.
                 - Deferred: until we know what's oging on w material sets (not to be confused with material param sets).
+            
+            - [x] Create the per-instance buffer
+                - [x] Is model transform buffer created alreayd?
+                    - Yes.
+        
+        - Ok so at this point the lights seem to be working better? Idk.
+        - But there needs to be the per-instance data used and model transform used now!
+
+        - [x] Use model transform and material param set idx from the per-instance data in shader now!
+
+        - This works. On the cpu side it'll just have to get better.
+        - It is weird tho that it seems to only be refreshing at 30fps or so. idk why that is.
+            - imgui metrics say it's running at >500fps (cpu side).
+            - But yeah what about gpu side?
 
             
-    - [ ] create buffer for per-instance data collection
-        - [ ] create buffer
+    - [x] create buffer for per-instance data collection
+        - [x] create buffer
         - [x] add buffer to the device address list.
+
+- [ ] Now material sets have to get created so that the right ones get written to the per-isntance data collection.
 
 
 ## Refactor.

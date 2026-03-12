@@ -54,8 +54,8 @@ struct VS_output
     float2 uv;
     float3 view_vec;
     float3 light_vec;
-    uint32_t instance_index;
     uint32_t lighting_mode;
+    Material_param_set mat_param_set;
 };
 
 
@@ -67,21 +67,21 @@ VS_output vertex_main(VS_input input,
                       uniform Material_param_set_collection* material_param_set_collection,
                       uint instance_index : SV_VulkanInstanceID)
 {
-    float4x4 model_mat = model_transform_set->transforms[instance_index];
+    Per_instance_data per_inst_data =
+        per_instance_data_collection->per_instance_datas[instance_index];
+    float4x4 model_mat = model_transform_set->transforms[per_inst_data.model_transform_set_idx];
 
     VS_output output;
     output.pos = mul(env_data->projection,
-                     mul(env_data->view,  // @NOCHECKIN: @THEA: omitted model mat so that could see a render (since all model mats are 0 right now).
-                             float4(input.pos.xyz, 1.0)));
-    // output.pos = mul(env_data->projection,  // @THEA: commented out since model_mat not implemented yet!!!
-    //                  mul(env_data->view,
-    //                      mul(model_mat,
-    //                          float4(input.pos.xyz, 1.0))));
-    output.normal = input.normal;
-    // output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
+                     mul(env_data->view,
+                         mul(model_mat,
+                             float4(input.pos.xyz, 1.0))));
+    output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
     output.uv = input.uv;
-    output.instance_index = instance_index;
     output.lighting_mode = env_data->lighting_mode;
+
+    output.mat_param_set =
+        material_param_set_collection->material_param_sets[per_inst_data.material_param_set_idx];
 
     // Calculate view vectors required for lighting.
     float4 frag_pos = mul(mul(env_data->view, model_mat), float4(input.pos.xyz, 1.0));
@@ -111,12 +111,14 @@ float4 fragment_main(VS_output input)
         float3 specular = pow(max(dot(R, V), 0.0), 16.0) * 0.75;
 
         // Sample from texture.
-        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+        float3 color = textures[NonUniformResourceIndex(input.mat_param_set.texture0_idx)]
+                           .Sample(input.uv).rgb;
         return float4(diffuse * color.rgb + specular, 1.0);
     }
     else if (input.lighting_mode == 2)
     {   // Unlit sample from texture.
-        float3 color = textures[NonUniformResourceIndex(input.instance_index)].Sample(input.uv).rgb;
+        float3 color = textures[NonUniformResourceIndex(input.mat_param_set.texture0_idx)]
+                           .Sample(input.uv).rgb;
         return float4(color.rgb, 1.0);
     }
 

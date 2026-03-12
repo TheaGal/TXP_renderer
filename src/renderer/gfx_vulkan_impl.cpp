@@ -687,6 +687,14 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
     // Create model transform set buffer.
     for (auto& frame : frames)
     {
+        frame.per_instance_data_collection_buffer.create(
+            gfx.device,
+            gfx.allocator,
+            sizeof(gpu_type::Per_instance_data_collection),
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
         frame.model_transform_set_buffer.create(
             gfx.device,
             gfx.allocator,
