@@ -1112,10 +1112,25 @@ void Graphics::Impl::set_render_object_per_instance_data(
 
     auto per_inst_data_ptr = static_cast<gpu_type::Per_instance_data*>(
         get_current_frame().per_instance_data_collection_buffer.get_p_mapped_data());
+
+    auto model_transform_ptr =
+        static_cast<char*>(get_current_frame().model_transform_set_buffer.get_p_mapped_data());
+    uint32_t model_transform_idx{ 0 };
+
     for (size_t i = 0; i < num_instances; i++)
-    {
+    {   // would-be outer loop: assign model transform data.
+        glm_mat4_copy(const_cast<vec4*>(rend_obj_list[i].transform),
+                      reinterpret_cast<vec4*>(model_transform_ptr));
+        model_transform_ptr += sizeof(mat4);  // Increment to next model transform.
+        model_transform_idx++;
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // would-be inner loop where per-instance data is set.
+
+#if 0
         per_inst_data_ptr->material_param_set_idx = 123123;  // Use .material_set_idx to access the material set, then use the idx of the mesh to access the material param set's idx.
-        per_inst_data_ptr->model_transform_set_idx = 1213123;  // Assign a model transform for the model, and then assign that index for the model_transform_set_idx here!
+        per_inst_data_ptr->model_transform_set_idx = model_transform_idx - 1;  // Assign a model transform for the model, and then assign that index for the model_transform_set_idx here!
+#endif // 0
 
         // @NOTE: it would also be good to note that the draw lists might be good to build right
         //        here. There are a bunch of assignments to mesh indices and stuff going aorund
@@ -1123,9 +1138,20 @@ void Graphics::Impl::set_render_object_per_instance_data(
         //        in memory, separated by shader would be good. Or even just storing that
         //        information into each shader and the draw lists/batches are built in a different
         //        point in time!  -Thea 2026/03/11
-    }
 
-    assert(false);  // @TODO: implement!
+        // @NOTE: there needs to be an inner loop since each instance represents a mesh within a
+        // model, not the whole model (i.e. render object).  -Thea 2026/03/11
+
+
+        // @TEMPORARY: in the future do a different setup but for now use this:
+        per_inst_data_ptr->material_param_set_idx = 0;
+        per_inst_data_ptr->model_transform_set_idx = model_transform_idx - 1;
+        ///////////////////////////////////////////////////////////////////////
+
+        per_inst_data_ptr++;  // Increment to next instance.
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+    }
 }
 
 void Graphics::Impl::start_next_frame()

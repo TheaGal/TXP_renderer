@@ -340,8 +340,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
             - [x] Copy correct transforms over.
 
-            - [ ] write model transform buffer.
+            - [x] write model transform buffer.
             - [ ] write material param set idx buffer.
+                - Deferred: until we know what's oging on w material sets (not to be confused with material param sets).
 
             
     - [ ] create buffer for per-instance data collection
