@@ -1,6 +1,7 @@
 #include "load_obj_model.h"
 
 #include "btglm.h"
+#include "btlogger.h"
 #include "render_model.h"
 #include "tiny_obj_loader.h"
 #include "vertex.h"
@@ -26,7 +27,7 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
     // Load obj file.
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
-    std::vector<tinyobj::material_t> materials;  // @NOTE: Materials are simply ignored (for obj files).
+    std::vector<tinyobj::material_t> materials;
 
     std::string base_dir{ std::filesystem::path(fname).parent_path().generic_string() };
 
@@ -59,6 +60,14 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
         // logger::printe(logger::ERROR, err);
         // assert(false);
     }
+
+    // @DEBUG
+    BT_TRACE("===========================");
+    for (auto const& m : materials)
+    {
+        BT_TRACEF("Mat name: %s", m.name.c_str());
+    }
+    BT_TRACE("===========================");
 
     // Get all unique combinations of attributes together.
     assert(attrib.vertices.size() < std::pow(2, 21));

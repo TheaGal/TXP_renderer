@@ -357,6 +357,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - It is weird tho that it seems to only be refreshing at 30fps or so. idk why that is.
             - imgui metrics say it's running at >500fps (cpu side).
             - But yeah what about gpu side?
+            > I put this train of thought into "Performance" section below.
 
             
     - [x] create buffer for per-instance data collection
@@ -364,9 +365,20 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] add buffer to the device address list.
 
 - [ ] Now material sets have to get created so that the right ones get written to the per-isntance data collection.
+    - These have to be loaded in by the model or added as a special case hmmm.
+    
+
+    - Maybe rename these to material-palettes? That would ease confusion of the material-set and material-param-set difference.
+        > THOUGHT: I think this is a good idea but later. I'll put this in the "Refactor" section below.
 
 
 ## Refactor.
 
 - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
 - [ ] Create functions for things noted to create a function in.
+- [ ] Rename "material-set" to "material-palette" since there's a bit of a naming confusion between this and "material-param-set" which is the block of params a material needs as input for the shader.
+
+
+## Performance.
+
+- [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?

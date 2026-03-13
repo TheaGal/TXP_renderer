@@ -16,6 +16,7 @@
 #include <cassert>
 #include <filesystem>
 #include <list>
+#include <stdexcept>
 
 
 void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collection,
@@ -340,6 +341,21 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         // @NOTE: Ignore the `skeleton` property in the `Skin` struct.
     }
 
+
+    // @DEBUG
+    BT_TRACE("===========================");
+    for (auto const& mesh : asset.meshes)
+    {
+        for (auto const& prim : mesh.primitives)
+        {
+            if (!prim.materialIndex.has_value())
+                throw std::runtime_error("No material idx for this primitive!");
+
+            BT_TRACEF("Mat name: %s", asset.materials[prim.materialIndex.value()].name.c_str());
+        }
+    }
+    BT_TRACE("===========================");
+
     // Load meshes.
     bool overall_has_skin{ !asset.skins.empty() };
     vertices.clear();
@@ -347,7 +363,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
     size_t num_meshes{ 0 };
     for (auto& mesh : asset.meshes)
-        num_meshes += mesh.primitives.size();
+        num_meshes += mesh.primitives.size();  // @NOTE: gltf "primitives" are called "meshes" here.
 
     meshes.clear();
     meshes.reserve(num_meshes);  // @NOTE: Reserve prevents calling dtor() which messes up the meshes.

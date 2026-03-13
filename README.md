@@ -109,9 +109,9 @@ gantt
         Material set from model tex names : a6, after a14, 1d
         完 Giant static model buffer         : a7, after a5_2, 2d
         完 Draw meshes with material system (Pt1)  : a8, after a7, 3d
-        Draw meshes with material system (Pt2)  : a14, after a13, 2d
+        中 Draw meshes with material system (Pt2)  : a14, after a13, 2d
     section ECS integration
-        中 Create ECS-based render objs : a13, after a8, 3d
+        完 Create ECS-based render objs : a13, after a8, 3d
     section Animation system
         Load .btafa and .btanitor to model : a9, after m1, 3d
         Compute shader of static mesh into skinned mesh in its own buffer : a10, after a9, 4d
