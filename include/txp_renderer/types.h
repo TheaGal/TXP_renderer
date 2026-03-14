@@ -77,7 +77,7 @@ struct Render_object_config
 
     // ^^ Required ^^ / vv Optional vv
 
-    std::string material_set;
+    std::string material_palette;
 
     struct Animated_create_config
     {
@@ -101,7 +101,7 @@ struct Render_object_config
                                    layer,
                                    model_name,
                                    transform,
-                                   material_set,
+                                   material_palette,
                                    deform_config);
 };
 

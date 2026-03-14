@@ -65,8 +65,8 @@ void Renderer::run()
     // Create shaders.
     // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
     //                enough of an interface.
-    Shader::Shader_gradient shad_gradient{ g.get_impl() };
-    Shader::Shader_basic_diffuse shad_basic_diffuse{ g.get_impl() };
+    Shader::Shader_gradient shad_gradient{ m_material_collection, g.get_impl() };
+    Shader::Shader_basic_diffuse shad_basic_diffuse{ m_material_collection, g.get_impl() };
 
     // Insert material params.
     auto material_assets{ m_material_assets.scoped_lock() };
@@ -130,8 +130,13 @@ void Renderer::run()
                 rend_obj_cfg.renderer_owned_data.pool_key = render_object_list.size();
                 render_object_list.emplace_back(Render_object{
                     .layer = rend_obj_cfg.layer,
-                    .render_model_idx = 123,
-                    .material_set_idx = 456,
+                    .render_model_idx =
+                        m_render_model_data_collection.get_static_model_data_set_idx(
+                            rend_obj_cfg.model_name),
+                    .material_palette_idx = m_material_collection.get_material_palette_idx(
+                        !rend_obj_cfg.material_palette.empty()
+                            ? rend_obj_cfg.material_palette
+                            : rend_obj_cfg.model_name + "__default_material_palette_name__"),
                 });
             }
             else

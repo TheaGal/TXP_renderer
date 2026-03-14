@@ -20,7 +20,7 @@ struct Render_object
     Render_layer layer{ RENDER_LAYER_DEFAULT };
 
     uint16_t render_model_idx;
-    uint16_t material_set_idx;  // Default: pulls from render model material set.
+    uint16_t material_palette_idx;  // Default: pulls from render model material set.
     uint16_t animator_idx{ (uint16_t)-1 };  // opt: -1 means no animator.
 
     uint16_t padding1;

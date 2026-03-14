@@ -6,6 +6,7 @@
 
 #include "btglm.h"
 #include "btlogger.h"
+#include "material_collection/material_collection.h"
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
@@ -48,11 +49,14 @@ struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_im
 // struct Shader_basic_diffuse::Impl
 struct Shader_basic_diffuse::Impl
 {
-    Impl(TXP::Graphics::Impl& graphics)
-        : g(graphics)
+    Impl(TXP::Material_collection& mat_coll, TXP::Graphics::Impl& graphics)
+        : material_collection(mat_coll)
+        , g(graphics)
         , device(g.gfx.device)
         , allocator(g.gfx.allocator)
     {
+        material_collection.emplace_shader(k_name);
+
     #define WRAP_INTO_OWN_FUNC 1
     #if WRAP_INTO_OWN_FUNC
         auto refl_data = Shader_Creation::read_slang_reflection(k_name);
@@ -339,6 +343,8 @@ struct Shader_basic_diffuse::Impl
     }
 
 
+    TXP::Material_collection& material_collection;
+
     TXP::Graphics::Impl& g;
     VkDevice device;
     VmaAllocator allocator;
@@ -369,8 +375,9 @@ struct Shader_basic_diffuse::Impl
 
 
 // class Shader_basic_diffuse
-Shader_basic_diffuse::Shader_basic_diffuse(void* graphics)
-    : m_pimpl(std::make_unique<Impl>(*static_cast<TXP::Graphics::Impl*>(graphics)))
+Shader_basic_diffuse::Shader_basic_diffuse(Material_collection& material_collection, void* graphics)
+    : m_pimpl(
+          std::make_unique<Impl>(material_collection, *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
@@ -395,6 +402,8 @@ void Shader_basic_diffuse::make_material(
         throw std::runtime_error("Wrong number of shader params.");
 
     m_pimpl->material_name_to_params_map.emplace(material_name, std::move(new_param_set));
+
+    m_pimpl->material_collection.emplace_material(material_name, k_name);
 }
 
 void Shader_basic_diffuse::build_material_collection()

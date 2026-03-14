@@ -7,6 +7,10 @@
 
 namespace TXP
 {
+
+// Forward decl.
+struct Material_collection;
+
 namespace Shader
 {
 
@@ -16,7 +20,7 @@ class Shader_gradient
 public:
     static constexpr char const* k_name{ "gradient" };
 
-    Shader_gradient(void* graphics);
+    Shader_gradient(Material_collection& material_collection, void* graphics);
     ~Shader_gradient();
 
     void make_material(std::string const& material_name,

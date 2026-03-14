@@ -7,6 +7,10 @@
 
 namespace TXP
 {
+
+// Forward decl.
+struct Material_collection;
+
 namespace Shader
 {
 
@@ -16,7 +20,7 @@ class Shader_basic_diffuse
 public:
     static constexpr char const* k_name{ "basic_diffuse" };
 
-    Shader_basic_diffuse(void* graphics);
+    Shader_basic_diffuse(Material_collection& material_collection, void* graphics);
     ~Shader_basic_diffuse();
 
     void make_material(std::string const& material_name,

@@ -5,6 +5,7 @@
 // clang-format on
 
 #include "btlogger.h"
+#include "material_collection/material_collection.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader_creation/shader_creation.h"
@@ -22,10 +23,13 @@ namespace Shader
 // struct Shader_gradient::Impl
 struct Shader_gradient::Impl
 {
-    Impl(TXP::Graphics::Impl& graphics)
-        : g(graphics)
+    Impl(TXP::Material_collection& mat_coll, TXP::Graphics::Impl& graphics)
+        : material_collection(mat_coll)
+        , g(graphics)
         , device(g.gfx.device)
     {
+        material_collection.emplace_shader(k_name);
+
     #define WRAP_INTO_OWN_FUNC 1
     #if WRAP_INTO_OWN_FUNC
         auto refl_data = Shader_Creation::read_slang_reflection(k_name);
@@ -138,6 +142,8 @@ struct Shader_gradient::Impl
     }
 
 
+    TXP::Material_collection& material_collection;
+
     TXP::Graphics::Impl& g;
     VkDevice device;
 
@@ -156,8 +162,9 @@ struct Shader_gradient::Impl
 
 
 // class Shader_gradient
-Shader_gradient::Shader_gradient(void* graphics)
-    : m_pimpl(std::make_unique<Impl>(*static_cast<TXP::Graphics::Impl*>(graphics)))
+Shader_gradient::Shader_gradient(Material_collection& material_collection, void* graphics)
+    : m_pimpl(
+          std::make_unique<Impl>(material_collection, *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
@@ -169,6 +176,8 @@ void Shader_gradient::make_material(
 {
     // Do nothing.
     BT_WARN("This material has no shader params.");
+
+    m_pimpl->material_collection.emplace_material(material_name, k_name);
 }
 
 void Shader_gradient::build_material_collection()

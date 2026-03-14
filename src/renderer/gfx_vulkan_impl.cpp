@@ -1136,7 +1136,7 @@ void Graphics::Impl::set_render_object_per_instance_data(
         // would-be inner loop where per-instance data is set.
 
 #if 0
-        per_inst_data_ptr->material_param_set_idx = 123123;  // Use .material_set_idx to access the material set, then use the idx of the mesh to access the material param set's idx.
+        per_inst_data_ptr->material_param_set_idx = 123123;  // Use .material_palette_idx to access the material set, then use the idx of the mesh to access the material param set's idx.
         per_inst_data_ptr->model_transform_set_idx = model_transform_idx - 1;  // Assign a model transform for the model, and then assign that index for the model_transform_set_idx here!
 #endif // 0
 

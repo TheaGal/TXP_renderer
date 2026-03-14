@@ -365,11 +365,17 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] add buffer to the device address list.
 
 - [ ] Now material sets have to get created so that the right ones get written to the per-isntance data collection.
-    - These have to be loaded in by the model or added as a special case hmmm.
-    
-
     - Maybe rename these to material-palettes? That would ease confusion of the material-set and material-param-set difference.
         > THOUGHT: I think this is a good idea but later. I'll put this in the "Refactor" section below.
+    
+
+    - These have to be loaded in by the model or added as a special case hmmm.
+        - [x] Created the material collection struct.
+            - May need a rename, but it holds shader names and collects material param set names to translate into indexes later during the renderobject creation process for drawing.
+        - [x] Use the indexes form the mat-coll struct to create the render objects.
+            - Used partial implementation of mat-coll.
+        - [x] generate the material and shader indexes while make_material() is called.
+        - [x] uses render model indexes when creating render object.
 
 
 ## Refactor.
@@ -377,6 +383,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
 - [ ] Create functions for things noted to create a function in.
 - [ ] Rename "material-set" to "material-palette" since there's a bit of a naming confusion between this and "material-param-set" which is the block of params a material needs as input for the shader.
+    - [x] Did partially as going thru.
+- [ ] Rename `struct Material_collection` (generates indexes for material param sets as a shader-local index) and rename `build_material_collection()` (creates GPU buffer for material param sets and uploads data up to them) to something else since these are different things and the current names don't describe what they're doing.
 
 
 ## Performance.
