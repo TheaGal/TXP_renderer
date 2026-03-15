@@ -47,6 +47,9 @@ struct Material_collection::Data
         size_t shader_id;
     };
     std::unordered_map<std::string, Material_info> material_name_to_info_map;
+
+    std::unordered_map<std::string, size_t> material_palette_name_to_palette_idx_map;
+    std::vector<Material_palette> material_palette_list;
 };
 
 
@@ -109,26 +112,44 @@ uint16_t Material_collection::get_shader_id_from_material_name(
 void Material_collection::emplace_material_palette(std::string const& material_palette_name,
                                                    Material_palette&& mat_pal)
 {
-    assert(false);
+    if (inner_data->material_palette_name_to_palette_idx_map.find(material_palette_name) !=
+        inner_data->material_palette_name_to_palette_idx_map.end())
+    {
+        throw std::runtime_error("Material palette with this name already emplaced.");
+    }
+
+    inner_data->material_palette_name_to_palette_idx_map.emplace(
+        material_palette_name,
+        inner_data->material_palette_list.size());
+    inner_data->material_palette_list.emplace_back(std::move(mat_pal));
 }
 
 void Material_collection::emplace_material_palette_alias(
     std::string const& material_palette_alias_name,
     std::string const& material_palette_original_name)
 {
-    assert(false);
+    if (inner_data->material_palette_name_to_palette_idx_map.find(material_palette_alias_name) !=
+        inner_data->material_palette_name_to_palette_idx_map.end())
+    {
+        throw std::runtime_error("Material palette with this name already emplaced.");
+    }
+
+    inner_data->material_palette_name_to_palette_idx_map.emplace(
+        material_palette_alias_name,
+        inner_data->material_palette_name_to_palette_idx_map.at(material_palette_original_name));
 }
 
 uint16_t Material_collection::get_material_palette_idx(
     std::string const& material_palette_name) const
 {
-    assert(false);
+    return static_cast<uint16_t>(
+        inner_data->material_palette_name_to_palette_idx_map.at(material_palette_name));
 }
 
 Material_palette const& Material_collection::get_material_palette(
     uint16_t material_palette_idx) const
 {
-    assert(false);
+    return inner_data->material_palette_list[material_palette_idx];
 }
 
 }  // namespace TXP
