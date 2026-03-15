@@ -381,6 +381,13 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - [x] Ehhh for the most part.
             - [x] Just filled the undefined ones with assert-false.
 
+        - [x] Create materials and material palettes func.
+            - Turns out only needed material palette creation.
+
+        - [ ] Create materal palette ifc.
+
+        - [ ] Define emplace_material_palette()
+
 
 ## Refactor.
 

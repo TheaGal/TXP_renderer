@@ -83,9 +83,10 @@ void Renderer::run()
     shad_gradient.build_material_collection();
     shad_basic_diffuse.build_material_collection();
 
-    // Load materials/material sets.
-    g.load_material_assets(std::move(*material_assets),
-                           std::move(*m_material_set_assets.scoped_lock()));
+    // Load material palettes (aligns with meshes inside models to assign materials).
+    g.load_material_palettes(std::move(*material_assets),
+                             std::move(*m_material_set_assets.scoped_lock()),
+                             m_material_collection);
 
     // Load models.
     g.load_model_assets(std::move(*m_model_assets.scoped_lock()),

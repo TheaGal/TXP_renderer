@@ -13,6 +13,7 @@
 #include "btdatecheck.h"
 #include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
+#include "material_collection/material_collection.h"
 #include "render_object/render_model.h"
 #include "types.h"
 
@@ -63,28 +64,18 @@ void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
     BT_TRACEF("Loaded all %zu textures.", texture_assets.size());
 }
 
-void TXP::Graphics::load_material_assets(
+void TXP::Graphics::load_material_palettes(
     std::vector<Material_asset_create_info>&& material_assets,
-    std::vector<Material_set_asset_create_info>&& material_set_assets)
+    std::vector<Material_set_asset_create_info>&& material_set_assets,
+    Material_collection& material_collection)
 {
-    BT::date_deadline(2026, 3, 15);
-    return;
-
-    // Load materials.
-    for (auto const& mat_asset : material_assets)
+    for (auto const& mat_pal_asset : material_set_assets)
     {
-        assert(false);
-        // @TODO: move this to renderer.cpp (stuff the params into the shaders at that level.)
-        // @TODO: also ensure that the materials for the shaders are also owned by the shaders (but idk how that's gonna all work out yet tbh).
+        Material_palette new_mat_pal; assert(false);  // @TODO
+        material_collection.emplace_material_palette(mat_pal_asset.mat_set_name,
+                                                     std::move(new_mat_pal));
     }
-    BT_TRACEF("Loaded all %zu materials.", material_assets.size());
-
-    // Load material sets.
-    for (auto const& mat_set_asset : material_set_assets)
-    {
-
-    }
-    BT_TRACEF("Loaded all %zu material sets.", material_set_assets.size());
+    BT_TRACEF("Loaded all %zu material palettes.", material_set_assets.size());
 }
 
 void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
