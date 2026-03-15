@@ -71,7 +71,8 @@ void TXP::Graphics::load_material_palettes(
 {
     for (auto const& mat_pal_asset : material_set_assets)
     {
-        Material_palette new_mat_pal; assert(false);  // @TODO
+        Material_palette new_mat_pal;
+        new_mat_pal.emplace_materials(material_collection, mat_pal_asset.materials);
         material_collection.emplace_material_palette(mat_pal_asset.mat_set_name,
                                                      std::move(new_mat_pal));
     }

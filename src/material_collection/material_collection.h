@@ -8,6 +8,8 @@
 namespace TXP
 {
 
+struct Material_collection;  // Forward decl.
+
 /// Individual entry of material index data.
 struct Material_index_entry
 {
@@ -20,12 +22,10 @@ struct Material_index_entry
 class Material_palette
 {
 public:
-    // @TODO: create emplacing function here!
+    void emplace_materials(Material_collection const& material_collection,
+                           std::vector<std::string> const& material_names_in_order);
 
-    Material_index_entry const& at(size_t idx) const
-    {
-        return m_materials[idx % m_materials.size()];
-    }
+    Material_index_entry const& at(size_t idx) const;
 
 private:
     std::vector<Material_index_entry> m_materials;
@@ -38,14 +38,17 @@ struct Material_collection
     ~Material_collection();
 
     void emplace_shader(std::string const& shader_name);
-    uint16_t get_shader_id(std::string const& shader_name);
+    uint16_t get_shader_id(std::string const& shader_name) const;
 
     /// Keeps track of material param idx by auto incrementing inside shader registration.
     /// @USAGE: as materials are created, execute this function.
     void emplace_material(std::string const& material_name, std::string const& shader_name);
 
     /// Obtains the (shader-local) material param idx for render objects.
-    uint16_t get_material_param_set_idx(std::string const& material_name);
+    uint16_t get_material_param_set_idx(std::string const& material_name) const;
+
+    /// Obtains the shader ID of the shader that the material belongs to.
+    uint16_t get_shader_id_from_material_name(std::string const& material_name) const;
 
     /// .
     void emplace_material_palette(std::string const& material_palette_name,
@@ -56,10 +59,10 @@ struct Material_collection
                                         std::string const& material_palette_original_name);
 
     /// .
-    uint16_t get_material_palette_idx(std::string const& material_palette_name);
+    uint16_t get_material_palette_idx(std::string const& material_palette_name) const;
 
     /// .
-    Material_palette const& get_material_palette(uint16_t material_palette_idx);
+    Material_palette const& get_material_palette(uint16_t material_palette_idx) const;
 
     // Pimpl.
     struct Data;

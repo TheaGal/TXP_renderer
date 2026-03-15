@@ -384,7 +384,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Create materials and material palettes func.
             - Turns out only needed material palette creation.
 
-        - [ ] Create materal palette ifc.
+        - [x] Create materal palette ifc.
 
         - [ ] Define emplace_material_palette()
 

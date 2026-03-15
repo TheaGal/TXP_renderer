@@ -363,7 +363,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     }
     if (has_non_default_material_in_set)
     {   // Create new material palette.
-        Material_palette new_mat_pal; assert(false);  // @TODO
+        Material_palette new_mat_pal;
+        new_mat_pal.emplace_materials(material_collection, material_palette_material_names);
         material_collection.emplace_material_palette(model_name +
                                                          "__default_material_palette_name__",
                                                      std::move(new_mat_pal));
