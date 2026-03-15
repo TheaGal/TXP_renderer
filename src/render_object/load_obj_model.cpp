@@ -11,6 +11,7 @@
 
 
 void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection,
+                                   Material_collection& material_collection,
                                    std::string const& model_name,
                                    std::string const& fname)
 {
@@ -63,6 +64,7 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
 
     // @DEBUG
     BT_TRACE("===========================");
+    static_assert(false);  // @TODO: start here!!!!
     for (auto const& m : materials)
     {
         BT_TRACEF("Mat name: %s", m.name.c_str());
