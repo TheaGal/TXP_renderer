@@ -1,8 +1,8 @@
 #pragma once
 
 #include "render_object/render_object.h"
+#include "renderer/types.h"
 #include "txp_renderer/types.h"
-#include "types.h"
 
 #include <memory>
 #include <string>

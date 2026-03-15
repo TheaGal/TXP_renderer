@@ -23,7 +23,7 @@
 #include "render_object/render_model.h"
 #include "render_object/render_object.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
-#include "types.h"
+#include "renderer/types.h"
 
 #include <cmath>
 #include <fstream>

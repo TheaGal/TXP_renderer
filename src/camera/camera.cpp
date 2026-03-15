@@ -4,7 +4,7 @@
 #include "btservice_finder.h"
 #include "input_handler/input_handler.h"
 #include "input_handler/input_key_codes.h"
-#include "types.h"
+#include "renderer/types.h"
 
 #include <stdexcept>
 #include <vector>

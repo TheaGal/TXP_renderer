@@ -15,7 +15,7 @@
 #include "gfx_vulkan/vk_image.h"
 #include "material_collection/material_collection.h"
 #include "render_object/render_model.h"
-#include "types.h"
+#include "renderer/types.h"
 
 #include <cassert>
 #include <string>

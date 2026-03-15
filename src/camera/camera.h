@@ -2,7 +2,7 @@
 
 #include "btglm.h"
 #include "input_handler/input_handler.h"
-#include "types.h"
+#include "renderer/types.h"
 
 #include <vector>
 

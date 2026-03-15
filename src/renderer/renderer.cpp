@@ -6,10 +6,10 @@
 #include "gfx.h"
 #include "render_object/render_model.h"
 #include "render_object/render_object.h"
+#include "renderer/types.h"
 #include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
 #include "txp_renderer/types.h"
-#include "types.h"
 
 #include <atomic>
 #include <cassert>

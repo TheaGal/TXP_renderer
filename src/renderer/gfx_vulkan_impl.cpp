@@ -33,9 +33,9 @@
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
+#include "renderer/types.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/renderer.h"
-#include "types.h"
 
 #include <array>
 #include <cassert>

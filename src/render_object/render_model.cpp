@@ -46,6 +46,7 @@ void TXP::load_model_from_disk(Render_model_data_collection& data_collection,
     if (file_ext == ".wobj")
     {
         load_obj_model_from_disk(data_collection,
+                                 material_collection,
                                  model_name,
                                  s_model_directory + model_name + file_ext);
     }
