@@ -51,6 +51,10 @@ struct Material_collection
     void emplace_material_palette(std::string const& material_palette_name,
                                   Material_palette&& mat_pal);
 
+    /// Links and adds another name to access the same material palette as the original name.
+    void emplace_material_palette_alias(std::string const& material_palette_alias_name,
+                                        std::string const& material_palette_original_name);
+
     /// .
     uint16_t get_material_palette_idx(std::string const& material_palette_name);
 

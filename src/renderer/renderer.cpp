@@ -88,7 +88,9 @@ void Renderer::run()
                            std::move(*m_material_set_assets.scoped_lock()));
 
     // Load models.
-    g.load_model_assets(std::move(*m_model_assets.scoped_lock()), m_render_model_data_collection);
+    g.load_model_assets(std::move(*m_model_assets.scoped_lock()),
+                        m_render_model_data_collection,
+                        m_material_collection);
 
     // Timer.
     BT::Timer main_timer;

@@ -8,7 +8,10 @@
 namespace TXP
 {
 
+struct Material_collection;  // Forward decl.
+
 void load_gltf_model_from_disk(Render_model_data_collection& data_collection,
+                               Material_collection& material_collection,
                                std::string const& model_name,
                                std::string const& fname);
 

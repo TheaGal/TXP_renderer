@@ -67,7 +67,7 @@ void TXP::Graphics::load_material_assets(
     std::vector<Material_asset_create_info>&& material_assets,
     std::vector<Material_set_asset_create_info>&& material_set_assets)
 {
-    BT::date_deadline(2026, 3, 12);
+    BT::date_deadline(2026, 3, 15);
     return;
 
     // Load materials.
@@ -88,11 +88,13 @@ void TXP::Graphics::load_material_assets(
 }
 
 void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
-                                      Render_model_data_collection& render_model_data_collection)
+                                      Render_model_data_collection& render_model_data_collection,
+                                      Material_collection& material_collection)
 {   // Load models.
     for (auto const& mod_asset : model_assets)
     {
         load_model_from_disk(render_model_data_collection,
+                             material_collection,
                              mod_asset.model_name,
                              mod_asset.file_ext);
     }

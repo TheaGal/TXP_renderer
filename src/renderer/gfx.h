@@ -11,6 +11,9 @@
 
 namespace TXP
 {
+
+struct Material_collection;  // Forward decl.
+
 namespace gpu_type
 {
 
@@ -65,7 +68,8 @@ public:
     void load_material_assets(std::vector<Material_asset_create_info>&& material_assets,
                               std::vector<Material_set_asset_create_info>&& material_set_assets);
     void load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
-                           Render_model_data_collection& render_model_data_collection);
+                           Render_model_data_collection& render_model_data_collection,
+                           Material_collection& material_collection);
 
     /// Polls for input events.
     void poll_input_events();

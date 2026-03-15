@@ -359,7 +359,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - But yeah what about gpu side?
             > I put this train of thought into "Performance" section below.
 
-            
+
     - [x] create buffer for per-instance data collection
         - [x] create buffer
         - [x] add buffer to the device address list.
@@ -376,6 +376,10 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
             - Used partial implementation of mat-coll.
         - [x] generate the material and shader indexes while make_material() is called.
         - [x] uses render model indexes when creating render object.
+
+        - [x] Define the funcs.
+            - [x] Ehhh for the most part.
+            - [x] Just filled the undefined ones with assert-false.
 
 
 ## Refactor.

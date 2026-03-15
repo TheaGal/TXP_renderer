@@ -7,6 +7,7 @@
 #include "fastgltf/math.hpp"
 #include "fastgltf/tools.hpp"
 #include "fastgltf/types.hpp"
+#include "material_collection/material_collection.h"
 #include "render_model.h"
 #include "skeletal_animation.h"
 #include "txp_renderer/types.h"
@@ -20,6 +21,7 @@
 
 
 void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collection,
+                                    Material_collection& material_collection,
                                     std::string const& model_name,
                                     std::string const& fname)
 {
@@ -342,19 +344,34 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     }
 
 
-    // @DEBUG
-    BT_TRACE("===========================");
+    // Create default material palette for this model.
+    bool has_non_default_material_in_set{ false };
+    std::vector<std::string> material_palette_material_names;
     for (auto const& mesh : asset.meshes)
     {
         for (auto const& prim : mesh.primitives)
         {
             if (!prim.materialIndex.has_value())
-                throw std::runtime_error("No material idx for this primitive!");
-
-            BT_TRACEF("Mat name: %s", asset.materials[prim.materialIndex.value()].name.c_str());
+                material_palette_material_names.emplace_back("default_mat");
+            else
+            {
+                material_palette_material_names.emplace_back(
+                    asset.materials[prim.materialIndex.value()].name);
+                has_non_default_material_in_set = true;
+            }
         }
     }
-    BT_TRACE("===========================");
+    if (has_non_default_material_in_set)
+    {   // Create new material palette.
+        Material_palette new_mat_pal; assert(false);  // @TODO
+        material_collection.emplace_material_palette(model_name +
+                                                         "__default_material_palette_name__",
+                                                     std::move(new_mat_pal));
+    }
+    else  // Use default material palette.
+        material_collection.emplace_material_palette_alias(model_name +
+                                                               "__default_material_palette_name__",
+                                                           "default_material_palette");
 
     // Load meshes.
     bool overall_has_skin{ !asset.skins.empty() };
