@@ -2,6 +2,7 @@
 
 #include "btglm.h"
 #include "btlogger.h"
+#include "material_collection/material_collection.h"
 #include "render_model.h"
 #include "tiny_obj_loader.h"
 #include "vertex.h"
@@ -62,14 +63,32 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
         // assert(false);
     }
 
-    // @DEBUG
-    BT_TRACE("===========================");
-    static_assert(false);  // @TODO: start here!!!!
-    for (auto const& m : materials)
+    // Create default material palette for this model.
+    bool has_non_default_material_in_set{ false };
+    std::vector<std::string> material_palette_material_names;
+    for (auto& shape : shapes)
     {
-        BT_TRACEF("Mat name: %s", m.name.c_str());
+        int32_t material_idx{ shape.mesh.material_ids.front() };
+        if (material_idx < 0)
+            material_palette_material_names.emplace_back("default_mat");
+        else
+        {
+            material_palette_material_names.emplace_back(materials[material_idx].name);
+            has_non_default_material_in_set = true;
+        }
     }
-    BT_TRACE("===========================");
+    if (has_non_default_material_in_set)
+    {   // Create new material palette.
+        Material_palette new_mat_pal;
+        new_mat_pal.emplace_materials(material_collection, material_palette_material_names);
+        material_collection.emplace_material_palette(model_name +
+                                                         "__default_material_palette_name__",
+                                                     std::move(new_mat_pal));
+    }
+    else  // Use default material palette.
+        material_collection.emplace_material_palette_alias(model_name +
+                                                               "__default_material_palette_name__",
+                                                           "default_material_palette");
 
     // Get all unique combinations of attributes together.
     assert(attrib.vertices.size() < std::pow(2, 21));

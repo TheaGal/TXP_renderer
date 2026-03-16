@@ -388,7 +388,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
         - [x] Define emplace_material_palette()
 
-        - [ ] Fix .(w)obj files not creating a material palette.
+        - [x] Fix .(w)obj files not creating a material palette.
 
 
 ## Refactor.
