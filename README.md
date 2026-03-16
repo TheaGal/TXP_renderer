@@ -35,6 +35,21 @@ int32_t main()
 ```
 
 
+## Controls
+
+Controls for the editor in the renderer:
+
+- Ctrl+Alt+Shift+D: show/hide ImGui demo window.
+    - @NOTE: this is for debug purposes.
+
+- RMB: enter into flying camera mode on the view (NIY)
+- *While in flying camera mode*
+    - WASD: move in a direction.
+    - E: move up in the Y axis.
+    - Q: move down in the Y axis.
+    - Shift+U: exit flying camera mode.
+
+
 
 ## Software
 
@@ -98,18 +113,18 @@ gantt
     dateFormat YYYY/MM/DD
     section Texture and material system
         完 Create shader pipeline from slang-reflection  : a1, 2026/02/08, 10d
-        Create shader pipeline from slang-reflection Pt2  : a1_1, after a6, 3d
-        Bindlessly load all textures          : a2, after a1_1, 4d
-        Material system                       : a3, after a2, 2d
-        Material sets as swatches for models  : a4, after a3, 1d
+        完 Create shader pipeline from slang-reflection Pt2  : a1_1, after a6, 3d
+        完 Bindlessly load all textures          : a2, after a1_1, 4d
+        完 Material system                       : a3, after a2, 2d
+        完 Material sets as swatches for models  : a4, after a3, 1d
     section Model system
         完 Load 3D meshes (gltf/obj)         : a5, after a1, 4d
         完 Geometry pipeline shader          : a5_1, after a5, 5d
         完 Camera controls                  : a5_2, after a5_1, 6d
-        Material set from model tex names : a6, after a14, 1d
+        完 Material set from model tex names : a6, after a14, 1d
         完 Giant static model buffer         : a7, after a5_2, 2d
         完 Draw meshes with material system (Pt1)  : a8, after a7, 3d
-        中 Draw meshes with material system (Pt2)  : a14, after a13, 2d
+        完 Draw meshes with material system (Pt2)  : a14, after a13, 2d
     section ECS integration
         完 Create ECS-based render objs : a13, after a8, 3d
     section Animation system

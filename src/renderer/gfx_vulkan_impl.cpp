@@ -30,6 +30,7 @@
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "input_handler/input_handler.h"
+#include "input_handler/input_key_codes.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
@@ -972,8 +973,45 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Frame contents.
-    ImGui::ShowDemoWindow();  // @TODO: erase this
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Contents.
+
+    // Prompt for cursor to get unlocked.
+    constexpr float_t k_padding{ 10.0f };
+    ImGuiViewport const& viewport{ *ImGui::GetMainViewport() };
+    ImGui::SetNextWindowPos(ImVec2(viewport.WorkPos.x + k_padding, viewport.WorkPos.y + k_padding),
+                            ImGuiCond_Always,
+                            ImVec2(0, 0));
+
+    ImGui::SetNextWindowBgAlpha(0.35f);
+    if (ImGui::Begin("##Overlay Window for Prompt to Unlock Cursor",
+                     nullptr,
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
+                         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove))
+    {
+        ImGui::Text("Press Shift+U to exit \"Flying Camera Mode\".");
+    }
+    ImGui::End();
+
+    // ImGui demo window.
+    static bool s_show_demo_window{ false };
+    static size_t s_prev_key_d_event_tick{ 0 };
+    if (auto ks = s_input_handler->get_keyboard_key_state(BT_KEY_D);
+        ks.last_event_tick > s_prev_key_d_event_tick)
+    {
+        if (ks.pressed && ks.modbits.has_control() && ks.modbits.has_alt() &&
+            ks.modbits.has_shift())
+        {
+            s_show_demo_window = !s_show_demo_window;
+        }
+        s_prev_key_d_event_tick = ks.last_event_tick;
+    }
+    if (s_show_demo_window)
+    {
+        ImGui::ShowDemoWindow();
+    }
+
     // if (!imgui_build_contents_callback)  @TODO
     //     throw std::runtime_error("ImGui build contents callback not defined!");
     // imgui_build_contents_callback();
