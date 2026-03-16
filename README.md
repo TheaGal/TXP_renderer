@@ -127,13 +127,15 @@ gantt
         完 Draw meshes with material system (Pt2)  : a14, after a13, 2d
     section ECS integration
         完 Create ECS-based render objs : a13, after a8, 3d
+    section Editor tooling
+        中 Render view usage tie-in with ImGui : a15, after a4, 3d
     section Animation system
         Load .btafa and .btanitor to model : a9, after m1, 3d
         Compute shader of static mesh into skinned mesh in its own buffer : a10, after a9, 4d
         Control animators via setting state-sets : a11, after a10, 3d
         Control animators via jump queues : a12, after a10, 3d
     section Milestones
-        Finish basic material-based geometry renderer : milestone, m1, after a4, 0d
+        Finish basic material-based geometry renderer : milestone, m1, after a15, 0d
         Finish animation system : milestone, m2, after a12, 0d
 ```
 

@@ -364,7 +364,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] create buffer
         - [x] add buffer to the device address list.
 
-- [ ] Now material sets have to get created so that the right ones get written to the per-isntance data collection.
+- [x] Now material sets have to get created so that the right ones get written to the per-isntance data collection.
     - Maybe rename these to material-palettes? That would ease confusion of the material-set and material-param-set difference.
         > THOUGHT: I think this is a good idea but later. I'll put this in the "Refactor" section below.
     
@@ -389,6 +389,18 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] Define emplace_material_palette()
 
         - [x] Fix .(w)obj files not creating a material palette.
+
+
+## Creatable render views.
+
+- [x] Move the `build_content()` into its own file.
+- [x] Main menubar.
+- [x] Placeholder windows for the main viewport and scene editor(s).
+- [ ] Change the size of main view when main viewport is resized.
+- [ ] Put main view into main viewport.
+- [ ] Add dockspace.
+- [ ] Create more render views for the scene editor views.
+- [ ] Put scene editor views into the imgui windows.
 
 
 ## Refactor.

@@ -192,6 +192,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_key_codes.h
@@ -225,6 +227,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/renderer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h
@@ -232,7 +235,6 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/types.h
 )
 
 # Executable build.
