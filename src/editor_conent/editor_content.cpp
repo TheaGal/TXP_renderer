@@ -5,6 +5,7 @@
 #include "imgui.h"
 #include "input_handler/input_handler.h"
 #include "input_handler/input_key_codes.h"
+#include "renderer/types.h"
 
 #include <cmath>
 #include <vector>
@@ -44,7 +45,8 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 }  // namespace
 
 
-void editor_content::build_content(TXP::Input::Input_handler const& input_handler)
+void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
+                                   std::vector<Render_view_size>& out_rend_view_sizes)
 {
     // Main menu bar.
     if (ImGui::BeginMainMenuBar())
@@ -86,10 +88,15 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     }
     ImGui::End();
 
+    // Collect size of available content in viewports.
+    std::vector<ImVec2> per_viewport_content_sizes;
+    per_viewport_content_sizes.reserve(1 + s_num_scene_editor_windows);
+
     // Draw main viewport window (only 1).
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Main Viewport"))
     {
+        per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
         ImGui::Text("@TODO: put view image here!!");
         ImGui::End();
     }
@@ -119,6 +126,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                              .c_str(),
                          &is_open))
         {
+            per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
             ImGui::Text("@TODO: put view image here!!");
 
             if (ImGui::IsItemHovered() && on_rmb_pressed)
@@ -142,6 +150,16 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     // if (!imgui_build_contents_callback)  @TODO
     //     throw std::runtime_error("ImGui build contents callback not defined!");
     // imgui_build_contents_callback();
+
+
+    // Report back render view sizes.
+    out_rend_view_sizes.reserve(per_viewport_content_sizes.size());
+    for (auto const& per_viewport_content_size : per_viewport_content_sizes)
+    {
+        out_rend_view_sizes.emplace_back(
+            Render_view_size{ .width = static_cast<int32_t>(per_viewport_content_size.x),
+                              .height = static_cast<int32_t>(per_viewport_content_size.y) });
+    }
 }
 
 }  // namespace TXP

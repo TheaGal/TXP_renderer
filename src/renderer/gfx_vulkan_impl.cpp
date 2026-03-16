@@ -974,13 +974,10 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    editor_content::build_content(*s_input_handler);
+    editor_content::build_content(*s_input_handler, out_rend_view_sizes);
 
     // Convert to render instructions.
     ImGui::Render();
-
-    // @TEMPORARY: there should be different render views that can show up.
-    out_rend_view_sizes.emplace_back(Render_view_size{ .width = 1280, .height = 720 });
 }
 
 void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)

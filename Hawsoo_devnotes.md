@@ -396,7 +396,10 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] Move the `build_content()` into its own file.
 - [x] Main menubar.
 - [x] Placeholder windows for the main viewport and scene editor(s).
-- [ ] Change the size of main view when main viewport is resized.
+- [x] Change the size of main view when main viewport is resized.
+- [ ] BUGFIX: why is there such a weird thing going on w/ the image?
+    - It seems like it's just drawing onto the same image over and over.
+    - This may be solved with the next point "put main view into main viewport."?
 - [ ] Put main view into main viewport.
 - [ ] Add dockspace.
 - [ ] Create more render views for the scene editor views.
