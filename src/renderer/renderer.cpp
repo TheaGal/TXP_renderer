@@ -200,12 +200,19 @@ void Renderer::run()
         std::vector<Render_view_size> render_view_sizes;
         g.build_imgui_contents(render_view_sizes);
 
+        bool render_view_sizes_changed = g.check_render_view_sizes_changed(render_view_sizes);
+
         // Wait until can start rendering.
-        g.start_next_frame();
+        if (!render_view_sizes_changed)
+            g.start_next_frame();
 
         // Set render view sizes.
         g.set_render_view_sizes(render_view_sizes);
         m_camera.set_render_view_sizes(render_view_sizes);
+
+        // Avoid drawing with deleted GPU data.
+        if (render_view_sizes_changed)
+            continue;
 
         // Set per-instance data from render objects.
         g.set_render_object_per_instance_data(render_object_list);
@@ -235,7 +242,8 @@ void Renderer::run()
             }
 
             // g.render_shadows(render_view);
-            shad_gradient.compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
+            // if (main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
+            //     shad_gradient.compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
             shad_basic_diffuse.draw(render_view);
 
             if (main_cam_matrix)

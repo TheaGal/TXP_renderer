@@ -78,6 +78,10 @@ public:
     /// Builds one imgui frame using a callback and readies the frame for rendering.
     void build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes);
 
+    /// Checks whether the render view sizes has changed from currently applied ones.
+    bool check_render_view_sizes_changed(
+        std::vector<Render_view_size> const& rend_view_sizes) const;
+
     /// Sets render view sizes for hdr draw images.
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 

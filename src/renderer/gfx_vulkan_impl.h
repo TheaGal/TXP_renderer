@@ -459,6 +459,10 @@ struct Graphics::Impl
 
     void build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes);
 
+    /// Checks whether render view sizes are different from the ones currently applied.
+    bool check_render_view_sizes_changed(
+        std::vector<Render_view_size> const& rend_view_sizes) const;
+
     /// Sets render view sizes and rebuilds any needed render views if changed.
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 

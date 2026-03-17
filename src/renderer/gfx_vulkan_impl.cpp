@@ -592,7 +592,7 @@ void Graphics::Impl::init_vulkan_for_imgui()
     {   // Create descriptor pool.
         VkDescriptorPoolSize pool_sizes[]{
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-              IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE },
+              IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE + 1024 },  // @NOCHECKIN: This may be unnecessary since desc pool stuff hasn't gone over yet???
         };
         VkDescriptorPoolCreateInfo pool_info{};
         pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -988,6 +988,22 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
     ImGui::Render();
 }
 
+bool Graphics::Impl::check_render_view_sizes_changed(
+    std::vector<Render_view_size> const& rend_view_sizes) const
+{
+    if (rend_view_sizes.size() != render_views.size())
+        return true;
+    
+    for (size_t i = 0; i < rend_view_sizes.size(); i++)
+    {
+        if (rend_view_sizes[i].width != render_views[i].color_image.get_extent().width ||
+            rend_view_sizes[i].height != render_views[i].color_image.get_extent().height)
+            return true;
+    }
+
+    return false;
+}
+
 void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
     bool is_gpu_idle{ false };  // Wait until GPU idle if any mutation.
@@ -1201,6 +1217,24 @@ void Graphics::Impl::start_next_frame()
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
     VkResult err;
+    err = vkAcquireNextImageKHR(gfx.device,
+                                gfx.swapchain,
+                                k_10sec_as_ns,
+                                current_frame.acquire_nxt_img_semaphore,
+                                nullptr,
+                                &current_swapchain_image_idx);
+    if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
+    {
+        throw std::runtime_error("Add in code for this!!");
+        // m_recreate_swapchain = true;
+
+        if (err == VK_ERROR_OUT_OF_DATE_KHR)
+            return /*false*/;
+    }
+    else if (err)
+        throw std::runtime_error("Acquire next swapchain image failed.");
+
+    // Sync fences before readying command buffers.
     err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
     if (err)
     {
@@ -1212,16 +1246,6 @@ void Graphics::Impl::start_next_frame()
     {
         throw std::runtime_error("reset render fence failed.");
     }
-
-    // Request image from swapchain.
-    err = vkAcquireNextImageKHR(gfx.device,
-                                gfx.swapchain,
-                                k_10sec_as_ns,
-                                current_frame.acquire_nxt_img_semaphore,
-                                nullptr,
-                                &current_swapchain_image_idx);
-    if (err)
-        throw std::runtime_error("Acquire next swapchain image failed.");
 
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();

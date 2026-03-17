@@ -402,7 +402,13 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - This may be solved with the next point "put main view into main viewport."?
 - [ ] Put main view into main viewport.
     - [x] Put in the groundwork
-    - [ ] There appears to be no imageview for the main color image.
+    - [x] There appears to be no imageview for the main color image.
+        - This gets deleted right after the imgui thing happens, so it's getting borked. It's essentially a nullrefexception.
+        - I think just putting the old render view into an "old renderviews" queue and then deleting it a frame later would be wiser.
+            - Then the old references could exist in the vulkan datastructure for the rest of the frame until things get recreated.
+                - @THEA: @SOLUTION: Welp, I tried a different technique (aborting rendering the frame asap when the render view sizes have changed) and that works great! and no double-buffering. There may be stuttering or stuff like that but that should be no problem since the resizing is only occasional.
+    - [x] MISC: moved vk-fence checking for after the acquire next image call since that is what informs if the swapchain needs to be recreated. This should be fine tho and make swapchain recreation easier in the future.
+    - [ ] There's some image transitioning that needs to be done.
 - [ ] Add dockspace.
 - [ ] Create more render views for the scene editor views.
 - [ ] Put scene editor views into the imgui windows.

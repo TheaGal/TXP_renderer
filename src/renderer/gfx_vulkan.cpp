@@ -106,6 +106,12 @@ void TXP::Graphics::build_imgui_contents(std::vector<Render_view_size>& out_rend
     m_pimpl->build_imgui_contents(out_rend_view_sizes);
 }
 
+bool TXP::Graphics::check_render_view_sizes_changed(
+    std::vector<Render_view_size> const& rend_view_sizes) const
+{
+    return m_pimpl->check_render_view_sizes_changed(rend_view_sizes);
+}
+
 void TXP::Graphics::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
     m_pimpl->set_render_view_sizes(rend_view_sizes);

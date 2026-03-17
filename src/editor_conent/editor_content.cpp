@@ -109,7 +109,6 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                         per_viewport_content_sizes.back());
     #endif // TXP_GFX_BACKEND_VULKAN
 
-        ImGui::Image((ImTextureRef)ImGui::GetIO().Fonts->TexRef, per_viewport_content_sizes.back());
         ImGui::End();
     }
 
