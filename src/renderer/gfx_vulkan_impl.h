@@ -134,13 +134,19 @@ struct Graphics::Impl
         /// Resets command buffer, causing initialization for the next `.get()` call.
         void reset()
         {
-            m_initialized = false;
+            if (m_state != k_state_undefined && m_state != k_state_finished)
+                throw std::runtime_error("Weird command buffer state.");
+
+            m_state = k_state_got_reset;
         }
 
         /// Gets command buffer, initializing if needed.
         VkCommandBuffer get()
         {
-            if (!m_initialized)
+            if (m_state == k_state_finished)
+                throw std::runtime_error("Weird command buffer state.");
+
+            if (m_state == k_state_got_reset)
             {
                 VkResult err;
 
@@ -157,14 +163,14 @@ struct Graphics::Impl
                     .pInheritanceInfo = nullptr,
                 };
 
-                //start the command buffer recording
+                // Start the command buffer recording.
                 err = vkBeginCommandBuffer(m_cmd, &info);
                 if (err)
                 {
                     std::runtime_error("Begin command buffer failed.");
                 }
 
-                m_initialized = true;
+                m_state = k_state_initialized;
             }
 
             return m_cmd;
@@ -180,10 +186,16 @@ struct Graphics::Impl
             {
                 std::runtime_error("End command buffer failed.");
             }
+
+            m_state = k_state_finished;
         }
 
     private:
-        bool m_initialized{ false };
+        static constexpr int32_t k_state_undefined{ -2 };
+        static constexpr int32_t k_state_got_reset{ -1 };
+        static constexpr int32_t k_state_initialized{ 0 };
+        static constexpr int32_t k_state_finished{ 1 };
+        int32_t m_state{ k_state_undefined };
         VkCommandBuffer m_cmd;
     };
 

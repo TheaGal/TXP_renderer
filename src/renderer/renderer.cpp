@@ -255,6 +255,8 @@ void Renderer::run()
             // g.render_particles();
             // g.render_transparent_geometry();
 
+            g.render_hdr_to_ldr_postprocessing(render_view_idx, g.LDR_TARGET_IMGUI);
+
             render_view_idx++;
         }
         if (render_view_idx == 0)
@@ -262,7 +264,6 @@ void Renderer::run()
             throw std::runtime_error("Main render view must exist.");
         }
 
-        g.render_hdr_to_ldr_postprocessing();
         g.render_imgui();
 
         g.present_frame_to_screen();

@@ -186,19 +186,33 @@ void TXP::Graphics::render_transparent_geometry()
     assert(false);
 }
 
-void TXP::Graphics::render_hdr_to_ldr_postprocessing()
+void TXP::Graphics::render_hdr_to_ldr_postprocessing(size_t rend_view_idx, Ldr_target render_target)
 {
-    // @TEMPORARY: this is only for the main image, and this is simply to get the hdr image into the
-    //             background of swapchain.
-    // @TODO: only do this if no imgui. If yes imgui, have this be tonemapped into ldr and then get
-    //        into an imgui image.
-    auto const& swapchain_extent{ m_pimpl->gfx.swapchain_extent };
-    m_pimpl->blit_image(m_pimpl->render_views[0].color_image.get_image(),
-                        m_pimpl->render_views[0].color_image.get_extent(),
-                        m_pimpl->gfx.swapchain_images[m_pimpl->current_swapchain_image_idx],
-                        VkExtent3D{ .width = swapchain_extent.width,
-                                    .height = swapchain_extent.height,
-                                    .depth = 1 });
+    // @TEMPORARY: this is only a blit or an image transition, but in the future have real
+    //             tonemapping.
+    switch (render_target)
+    {
+    case LDR_TARGET_SWAPCHAIN:
+    {
+        auto const& swapchain_extent{ m_pimpl->gfx.swapchain_extent };
+        m_pimpl->blit_image(m_pimpl->render_views[rend_view_idx].color_image.get_image(),
+                            m_pimpl->render_views[rend_view_idx].color_image.get_extent(),
+                            m_pimpl->gfx.swapchain_images[m_pimpl->current_swapchain_image_idx],
+                            VkExtent3D{ .width = swapchain_extent.width,
+                                        .height = swapchain_extent.height,
+                                        .depth = 1 });
+        break;
+    }
+
+    case LDR_TARGET_IMGUI:
+    {
+        Vk_Image::Image::transition_to(
+            m_pimpl->get_current_frame().graphics_queue_command_buffer.get(),
+            { { &m_pimpl->render_views[rend_view_idx].color_image.get_image(),
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } });
+        break;
+    }
+    }
 }
 
 void TXP::Graphics::render_imgui()

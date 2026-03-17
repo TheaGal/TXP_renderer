@@ -127,8 +127,15 @@ public:
     /// .
     void render_transparent_geometry();
 
+    /// Target for where to render to for LDR rendering.
+    enum Ldr_target
+    {
+        LDR_TARGET_SWAPCHAIN = 0,
+        LDR_TARGET_IMGUI,
+    };
+
     /// .
-    void render_hdr_to_ldr_postprocessing();
+    void render_hdr_to_ldr_postprocessing(size_t rend_view_idx, Ldr_target render_target);
 
     /// Renders collected immediate-mode GUI commands to LDR present surface.
     void render_imgui();
