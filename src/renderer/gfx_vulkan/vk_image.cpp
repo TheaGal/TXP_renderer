@@ -256,7 +256,7 @@ Image& Allocated_image::get_image()
     return m_image;
 }
 
-VkImageView& Allocated_image::get_image_view()
+VkImageView Allocated_image::get_image_view() const
 {
     if (!m_initialized)
         throw std::runtime_error("Uninitialized Allocated_image.");

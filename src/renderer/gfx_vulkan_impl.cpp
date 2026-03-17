@@ -974,7 +974,15 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    editor_content::build_content(*s_input_handler, out_rend_view_sizes);
+    editor_content::Render_view_image_content render_view_image_content;
+    render_view_image_content.content_image_descriptors.reserve(render_views.size());
+    for (auto const& rv : render_views)
+    {
+        render_view_image_content.content_image_descriptors.emplace_back(
+            rv.imgui_color_image_descriptor);
+    }
+
+    editor_content::build_content(*s_input_handler, render_view_image_content, out_rend_view_sizes);
 
     // Convert to render instructions.
     ImGui::Render();
@@ -991,6 +999,27 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         }
     };
 
+    if (render_view_imgui_image_sampler == VK_NULL_HANDLE)
+    {   // Create image sampler for render views.
+        VkSamplerCreateInfo sampler_info{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_NEAREST,
+            .minFilter = VK_FILTER_NEAREST,
+            .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+            .addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            .anisotropyEnable = VK_FALSE,
+            .maxAnisotropy = 1.0f,
+            .minLod = -1000,
+            .maxLod = 1000,
+        };
+        VkResult err =
+            vkCreateSampler(gfx.device, &sampler_info, nullptr, &render_view_imgui_image_sampler);
+        if (err)
+            throw std::runtime_error("Couldn't create the stupid little sampler. Wtf.");
+    }
+
     size_t prev_render_views_size{ render_views.size() };
 
     auto& current_frame{ get_current_frame() };
@@ -1004,6 +1033,7 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         auto& render_view{ render_views[i] };
         render_view.color_image.teardown();
         render_view.depth_image.teardown();
+        ImGui_ImplVulkan_RemoveTexture(render_view.imgui_color_image_descriptor);
     }
 
     // Destroy environment data buffers if shrinking its list's size.
@@ -1036,6 +1066,7 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
             ensure_gpu_idle_fn();
             render_view.color_image.teardown();
             render_view.depth_image.teardown();
+            ImGui_ImplVulkan_RemoveTexture(render_view.imgui_color_image_descriptor);
         }
 
         // HDR draw image.
@@ -1052,9 +1083,15 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
                 VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                 VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT |  // For ImGui render view sampling.
                 VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
         render_view.depth_image = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
+
+        render_view.imgui_color_image_descriptor =
+            ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,
+                                        render_view.color_image.get_image_view(),
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     }
     if (render_views.empty())
         throw std::runtime_error("Render-view list must not be empty.");

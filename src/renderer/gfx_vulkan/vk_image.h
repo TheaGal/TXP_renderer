@@ -75,7 +75,7 @@ public:
 
     Image& get_image();
 
-    VkImageView& get_image_view();
+    VkImageView get_image_view() const;
 
     VkExtent3D get_extent() const;
 

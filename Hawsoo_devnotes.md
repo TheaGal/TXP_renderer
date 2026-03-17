@@ -401,6 +401,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - It seems like it's just drawing onto the same image over and over.
     - This may be solved with the next point "put main view into main viewport."?
 - [ ] Put main view into main viewport.
+    - [x] Put in the groundwork
+    - [ ] There appears to be no imageview for the main color image.
 - [ ] Add dockspace.
 - [ ] Create more render views for the scene editor views.
 - [ ] Put scene editor views into the imgui windows.

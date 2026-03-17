@@ -220,8 +220,10 @@ struct Graphics::Impl
         size_t render_view_idx;
         Vk_Image::Allocated_image color_image;
         Vk_Image::Allocated_image depth_image;
+        VkDescriptorSet imgui_color_image_descriptor;
     };
     std::vector<Render_view_data> render_views;
+    VkSampler render_view_imgui_image_sampler{ VK_NULL_HANDLE };
 
     /// Helper for loading shader module.
     VkShaderModule load_shader_module(std::string const& fname)

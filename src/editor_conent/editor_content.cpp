@@ -1,5 +1,9 @@
 #include "editor_content.h"
 
+#if TXP_GFX_BACKEND_VULKAN
+#include "backends/imgui_impl_vulkan.h"
+#endif // TXP_GFX_BACKEND_VULKAN
+
 #include "btlogger.h"
 #include "btuuid.h"
 #include "imgui.h"
@@ -18,7 +22,7 @@ namespace
 
 bool s_show_demo_window{ false };
 
-size_t s_num_scene_editor_windows{ 1 };
+size_t s_num_scene_editor_windows{ 0 };  // @TEMP: I want default to be 1 in the future.
 std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 
 /// Optional ImGui demo window drawing (enable/disable-able).
@@ -46,6 +50,7 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 
 
 void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
+                                   Render_view_image_content const& render_view_image_content,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
     // Main menu bar.
@@ -97,7 +102,14 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     if (ImGui::Begin("Main Viewport"))
     {
         per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
-        ImGui::Text("@TODO: put view image here!!");
+
+    #if TXP_GFX_BACKEND_VULKAN
+        auto& img_descriptor{ render_view_image_content.content_image_descriptors.front() };
+        ImGui::Image((ImTextureRef)img_descriptor,
+                        per_viewport_content_sizes.back());
+    #endif // TXP_GFX_BACKEND_VULKAN
+
+        ImGui::Image((ImTextureRef)ImGui::GetIO().Fonts->TexRef, per_viewport_content_sizes.back());
         ImGui::End();
     }
 
@@ -127,7 +139,16 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                          &is_open))
         {
             per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
-            ImGui::Text("@TODO: put view image here!!");
+
+        #if TXP_GFX_BACKEND_VULKAN
+            auto& img_descriptor{
+                i + 1 < render_view_image_content.content_image_descriptors.size()
+                    ? render_view_image_content.content_image_descriptors[i + 1]
+                    : render_view_image_content.content_image_descriptors.back()
+            };
+            ImGui::Image((ImTextureRef)img_descriptor,
+                         per_viewport_content_sizes.back());
+        #endif // TXP_GFX_BACKEND_VULKAN
 
             if (ImGui::IsItemHovered() && on_rmb_pressed)
             {
