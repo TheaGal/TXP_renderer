@@ -420,7 +420,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] have flying camera controls be used on only the window that gets right clicked on.
     - [x] Do actual controls.
-    - [ ] Get the guide overlay for exiting flying cam mode in there.
+    - [x] Get the guide overlay for exiting flying cam mode in there.
+        - Partial but it doesn't look good.
+        - Now it looks ok decent.
     - [ ] Put in functionality of exiting fllying cam mode.
     - [ ] Lock cursor.
 

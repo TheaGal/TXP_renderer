@@ -58,6 +58,11 @@ void Camera::set_controlling_camera(size_t camera_idx)
     m_controlling_camera_state_idx = camera_idx;
 }
 
+size_t Camera::get_controlling_camera() const
+{
+    return m_controlling_camera_state_idx;
+}
+
 void Camera::update(float_t delta_time)
 {
     if (m_controlling_camera_state_idx >= m_camera_states.size())

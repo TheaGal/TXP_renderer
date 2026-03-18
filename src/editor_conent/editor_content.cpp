@@ -23,8 +23,33 @@ namespace
 
 bool s_show_demo_window{ false };
 
-size_t s_num_scene_editor_windows{ 0 };  // @TEMP: I want default to be 1 in the future.
+size_t s_num_scene_editor_windows{ 1 };
 std::vector<BT::UUID> s_active_scene_editor_window_uuids;
+
+/// Prompt overlay for flying camera cursor to get unlocked.
+void imgui_flying_camera_cursor_unlock_prompt_overlay(
+    TXP::Input::Input_handler const& input_handler,
+    Camera& camera,
+    ImVec2 topleft_pos)
+{
+    constexpr float_t k_padding{ 10.0f };
+    ImGui::SetNextWindowPos(ImVec2(topleft_pos.x + k_padding, topleft_pos.y + k_padding),
+                            ImGuiCond_Always,
+                            ImVec2(0, 0));
+
+    ImGui::SetNextWindowBgAlpha(0.6f);
+    if (ImGui::BeginChild(ImGui::GetID("Flying camera cursor unlock prompt overlay"),
+                          ImVec2(0, 0),
+                          ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX |
+                              ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding,
+                          ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings |
+                              ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                              ImGuiWindowFlags_NoMove))
+    {
+        ImGui::Text("Press Shift+C to exit \"Flying Camera Mode\".");
+    }
+    ImGui::EndChild();
+}
 
 /// Optional ImGui demo window drawing (enable/disable-able).
 void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
@@ -82,27 +107,9 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                                  ImGui::GetMainViewport(),
                                  0);
 
-    // Prompt for cursor to get unlocked.
-    constexpr float_t k_padding{ 10.0f };
-    ImGuiViewport const& viewport{ *ImGui::GetMainViewport() };
-    ImGui::SetNextWindowPos(ImVec2(viewport.WorkPos.x + k_padding, viewport.WorkPos.y + k_padding),
-                            ImGuiCond_Always,
-                            ImVec2(0, 0));
-
-    ImGui::SetNextWindowBgAlpha(0.35f);
-    if (ImGui::Begin("##Overlay Window for Prompt to Unlock Cursor",
-                     nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize |
-                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing |
-                         ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoMove))
-    {
-        ImGui::Text("Press Shift+U to exit \"Flying Camera Mode\".");
-    }
-    ImGui::End();
-
     // Collect size of available content in viewports.
     std::vector<ImVec2> per_viewport_content_sizes;
-    per_viewport_content_sizes.reserve(1 + s_num_scene_editor_windows);
+    per_viewport_content_sizes.reserve(1 + s_num_scene_editor_windows);  // +1 for main viewport.
 
     // Draw main viewport window (only 1).
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
@@ -147,6 +154,8 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                              .c_str(),
                          &is_open))
         {
+            auto window_content_pos = ImGui::GetCursorScreenPos();
+
             per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
 
         #if TXP_GFX_BACKEND_VULKAN
@@ -163,6 +172,13 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             {
                 BT_TRACE("ENTER FLYING CAM MODE");
                 camera.set_controlling_camera(i + 1);
+            }
+
+            if (camera.get_controlling_camera() == i + 1)
+            {
+                imgui_flying_camera_cursor_unlock_prompt_overlay(input_handler,
+                                                                 camera,
+                                                                 window_content_pos);
             }
         }
         ImGui::End();

@@ -21,6 +21,7 @@ public:
     static constexpr size_t k_controlling_camera_state_none{ (size_t)-1 };
 
     void set_controlling_camera(size_t camera_idx);
+    size_t get_controlling_camera() const;
 
     void update(float_t delta_time);
 
