@@ -16,7 +16,7 @@ struct Modifier_bits
     int32_t modbits{ 0 };
 
     // Mod bits funcs.
-    bool has_shift();
+    bool has_shift();  // @TODO: @THEA: there needs to be a way to have exclusive modbits checking!!!!
     bool has_control();
     bool has_alt();
     bool has_super();

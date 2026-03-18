@@ -47,6 +47,16 @@ void imgui_flying_camera_cursor_unlock_prompt_overlay(
                               ImGuiWindowFlags_NoMove))
     {
         ImGui::Text("Press Shift+C to exit \"Flying Camera Mode\".");
+
+        static size_t s_prev_key_c_event_tick{ 0 };
+        if (auto ks = input_handler.get_keyboard_key_state(BT_KEY_C);
+            ks.last_event_tick > s_prev_key_c_event_tick)
+        {
+            if (ks.pressed && ks.modbits.has_shift())
+            {
+                camera.set_controlling_camera(camera.k_controlling_camera_state_none);
+            }
+        }
     }
     ImGui::EndChild();
 }
