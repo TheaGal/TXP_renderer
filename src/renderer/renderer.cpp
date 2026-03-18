@@ -198,7 +198,7 @@ void Renderer::run()
 
         // Build imgui for this frame.
         std::vector<Render_view_size> render_view_sizes;
-        g.build_imgui_contents(render_view_sizes);
+        g.build_imgui_contents(m_camera, render_view_sizes);
 
         bool render_view_sizes_changed = g.check_render_view_sizes_changed(render_view_sizes);
 

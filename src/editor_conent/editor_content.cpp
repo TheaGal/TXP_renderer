@@ -6,6 +6,7 @@
 
 #include "btlogger.h"
 #include "btuuid.h"
+#include "camera/camera.h"
 #include "imgui.h"
 #include "input_handler/input_handler.h"
 #include "input_handler/input_key_codes.h"
@@ -51,6 +52,7 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 
 void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
+                                   Camera& camera,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
     // Main menu bar.
@@ -160,6 +162,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             if (ImGui::IsItemHovered() && on_rmb_pressed)
             {
                 BT_TRACE("ENTER FLYING CAM MODE");
+                camera.set_controlling_camera(i + 1);
             }
         }
         ImGui::End();

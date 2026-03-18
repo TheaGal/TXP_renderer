@@ -12,6 +12,8 @@
 namespace TXP
 {
 
+class Camera;  // Forward decl.
+
 namespace Input
 {
 class Input_handler;  // Forward decl.
@@ -32,6 +34,7 @@ struct Render_view_image_content
 /// Builds ImGui content for the frame.
 void build_content(TXP::Input::Input_handler const& input_handler,
                    Render_view_image_content const& render_view_image_content,
+                   Camera& camera,
                    std::vector<Render_view_size>& out_rend_view_sizes);
 
 }  // namespace editor_content

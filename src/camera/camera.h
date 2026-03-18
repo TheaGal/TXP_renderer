@@ -18,6 +18,10 @@ public:
 
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
+    static constexpr size_t k_controlling_camera_state_none{ (size_t)-1 };
+
+    void set_controlling_camera(size_t camera_idx);
+
     void update(float_t delta_time);
 
     struct Cam_matrix
@@ -50,6 +54,8 @@ private:
         float_t aspect;
     };
     std::vector<Camera_state> m_camera_states;
+
+    size_t m_controlling_camera_state_idx{ k_controlling_camera_state_none };
 };
 
 }  // namespace TXP

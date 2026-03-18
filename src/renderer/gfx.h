@@ -12,6 +12,7 @@
 namespace TXP
 {
 
+class Camera;  // Forward decl.
 struct Material_collection;  // Forward decl.
 
 namespace gpu_type
@@ -76,7 +77,7 @@ public:
     void poll_input_events();
 
     /// Builds one imgui frame using a callback and readies the frame for rendering.
-    void build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes);
+    void build_imgui_contents(Camera& camera, std::vector<Render_view_size>& out_rend_view_sizes);
 
     /// Checks whether the render view sizes has changed from currently applied ones.
     bool check_render_view_sizes_changed(

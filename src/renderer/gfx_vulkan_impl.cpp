@@ -968,7 +968,8 @@ void Graphics::Impl::poll_input_events()
     glfwPollEvents();
 }
 
-void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_rend_view_sizes)
+void Graphics::Impl::build_imgui_contents(Camera& camera,
+                                          std::vector<Render_view_size>& out_rend_view_sizes)
 {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -982,7 +983,10 @@ void Graphics::Impl::build_imgui_contents(std::vector<Render_view_size>& out_ren
             rv.imgui_color_image_descriptor);
     }
 
-    editor_content::build_content(*s_input_handler, render_view_image_content, out_rend_view_sizes);
+    editor_content::build_content(*s_input_handler,
+                                  render_view_image_content,
+                                  camera,
+                                  out_rend_view_sizes);
 
     // Convert to render instructions.
     ImGui::Render();

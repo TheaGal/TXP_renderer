@@ -53,13 +53,17 @@ void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_vie
     }
 }
 
+void Camera::set_controlling_camera(size_t camera_idx)
+{
+    m_controlling_camera_state_idx = camera_idx;
+}
+
 void Camera::update(float_t delta_time)
 {
-    size_t camera_idx{ 0 };  // @HARDCODE
-    if (camera_idx >= m_camera_states.size())
+    if (m_controlling_camera_state_idx >= m_camera_states.size())
         return;  // Exit early since camera doesn't exist.
 
-    auto& camera{ m_camera_states[camera_idx] };
+    auto& camera{ m_camera_states[m_controlling_camera_state_idx] };
 
     // Get input.
     auto key_w_state{ m_input_handler.get_keyboard_key_state(BT_KEY_W) };
