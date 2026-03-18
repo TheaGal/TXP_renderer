@@ -75,6 +75,11 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         ImGui::EndMainMenuBar();
     }
 
+    // Main dockspace.
+    ImGui::DockSpaceOverViewport(0,
+                                 ImGui::GetMainViewport(),
+                                 0);
+
     // Prompt for cursor to get unlocked.
     constexpr float_t k_padding{ 10.0f };
     ImGuiViewport const& viewport{ *ImGui::GetMainViewport() };
@@ -108,9 +113,12 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         ImGui::Image((ImTextureRef)img_descriptor,
                         per_viewport_content_sizes.back());
     #endif // TXP_GFX_BACKEND_VULKAN
-
-        ImGui::End();
     }
+    else
+    {   // Put in dummy 1x1 view if view is obfuscated or closed.
+        per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
+    }
+    ImGui::End();
 
     // Update mouse input data.
     bool on_rmb_pressed{ false };
