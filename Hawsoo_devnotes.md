@@ -400,7 +400,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [ ] BUGFIX: why is there such a weird thing going on w/ the image?
     - It seems like it's just drawing onto the same image over and over.
     - This may be solved with the next point "put main view into main viewport."?
-- [ ] Put main view into main viewport.
+- [x] Put main view into main viewport.
     - [x] Put in the groundwork
     - [x] There appears to be no imageview for the main color image.
         - This gets deleted right after the imgui thing happens, so it's getting borked. It's essentially a nullrefexception.
@@ -411,11 +411,14 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] There's some image transitioning that needs to be done.
     - [ ] ~~Fix swapchain not clearing.~~
         - This might just be solvable with an opaque bg dockspace (see "add dockspace")
-    - [ ] Fix semaphore validation errors (probs from the rearranging done earlier?)
+    - [x] Fix semaphore validation errors (probs from the rearranging done earlier?)
+        - I just revertedd it. It should be fine right? The fence being reset I think should be fine in case something like this happens again.
 - [x] Add dockspace.
     - This fixed the clearing visual issue.
-- [ ] Create more render views for the scene editor views.
-- [ ] Put scene editor views into the imgui windows.
+- [x] Create more render views for the scene editor views.
+- [x] Put scene editor views into the imgui windows.
+
+- [ ] have flying camera controls be used on only the window that gets right clicked on.
 
 
 ## Refactor.

@@ -1217,6 +1217,21 @@ void Graphics::Impl::start_next_frame()
     constexpr uint64_t k_10sec_as_ns{ 10'000'000'000 };
 
     VkResult err;
+
+    // Sync fences before readying command buffers.
+    err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
+    if (err)
+    {
+        throw std::runtime_error("wait for render fence timed out.");
+    }
+
+    err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
+    if (err)
+    {
+        throw std::runtime_error("reset render fence failed.");
+    }
+
+    // Acquire next image and check for swapchain recreation requirements.
     err = vkAcquireNextImageKHR(gfx.device,
                                 gfx.swapchain,
                                 k_10sec_as_ns,
@@ -1233,19 +1248,6 @@ void Graphics::Impl::start_next_frame()
     }
     else if (err)
         throw std::runtime_error("Acquire next swapchain image failed.");
-
-    // Sync fences before readying command buffers.
-    err = vkWaitForFences(gfx.device, 1, &current_frame.render_fence, true, k_10sec_as_ns);
-    if (err)
-    {
-        throw std::runtime_error("wait for render fence timed out.");
-    }
-
-    err = vkResetFences(gfx.device, 1, &current_frame.render_fence);
-    if (err)
-    {
-        throw std::runtime_error("reset render fence failed.");
-    }
 
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();
