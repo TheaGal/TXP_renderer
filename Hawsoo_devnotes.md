@@ -409,10 +409,11 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
                 - @THEA: @SOLUTION: Welp, I tried a different technique (aborting rendering the frame asap when the render view sizes have changed) and that works great! and no double-buffering. There may be stuttering or stuff like that but that should be no problem since the resizing is only occasional.
     - [x] MISC: moved vk-fence checking for after the acquire next image call since that is what informs if the swapchain needs to be recreated. This should be fine tho and make swapchain recreation easier in the future.
     - [x] There's some image transitioning that needs to be done.
-    - [ ] Fix swapchain not clearing.
+    - [ ] ~~Fix swapchain not clearing.~~
         - This might just be solvable with an opaque bg dockspace (see "add dockspace")
     - [ ] Fix semaphore validation errors (probs from the rearranging done earlier?)
-- [ ] Add dockspace.
+- [x] Add dockspace.
+    - This fixed the clearing visual issue.
 - [ ] Create more render views for the scene editor views.
 - [ ] Put scene editor views into the imgui windows.
 
