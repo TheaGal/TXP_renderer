@@ -48,6 +48,7 @@ struct Graphics::Impl
 
     std::string window_title;
     GLFWwindow* window{ nullptr };
+    std::function<void(bool)> lock_cursor_fn;
 
     int32_t window_dims[2];
     float_t monitor_scale{ 1.0f };

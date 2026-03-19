@@ -213,6 +213,15 @@ void Graphics::Impl::init_window()
     glfwSetWindowIconifyCallback(window, window_iconify_callback);
     glfwSetWindowCloseCallback(window, window_close_callback);
 
+    // Lock cursor func.
+    lock_cursor_fn = [&](bool lock) {
+        // Enable/disable ImGui reading mouse and keyboard interactions.
+        if (lock)  ImGui::GetIO().ConfigFlags |= (ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoKeyboard);
+        else       ImGui::GetIO().ConfigFlags &= ~(ImGuiConfigFlags_NoMouse | ImGuiConfigFlags_NoKeyboard);
+
+        glfwSetInputMode(window, GLFW_CURSOR, lock ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+    };
+
     // Finish.
     glfwShowWindow(window);
 }
@@ -985,6 +994,7 @@ void Graphics::Impl::build_imgui_contents(Camera& camera,
 
     editor_content::build_content(*s_input_handler,
                                   render_view_image_content,
+                                  lock_cursor_fn,
                                   camera,
                                   out_rend_view_sizes);
 

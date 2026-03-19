@@ -66,7 +66,10 @@ size_t Camera::get_controlling_camera() const
 void Camera::update(float_t delta_time)
 {
     if (m_controlling_camera_state_idx >= m_camera_states.size())
+    {
+        m_controlling_camera_state_idx = k_controlling_camera_state_none;  // In case dangling, reset.
         return;  // Exit early since camera doesn't exist.
+    }
 
     auto& camera{ m_camera_states[m_controlling_camera_state_idx] };
 

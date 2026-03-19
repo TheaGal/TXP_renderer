@@ -29,6 +29,7 @@ std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 /// Prompt overlay for flying camera cursor to get unlocked.
 void imgui_flying_camera_cursor_unlock_prompt_overlay(
     TXP::Input::Input_handler const& input_handler,
+    std::function<void(bool)> const& lock_cursor_fn,
     Camera& camera,
     ImVec2 topleft_pos)
 {
@@ -55,6 +56,7 @@ void imgui_flying_camera_cursor_unlock_prompt_overlay(
             if (ks.pressed && ks.modbits.has_shift())
             {
                 camera.set_controlling_camera(camera.k_controlling_camera_state_none);
+                lock_cursor_fn(false);
             }
         }
     }
@@ -87,6 +89,7 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 
 void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
+                                   std::function<void(bool)> const& lock_cursor_fn,
                                    Camera& camera,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
@@ -182,11 +185,13 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             {
                 BT_TRACE("ENTER FLYING CAM MODE");
                 camera.set_controlling_camera(i + 1);
+                lock_cursor_fn(true);
             }
 
             if (camera.get_controlling_camera() == i + 1)
             {
                 imgui_flying_camera_cursor_unlock_prompt_overlay(input_handler,
+                                                                 lock_cursor_fn,
                                                                  camera,
                                                                  window_content_pos);
             }

@@ -424,7 +424,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - Partial but it doesn't look good.
         - Now it looks ok decent.
     - [x] Put in functionality of exiting fllying cam mode.
-    - [ ] Lock cursor.
+    - [x] Lock cursor.
+    - [ ] Fix first tick crazy view change issue.
 
 
 ## Refactor.

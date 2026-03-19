@@ -6,6 +6,7 @@
 
 #include "renderer/types.h"
 
+#include <functional>
 #include <vector>
 
 
@@ -34,6 +35,7 @@ struct Render_view_image_content
 /// Builds ImGui content for the frame.
 void build_content(TXP::Input::Input_handler const& input_handler,
                    Render_view_image_content const& render_view_image_content,
+                   std::function<void(bool)> const& lock_cursor_fn,
                    Camera& camera,
                    std::vector<Render_view_size>& out_rend_view_sizes);
 
