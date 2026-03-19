@@ -203,6 +203,36 @@ struct Graphics::Impl
     };
 
 
+
+    /// Helper function to create a semaphore.
+    VkSemaphore create_semaphore(VkSemaphoreCreateFlags flags = 0)
+    {
+        VkSemaphoreCreateInfo semaphore_create_info{
+            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+            .pNext = nullptr,
+            .flags = flags,
+        };
+
+        VkSemaphore new_semaphore;
+        VkResult err = vkCreateSemaphore(gfx.device,
+                                         &semaphore_create_info,
+                                         nullptr,
+                                         &new_semaphore);
+        if (err)
+        {
+            throw std::runtime_error("Vulkan semaphore creation failed.");
+        }
+
+        return new_semaphore;
+    }
+
+    /// Helper function to destroy a semaphore.
+    void destroy_semaphore(VkSemaphore sema)
+    {
+        vkDestroySemaphore(gfx.device, sema, nullptr);
+    }
+
+
     /// Holds per-frame data.
     struct Frame_data
     {

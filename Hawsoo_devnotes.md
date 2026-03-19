@@ -434,9 +434,11 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [x] Recreate swapchain basically.
 
-- [ ] Fix validation errors when resizing.
-- [ ] Are the old image views and stuff getting properly deleted?!!??!?!
+- [x] Fix validation errors when resizing.
+- [x] Are the old image views and stuff getting properly deleted?!!??!?!
     - maybe but can you check?
+    - MoltenVK validation layers says those images are invalid now so I'm assuming the image views are invalid as well too???
+    - So image views did have to get deleted. Done'd.
 
 
 ## Refactor.

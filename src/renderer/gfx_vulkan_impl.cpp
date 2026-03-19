@@ -462,11 +462,15 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     int fb_width, fb_height;
     glfwGetFramebufferSize(window, &fb_width, &fb_height);
 
+    // Check for if doing a swapchain rebuild.
+    bool building_brand_new_swapchain{ gfx.swapchain == VK_NULL_HANDLE };
+    VkSwapchainKHR old_swapchain{ gfx.swapchain };  // Will be NULL if new swapchain.
+
     // Build swapchain.
     vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
     vkb::Swapchain swapchain{
         swapchain_builder
-            .set_old_swapchain(gfx.swapchain)  // @NOTE: first init will be NULL_HANDLE.
+            .set_old_swapchain(old_swapchain)  // @NOTE: first init will be NULL_HANDLE.
             .set_desired_extent(fb_width, fb_height)
             .set_desired_format(gfx.surface_format)
             .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // G-Sync.
@@ -480,6 +484,17 @@ void Graphics::Impl::init_vulkan_build_swapchain()
             .build()
             .value()
     };
+
+    if (!building_brand_new_swapchain)
+    {   // Delete old stuff (once old swapchain got used for the rebuild).
+        vkDestroySwapchainKHR(gfx.device, old_swapchain, nullptr);
+        for (auto img_view : gfx.swapchain_image_views)
+        {
+            vkDestroyImageView(gfx.device, img_view, nullptr);
+        }
+        gfx.swapchain_images.clear();
+        gfx.swapchain_image_views.clear();
+    }
 
     gfx.swapchain = swapchain.swapchain;
 
@@ -496,7 +511,13 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     })();
 
     gfx.swapchain_image_views = swapchain.get_image_views().value();
-    gfx.swapchain_submit_semaphores.resize(gfx.swapchain_images.size());
+
+    if (building_brand_new_swapchain)
+        gfx.swapchain_submit_semaphores.resize(gfx.swapchain_images.size());
+    else if (gfx.swapchain_submit_semaphores.size() != gfx.swapchain_images.size())
+        throw std::runtime_error(
+            "Swapchain image count changed. No handling implemented for this case!!");
+
     gfx.swapchain_image_format = swapchain.image_format;
     gfx.swapchain_extent.width = fb_width;
     gfx.swapchain_extent.height = fb_height;
@@ -559,23 +580,9 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
         .flags = VK_FENCE_CREATE_SIGNALED_BIT,  // For waiting on it for the first frame.
     };
 
-    // Create semaphores for syncing swapchain rendering.
-    VkSemaphoreCreateInfo semaphore_create_info{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-    };
-
     for (auto& sss : gfx.swapchain_submit_semaphores)
     {
-        err = vkCreateSemaphore(gfx.device,
-                                &semaphore_create_info,
-                                nullptr,
-                                &sss);
-        if (err)
-        {
-            throw std::runtime_error("Vulkan swapchain submit semaphore creation failed.");
-        }
+        sss = create_semaphore();
     }
 
     for (uint32_t i = 0; i < k_frame_overlap; i++)
@@ -586,14 +593,7 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
             throw std::runtime_error("Vulkan render fence creation failed.");
         }
 
-        err = vkCreateSemaphore(gfx.device,
-                                &semaphore_create_info,
-                                nullptr,
-                                &frames[i].acquire_nxt_img_semaphore);
-        if (err)
-        {
-            throw std::runtime_error("Vulkan acquire next img semaphore creation failed.");
-        }
+        frames[i].acquire_nxt_img_semaphore = create_semaphore();
     }
 }
 
@@ -733,10 +733,7 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 void Graphics::Impl::rebuild_vulkan_swapchain()
 {
     wait_until_gpu_idle();
-
-    VkSwapchainKHR old_swapchain = gfx.swapchain;
     init_vulkan_build_swapchain();
-    vkDestroySwapchainKHR(gfx.device, old_swapchain, nullptr);
 }
 
 void Graphics::Impl::construct_ktx_vk_device_info()
@@ -1256,22 +1253,28 @@ bool Graphics::Impl::start_next_frame()
     }
 
     // Acquire next image and check for swapchain recreation requirements.
-    current_swapchain_image_idx = (uint32_t)-1;  // @DEBUG
-    err = vkAcquireNextImageKHR(gfx.device,
-                                gfx.swapchain,
-                                k_10sec_as_ns,
-                                current_frame.acquire_nxt_img_semaphore,
-                                nullptr,
-                                &current_swapchain_image_idx);
-    if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
+    do
     {
-        rebuild_vulkan_swapchain();
+        current_swapchain_image_idx = (uint32_t)-1;  // @DEBUG
+        err = vkAcquireNextImageKHR(gfx.device,
+                                    gfx.swapchain,
+                                    k_10sec_as_ns,
+                                    current_frame.acquire_nxt_img_semaphore,
+                                    nullptr,
+                                    &current_swapchain_image_idx);
+        if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
+        {
+            rebuild_vulkan_swapchain();
 
-        if (err == VK_ERROR_OUT_OF_DATE_KHR)
-            return false;
-    }
-    else if (err)
-        throw std::runtime_error("Acquire next swapchain image failed.");
+            destroy_semaphore(current_frame.acquire_nxt_img_semaphore);
+            current_frame.acquire_nxt_img_semaphore = create_semaphore();
+
+            if (err == VK_ERROR_OUT_OF_DATE_KHR)
+                return false;
+        }
+        else if (err)
+            throw std::runtime_error("Acquire next swapchain image failed.");
+    } while (err != VK_SUCCESS);
 
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();
