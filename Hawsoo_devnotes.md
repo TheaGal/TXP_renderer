@@ -428,6 +428,17 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Fix first tick crazy view change issue.
 
 
+## Small detour: recreate swapchain.
+
+- Since the hdr color image is based off of render-view-sizes vector, it will update correctly.
+
+- [x] Recreate swapchain basically.
+
+- [ ] Fix validation errors when resizing.
+- [ ] Are the old image views and stuff getting properly deleted?!!??!?!
+    - maybe but can you check?
+
+
 ## Refactor.
 
 - [ ] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.

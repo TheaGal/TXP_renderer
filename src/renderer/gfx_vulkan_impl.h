@@ -86,7 +86,7 @@ struct Graphics::Impl
 
         VmaAllocator allocator;
 
-        VkSwapchainKHR swapchain;
+        VkSwapchainKHR swapchain{ VK_NULL_HANDLE };
         std::vector<Vk_Image::Image> swapchain_images;
         std::vector<VkImageView> swapchain_image_views;
         std::vector<VkSemaphore> swapchain_submit_semaphores;
@@ -286,6 +286,8 @@ struct Graphics::Impl
     void init_vulkan_for_imgui();
     void init_vulkan_render_graph_resources();
     void init_vulkan_create_descriptors();
+
+    void rebuild_vulkan_swapchain();
 
 
     /// Adds textures.
@@ -494,7 +496,7 @@ struct Graphics::Impl
     void set_render_object_per_instance_data(std::vector<Render_object> const& rend_obj_list);
 
 
-    void start_next_frame();
+    bool start_next_frame();
     void* get_render_view(size_t rend_view_idx);
 
     void blit_image(Vk_Image::Image& from_image,

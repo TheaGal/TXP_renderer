@@ -203,15 +203,16 @@ void Renderer::run()
         bool render_view_sizes_changed = g.check_render_view_sizes_changed(render_view_sizes);
 
         // Wait until can start rendering.
+        bool frame_acquired{ false };
         if (!render_view_sizes_changed)
-            g.start_next_frame();
+            frame_acquired = g.start_next_frame();
 
         // Set render view sizes.
         g.set_render_view_sizes(render_view_sizes);
         m_camera.set_render_view_sizes(render_view_sizes);
 
-        // Avoid drawing with deleted GPU data.
-        if (render_view_sizes_changed)
+        // Avoid drawing with deleted GPU data or frame acquire failed.
+        if (render_view_sizes_changed || !frame_acquired)
             continue;
 
         // Set per-instance data from render objects.

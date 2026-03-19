@@ -221,9 +221,9 @@ void TXP::Graphics::render_imgui()
     m_pimpl->render_imgui();
 }
 
-void TXP::Graphics::start_next_frame()
+bool TXP::Graphics::start_next_frame()
 {
-    m_pimpl->start_next_frame();
+    return m_pimpl->start_next_frame();
 }
 
 void TXP::Graphics::present_frame_to_screen()

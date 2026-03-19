@@ -466,11 +466,12 @@ void Graphics::Impl::init_vulkan_build_swapchain()
     vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
     vkb::Swapchain swapchain{
         swapchain_builder
+            .set_old_swapchain(gfx.swapchain)  // @NOTE: first init will be NULL_HANDLE.
+            .set_desired_extent(fb_width, fb_height)
             .set_desired_format(gfx.surface_format)
             .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // G-Sync.
             .add_fallback_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)  // Freesync / V-Sync off.
             .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // V-Sync on.
-            .set_desired_extent(fb_width, fb_height)
             // @TODO: TRANSFER_DST image usage added below. Try removing once renderer is finished
             // (assuming you're not gonna have some kind of image transfer as the last step into the
             // swapchain image).
@@ -727,6 +728,15 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     };
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
+}
+
+void Graphics::Impl::rebuild_vulkan_swapchain()
+{
+    wait_until_gpu_idle();
+
+    VkSwapchainKHR old_swapchain = gfx.swapchain;
+    init_vulkan_build_swapchain();
+    vkDestroySwapchainKHR(gfx.device, old_swapchain, nullptr);
 }
 
 void Graphics::Impl::construct_ktx_vk_device_info()
@@ -1224,7 +1234,7 @@ void Graphics::Impl::set_render_object_per_instance_data(
     }
 }
 
-void Graphics::Impl::start_next_frame()
+bool Graphics::Impl::start_next_frame()
 {   // Wait until GPU has finished rendering last frame (of current frame index).
     auto& current_frame{ get_current_frame() };
 
@@ -1246,6 +1256,7 @@ void Graphics::Impl::start_next_frame()
     }
 
     // Acquire next image and check for swapchain recreation requirements.
+    current_swapchain_image_idx = (uint32_t)-1;  // @DEBUG
     err = vkAcquireNextImageKHR(gfx.device,
                                 gfx.swapchain,
                                 k_10sec_as_ns,
@@ -1254,17 +1265,18 @@ void Graphics::Impl::start_next_frame()
                                 &current_swapchain_image_idx);
     if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     {
-        throw std::runtime_error("Add in code for this!!");
-        // m_recreate_swapchain = true;
+        rebuild_vulkan_swapchain();
 
         if (err == VK_ERROR_OUT_OF_DATE_KHR)
-            return /*false*/;
+            return false;
     }
     else if (err)
         throw std::runtime_error("Acquire next swapchain image failed.");
 
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();
+
+    return true;
 }
 
 void* Graphics::Impl::get_render_view(size_t rend_view_idx)

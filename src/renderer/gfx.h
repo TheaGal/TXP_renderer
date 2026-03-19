@@ -142,7 +142,7 @@ public:
     void render_imgui();
 
     /// Waits until GPU can use next frame resources, then starts a new frame.
-    void start_next_frame();
+    bool start_next_frame();
 
     /// Presents rendered frame to screen.
     void present_frame_to_screen();
