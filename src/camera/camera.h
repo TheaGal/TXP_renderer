@@ -57,6 +57,7 @@ private:
     std::vector<Camera_state> m_camera_states;
 
     size_t m_controlling_camera_state_idx{ k_controlling_camera_state_none };
+    int32_t m_ignore_mouse_delta_frames{ 0 };
 };
 
 }  // namespace TXP

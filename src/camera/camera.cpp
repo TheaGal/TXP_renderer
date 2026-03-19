@@ -56,6 +56,7 @@ void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_vie
 void Camera::set_controlling_camera(size_t camera_idx)
 {
     m_controlling_camera_state_idx = camera_idx;
+    m_ignore_mouse_delta_frames = 1;
 }
 
 size_t Camera::get_controlling_camera() const
@@ -88,6 +89,15 @@ void Camera::update(float_t delta_time)
 
     if (!m_prev_cursor_state.valid)
     {   // Clear delta.
+        cursor_delta.xpos = 0;
+        cursor_delta.ypos = 0;
+    }
+
+    if (m_ignore_mouse_delta_frames > 0)
+    {
+        m_ignore_mouse_delta_frames--;
+
+        // Clear delta.
         cursor_delta.xpos = 0;
         cursor_delta.ypos = 0;
     }

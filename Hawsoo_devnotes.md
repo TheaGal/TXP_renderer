@@ -418,14 +418,14 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] Create more render views for the scene editor views.
 - [x] Put scene editor views into the imgui windows.
 
-- [ ] have flying camera controls be used on only the window that gets right clicked on.
+- [x] have flying camera controls be used on only the window that gets right clicked on.
     - [x] Do actual controls.
     - [x] Get the guide overlay for exiting flying cam mode in there.
         - Partial but it doesn't look good.
         - Now it looks ok decent.
     - [x] Put in functionality of exiting fllying cam mode.
     - [x] Lock cursor.
-    - [ ] Fix first tick crazy view change issue.
+    - [x] Fix first tick crazy view change issue.
 
 
 ## Refactor.
