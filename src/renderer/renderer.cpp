@@ -245,7 +245,11 @@ void Renderer::run()
             // g.render_shadows(render_view);
             // if (main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
             //     shad_gradient.compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
+
+            // Render all graphics shaders.
+            g.begin_rendering_render_view(render_view_idx);
             shad_basic_diffuse.draw(render_view);
+            g.end_rendering_render_view(render_view_idx);
 
             if (main_cam_matrix)
             {

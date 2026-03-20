@@ -141,6 +141,16 @@ void* TXP::Graphics::get_render_view(size_t rend_view_idx)
     return m_pimpl->get_render_view(rend_view_idx);
 }
 
+void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)
+{
+    m_pimpl->begin_rendering_render_view(rend_view_idx);
+}
+
+void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
+{
+    m_pimpl->end_rendering_render_view();
+}
+
 void TXP::Graphics::set_render_object_per_instance_data(
     std::vector<Render_object> const& rend_obj_list)
 {

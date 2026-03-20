@@ -156,7 +156,7 @@ struct Graphics::Impl
                 err = vkResetCommandBuffer(m_cmd, 0);
                 if (err)
                 {
-                    std::runtime_error("Reset command buffer failed.");
+                    throw std::runtime_error("Reset command buffer failed.");
                 }
 
                 VkCommandBufferBeginInfo info{
@@ -170,7 +170,7 @@ struct Graphics::Impl
                 err = vkBeginCommandBuffer(m_cmd, &info);
                 if (err)
                 {
-                    std::runtime_error("Begin command buffer failed.");
+                    throw std::runtime_error("Begin command buffer failed.");
                 }
 
                 m_state = k_state_initialized;
@@ -187,7 +187,7 @@ struct Graphics::Impl
             err = vkEndCommandBuffer(m_cmd);
             if (err)
             {
-                std::runtime_error("End command buffer failed.");
+                throw std::runtime_error("End command buffer failed.");
             }
 
             m_state = k_state_finished;
@@ -534,6 +534,12 @@ struct Graphics::Impl
 
     bool start_next_frame();
     void* get_render_view(size_t rend_view_idx);
+
+    /// Begins dynamic rendering while clearing the render view images.
+    void begin_rendering_render_view(size_t rend_view_idx);
+
+    /// Ends dynamic rendering for a render view.
+    void end_rendering_render_view();
 
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,

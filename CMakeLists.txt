@@ -232,6 +232,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_support.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_support.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h

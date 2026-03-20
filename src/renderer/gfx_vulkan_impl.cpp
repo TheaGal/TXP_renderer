@@ -1405,6 +1405,46 @@ void* Graphics::Impl::get_render_view(size_t rend_view_idx)
     return &render_views[rend_view_idx];
 }
 
+void Graphics::Impl::begin_rendering_render_view(size_t rend_view_idx)
+{   
+    VkCommandBuffer cmd{ get_current_frame().graphics_queue_command_buffer.get() };
+    auto& color_image{ render_views[rend_view_idx].color_image };
+    auto& depth_image{ render_views[rend_view_idx].depth_image };
+
+    // Ready images.
+    Vk_Image::Image::transition_to(
+        cmd,
+        { { &color_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
+          { &depth_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
+
+    // Begin rendering.
+    VkClearValue color_clear_value{
+        .color{ .float32{ 0, 0, 0, 1 } },
+    };
+    VkRenderingAttachmentInfo color_attachment =
+        Vk_Structs::txp_vk_attachment_info(color_image.get_image_view(),
+                                           &color_clear_value,
+                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    VkClearValue depth_clear_value{
+        .depthStencil{ .depth = 1.0f, .stencil = 0 },
+    };
+    VkRenderingAttachmentInfo depth_attachment =
+        Vk_Structs::txp_vk_attachment_info(depth_image.get_image_view(),
+                                           &depth_clear_value,
+                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
+        VkExtent2D{ .width = color_image.get_extent().width,
+                    .height = color_image.get_extent().height },
+        &color_attachment,
+        &depth_attachment);
+    vkCmdBeginRendering(cmd, &render_info);
+}
+
+void Graphics::Impl::end_rendering_render_view()
+{   // End rendering.
+    vkCmdEndRendering(get_current_frame().graphics_queue_command_buffer.get());
+}
+
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
                                 VkExtent3D from_extent,
                                 Vk_Image::Image& to_image,

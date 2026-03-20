@@ -12,6 +12,7 @@
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan/vk_structs.h"
 #include "renderer/gfx_vulkan_impl.h"
+#include "shader/shader_support.h"
 #include "shader_creation/shader_creation.h"
 #include "vulkan/vulkan_core.h"
 
@@ -57,18 +58,9 @@ struct Shader_basic_diffuse::Impl
     {
         material_collection.emplace_shader(k_name);
 
-    #define WRAP_INTO_OWN_FUNC 1
-    #if WRAP_INTO_OWN_FUNC
-        auto refl_data = Shader_Creation::read_slang_reflection(k_name);
-
-        if (refl_data.entryPoints.size() != 2 ||
-            refl_data.entryPoints[0].stage != "vertex" ||
-            refl_data.entryPoints[0].stage != "fragment")
-            std::runtime_error("Malformed shader data.");
-
-        vertex_entry_point_name = refl_data.entryPoints[0].name;
-        fragment_entry_point_name = refl_data.entryPoints[1].name;
-    #endif // WRAP_INTO_OWN_FUNC
+        Shader_Support::fetch_graphics_shader_info(k_name,
+                                                   vertex_entry_point_name,
+                                                   fragment_entry_point_name);
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Pipeline.
@@ -243,13 +235,6 @@ struct Shader_basic_diffuse::Impl
     // Parameters for a material.
     std::unordered_map<std::string, gpu_type::Material_param_set> material_name_to_params_map;
     Vk_Buffer::Allocated_buffer material_param_set_collection_buffer;
-
-    // @THEA: @NOCHECKIN: the vv below vv needs to get promoted to be created at the same time as the ktxtextures get loaded!!!!
-#define WRAP_INTO_OWN_FUNC 1
-#if WRAP_INTO_OWN_FUNC
-    /// Descriptor set for `textures`.
-    std::vector<VkDescriptorImageInfo> all_texture_infos;
-#endif // WRAP_INTO_OWN_FUNC
 };
 
 
@@ -316,37 +301,6 @@ void Shader_basic_diffuse::draw(void* render_view_param)
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    // Ready images.
-    Vk_Image::Image::transition_to(
-        cmd,
-        { { &render_view.color_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
-          { &render_view.depth_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
-
-#define WRAP_INTO_OWN_FUNC 1
-#if WRAP_INTO_OWN_FUNC
-    // Begin rendering.
-    VkClearValue color_clear_value{
-        .color{ .float32{ 0, 0, 0, 1 } },
-    };
-    VkRenderingAttachmentInfo color_attachment =
-        Vk_Structs::txp_vk_attachment_info(render_view.color_image.get_image_view(),
-                                           &color_clear_value,
-                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
-    VkClearValue depth_clear_value{
-        .depthStencil{ .depth = 1.0f, .stencil = 0 },
-    };
-    VkRenderingAttachmentInfo depth_attachment =
-        Vk_Structs::txp_vk_attachment_info(render_view.depth_image.get_image_view(),
-                                           &depth_clear_value,
-                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
-    VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
-        VkExtent2D{ .width = render_view.color_image.get_extent().width,
-                    .height = render_view.color_image.get_extent().height },
-        &color_attachment,
-        &depth_attachment);
-    vkCmdBeginRendering(cmd, &render_info);
-#endif // WRAP_INTO_OWN_FUNC
-
     // Render.
     VkViewport viewport{ .width = static_cast<float>(render_view.color_image.get_extent().width),
                          .height = static_cast<float>(render_view.color_image.get_extent().height),
@@ -393,12 +347,6 @@ void Shader_basic_diffuse::draw(void* render_view_param)
         };
 
     k_cmd_draw_fn(cmd);
-
-#define WRAP_INTO_OWN_FUNC 1
-#if WRAP_INTO_OWN_FUNC
-    // End rendering.
-    vkCmdEndRendering(cmd);
-#endif // WRAP_INTO_OWN_FUNC
 }
 
 }  // namespace Shader

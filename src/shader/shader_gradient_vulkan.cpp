@@ -8,6 +8,7 @@
 #include "material_collection/material_collection.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
+#include "shader/shader_support.h"
 #include "shader_creation/shader_creation.h"
 #include "vulkan/vulkan_core.h"
 
@@ -30,24 +31,11 @@ struct Shader_gradient::Impl
     {
         material_collection.emplace_shader(k_name);
 
-    #define WRAP_INTO_OWN_FUNC 1
-    #if WRAP_INTO_OWN_FUNC
-        auto refl_data = Shader_Creation::read_slang_reflection(k_name);
-
-        if (refl_data.entryPoints.size() != 1 ||
-            refl_data.entryPoints.front().stage != "compute" ||
-            refl_data.entryPoints.front().threadGroupSize.size() != 3 ||
-            refl_data.entryPoints.front().threadGroupSize[0] <= 0 ||
-            refl_data.entryPoints.front().threadGroupSize[1] <= 0 ||
-            refl_data.entryPoints.front().threadGroupSize[2] <= 0)
-            std::runtime_error("Malformed shader data.");
-
-        compute_entry_point_name = refl_data.entryPoints.front().name;
-
-        thread_grp_sizes.width  = refl_data.entryPoints.front().threadGroupSize[0];
-        thread_grp_sizes.height = refl_data.entryPoints.front().threadGroupSize[1];
-        thread_grp_sizes.depth  = refl_data.entryPoints.front().threadGroupSize[2];
-    #endif // WRAP_INTO_OWN_FUNC
+        Shader_Support::fetch_compute_shader_info(k_name,
+                                                  compute_entry_point_name,
+                                                  thread_grp_sizes.width,
+                                                  thread_grp_sizes.height,
+                                                  thread_grp_sizes.depth);
 
 
         // @TODO: for vv below vv pull out the `build_Descriptor_layout()` and
