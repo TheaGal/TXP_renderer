@@ -203,7 +203,6 @@ struct Graphics::Impl
     };
 
 
-
     /// Helper function to create a semaphore.
     VkSemaphore create_semaphore(VkSemaphoreCreateFlags flags = 0)
     {
@@ -477,6 +476,13 @@ struct Graphics::Impl
     };
 
     Descriptor_allocator global_descriptor_allocator;
+
+    /// Descriptor set for `textures`.
+    std::vector<VkDescriptorImageInfo> all_texture_infos;
+    VkDescriptorSet all_textures_descriptor_set;
+    VkDescriptorSetLayout all_textures_descriptor_layout;
+
+    void create_all_textures_descriptor();
 
 #if 0
     VkDescriptorSet draw_image_descriptors;               // 3rd (just has to be after 1st)

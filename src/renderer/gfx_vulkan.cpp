@@ -62,6 +62,11 @@ void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
     }
     m_pimpl->destruct_ktx_vk_device_info();
     BT_TRACEF("Loaded all %zu textures.", texture_assets.size());
+
+    // Create "all textures" descriptor.
+    // @NOTE: required before shaders are initialized!!! (order importance)
+    m_pimpl->create_all_textures_descriptor();
+    BT_TRACE("Created all-textures descriptor.");
 }
 
 void TXP::Graphics::load_material_palettes(

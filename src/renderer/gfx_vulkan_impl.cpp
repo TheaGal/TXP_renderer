@@ -979,6 +979,124 @@ VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
 }
 
 
+void Graphics::Impl::create_all_textures_descriptor()
+{   // Create all-texture descriptor image infos.
+    all_texture_infos.reserve(texture_entries.size());
+
+    if (texture_entries.empty())
+    {
+        BT_ERROR(
+            "Cannot create descriptor set with empty texture entries. Add entries or else I will "
+            "be very disappointed. Not mad, just disappointed.");
+        throw std::runtime_error("No texture entries.");
+    }
+    if (texture_entries.size() > 16)
+    {
+        BT_ERRORF(
+            "Texture entries exceeded macOS limit of maxPerStageDescritorSamplers: %zu. At "
+            "this point, separate out the COMBINED_IMAGE_SAMPLERS thingies into sampled images "
+            "and samplers. Change this error message to just error when the number of samplers "
+            "goes over whatever the device limit is, or 16, whichever is smaller.",
+            texture_entries.size());
+        throw std::runtime_error("Too many samplers.");
+    }
+    if (texture_entries.size() > 256)
+    {
+        BT_ERRORF(
+            "Texture entries exceeded macOS limit of maxPerStageDescritorSampledImages: %zu. "
+            "At this point, you need to make a material-sampledimage-sampler batcher that can "
+            "handle the sampler and sampledimage device limits. Once you make this, uncap the "
+            "sampler limit from the random 16 limit. Also, change this error message to error "
+            "if the sampled image size exceeds device limits once you implement the batcher "
+            "system. Good luck, future Thea!!",
+            texture_entries.size());
+        throw std::runtime_error("Too many sampled images.");
+    }
+
+    std::vector<VkDescriptorImageInfo> desc_img_infos;
+    desc_img_infos.reserve(texture_entries.size());
+
+    for (auto& [name, entry] : texture_entries)
+    {
+        VkResult err;
+
+        // Create texture sampler.
+        VkSamplerCreateInfo sampler_info{
+            .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+            .magFilter = VK_FILTER_LINEAR,
+            .minFilter = VK_FILTER_LINEAR,
+            .mipmapMode = (entry.texture.levelCount == 1 ? VK_SAMPLER_MIPMAP_MODE_NEAREST
+                                                         : VK_SAMPLER_MIPMAP_MODE_LINEAR),
+            .anisotropyEnable = VK_TRUE,  // @TODO: put this into a setting!
+            .maxAnisotropy = 8.0f,  // 8 is a widely supported value for max anisotropy.  @TODO: put this into a setting!
+            .maxLod = static_cast<float>(entry.texture.levelCount),
+        };
+
+        err = vkCreateSampler(gfx.device, &sampler_info, nullptr, &entry.sampler);
+        if (err)
+            throw std::runtime_error("Failed to create VK sampler.");
+
+        // Create texture image view.
+        VkImageViewCreateInfo image_view_info{
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .pNext = nullptr,
+            .image = entry.texture.image,
+            .viewType = entry.texture.viewType,
+            .format = entry.texture.imageFormat,
+            .subresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = entry.texture.levelCount,
+                .baseArrayLayer = 0,
+                .layerCount = entry.texture.layerCount,
+            },
+        };
+
+        err = vkCreateImageView(gfx.device, &image_view_info, nullptr, &entry.image_view);
+        if (err)
+            throw std::runtime_error("Failed to create VK image view.");
+
+        // Create descriptor.
+        VkDescriptorImageInfo desc_img_info{
+            .sampler = entry.sampler,
+            .imageView = entry.image_view,
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        };
+
+        entry.gpu_idx = desc_img_infos.size();
+        desc_img_infos.emplace_back(std::move(desc_img_info));
+    }
+
+    // Descriptor layouts.
+    using Descriptor_type_info = Graphics::Impl::Descriptor_type_info;
+
+    all_textures_descriptor_layout = build_descriptor_layout(
+        {
+            { 0,
+              Descriptor_type_info{ .descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                    .use_variable_descriptor_count_binding_flag = true,
+                                    .variable_descriptor_count =
+                                        static_cast<uint32_t>(texture_entries.size()) } },
+        },
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0);
+
+    // Descriptors.
+    all_textures_descriptor_set =
+        global_descriptor_allocator.allocate(all_textures_descriptor_layout,
+                                             static_cast<uint32_t>(texture_entries.size()));
+
+    VkWriteDescriptorSet imgs_write{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                     .dstSet = all_textures_descriptor_set,
+                                     .dstBinding = 0,
+                                     .descriptorCount =
+                                         static_cast<uint32_t>(texture_entries.size()),
+                                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                     .pImageInfo = desc_img_infos.data() };
+    vkUpdateDescriptorSets(gfx.device, 1, &imgs_write, 0, nullptr);
+}
+
+
 void Graphics::Impl::poll_input_events()
 {
     glfwPollEvents();
