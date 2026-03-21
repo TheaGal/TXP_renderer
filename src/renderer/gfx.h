@@ -13,7 +13,7 @@ namespace TXP
 {
 
 class Camera;  // Forward decl.
-struct Material_collection;  // Forward decl.
+struct Material_organizer;  // Forward decl.
 
 namespace gpu_type
 {
@@ -69,10 +69,10 @@ public:
     void load_material_palettes(
         std::vector<Material_asset_create_info>&& material_assets,
         std::vector<Material_palette_asset_create_info>&& material_palette_assets,
-        Material_collection& material_collection);
+        Material_organizer& material_organizer);
     void load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
                            Render_model_data_collection& render_model_data_collection,
-                           Material_collection& material_collection);
+                           Material_organizer& material_organizer);
 
     /// Polls for input events.
     void poll_input_events();

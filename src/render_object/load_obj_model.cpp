@@ -2,7 +2,7 @@
 
 #include "btglm.h"
 #include "btlogger.h"
-#include "material_collection/material_collection.h"
+#include "material_organizer/material_organizer.h"
 #include "render_model.h"
 #include "tiny_obj_loader.h"
 #include "vertex.h"
@@ -12,7 +12,7 @@
 
 
 void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection,
-                                   Material_collection& material_collection,
+                                   Material_organizer& material_organizer,
                                    std::string const& model_name,
                                    std::string const& fname)
 {
@@ -80,15 +80,15 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
     if (has_non_default_material_in_set)
     {   // Create new material palette.
         Material_palette new_mat_pal;
-        new_mat_pal.emplace_materials(material_collection, material_palette_material_names);
-        material_collection.emplace_material_palette(model_name +
-                                                         "__default_material_palette_name__",
-                                                     std::move(new_mat_pal));
+        new_mat_pal.emplace_materials(material_organizer, material_palette_material_names);
+        material_organizer.emplace_material_palette(model_name +
+                                                        "__default_material_palette_name__",
+                                                    std::move(new_mat_pal));
     }
     else  // Use default material palette.
-        material_collection.emplace_material_palette_alias(model_name +
-                                                               "__default_material_palette_name__",
-                                                           "default_material_palette");
+        material_organizer.emplace_material_palette_alias(model_name +
+                                                              "__default_material_palette_name__",
+                                                          "default_material_palette");
 
     // Get all unique combinations of attributes together.
     assert(attrib.vertices.size() < std::pow(2, 21));

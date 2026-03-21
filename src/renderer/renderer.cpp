@@ -65,8 +65,8 @@ void Renderer::run()
     // Create shaders.
     // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
     //                enough of an interface.
-    Shader::Shader_gradient shad_gradient{ m_material_collection, g.get_impl() };
-    Shader::Shader_basic_diffuse shad_basic_diffuse{ m_material_collection, g.get_impl() };
+    Shader::Shader_gradient shad_gradient{ m_material_organizer, g.get_impl() };
+    Shader::Shader_basic_diffuse shad_basic_diffuse{ m_material_organizer, g.get_impl() };
 
     // Insert material params.
     auto material_assets{ m_material_assets.scoped_lock() };
@@ -79,19 +79,19 @@ void Renderer::run()
         // clang-format on
     }
 
-    // Trigger build material param collections in shaders.
-    shad_gradient.build_material_collection();
-    shad_basic_diffuse.build_material_collection();
+    // Organize material param collections into shaders.
+    shad_gradient.organize_materials();
+    shad_basic_diffuse.organize_materials();
 
     // Load material palettes (aligns with meshes inside models to assign materials).
     g.load_material_palettes(std::move(*material_assets),
                              std::move(*m_material_palette_assets.scoped_lock()),
-                             m_material_collection);
+                             m_material_organizer);
 
     // Load models.
     g.load_model_assets(std::move(*m_model_assets.scoped_lock()),
                         m_render_model_data_collection,
-                        m_material_collection);
+                        m_material_organizer);
 
     // Timer.
     BT::Timer main_timer;
@@ -136,7 +136,7 @@ void Renderer::run()
                     .render_model_idx =
                         m_render_model_data_collection.get_static_model_data_set_idx(
                             rend_obj_cfg.model_name),
-                    .material_palette_idx = m_material_collection.get_material_palette_idx(
+                    .material_palette_idx = m_material_organizer.get_material_palette_idx(
                         !rend_obj_cfg.material_palette.empty()
                             ? rend_obj_cfg.material_palette
                             : rend_obj_cfg.model_name + "__default_material_palette_name__"),

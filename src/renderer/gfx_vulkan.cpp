@@ -13,7 +13,7 @@
 #include "btdatecheck.h"
 #include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
-#include "material_collection/material_collection.h"
+#include "material_organizer/material_organizer.h"
 #include "render_object/render_model.h"
 #include "renderer/types.h"
 
@@ -72,26 +72,26 @@ void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
 void TXP::Graphics::load_material_palettes(
     std::vector<Material_asset_create_info>&& material_assets,
     std::vector<Material_palette_asset_create_info>&& material_palette_assets,
-    Material_collection& material_collection)
+    Material_organizer& material_organizer)
 {
     for (auto const& mat_pal_asset : material_palette_assets)
     {
         Material_palette new_mat_pal;
-        new_mat_pal.emplace_materials(material_collection, mat_pal_asset.materials);
-        material_collection.emplace_material_palette(mat_pal_asset.mat_set_name,
-                                                     std::move(new_mat_pal));
+        new_mat_pal.emplace_materials(material_organizer, mat_pal_asset.materials);
+        material_organizer.emplace_material_palette(mat_pal_asset.mat_set_name,
+                                                    std::move(new_mat_pal));
     }
     BT_TRACEF("Loaded all %zu material palettes.", material_palette_assets.size());
 }
 
 void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
                                       Render_model_data_collection& render_model_data_collection,
-                                      Material_collection& material_collection)
+                                      Material_organizer& material_organizer)
 {   // Load models.
     for (auto const& mod_asset : model_assets)
     {
         load_model_from_disk(render_model_data_collection,
-                             material_collection,
+                             material_organizer,
                              mod_asset.model_name,
                              mod_asset.file_ext);
     }

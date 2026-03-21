@@ -9,7 +9,7 @@
 namespace TXP
 {
 
-struct Material_collection;  // Forward decl.
+struct Material_organizer;  // Forward decl.
 
 /// Individual entry of material index data.
 struct Material_index_entry
@@ -23,7 +23,7 @@ struct Material_index_entry
 class Material_palette
 {
 public:
-    void emplace_materials(Material_collection const& material_collection,
+    void emplace_materials(Material_organizer const& material_organizer,
                            std::vector<std::string> const& material_names_in_order);
 
     Material_index_entry const& at(size_t idx) const;
@@ -33,10 +33,10 @@ private:
 };
 
 /// Collection that holds material information for render objects.
-struct Material_collection
+struct Material_organizer
 {
-    Material_collection();
-    ~Material_collection();
+    Material_organizer();
+    ~Material_organizer();
 
     void emplace_shader(std::string const& shader_name);
     uint16_t get_shader_id(std::string const& shader_name) const;

@@ -197,8 +197,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_key_codes.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/material_collection/material_collection.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/material_collection/material_collection.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/material_organizer/material_organizer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/material_organizer/material_organizer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/mutex_wrapper/mutex_wrapper.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/animator_template.h

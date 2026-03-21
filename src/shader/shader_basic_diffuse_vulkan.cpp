@@ -6,7 +6,7 @@
 
 #include "btglm.h"
 #include "btlogger.h"
-#include "material_collection/material_collection.h"
+#include "material_organizer/material_organizer.h"
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
@@ -50,13 +50,13 @@ struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_im
 // struct Shader_basic_diffuse::Impl
 struct Shader_basic_diffuse::Impl
 {
-    Impl(TXP::Material_collection& mat_coll, TXP::Graphics::Impl& graphics)
-        : material_collection(mat_coll)
+    Impl(TXP::Material_organizer& mat_coll, TXP::Graphics::Impl& graphics)
+        : material_organizer(mat_coll)
         , g(graphics)
         , device(g.gfx.device)
         , allocator(g.gfx.allocator)
     {
-        material_collection.emplace_shader(k_name);
+        material_organizer.emplace_shader(k_name);
 
         Shader_Support::fetch_graphics_shader_info(k_name,
                                                    vertex_entry_point_name,
@@ -216,7 +216,7 @@ struct Shader_basic_diffuse::Impl
     }
 
 
-    TXP::Material_collection& material_collection;
+    TXP::Material_organizer& material_organizer;
 
     TXP::Graphics::Impl& g;
     VkDevice device;
@@ -239,9 +239,9 @@ struct Shader_basic_diffuse::Impl
 
 
 // class Shader_basic_diffuse
-Shader_basic_diffuse::Shader_basic_diffuse(Material_collection& material_collection, void* graphics)
+Shader_basic_diffuse::Shader_basic_diffuse(Material_organizer& material_organizer, void* graphics)
     : m_pimpl(
-          std::make_unique<Impl>(material_collection, *static_cast<TXP::Graphics::Impl*>(graphics)))
+          std::make_unique<Impl>(material_organizer, *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
@@ -267,10 +267,10 @@ void Shader_basic_diffuse::make_material(
 
     m_pimpl->material_name_to_params_map.emplace(material_name, std::move(new_param_set));
 
-    m_pimpl->material_collection.emplace_material(material_name, k_name);
+    m_pimpl->material_organizer.emplace_material(material_name, k_name);
 }
 
-void Shader_basic_diffuse::build_material_collection()
+void Shader_basic_diffuse::organize_materials()
 {   // Create buffer.
     m_pimpl->material_param_set_collection_buffer.create(
         m_pimpl->device,

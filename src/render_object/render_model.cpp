@@ -3,7 +3,7 @@
 #include "btglm.h"
 #include "load_gltf_model.h"
 #include "load_obj_model.h"
-#include "material_collection/material_collection.h"
+#include "material_organizer/material_organizer.h"
 
 #include <cassert>
 #include <limits>
@@ -39,21 +39,21 @@ void TXP::AA_bounding_box::feed_position(vec3 position)
 
 
 void TXP::load_model_from_disk(Render_model_data_collection& data_collection,
-                               Material_collection& material_collection,
+                               Material_organizer& material_organizer,
                                std::string const& model_name,
                                std::string const& file_ext)
 {
     if (file_ext == ".wobj")
     {
         load_obj_model_from_disk(data_collection,
-                                 material_collection,
+                                 material_organizer,
                                  model_name,
                                  s_model_directory + model_name + file_ext);
     }
     else if (file_ext == ".glb" || file_ext == ".gltf")
     {
         load_gltf_model_from_disk(data_collection,
-                                  material_collection,
+                                  material_organizer,
                                   model_name,
                                   s_model_directory + model_name + file_ext);
     }

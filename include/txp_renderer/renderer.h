@@ -2,7 +2,7 @@
 
 #include "camera/camera.h"
 #include "entt/entity/fwd.hpp"
-#include "material_collection/material_collection.h"
+#include "material_organizer/material_organizer.h"
 #include "mutex_wrapper/mutex_wrapper.h"
 #include "render_object/render_object.h"
 #include "txp_renderer/types.h"
@@ -100,7 +100,7 @@ private:
     BT::Mutex_wrapper<std::vector<Model_asset_create_info>> m_model_assets;
 
     /// Material information tracker.
-    Material_collection m_material_collection;
+    Material_organizer m_material_organizer;
 
     /// Loaded information of model assets.
     Render_model_data_collection m_render_model_data_collection;

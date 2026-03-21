@@ -5,7 +5,7 @@
 // clang-format on
 
 #include "btlogger.h"
-#include "material_collection/material_collection.h"
+#include "material_organizer/material_organizer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader/shader_support.h"
@@ -24,12 +24,12 @@ namespace Shader
 // struct Shader_gradient::Impl
 struct Shader_gradient::Impl
 {
-    Impl(TXP::Material_collection& mat_coll, TXP::Graphics::Impl& graphics)
-        : material_collection(mat_coll)
+    Impl(TXP::Material_organizer& mat_coll, TXP::Graphics::Impl& graphics)
+        : material_organizer(mat_coll)
         , g(graphics)
         , device(g.gfx.device)
     {
-        material_collection.emplace_shader(k_name);
+        material_organizer.emplace_shader(k_name);
 
         Shader_Support::fetch_compute_shader_info(k_name,
                                                   compute_entry_point_name,
@@ -130,7 +130,7 @@ struct Shader_gradient::Impl
     }
 
 
-    TXP::Material_collection& material_collection;
+    TXP::Material_organizer& material_organizer;
 
     TXP::Graphics::Impl& g;
     VkDevice device;
@@ -150,9 +150,9 @@ struct Shader_gradient::Impl
 
 
 // class Shader_gradient
-Shader_gradient::Shader_gradient(Material_collection& material_collection, void* graphics)
+Shader_gradient::Shader_gradient(Material_organizer& material_organizer, void* graphics)
     : m_pimpl(
-          std::make_unique<Impl>(material_collection, *static_cast<TXP::Graphics::Impl*>(graphics)))
+          std::make_unique<Impl>(material_organizer, *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
@@ -165,10 +165,10 @@ void Shader_gradient::make_material(
     // Do nothing.
     BT_WARN("This material has no shader params.");
 
-    m_pimpl->material_collection.emplace_material(material_name, k_name);
+    m_pimpl->material_organizer.emplace_material(material_name, k_name);
 }
 
-void Shader_gradient::build_material_collection()
+void Shader_gradient::organize_materials()
 {
     // Do nothing.
     BT_TRACE("Shader_gradient has no material collection.");

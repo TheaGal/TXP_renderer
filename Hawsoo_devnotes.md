@@ -449,6 +449,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] Rename "material-set" to "material-palette" since there's a bit of a naming confusion between this and "material-param-set" which is the block of params a material needs as input for the shader.
     - [x] Did partially as going thru.
 - [ ] Rename `struct Material_collection` (generates indexes for material param sets as a shader-local index) and rename `build_material_collection()` (creates GPU buffer for material param sets and uploads data up to them) to something else since these are different things and the current names don't describe what they're doing.
+    - [x] renaming to `struct Material_organizer`
 
 
 ## Get actual render objects working with multiple models and materials.

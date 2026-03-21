@@ -1,4 +1,4 @@
-#include "material_collection.h"
+#include "material_organizer.h"
 
 #include <cassert>
 #include <cstdint>
@@ -13,7 +13,7 @@ namespace TXP
 {
 
 // class Material_palette
-void Material_palette::emplace_materials(Material_collection const& material_collection,
+void Material_palette::emplace_materials(Material_organizer const& material_organizer,
                                          std::vector<std::string> const& material_names_in_order)
 {
     assert(m_materials.empty());
@@ -23,8 +23,8 @@ void Material_palette::emplace_materials(Material_collection const& material_col
     for (auto const& mat_name : material_names_in_order)
     {
         m_materials.emplace_back(Material_index_entry{
-            .shader_id = material_collection.get_shader_id_from_material_name(mat_name),
-            .material_param_set_idx = material_collection.get_material_param_set_idx(mat_name) });
+            .shader_id = material_organizer.get_shader_id_from_material_name(mat_name),
+            .material_param_set_idx = material_organizer.get_material_param_set_idx(mat_name) });
     }
 }
 
@@ -35,7 +35,7 @@ Material_index_entry const& Material_palette::at(size_t idx) const
 
 
 // struct Data
-struct Material_collection::Data
+struct Material_organizer::Data
 {
     std::unordered_map<std::string, size_t> shader_name_to_id_map;
 
@@ -53,15 +53,15 @@ struct Material_collection::Data
 };
 
 
-// struct Material_collection
-Material_collection::Material_collection()
+// struct Material_organizer
+Material_organizer::Material_organizer()
     : inner_data(std::make_unique<Data>())
 {
 }
 
-Material_collection::~Material_collection() = default;  // For pimpl
+Material_organizer::~Material_organizer() = default;  // For pimpl
 
-void Material_collection::emplace_shader(std::string const& shader_name)
+void Material_organizer::emplace_shader(std::string const& shader_name)
 {
     if (inner_data->shader_name_to_id_map.find(shader_name) !=
         inner_data->shader_name_to_id_map.end())
@@ -74,13 +74,13 @@ void Material_collection::emplace_shader(std::string const& shader_name)
     inner_data->material_param_set_idx_counters.emplace_back(0);
 }
 
-uint16_t Material_collection::get_shader_id(std::string const& shader_name) const
+uint16_t Material_organizer::get_shader_id(std::string const& shader_name) const
 {
     return static_cast<uint16_t>(inner_data->shader_name_to_id_map.at(shader_name));
 }
 
-void Material_collection::emplace_material(std::string const& material_name,
-                                           std::string const& shader_name)
+void Material_organizer::emplace_material(std::string const& material_name,
+                                          std::string const& shader_name)
 {
     if (inner_data->material_name_to_info_map.find(material_name) !=
         inner_data->material_name_to_info_map.end())
@@ -97,20 +97,20 @@ void Material_collection::emplace_material(std::string const& material_name,
         Data::Material_info{ .param_set_idx = new_param_set_idx, .shader_id = shader_id });
 }
 
-uint16_t Material_collection::get_material_param_set_idx(std::string const& material_name) const
+uint16_t Material_organizer::get_material_param_set_idx(std::string const& material_name) const
 {
     return static_cast<uint16_t>(
         inner_data->material_name_to_info_map.at(material_name).param_set_idx);
 }
 
-uint16_t Material_collection::get_shader_id_from_material_name(
+uint16_t Material_organizer::get_shader_id_from_material_name(
     std::string const& material_name) const
 {
     return static_cast<uint16_t>(inner_data->material_name_to_info_map.at(material_name).shader_id);
 }
 
-void Material_collection::emplace_material_palette(std::string const& material_palette_name,
-                                                   Material_palette&& mat_pal)
+void Material_organizer::emplace_material_palette(std::string const& material_palette_name,
+                                                  Material_palette&& mat_pal)
 {
     if (inner_data->material_palette_name_to_palette_idx_map.find(material_palette_name) !=
         inner_data->material_palette_name_to_palette_idx_map.end())
@@ -124,7 +124,7 @@ void Material_collection::emplace_material_palette(std::string const& material_p
     inner_data->material_palette_list.emplace_back(std::move(mat_pal));
 }
 
-void Material_collection::emplace_material_palette_alias(
+void Material_organizer::emplace_material_palette_alias(
     std::string const& material_palette_alias_name,
     std::string const& material_palette_original_name)
 {
@@ -139,14 +139,14 @@ void Material_collection::emplace_material_palette_alias(
         inner_data->material_palette_name_to_palette_idx_map.at(material_palette_original_name));
 }
 
-uint16_t Material_collection::get_material_palette_idx(
+uint16_t Material_organizer::get_material_palette_idx(
     std::string const& material_palette_name) const
 {
     return static_cast<uint16_t>(
         inner_data->material_palette_name_to_palette_idx_map.at(material_palette_name));
 }
 
-Material_palette const& Material_collection::get_material_palette(
+Material_palette const& Material_organizer::get_material_palette(
     uint16_t material_palette_idx) const
 {
     return inner_data->material_palette_list[material_palette_idx];
