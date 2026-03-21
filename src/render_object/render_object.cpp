@@ -168,12 +168,13 @@ uint16_t Render_model_data_collection::get_deformed_vertex_buffer(std::string co
 }
 
 
-uint16_t Render_model_data_collection::emplace_material_set(std::string const& name, Material_set&& data)
+uint16_t Render_model_data_collection::emplace_material_palette(std::string const& name,
+                                                                Material_palette&& data)
 {
     assert(false);
 }
 
-uint16_t Render_model_data_collection::get_material_set(std::string const& name)
+uint16_t Render_model_data_collection::get_material_palette(std::string const& name)
 {
     assert(false);
 }

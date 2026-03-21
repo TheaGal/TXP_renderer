@@ -58,7 +58,7 @@ struct Render_model
     Per_mesh_first_index_offset_set override_first_index_offsets;                    // optional: empty means non-deformed model.
     int32_t override_vertex_index_offset{ std::numeric_limits<int32_t>::lowest() };  // optional: INT_LOWEST means non-deformed model.
 
-    uint16_t default_material_set_idx;  // @NOTE: created from material names inside the model.
+    uint16_t default_material_palette_idx;  // @NOTE: created from material names inside the model.
 
     /// Checks whether is a deformed model or not.
     bool is_deformed_model()

@@ -85,7 +85,7 @@ void Renderer::run()
 
     // Load material palettes (aligns with meshes inside models to assign materials).
     g.load_material_palettes(std::move(*material_assets),
-                             std::move(*m_material_set_assets.scoped_lock()),
+                             std::move(*m_material_palette_assets.scoped_lock()),
                              m_material_collection);
 
     // Load models.
@@ -307,13 +307,13 @@ void Renderer::add_material(std::string const& material_name,
     m_material_assets.scoped_lock()->emplace_back(material_name, shader_name, shader_params);
 }
 
-void Renderer::add_material_set(std::string const& mat_set_name,
+void Renderer::add_material_palette(std::string const& mat_set_name,
                                 std::vector<std::string>&& materials)
 {
     if (!m_asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_material_set_assets.scoped_lock()->emplace_back(mat_set_name, std::move(materials));
+    m_material_palette_assets.scoped_lock()->emplace_back(mat_set_name, std::move(materials));
 }
 
 void Renderer::add_model(std::string const& model_name,

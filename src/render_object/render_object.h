@@ -20,7 +20,7 @@ struct Render_object
     Render_layer layer{ RENDER_LAYER_DEFAULT };
 
     uint16_t render_model_idx;
-    uint16_t material_palette_idx;  // Default: pulls from render model material set.
+    uint16_t material_palette_idx;  // Default: pulls from render model material palette.
     uint16_t animator_idx{ (uint16_t)-1 };  // opt: -1 means no animator.
 
     uint16_t padding1;
@@ -33,7 +33,7 @@ struct Render_object
 struct Static_model_data_set;
 struct Deformed_model_skin;
 struct Deformed_model_animation_set;
-struct Material_set;
+struct Material_palette;
 
 /// Collection that holds pools of render data.
 struct Render_model_data_collection
@@ -59,8 +59,8 @@ struct Render_model_data_collection
     uint16_t emplace_deformed_vertex_buffer(std::string const& name, void* data);
     uint16_t get_deformed_vertex_buffer(std::string const& name);
 
-    uint16_t emplace_material_set(std::string const& name, Material_set&& data);
-    uint16_t get_material_set(std::string const& name);
+    uint16_t emplace_material_palette(std::string const& name, Material_palette&& data);
+    uint16_t get_material_palette(std::string const& name);
 
     // Pimpl.
     struct Data;

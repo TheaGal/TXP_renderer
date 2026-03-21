@@ -35,8 +35,8 @@ struct Material_asset_create_info
     std::unordered_map<std::string, std::string> shader_params;
 };
 
-/// Information to create material-set asset.
-struct Material_set_asset_create_info
+/// Information to create material palette asset.
+struct Material_palette_asset_create_info
 {
     std::string mat_set_name;
     std::vector<std::string> materials;

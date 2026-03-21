@@ -56,7 +56,8 @@ public:
                       std::unordered_map<std::string, std::string> const& shader_params);
 
     /// Adds set of geometry material to renderer index.
-    void add_material_set(std::string const& mat_set_name, std::vector<std::string>&& materials);
+    void add_material_palette(std::string const& mat_set_name,
+                              std::vector<std::string>&& materials);
 
     /// Adds model to renderer.
     void add_model(std::string const& model_name,
@@ -95,7 +96,7 @@ private:
 
     BT::Mutex_wrapper<std::vector<Texture_asset_create_info>> m_texture_assets;
     BT::Mutex_wrapper<std::vector<Material_asset_create_info>> m_material_assets;
-    BT::Mutex_wrapper<std::vector<Material_set_asset_create_info>> m_material_set_assets;
+    BT::Mutex_wrapper<std::vector<Material_palette_asset_create_info>> m_material_palette_assets;
     BT::Mutex_wrapper<std::vector<Model_asset_create_info>> m_model_assets;
 
     /// Material information tracker.
