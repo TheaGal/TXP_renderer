@@ -446,7 +446,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] Move the `all_texture_infos` descriptor from shader_basic_diffuse_vulkan.cpp to the actual vulkan engine.
     - @NOTE: this must get created before any shaders use the descriptor layout for shader initialization!!!!
 - [x] Create functions for things noted to create a function in.
-- [ ] Rename "material-set" to "material-palette" since there's a bit of a naming confusion between this and "material-param-set" which is the block of params a material needs as input for the shader.
+- [x] Rename "material-set" to "material-palette" since there's a bit of a naming confusion between this and "material-param-set" which is the block of params a material needs as input for the shader.
     - [x] Did partially as going thru.
 - [ ] Rename `struct Material_collection` (generates indexes for material param sets as a shader-local index) and rename `build_material_collection()` (creates GPU buffer for material param sets and uploads data up to them) to something else since these are different things and the current names don't describe what they're doing.
 
