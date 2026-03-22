@@ -167,16 +167,4 @@ uint16_t Render_model_data_collection::get_deformed_vertex_buffer(std::string co
     assert(false);
 }
 
-
-uint16_t Render_model_data_collection::emplace_material_palette(std::string const& name,
-                                                                Material_palette&& data)
-{
-    assert(false);
-}
-
-uint16_t Render_model_data_collection::get_material_palette(std::string const& name)
-{
-    assert(false);
-}
-
 }  // namespace TXP

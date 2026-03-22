@@ -36,6 +36,7 @@ namespace TXP
 {
 
 class Camera;  // Forward decl.
+struct Material_organizer;  // Forward decl.
 
 struct Graphics::Impl
 {
@@ -529,7 +530,11 @@ struct Graphics::Impl
                                float_t intensity);
 
     /// Sets GPU per-instance data from list of render objects.
-    void set_render_object_per_instance_data(std::vector<Render_object> const& rend_obj_list);
+    void set_render_object_per_instance_data(
+        Material_organizer const& material_organizer,
+        std::vector<Render_object> const& rend_obj_list,
+        std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
+        size_t mod_mesh_ref_list_length);
 
 
     bool start_next_frame();

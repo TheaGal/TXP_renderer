@@ -457,9 +457,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] Have render objects' model info be used when drawing with shader stuff.
     - i.e. replace the `k_cmd_draw_fn` lambda in the diffuse shader.
+    - [x] created a new renderer setup and interfaces for the right data set up for `set_render_object_per_instance_data()`.
 - [ ] Put render objects' sub-meshes into buckets (one for each shader) so that it can render stuff.
 - [ ] Have shaders render what's in their buckets.
     - Or just skip if there's nothing in their buckets!
+- [x] Rework the #if0'd code in `set_render_object_per_instance_data()`
+    - Make sure that the right number of instances and what to put for instances is done.
 
 
 ## Performance.

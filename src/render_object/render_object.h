@@ -29,6 +29,14 @@ struct Render_object
     mat4 transform = GLM_MAT4_IDENTITY_INIT;
 };
 
+/// Holds reference for a render object's model mesh.
+/// For keeping track of model's mesh when different materials are used per mesh.
+struct Render_object_model_mesh_reference
+{
+    uint16_t render_obj_idx;
+    uint16_t model_mesh_idx;
+};
+
 // Forward declarations for collection.
 struct Static_model_data_set;
 struct Deformed_model_skin;
@@ -58,9 +66,6 @@ struct Render_model_data_collection
 
     uint16_t emplace_deformed_vertex_buffer(std::string const& name, void* data);
     uint16_t get_deformed_vertex_buffer(std::string const& name);
-
-    uint16_t emplace_material_palette(std::string const& name, Material_palette&& data);
-    uint16_t get_material_palette(std::string const& name);
 
     // Pimpl.
     struct Data;

@@ -152,9 +152,15 @@ void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
 }
 
 void TXP::Graphics::set_render_object_per_instance_data(
-    std::vector<Render_object> const& rend_obj_list)
+    Material_organizer const& material_organizer,
+    std::vector<Render_object> const& rend_obj_list,
+    std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
+    size_t mod_mesh_ref_list_length)
 {
-    m_pimpl->set_render_object_per_instance_data(rend_obj_list);
+    m_pimpl->set_render_object_per_instance_data(material_organizer,
+                                                 rend_obj_list,
+                                                 model_mesh_ref_list,
+                                                 mod_mesh_ref_list_length);
 }
 
 void TXP::Graphics::compute_light_culling()

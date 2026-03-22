@@ -32,6 +32,7 @@
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "input_handler/input_handler.h"
+#include "material_organizer/material_organizer.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
@@ -1300,52 +1301,42 @@ void Graphics::Impl::set_directional_light(size_t render_view_idx,
 }
 
 void Graphics::Impl::set_render_object_per_instance_data(
-    std::vector<Render_object> const& rend_obj_list)
+    Material_organizer const& material_organizer,
+    std::vector<Render_object> const& rend_obj_list,
+    std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
+    size_t mod_mesh_ref_list_length)
 {
-    size_t num_instances{ std::min(rend_obj_list.size(), static_cast<size_t>(65535)) };  // @HARDCODE: comes from shader.
-
-    auto per_inst_data_ptr = static_cast<gpu_type::Per_instance_data*>(
-        get_current_frame().per_instance_data_collection_buffer.get_p_mapped_data());
-
+    // Write transform data.
+    size_t num_transforms{ std::min(rend_obj_list.size(), static_cast<size_t>(65535)) };  // @HARDCODE: comes from shader.
     auto model_transform_ptr =
         static_cast<char*>(get_current_frame().model_transform_set_buffer.get_p_mapped_data());
-    uint32_t model_transform_idx{ 0 };
 
-    for (size_t i = 0; i < num_instances; i++)
-    {   // would-be outer loop: assign model transform data.
+    for (size_t i = 0; i < num_transforms; i++)
+    {
         glm_mat4_copy(const_cast<vec4*>(rend_obj_list[i].transform),
                       reinterpret_cast<vec4*>(model_transform_ptr));
         model_transform_ptr += sizeof(mat4);  // Increment to next model transform.
-        model_transform_idx++;
+    }
 
-        ////////////////////////////////////////////////////////////////////////////////////////////
-        // would-be inner loop where per-instance data is set.
+    // Write per-instance data.
+    size_t num_instances{ std::min(mod_mesh_ref_list_length, static_cast<size_t>(65535)) };  // @HARDCODE: comes from shader.
+    auto per_inst_data_ptr = static_cast<gpu_type::Per_instance_data*>(
+        get_current_frame().per_instance_data_collection_buffer.get_p_mapped_data());
 
-        BT::date_deadline(2026, 3, 25);  // Work on getting the render object with models working with the material sets better!!!!
-#if 0
-        per_inst_data_ptr->material_param_set_idx = 123123;  // Use .material_palette_idx to access the material palette, then use the idx of the mesh to access the material param set's idx.
-        per_inst_data_ptr->model_transform_set_idx = model_transform_idx - 1;  // Assign a model transform for the model, and then assign that index for the model_transform_set_idx here!
-#endif // 0
+    for (size_t i = 0; i < num_instances; i++)
+    {
+        auto const& modmesh_ref{ model_mesh_ref_list[i] };
+        auto rend_obj_idx{ modmesh_ref.render_obj_idx };
+        auto mat_pal_idx{ rend_obj_list[rend_obj_idx].material_palette_idx };
 
-        // @NOTE: it would also be good to note that the draw lists might be good to build right
-        //        here. There are a bunch of assignments to mesh indices and stuff going aorund
-        //        here, and to calc it again would likely be a pain, so storing the information here
-        //        in memory, separated by shader would be good. Or even just storing that
-        //        information into each shader and the draw lists/batches are built in a different
-        //        point in time!  -Thea 2026/03/11
+        auto material_param_set_idx{ material_organizer.get_material_palette(mat_pal_idx)
+                                         .at(modmesh_ref.model_mesh_idx)
+                                         .material_param_set_idx };
 
-        // @NOTE: there needs to be an inner loop since each instance represents a mesh within a
-        // model, not the whole model (i.e. render object).  -Thea 2026/03/11
-
-
-        // @TEMPORARY: in the future do a different setup but for now use this:
-        per_inst_data_ptr->material_param_set_idx = 0;
-        per_inst_data_ptr->model_transform_set_idx = model_transform_idx - 1;
-        ///////////////////////////////////////////////////////////////////////
+        per_inst_data_ptr->model_transform_set_idx = rend_obj_idx;
+        per_inst_data_ptr->material_param_set_idx = material_param_set_idx;
 
         per_inst_data_ptr++;  // Increment to next instance.
-
-        ////////////////////////////////////////////////////////////////////////////////////////////
     }
 }
 

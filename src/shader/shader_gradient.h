@@ -1,15 +1,18 @@
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 
 namespace TXP
 {
 
-// Forward decl.
-struct Material_organizer;
+struct Material_organizer;  // Forward decl.
+struct Render_object;  // Forward decl.
+struct Render_object_model_mesh_reference;  // Forward decl.
 
 namespace Shader
 {
@@ -26,6 +29,11 @@ public:
     void make_material(std::string const& material_name,
                        std::unordered_map<std::string, std::string> const& shader_params);
     void organize_materials();
+
+    void allocate_per_instance_data_slots(
+        std::vector<Render_object> const& render_object_list,
+        std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
+        size_t& in_out_cur_modmesh_ref_idx);
 
     void compute(void* render_frame);
 

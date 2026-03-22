@@ -100,6 +100,9 @@ void Renderer::run()
     // List of render objects.
     std::vector<Render_object> render_object_list;
 
+    std::vector<Render_object_model_mesh_reference> model_mesh_ref_list;
+    model_mesh_ref_list.resize(65535);  // @NOTE: from per-instance data max entries.
+
     // Render frames until shutdown flag is tripped.
     while (!m_shutdown_flag.load())
     {
@@ -215,8 +218,20 @@ void Renderer::run()
         if (render_view_sizes_changed || !frame_acquired)
             continue;
 
+        // Populate render object model mesh references for organizing per-instance data.
+        size_t cur_modmesh_ref_idx{ 0 };
+        shad_gradient.allocate_per_instance_data_slots(render_object_list,
+                                                       model_mesh_ref_list,
+                                                       cur_modmesh_ref_idx);
+        shad_basic_diffuse.allocate_per_instance_data_slots(render_object_list,
+                                                            model_mesh_ref_list,
+                                                            cur_modmesh_ref_idx);
+
         // Set per-instance data from render objects.
-        g.set_render_object_per_instance_data(render_object_list);
+        g.set_render_object_per_instance_data(m_material_organizer,
+                                              render_object_list,
+                                              model_mesh_ref_list,
+                                              cur_modmesh_ref_idx);
 
         // Render for each render view.
         size_t render_view_idx{ 0 };
