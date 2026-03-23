@@ -19,6 +19,15 @@ int32_t main()
         rend_obj_cfg.layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "probuilder_example";
     }
+    {   // Create sample entity 2.
+        auto ecs_entity = ecs_registry.create();
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::Render_object_config>(ecs_entity);
+
+        rend_obj_cfg.layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.model_name = "probuilder_example";
+        glm_scale_make(rend_obj_cfg.transform.raw, vec3{ 0.5f, 0.5f, 0.5f });
+        glm_translate(rend_obj_cfg.transform.raw, vec3{ 100, 0, 0 });
+    }
 
     TXP::Input::Input_handler input_handler;
 
