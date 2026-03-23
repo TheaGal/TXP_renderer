@@ -129,6 +129,13 @@ struct Shader_gradient::Impl
         vkDestroyShaderModule(device, shader_module, nullptr);
     }
 
+    ~Impl()
+    {
+        vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
+        vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
+        
+    }
+
 
     TXP::Material_organizer& material_organizer;
 

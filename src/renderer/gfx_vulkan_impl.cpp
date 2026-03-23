@@ -226,6 +226,12 @@ void Graphics::Impl::init_window()
     glfwShowWindow(window);
 }
 
+void Graphics::Impl::destroy_glfw()
+{
+    glfwDestroyWindow(window);
+    glfwTerminate();
+}
+
 
 Graphics::Impl::Frame_data& Graphics::Impl::get_current_frame()
 {
@@ -736,6 +742,69 @@ void Graphics::Impl::rebuild_vulkan_swapchain()
     init_vulkan_build_swapchain();
 }
 
+void Graphics::Impl::destroy_vulkan()
+{
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+    vkDestroyDescriptorPool(gfx.device, gfx.imgui_desc_pool, nullptr);
+
+    for (auto sss : gfx.swapchain_submit_semaphores)
+    {
+        vkDestroySemaphore(gfx.device, sss, nullptr);
+    }
+    for (auto& frame : frames)
+    {
+        vkDestroyFence(gfx.device, frame.render_fence, nullptr);
+        vkDestroySemaphore(gfx.device, frame.acquire_nxt_img_semaphore, nullptr);
+    }
+
+    for (auto& frame : frames)
+    {
+        for (auto& env_data_buffer : frame.environment_data_buffers)
+        {
+            env_data_buffer.destroy();
+        }
+        frame.per_instance_data_collection_buffer.destroy();
+        frame.model_transform_set_buffer.destroy();
+    }
+
+    combined_static_model.vertex_index_buffer.destroy();
+
+    for (auto& render_view : render_views)
+    {
+        render_view.color_image.teardown();
+        render_view.depth_image.teardown();
+    }
+    vkDestroySampler(gfx.device, render_view_imgui_image_sampler, nullptr);
+
+    for (auto desc_layout : built_descriptor_layouts)
+    {
+        vkDestroyDescriptorSetLayout(gfx.device, desc_layout, nullptr);
+    }
+    global_descriptor_allocator.teardown_pool();
+
+    for (auto& frame : frames)
+    {
+        vkDestroyCommandPool(gfx.device, frame.command_pool, nullptr);
+    }
+
+    vmaDestroyAllocator(gfx.allocator);
+
+    // Destroy swapchain.
+    vkDestroySwapchainKHR(gfx.device, gfx.swapchain, nullptr);
+    for (auto img_view : gfx.swapchain_image_views)
+    {
+        vkDestroyImageView(gfx.device, img_view, nullptr);
+    }
+
+    vkDestroySurfaceKHR(gfx.instance, gfx.surface, nullptr);
+    vkb::destroy_debug_utils_messenger(gfx.instance, gfx.debug_utils_messenger);
+
+    vkDestroyDevice(gfx.device, nullptr);
+    vkDestroyInstance(gfx.instance, nullptr);
+}
+
 void Graphics::Impl::construct_ktx_vk_device_info()
 {
     // ktxVulkanDeviceInfo kvdi{
@@ -817,6 +886,16 @@ void Graphics::Impl::add_texture_entry(std::string const& texture_name,
                                        ktxVulkanTexture&& allocated_image)
 {
     texture_entries.emplace(texture_name, std::move(allocated_image));
+}
+
+void Graphics::Impl::destroy_texture_entries()
+{
+    for (auto& [_, texture_entry] : texture_entries)
+    {
+        vkDestroySampler(gfx.device, texture_entry.sampler, nullptr);
+        vkDestroyImageView(gfx.device, texture_entry.image_view, nullptr);
+        ktxVulkanTexture_Destruct(&texture_entry.texture, gfx.device, nullptr);
+    }
 }
 
 
@@ -971,9 +1050,10 @@ VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
                                                &layout_info,
                                                nullptr,
                                                &layout);
-
     if (err)
         throw std::runtime_error("Creating descriptor set layout failed.");
+
+    built_descriptor_layouts.emplace_back(layout);
 
     return layout;
 }

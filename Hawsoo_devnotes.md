@@ -465,6 +465,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - Make sure that the right number of instances and what to put for instances is done.
 
 
+## Can quit out.
+
+- [x] let's see whats needed.
+- [x] all done!
+
+
 ## Performance.
 
 - [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?

@@ -59,6 +59,8 @@ struct Graphics::Impl
     void init_window_props();
     void init_window();
 
+    void destroy_glfw();
+
 
     /// Holds Vulkan graphics initialization information.
     struct Vk_gfx_instance
@@ -319,6 +321,8 @@ struct Graphics::Impl
 
     void rebuild_vulkan_swapchain();
 
+    void destroy_vulkan();
+
 
     /// Adds textures.
     struct Texture_entry
@@ -337,6 +341,7 @@ struct Graphics::Impl
 
     ktxVulkanTexture load_and_upload_texture(std::string const& fname);
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);
+    void destroy_texture_entries();
 
     /// Add models.
     void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
@@ -369,11 +374,13 @@ struct Graphics::Impl
     /// Descriptor binding types.
     using Descriptor_binding_set_t = std::vector<std::pair<uint32_t, Descriptor_type_info>>;
 
-    /// Build descriptor layouts.
+    /// Build descriptor layouts. Created descriptor layouts are cleaned up at the end.
     VkDescriptorSetLayout build_descriptor_layout(
         Descriptor_binding_set_t&& bindings,
         VkShaderStageFlags shader_stages,
         VkDescriptorSetLayoutCreateFlags flags);
+
+    std::vector<VkDescriptorSetLayout> built_descriptor_layouts;  // For cleanup.
     
     /// Allocate descriptors.
     class Descriptor_allocator

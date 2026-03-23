@@ -44,10 +44,9 @@ TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
 
 TXP::Graphics::~Graphics()
 {
-    // m_pimpl->destroy_texture_entries();  @TODO
-
-    // @TODO
-    assert(false);
+    m_pimpl->destroy_texture_entries();
+    m_pimpl->destroy_vulkan();
+    m_pimpl->destroy_glfw();
 }
 
 void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,

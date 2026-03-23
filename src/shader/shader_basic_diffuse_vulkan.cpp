@@ -219,6 +219,13 @@ struct Shader_basic_diffuse::Impl
         vkDestroyShaderModule(device, shader_module, nullptr);
     }
 
+    ~Impl()
+    {
+        vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
+        vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
+        material_param_set_collection_buffer.destroy();
+    }
+
 
     TXP::Material_organizer& material_organizer;
     TXP::Render_model_data_collection& render_model_data_collection;
