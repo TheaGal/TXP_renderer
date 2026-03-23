@@ -66,7 +66,9 @@ void Renderer::run()
     // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
     //                enough of an interface.
     Shader::Shader_gradient shad_gradient{ m_material_organizer, g.get_impl() };
-    Shader::Shader_basic_diffuse shad_basic_diffuse{ m_material_organizer, g.get_impl() };
+    Shader::Shader_basic_diffuse shad_basic_diffuse{ m_material_organizer,
+                                                     m_render_model_data_collection,
+                                                     g.get_impl() };
 
     // Insert material params.
     auto material_assets{ m_material_assets.scoped_lock() };
@@ -263,7 +265,7 @@ void Renderer::run()
 
             // Render all graphics shaders.
             g.begin_rendering_render_view(render_view_idx);
-            shad_basic_diffuse.draw(render_view);
+            shad_basic_diffuse.draw(render_object_list, model_mesh_ref_list, render_view);
             g.end_rendering_render_view(render_view_idx);
 
             if (main_cam_matrix)

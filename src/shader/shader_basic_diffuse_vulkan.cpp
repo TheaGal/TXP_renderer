@@ -16,6 +16,7 @@
 #include "shader_creation/shader_creation.h"
 #include "vulkan/vulkan_core.h"
 
+#include <array>
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -50,8 +51,11 @@ struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_im
 // struct Shader_basic_diffuse::Impl
 struct Shader_basic_diffuse::Impl
 {
-    Impl(TXP::Material_organizer& mat_coll, TXP::Graphics::Impl& graphics)
+    Impl(TXP::Material_organizer& mat_coll,
+         TXP::Render_model_data_collection& rend_mod_data_coll,
+         TXP::Graphics::Impl& graphics)
         : material_organizer(mat_coll)
+        , render_model_data_collection(rend_mod_data_coll)
         , g(graphics)
         , device(g.gfx.device)
         , allocator(g.gfx.allocator)
@@ -217,6 +221,7 @@ struct Shader_basic_diffuse::Impl
 
 
     TXP::Material_organizer& material_organizer;
+    TXP::Render_model_data_collection& render_model_data_collection;
 
     TXP::Graphics::Impl& g;
     VkDevice device;
@@ -235,13 +240,20 @@ struct Shader_basic_diffuse::Impl
     // Parameters for a material.
     std::unordered_map<std::string, gpu_type::Material_param_set> material_name_to_params_map;
     Vk_Buffer::Allocated_buffer material_param_set_collection_buffer;
+
+    // Drawing list.
+    std::array<size_t, 2> draw_inst_list_start_end;  // End is exclusive.
 };
 
 
 // class Shader_basic_diffuse
-Shader_basic_diffuse::Shader_basic_diffuse(Material_organizer& material_organizer, void* graphics)
-    : m_pimpl(
-          std::make_unique<Impl>(material_organizer, *static_cast<TXP::Graphics::Impl*>(graphics)))
+Shader_basic_diffuse::Shader_basic_diffuse(
+    Material_organizer& material_organizer,
+    Render_model_data_collection& render_model_data_collection,
+    void* graphics)
+    : m_pimpl(std::make_unique<Impl>(material_organizer,
+                                     render_model_data_collection,
+                                     *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
@@ -292,8 +304,50 @@ void Shader_basic_diffuse::organize_materials()
     }
 }
 
-void Shader_basic_diffuse::draw(void* render_view_param)
+void Shader_basic_diffuse::allocate_per_instance_data_slots(
+    std::vector<Render_object> const& render_object_list,
+    std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
+    size_t& in_out_cur_modmesh_ref_idx)
 {
+    m_pimpl->draw_inst_list_start_end.front() = in_out_cur_modmesh_ref_idx;
+
+    uint16_t render_obj_idx{ 0 };
+    for (auto const& rend_obj : render_object_list)
+    {
+        // Find number of instances needed for the model.
+        auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
+            rend_obj.render_model_idx) };
+        size_t num_meshes_in_model{ model.meshes.size() };
+
+        // Collect meshes for this shader.
+        auto this_shader_id{ m_pimpl->material_organizer.get_shader_id(k_name) };
+        auto const& material_palette{ m_pimpl->material_organizer.get_material_palette(
+            rend_obj.material_palette_idx) };
+        for (size_t mesh_idx = 0; mesh_idx < num_meshes_in_model; mesh_idx++)
+        {
+            auto const& material{ material_palette.at(mesh_idx) };
+            if (material.shader_id == this_shader_id)
+            {   // Uses this shader!
+                auto& modmesh_ref_entry{ out_model_mesh_ref_list[in_out_cur_modmesh_ref_idx++] };
+                modmesh_ref_entry.render_obj_idx = render_obj_idx;
+                modmesh_ref_entry.model_mesh_idx = mesh_idx;
+            }
+        }
+
+        render_obj_idx++;
+    }
+
+    m_pimpl->draw_inst_list_start_end.back() = in_out_cur_modmesh_ref_idx;
+}
+
+void Shader_basic_diffuse::draw(
+    std::vector<Render_object> const& render_object_list,
+    std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
+    void* render_view_param)
+{
+    if (m_pimpl->draw_inst_list_start_end.back() - m_pimpl->draw_inst_list_start_end.front() == 0)
+        return;  // Nothing to draw. Exit early.
+
     auto& p{ *m_pimpl };
 
     auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
@@ -340,13 +394,24 @@ void Shader_basic_diffuse::draw(void* render_view_param)
                        sizeof(Shader_basic_diffuse_push_constants),
                        &push_consts);
 
-    // @TODO: @THEA: this needs to be some kind of draw function for certain meshes that want to be drawn by this shader.
-    static auto const k_cmd_draw_fn =
-        [](VkCommandBuffer cmd) {
-            vkCmdDrawIndexed(cmd, 4224, 1, 0, 0, 0);  // @HACK: first uploaded model has 4224 idxs
+    // Render instances.
+    for (auto draw_instance = m_pimpl->draw_inst_list_start_end.front();
+         draw_instance < m_pimpl->draw_inst_list_start_end.back();
+         draw_instance++)
+    {
+        auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
+        auto const& rend_obj{
+            render_object_list[modmesh_ref.render_obj_idx]
         };
-
-    k_cmd_draw_fn(cmd);
+        auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
+            rend_obj.render_model_idx) };
+        vkCmdDrawIndexed(cmd,
+                         model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
+                         1,
+                         model.first_index_offsets[modmesh_ref.model_mesh_idx],
+                         model.vertex_index_offset,
+                         draw_instance);
+    }
 }
 
 }  // namespace Shader

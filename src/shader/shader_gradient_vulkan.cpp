@@ -174,6 +174,15 @@ void Shader_gradient::organize_materials()
     BT_TRACE("Shader_gradient has no material collection.");
 }
 
+void Shader_gradient::allocate_per_instance_data_slots(
+    std::vector<Render_object> const& render_object_list,
+    std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
+    size_t& in_out_cur_modmesh_ref_idx)
+{
+    // Do nothing.
+    // BT_TRACE("Shader_gradient has no per-instance data.");
+}
+
 void Shader_gradient::compute(void* render_frame)
 {
     auto& p{ *m_pimpl };
