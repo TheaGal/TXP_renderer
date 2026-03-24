@@ -116,6 +116,8 @@ string(COMPARE EQUAL "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_SOURCE_DIR}" TXP_REN
 if (TXP_RENDERER_STANDALONE)
     message("TXP Renderer standalone mode! Using standalone asset directory.")
     set(ASSET_DIR ${CMAKE_CURRENT_SOURCE_DIR}/assets)
+elseif(NOT DEFINED ASSET_DIR)
+    message(FATAL_ERROR "ASSET_DIR is not defined!!")
 endif()
 
 # Create symlink to assets folder.
@@ -239,16 +241,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h
 )
 
-# Executable build.
-add_executable(${PROJECT_NAME}
-    MACOSX_BUNDLE
-
-    # Main source files.
-    ${MAIN_SOURCES}
-
-    # Resource files.
-    ${ASSET_DIR_FILES}
-
+# Support source files.
+set(SUPPORT_SOURCES
     # Dear ImGui implementation source files.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/backends/imgui_impl_glfw.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/backends/imgui_impl_glfw.h
@@ -285,6 +279,24 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/tinyobjloader/tiny_obj_loader.h
 )
 
+if(TXP_RENDERER_STANDALONE)
+    # Executable build.
+    add_executable(${PROJECT_NAME}
+        MACOSX_BUNDLE
+
+        ${MAIN_SOURCES}
+        ${SUPPORT_SOURCES}
+
+        # Resource files.
+        ${ASSET_DIR_FILES}
+    )
+else()
+    add_library(${PROJECT_NAME}
+        ${MAIN_SOURCES}
+        ${SUPPORT_SOURCES}
+    )
+endif()
+
 target_include_directories(${PROJECT_NAME}
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -310,14 +322,16 @@ target_compile_definitions(${PROJECT_NAME}
         ${GFX_LIB_DEFINITIONS}
 )
 
-set_target_properties(${PROJECT_NAME} PROPERTIES
-    MACOSX_BUNDLE_GUI_IDENTIFIER "com.hawsoo.txp_renderer"
-    MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
-    MACOSX_BUNDLE_BUNDLE_VERSION "0.1.0"
-    MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
-    # RESOURCE "${ASSET_DIR_FILES}"  @CHECK: commented these out since it caused resource files to get placed at the root of the bundle. So it should be good enough if changes?  -Thea 2026/02/08
-)
+if(TXP_RENDERER_STANDALONE)
+    set_target_properties(${PROJECT_NAME} PROPERTIES
+        MACOSX_BUNDLE_GUI_IDENTIFIER "com.hawsoo.txp_renderer"
+        MACOSX_BUNDLE_BUNDLE_NAME ${PROJECT_NAME}
+        MACOSX_BUNDLE_BUNDLE_VERSION "0.1.0"
+        MACOSX_BUNDLE_SHORT_VERSION_STRING "0.1"
+        # RESOURCE "${ASSET_DIR_FILES}"  @CHECK: commented these out since it caused resource files to get placed at the root of the bundle. So it should be good enough if changes?  -Thea 2026/02/08
+    )
 
-# Set this project as Visual Studio startup project.
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+    # Set this project as Visual Studio startup project.
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        PROPERTY VS_STARTUP_PROJECT ${PROJECT_NAME})
+endif()
