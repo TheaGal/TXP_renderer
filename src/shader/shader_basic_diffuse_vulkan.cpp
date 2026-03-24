@@ -183,6 +183,7 @@ struct Shader_basic_diffuse::Impl
         };
         VkPipelineRasterizationStateCreateInfo rasterization_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .cullMode = VK_CULL_MODE_BACK_BIT,
             .lineWidth = 1.0f,
         };
         VkPipelineMultisampleStateCreateInfo multisample_state{
