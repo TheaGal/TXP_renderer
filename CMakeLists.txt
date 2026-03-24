@@ -8,9 +8,6 @@ project(txp_renderer
 # When turning this option on, the library will be compiled using assertions. By default asserts are enabled in Debug build.
 option(ENABLE_PROFILING "Enable profiling" OFF)
 
-# When turning this option on, it will attempt to look for nlohmann::json externally instead of using the subdirectory here.
-option(TXP_REND_USE_EXTERNAL_JSON "Use an external JSON library" OFF)
-
 
 # Print out all options.
 message(
@@ -18,7 +15,6 @@ message(
     "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n"
     "|               ::OPTION VALUES::                \n"
     "| ENABLE_PROFILING           : ${ENABLE_PROFILING}\n"
-    "| TXP_REND_USE_EXTERNAL_JSON : ${TXP_REND_USE_EXTERNAL_JSON}\n"
     "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
 
 # C/C++ standard.
@@ -70,11 +66,12 @@ set(DEPENDENCY_INCLUDE_DIRS
 add_subdirectory(third_party/efsw)
 add_subdirectory(third_party/fastgltf)
 add_subdirectory(third_party/KTX-Software/lib ktx)
-add_subdirectory(third_party/stduuid)
 
-if(TXP_REND_USE_EXTERNAL_JSON)
-  find_package(nlohmann_json 3.12.0 REQUIRED)
-else()
+if (NOT TARGET nlohmann_json::nlohmann_json)
+    add_subdirectory(third_party/stduuid)
+endif()
+
+if (NOT TARGET nlohmann_json::nlohmann_json)
   set(JSON_BuildTests OFF CACHE INTERNAL "")
   add_subdirectory(third_party/json)
 endif()
