@@ -12,6 +12,7 @@
 #include "renderer/types.h"
 #include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
+#include "shader_creation/shader_creation.h"
 #include "txp_renderer/types.h"
 
 #include <atomic>
