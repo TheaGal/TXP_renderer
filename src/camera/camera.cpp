@@ -1,4 +1,4 @@
-#include "txp_renderer/camera/camera.h"
+#include "camera.h"
 
 #include "btglm.h"
 #include "btservice_finder.h"

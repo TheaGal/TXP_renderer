@@ -168,7 +168,6 @@ endif()
 
 # Main source files.
 set(MAIN_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/camera/camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
@@ -193,6 +192,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp

@@ -1,14 +1,9 @@
 #pragma once
 
-#include "camera/camera.h"
 #include "entt/entity/fwd.hpp"
-#include "material_organizer/material_organizer.h"
-#include "mutex_wrapper/mutex_wrapper.h"
-#include "render_object/render_object.h"
-#include "txp_renderer/types.h"
 
-#include <atomic>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -31,6 +26,8 @@ public:
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
              std::string const& model_asset_dir);
+
+    ~Renderer();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Render loop.
@@ -63,53 +60,14 @@ public:
     void add_model(std::string const& model_name,
                    std::string const& file_ext);
 
-#define POSSIBLY_REMOVE_THIS_LETS_SEE 0
-#if POSSIBLY_REMOVE_THIS_LETS_SEE
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Render object lifetime.
-
-    /// Creates render object.
-    pool_key_t create_render_obj(Render_object_config&& config);
-
-    /// Destroys render object.
-    void destroy_render_obj(pool_key_t key);
-#endif // POSSIBLY_REMOVE_THIS_LETS_SEE
-
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Animator controls.
 
     // @TODO.
 
 private:
-    entt::registry& m_ecs_registry;
-
-    std::string m_title;
-    int32_t m_width;
-    int32_t m_height;
-
-    std::string m_texture_asset_dir;
-    std::string m_shader_asset_dir;
-    std::string m_model_asset_dir;
-
-    /// Able to register assets until assets are starting to be loaded into the GPU.
-    std::atomic_bool m_asset_reg_window_open{ true };
-
-    BT::Mutex_wrapper<std::vector<Texture_asset_create_info>> m_texture_assets;
-    BT::Mutex_wrapper<std::vector<Material_asset_create_info>> m_material_assets;
-    BT::Mutex_wrapper<std::vector<Material_palette_asset_create_info>> m_material_palette_assets;
-    BT::Mutex_wrapper<std::vector<Model_asset_create_info>> m_model_assets;
-
-    /// Material information tracker.
-    Material_organizer m_material_organizer;
-
-    /// Loaded information of model assets.
-    Render_model_data_collection m_render_model_data_collection;
-
-    /// Flag for renderer to start shutdown process.
-    std::atomic_bool m_shutdown_flag{ false };
-
-    /// Camera for renderer and any other threads that desire to access it.
-    Camera m_camera;
+    struct Impl;
+    std::unique_ptr<Impl> m_pimpl;
 };
 
 }  // namespace TXP

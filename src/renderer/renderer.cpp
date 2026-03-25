@@ -2,8 +2,11 @@
 
 #include "btservice_finder.h"
 #include "bttimer.h"
+#include "camera/camera.h"
 #include "entt/entity/registry.hpp"
 #include "gfx.h"
+#include "material_organizer/material_organizer.h"
+#include "mutex_wrapper/mutex_wrapper.h"
 #include "render_object/render_model.h"
 #include "render_object/render_object.h"
 #include "renderer/types.h"
@@ -20,6 +23,59 @@
 namespace TXP
 {
 
+// struct Renderer::Impl
+struct Renderer::Impl
+{
+    Impl(entt::registry& ecs_registry,
+         std::string const& title,
+         int32_t width,
+         int32_t height,
+         std::string const& texture_asset_dir,
+         std::string const& shader_asset_dir,
+         std::string const& model_asset_dir)
+        : ecs_registry(ecs_registry)
+        , title(title)
+        , width(width)
+        , height(height)
+        , texture_asset_dir(texture_asset_dir)
+        , shader_asset_dir(shader_asset_dir)
+        , model_asset_dir(model_asset_dir)
+    {
+    }
+
+    entt::registry& ecs_registry;
+
+    std::string title;
+    int32_t width;
+    int32_t height;
+
+    std::string texture_asset_dir;
+    std::string shader_asset_dir;
+    std::string model_asset_dir;
+
+    /// Able to register assets until assets are starting to be loaded into the GPU.
+    std::atomic_bool asset_reg_window_open{ true };
+
+    BT::Mutex_wrapper<std::vector<Texture_asset_create_info>> texture_assets;
+    BT::Mutex_wrapper<std::vector<Material_asset_create_info>> material_assets;
+    BT::Mutex_wrapper<std::vector<Material_palette_asset_create_info>> material_palette_assets;
+    BT::Mutex_wrapper<std::vector<Model_asset_create_info>> model_assets;
+
+    /// Material information tracker.
+    Material_organizer material_organizer;
+
+    /// Loaded information of model assets.
+    Render_model_data_collection render_model_data_collection;
+
+    /// Flag for renderer to start shutdown process.
+    std::atomic_bool shutdown_flag{ false };
+
+    /// Camera for renderer and any other threads that desire to access it.
+    Camera camera;
+};
+
+
+// class Renderer
 Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& title,
                    int32_t width,
@@ -27,13 +83,13 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir)
-    : m_ecs_registry(ecs_registry)
-    , m_title(title)
-    , m_width(width)
-    , m_height(height)
-    , m_texture_asset_dir(texture_asset_dir)
-    , m_shader_asset_dir(shader_asset_dir)
-    , m_model_asset_dir(model_asset_dir)
+    : m_pimpl(std::make_unique<Impl>(ecs_registry,
+                                     title,
+                                     width,
+                                     height,
+                                     texture_asset_dir,
+                                     shader_asset_dir,
+                                     model_asset_dir))
 {   // Ensure only one instance.
     static std::atomic_bool s_init{ false };
     bool expect_init{ false };
@@ -43,35 +99,40 @@ Renderer::Renderer(entt::registry& ecs_registry,
     }
 
     // Small setup of auxiliary systems.
-    Shader_Creation::set_shader_directory(m_shader_asset_dir);
-    set_model_directory(m_model_asset_dir);
+    Shader_Creation::set_shader_directory(m_pimpl->shader_asset_dir);
+    set_model_directory(m_pimpl->model_asset_dir);
 
     // Add self as service.
     BT_SERVICE_FINDER_ADD_SERVICE(Renderer, this);
 }
 
+Renderer::~Renderer() = default;  // for pimpl.
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Render loop.
 void Renderer::run()
-{   // Setup renderer.
-    Graphics g(m_title, m_width, m_height);
+{
+    auto& m{ *m_pimpl };
 
-    m_asset_reg_window_open = false;
+    // Setup renderer.
+    Graphics g(m.title, m.width, m.height);
+
+    m.asset_reg_window_open = false;
 
     // Load textures.
-    g.load_texture_assets(m_texture_asset_dir, std::move(*m_texture_assets.scoped_lock()));
+    g.load_texture_assets(m.texture_asset_dir, std::move(*m.texture_assets.scoped_lock()));
 
     // Create shaders.
     // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
     //                enough of an interface.
-    Shader::Shader_gradient shad_gradient{ m_material_organizer, g.get_impl() };
-    Shader::Shader_basic_diffuse shad_basic_diffuse{ m_material_organizer,
-                                                     m_render_model_data_collection,
+    Shader::Shader_gradient shad_gradient{ m.material_organizer, g.get_impl() };
+    Shader::Shader_basic_diffuse shad_basic_diffuse{ m.material_organizer,
+                                                     m.render_model_data_collection,
                                                      g.get_impl() };
 
     // Insert material params.
-    auto material_assets{ m_material_assets.scoped_lock() };
+    auto material_assets{ m.material_assets.scoped_lock() };
     for (auto const& mat_asset : *material_assets)
     {   // Find shader.
         // clang-format off
@@ -87,13 +148,13 @@ void Renderer::run()
 
     // Load material palettes (aligns with meshes inside models to assign materials).
     g.load_material_palettes(std::move(*material_assets),
-                             std::move(*m_material_palette_assets.scoped_lock()),
-                             m_material_organizer);
+                             std::move(*m.material_palette_assets.scoped_lock()),
+                             m.material_organizer);
 
     // Load models.
-    g.load_model_assets(std::move(*m_model_assets.scoped_lock()),
-                        m_render_model_data_collection,
-                        m_material_organizer);
+    g.load_model_assets(std::move(*m.model_assets.scoped_lock()),
+                        m.render_model_data_collection,
+                        m.material_organizer);
 
     // Timer.
     BT::Timer main_timer;
@@ -106,7 +167,7 @@ void Renderer::run()
     model_mesh_ref_list.resize(65535);  // @NOTE: from per-instance data max entries.
 
     // Render frames until shutdown flag is tripped.
-    while (!m_shutdown_flag.load())
+    while (!m.shutdown_flag.load())
     {
         BT::logger::notify_start_new_mainloop_iteration();
         float_t delta_time{ main_timer.calc_delta_time() };
@@ -127,7 +188,7 @@ void Renderer::run()
         }
 
         // Add new render objects and mark existing render objects as non-stale.
-        auto rend_obj_cfg_view = m_ecs_registry.view<TXP::Render_object_config>();
+        auto rend_obj_cfg_view = m.ecs_registry.view<TXP::Render_object_config>();
         for (auto ecs_entity : rend_obj_cfg_view)
         {
             auto& rend_obj_cfg = rend_obj_cfg_view.get<TXP::Render_object_config>(ecs_entity);
@@ -139,9 +200,9 @@ void Renderer::run()
                 render_object_list.emplace_back(Render_object{
                     .layer = rend_obj_cfg.layer,
                     .render_model_idx =
-                        m_render_model_data_collection.get_static_model_data_set_idx(
+                        m.render_model_data_collection.get_static_model_data_set_idx(
                             rend_obj_cfg.model_name),
-                    .material_palette_idx = m_material_organizer.get_material_palette_idx(
+                    .material_palette_idx = m.material_organizer.get_material_palette_idx(
                         !rend_obj_cfg.material_palette.empty()
                             ? rend_obj_cfg.material_palette
                             : rend_obj_cfg.model_name + "__default_material_palette_name__"),
@@ -199,11 +260,11 @@ void Renderer::run()
 
         // Poll for input events.
         g.poll_input_events();
-        m_camera.update(delta_time);
+        m.camera.update(delta_time);
 
         // Build imgui for this frame.
         std::vector<Render_view_size> render_view_sizes;
-        g.build_imgui_contents(m_camera, render_view_sizes);
+        g.build_imgui_contents(m.camera, render_view_sizes);
 
         bool render_view_sizes_changed = g.check_render_view_sizes_changed(render_view_sizes);
 
@@ -214,7 +275,7 @@ void Renderer::run()
 
         // Set render view sizes.
         g.set_render_view_sizes(render_view_sizes);
-        m_camera.set_render_view_sizes(render_view_sizes);
+        m.camera.set_render_view_sizes(render_view_sizes);
 
         // Avoid drawing with deleted GPU data or frame acquire failed.
         if (render_view_sizes_changed || !frame_acquired)
@@ -230,14 +291,14 @@ void Renderer::run()
                                                             cur_modmesh_ref_idx);
 
         // Set per-instance data from render objects.
-        g.set_render_object_per_instance_data(m_material_organizer,
+        g.set_render_object_per_instance_data(m.material_organizer,
                                               render_object_list,
                                               model_mesh_ref_list,
                                               cur_modmesh_ref_idx);
 
         // Render for each render view.
         size_t render_view_idx{ 0 };
-        for (auto const& cam_matrix : m_camera.calc_cam_matrices())
+        for (auto const& cam_matrix : m.camera.calc_cam_matrices())
         {
             bool main_cam_matrix{ render_view_idx == 0 };
 
@@ -297,7 +358,7 @@ void Renderer::run()
 
 void Renderer::shutdown_loop()
 {
-    m_shutdown_flag.store(true);
+    m_pimpl->shutdown_flag.store(true);
 }
 
 
@@ -305,54 +366,41 @@ void Renderer::shutdown_loop()
 // Asset loading.
 void Renderer::add_texture(std::string const& texture_name, std::string const& file_ext)
 {
-    if (!m_asset_reg_window_open.load())
+    if (!m_pimpl->asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
     if (file_ext != ".ktx2")
         throw std::runtime_error("Only .ktx2 file type for textures are allowed.");
 
-    m_texture_assets.scoped_lock()->emplace_back(texture_name, texture_name + ".ktx2");
+    m_pimpl->texture_assets.scoped_lock()->emplace_back(texture_name, texture_name + ".ktx2");
 }
 
 void Renderer::add_material(std::string const& material_name,
                             std::string const& shader_name,
                             std::unordered_map<std::string, std::string> const& shader_params)
 {
-    if (!m_asset_reg_window_open.load())
+    if (!m_pimpl->asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_material_assets.scoped_lock()->emplace_back(material_name, shader_name, shader_params);
+    m_pimpl->material_assets.scoped_lock()->emplace_back(material_name, shader_name, shader_params);
 }
 
 void Renderer::add_material_palette(std::string const& mat_set_name,
                                 std::vector<std::string>&& materials)
 {
-    if (!m_asset_reg_window_open.load())
+    if (!m_pimpl->asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_material_palette_assets.scoped_lock()->emplace_back(mat_set_name, std::move(materials));
+    m_pimpl->material_palette_assets.scoped_lock()->emplace_back(mat_set_name, std::move(materials));
 }
 
 void Renderer::add_model(std::string const& model_name,
                          std::string const& file_ext)
 {
-    if (!m_asset_reg_window_open.load())
+    if (!m_pimpl->asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_model_assets.scoped_lock()->emplace_back(model_name, file_ext);
+    m_pimpl->model_assets.scoped_lock()->emplace_back(model_name, file_ext);
 }
-
-
-#if POSSIBLY_REMOVE_THIS_LETS_SEE
-////////////////////////////////////////////////////////////////////////////////////////////////////
-// Render object lifetime.
-pool_key_t Renderer::create_render_obj(Render_object_config&& config)
-{
-    return 0;
-}
-
-void Renderer::destroy_render_obj(pool_key_t key)
-{}
-#endif // POSSIBLY_REMOVE_THIS_LETS_SEE
 
 }  // namespace TXP

@@ -6,9 +6,9 @@
 
 #include "btlogger.h"
 #include "btuuid.h"
+#include "camera/camera.h"
 #include "imgui.h"
 #include "renderer/types.h"
-#include "txp_renderer/camera/camera.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
 
