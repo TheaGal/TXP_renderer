@@ -31,12 +31,12 @@
 #include "editor_conent/editor_content.h"
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
-#include "input_handler/input_handler.h"
 #include "material_organizer/material_organizer.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
+#include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
 
 #include <array>

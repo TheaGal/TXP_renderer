@@ -1,5 +1,4 @@
 #include "entt/entity/registry.hpp"
-#include "input_handler/input_handler.h"  // @TODO: put in public folder.
 #include "txp_renderer_public.h"
 #define BT_SERVICE_FINDER_IMPLEMENTATION
 #include "btservice_finder.h"  // @TODO: put in public folder.

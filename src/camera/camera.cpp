@@ -1,10 +1,10 @@
-#include "camera.h"
+#include "txp_renderer/camera/camera.h"
 
 #include "btglm.h"
 #include "btservice_finder.h"
-#include "input_handler/input_handler.h"
-#include "input_handler/input_key_codes.h"
 #include "renderer/types.h"
+#include "txp_renderer/input_handler/input_handler.h"
+#include "txp_renderer/input_handler/input_key_codes.h"
 
 #include <stdexcept>
 #include <vector>

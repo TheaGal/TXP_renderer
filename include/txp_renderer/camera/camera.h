@@ -1,8 +1,8 @@
 #pragma once
 
 #include "btglm.h"
-#include "input_handler/input_handler.h"
 #include "renderer/types.h"
+#include "txp_renderer/input_handler/input_handler.h"
 
 #include <vector>
 
