@@ -2,7 +2,6 @@
 
 #include "btglm.h"
 #include "nlohmann/detail/macro_scope.hpp"
-#include "shader_creation/shader_creation.h"
 
 #include <cstdint>
 #include <string>
