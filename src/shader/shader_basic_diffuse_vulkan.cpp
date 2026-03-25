@@ -291,7 +291,14 @@ void Shader_basic_diffuse::make_material(
 }
 
 void Shader_basic_diffuse::organize_materials()
-{   // Create buffer.
+{
+    if (m_pimpl->material_name_to_params_map.empty())
+    {
+        BT_WARN("There are no materials registered with this shader.");
+        return;
+    }
+
+    // Create buffer.
     m_pimpl->material_param_set_collection_buffer.create(
         m_pimpl->device,
         m_pimpl->allocator,

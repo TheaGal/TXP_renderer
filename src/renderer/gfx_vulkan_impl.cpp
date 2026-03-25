@@ -964,6 +964,12 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     VkDeviceSize vertex_buf_size{ sizeof(Vertex) * combined_vertices.size() };
     VkDeviceSize index_buf_size{ sizeof(uint32_t) * combined_indices.size() };
 
+    if (vertex_buf_size == 0)
+    {
+        BT_WARN("No models to upload in combined static model.");
+        return;
+    }
+
     combined_static_model.vertex_index_buffer.create(
         gfx.device,
         gfx.allocator,
