@@ -224,10 +224,11 @@ void Renderer::render_one_frame(float_t delta_time)
     }
 
     // Add new render objects and mark existing render objects as non-stale.
-    auto rend_obj_cfg_view = m.ecs_registry.view<TXP::Render_object_config>();
+    auto rend_obj_cfg_view = m.ecs_registry.view<TXP::component::Render_object_config>();
     for (auto ecs_entity : rend_obj_cfg_view)
     {
-        auto& rend_obj_cfg = rend_obj_cfg_view.get<TXP::Render_object_config>(ecs_entity);
+        auto& rend_obj_cfg =
+            rend_obj_cfg_view.get<TXP::component::Render_object_config>(ecs_entity);
         auto& rend_owned_data = rend_obj_cfg.renderer_owned_data;
 
         if (rend_owned_data.pool_key == k_pool_key_process_flag)
@@ -278,7 +279,8 @@ void Renderer::render_one_frame(float_t delta_time)
     // Apply new pool keys.
     for (auto ecs_entity : rend_obj_cfg_view)
     {
-        auto& rend_obj_cfg = rend_obj_cfg_view.get<TXP::Render_object_config>(ecs_entity);
+        auto& rend_obj_cfg =
+            rend_obj_cfg_view.get<TXP::component::Render_object_config>(ecs_entity);
 
         rend_obj_cfg.renderer_owned_data.pool_key =
             old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);

@@ -5,9 +5,6 @@
 
 #include <cstdint>
 #include <string>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 
 namespace TXP
@@ -18,35 +15,6 @@ constexpr float_t k_skeletal_anim_frames_per_second{ 60.0f };
 
 /// Tick interval for simulation thread.
 constexpr float_t k_simulation_delta_time{ 1.0f / k_skeletal_anim_frames_per_second };
-
-/// Information to create texture asset.
-struct Texture_asset_create_info
-{
-    std::string texture_name;
-    std::string ktx2_fname;
-};
-
-/// Information to create material asset.
-struct Material_asset_create_info
-{
-    std::string material_name;
-    std::string shader_name;
-    std::unordered_map<std::string, std::string> shader_params;
-};
-
-/// Information to create material palette asset.
-struct Material_palette_asset_create_info
-{
-    std::string mat_set_name;
-    std::vector<std::string> materials;
-};
-
-/// Information to create model asset.
-struct Model_asset_create_info
-{
-    std::string model_name;
-    std::string file_ext;
-};
 
 /// Key to access editing render objects.
 using pool_key_t = std::uint32_t;
@@ -65,6 +33,10 @@ enum Render_layer : uint16_t
     RENDER_LAYER_INVISIBLE    = 0b0000'0000'0000'0010,
     RENDER_LAYER_LEVEL_EDITOR = 0b0000'0000'0000'0100,
 };
+
+
+namespace component
+{
 
 /// Config for a render object (to be used as ECS component).
 struct Render_object_config
@@ -104,4 +76,5 @@ struct Render_object_config
                                    deform_config);
 };
 
+}  // namespace component
 }  // namespace TXP

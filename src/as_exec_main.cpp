@@ -13,14 +13,14 @@ int32_t main()
     entt::registry ecs_registry;
     {   // Create sample entity.
         auto ecs_entity = ecs_registry.create();
-        auto& rend_obj_cfg = ecs_registry.emplace<TXP::Render_object_config>(ecs_entity);
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
 
         rend_obj_cfg.layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "probuilder_example";
     }
     {   // Create sample entity 2.
         auto ecs_entity = ecs_registry.create();
-        auto& rend_obj_cfg = ecs_registry.emplace<TXP::Render_object_config>(ecs_entity);
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
 
         rend_obj_cfg.layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "probuilder_example";

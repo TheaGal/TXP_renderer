@@ -6,6 +6,7 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 
@@ -53,6 +54,36 @@ struct Model_transform_set
 };
 
 }  // namespace gpu_type
+
+
+/// Information to create texture asset.
+struct Texture_asset_create_info
+{
+    std::string texture_name;
+    std::string ktx2_fname;
+};
+
+/// Information to create material asset.
+struct Material_asset_create_info
+{
+    std::string material_name;
+    std::string shader_name;
+    std::unordered_map<std::string, std::string> shader_params;
+};
+
+/// Information to create material palette asset.
+struct Material_palette_asset_create_info
+{
+    std::string mat_set_name;
+    std::vector<std::string> materials;
+};
+
+/// Information to create model asset.
+struct Model_asset_create_info
+{
+    std::string model_name;
+    std::string file_ext;
+};
 
 
 /// Renderer backend with implementation depending on the platform using preprocessor macros in the
