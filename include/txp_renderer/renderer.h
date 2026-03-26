@@ -96,6 +96,9 @@ public:
     /// Gets model's basic data.
     Basic_model get_model_basic_data(std::string const& model_name) const;
 
+    /// Gets camera view direction.
+    void get_main_camera_view_direction(vec3 out_cam_view_direction) const;
+
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Debug special functions.
 

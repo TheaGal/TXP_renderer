@@ -33,6 +33,8 @@ public:
 
     std::vector<Cam_matrix> calc_cam_matrices() const;
 
+    void get_main_cam_view_direction(vec3 out_cam_view_direction) const;
+
 private:
     Input::Input_handler& m_input_handler;
     Input::Cursor_pos_state m_prev_cursor_state;

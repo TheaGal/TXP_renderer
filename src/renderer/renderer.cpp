@@ -486,6 +486,11 @@ auto Renderer::get_model_basic_data(std::string const& model_name) const -> Basi
     return basic_model;
 }
 
+void Renderer::get_main_camera_view_direction(vec3 out_cam_view_direction) const
+{
+    m_pimpl->camera.get_main_cam_view_direction(out_cam_view_direction);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug special functions.
