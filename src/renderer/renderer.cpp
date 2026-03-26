@@ -1,5 +1,6 @@
 #include "txp_renderer/renderer.h"
 
+#include "btdatecheck.h"
 #include "btservice_finder.h"
 #include "camera/camera.h"
 #include "entt/entity/registry.hpp"
@@ -92,6 +93,9 @@ struct Renderer::Impl
 
     /// Camera for renderer and any other threads that desire to access it.
     Camera camera;
+
+    /// Debug stats' performance times.
+    std::unordered_map<Performance_time_type, float_t> perf_time_map;
 };
 
 
@@ -428,6 +432,15 @@ void Renderer::add_model(std::string const& model_name,
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
     m_pimpl->model_assets.scoped_lock()->emplace_back(model_name, file_ext);
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Debug information.
+
+void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
+{
+    BT::date_deadline(2026, 4, 46);  // @TODO: do something with this time!!! Like display in a debug window??
+    m_pimpl->perf_time_map[perf_time_type] = delta_time;
 }
 
 }  // namespace TXP

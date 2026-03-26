@@ -74,6 +74,19 @@ public:
 
     // @TODO.
 
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Debug information.
+
+    /// Performance time types for reporting performance.
+    enum Performance_time_type
+    {
+        PERF_TIME_TYPE_SIMULATION_LOOP,
+        PERF_TIME_TYPE_RENDERER_LOOP,
+    };
+
+    /// Reports the performance time for display in the debug stats.
+    void report_performance_time(Performance_time_type perf_time_type, float_t delta_time);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> m_pimpl;
