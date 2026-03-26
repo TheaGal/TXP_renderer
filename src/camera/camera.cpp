@@ -1,6 +1,7 @@
 #include "camera.h"
 
 #include "btglm.h"
+#include "btlogger.h"
 #include "btservice_finder.h"
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
@@ -242,6 +243,15 @@ std::vector<Camera::Cam_matrix> Camera::calc_cam_matrices() const
 
 void Camera::get_main_cam_view_direction(vec3 out_cam_view_direction) const
 {
+    if (m_camera_states.empty())
+    {
+        BT_WARN(
+            "No camera states, just going to use Z-forward vector as default. Fix this if you feel "
+            "like it.");
+        glm_vec3_copy(vec3{ 0, 0, 1 }, out_cam_view_direction);
+        return;
+    }
+
     glm_vec3_copy(const_cast<float_t*>(m_camera_states.front().view_direction.raw),
                   out_cam_view_direction);
 }
