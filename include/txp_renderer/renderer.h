@@ -1,5 +1,6 @@
 #pragma once
 
+#include "btglm.h"
 #include "entt/entity/fwd.hpp"
 #include "txp_renderer/types.h"
 
@@ -77,6 +78,23 @@ public:
     // Animator controls.
 
     // @TODO.
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Model information.
+
+    /// Model with only essential data.
+    struct Basic_model
+    {
+        struct Basic_vertex
+        {
+            vec3 position;
+        };
+        std::vector<Basic_vertex> vertices;
+        std::vector<uint32_t> indices;
+    };
+
+    /// Gets model's basic data.
+    Basic_model get_model_basic_data(std::string const& model_name) const;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Debug special functions.

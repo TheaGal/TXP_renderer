@@ -456,6 +456,37 @@ void Renderer::add_model(std::string const& model_name,
     m_pimpl->model_assets.scoped_lock()->emplace_back(model_name, file_ext);
 }
 
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Model information.
+
+auto Renderer::get_model_basic_data(std::string const& model_name) const -> Basic_model
+{
+    auto& rend_mod_dat_coll{ m_pimpl->render_model_data_collection };
+    auto const& static_model_dat_set = rend_mod_dat_coll.get_static_model_data_set(
+        rend_mod_dat_coll.get_static_model_data_set_idx(model_name));
+
+    Basic_model basic_model;
+
+    basic_model.vertices.reserve(static_model_dat_set.vertices.size());
+    for (auto const& vert : static_model_dat_set.vertices)
+    {
+        basic_model.vertices.emplace_back();
+        glm_vec3_copy(const_cast<TXP::Vertex&>(vert).position_vec3(),
+                      basic_model.vertices.back().position);
+    }
+
+    for (auto const& mesh : static_model_dat_set.meshes)
+    for (auto idx : mesh.indices)
+    {
+        basic_model.indices.emplace_back(idx);
+    }
+    basic_model.indices.shrink_to_fit();
+
+    return basic_model;
+}
+
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug special functions.
 
