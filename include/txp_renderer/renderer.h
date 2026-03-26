@@ -3,6 +3,7 @@
 #include "entt/entity/fwd.hpp"
 
 #include <cstdint>
+#include <functional>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -25,7 +26,8 @@ public:
              int32_t height,
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
-             std::string const& model_asset_dir);
+             std::string const& model_asset_dir,
+             std::function<void(bool)>&& set_play_flag_fn);
 
     ~Renderer();
 

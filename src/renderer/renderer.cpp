@@ -34,7 +34,8 @@ struct Renderer::Impl
          int32_t height,
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
-         std::string const& model_asset_dir)
+         std::string const& model_asset_dir,
+         std::function<void(bool)>&& set_play_flag_fn)
         : ecs_registry(ecs_registry)
         , title(title)
         , width(width)
@@ -42,7 +43,9 @@ struct Renderer::Impl
         , texture_asset_dir(texture_asset_dir)
         , shader_asset_dir(shader_asset_dir)
         , model_asset_dir(model_asset_dir)
+        , set_play_flag_fn(std::move(set_play_flag_fn))
     {
+        BT::date_deadline(2026, 4, 26);  // @TODO: use `set_play_flag_fn`.
     }
 
     ~Impl()
@@ -60,6 +63,8 @@ struct Renderer::Impl
     std::string texture_asset_dir;
     std::string shader_asset_dir;
     std::string model_asset_dir;
+
+    std::function<void(bool)> set_play_flag_fn;
 
     /// Able to register assets until assets are starting to be loaded into the GPU.
     std::atomic_bool asset_reg_window_open{ true };
@@ -109,14 +114,16 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    int32_t height,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
-                   std::string const& model_asset_dir)
+                   std::string const& model_asset_dir,
+                   std::function<void(bool)>&& set_play_flag_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
                                      title,
                                      width,
                                      height,
                                      texture_asset_dir,
                                      shader_asset_dir,
-                                     model_asset_dir))
+                                     model_asset_dir,
+                                     std::move(set_play_flag_fn)))
 {   // Ensure only one instance.
     static std::atomic_bool s_init{ false };
     bool expect_init{ false };

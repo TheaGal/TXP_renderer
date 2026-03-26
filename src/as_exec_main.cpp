@@ -36,7 +36,8 @@ int32_t main()
                      720,
                      "assets/textures/",
                      "assets/shaders/",
-                     "assets/models/" };
+                     "assets/models/",
+                     [](bool) { } };
 
     r.add_texture("default_tex", ".ktx2");
     r.add_material("default_mat", "basic_diffuse", { { "texture0", "default_tex" } });
