@@ -94,6 +94,9 @@ struct Renderer::Impl
     /// Camera for renderer and any other threads that desire to access it.
     Camera camera;
 
+    /// Flag for disabling deformed render models.
+    std::atomic_bool allow_deformed_render_models{ true };
+
     /// Debug stats' performance times.
     std::unordered_map<Performance_time_type, float_t> perf_time_map;
 };
@@ -435,7 +438,13 @@ void Renderer::add_model(std::string const& model_name,
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
-// Debug information.
+// Debug special functions.
+
+void Renderer::set_allow_deformed_render_models(bool allow)
+{
+    BT::date_deadline(2026, 4, 46);  // @TODO: do something with this flag!!!
+    m_pimpl->allow_deformed_render_models = allow;
+}
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
 {

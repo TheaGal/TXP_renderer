@@ -75,7 +75,10 @@ public:
     // @TODO.
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Debug information.
+    // Debug special functions.
+
+    /// Can force a disable. (e.g. during level editor)
+    void set_allow_deformed_render_models(bool allow);
 
     /// Performance time types for reporting performance.
     enum Performance_time_type
