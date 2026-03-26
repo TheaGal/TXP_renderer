@@ -14,6 +14,7 @@ namespace TXP
 {
 
 class Camera;  // Forward decl.
+struct Information_hook_struct;  // Forward decl.
 
 namespace Input
 {
@@ -37,6 +38,7 @@ void build_content(TXP::Input::Input_handler const& input_handler,
                    Render_view_image_content const& render_view_image_content,
                    std::function<void(bool)> const& lock_cursor_fn,
                    Camera& camera,
+                   Information_hook_struct const& info_hook_struct,
                    std::vector<Render_view_size>& out_rend_view_sizes);
 
 }  // namespace editor_content

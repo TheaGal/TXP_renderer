@@ -1207,6 +1207,7 @@ void Graphics::Impl::build_imgui_contents(Camera& camera,
                                   render_view_image_content,
                                   lock_cursor_fn,
                                   camera,
+                                  info_hook_struct,
                                   out_rend_view_sizes);
 
     // Convert to render instructions.

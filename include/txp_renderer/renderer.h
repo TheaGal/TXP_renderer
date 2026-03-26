@@ -1,6 +1,7 @@
 #pragma once
 
 #include "entt/entity/fwd.hpp"
+#include "txp_renderer/types.h"
 
 #include <cstdint>
 #include <functional>
@@ -27,7 +28,8 @@ public:
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
              std::string const& model_asset_dir,
-             std::function<void(bool)>&& set_play_flag_fn);
+             std::function<void(bool)>&& set_play_flag_fn,
+             std::function<bool()>&& get_play_flag_fn);
 
     ~Renderer();
 
@@ -81,13 +83,6 @@ public:
 
     /// Can force a disable. (e.g. during level editor)
     void set_allow_deformed_render_models(bool allow);
-
-    /// Performance time types for reporting performance.
-    enum Performance_time_type
-    {
-        PERF_TIME_TYPE_SIMULATION_LOOP,
-        PERF_TIME_TYPE_RENDERER_LOOP,
-    };
 
     /// Reports the performance time for display in the debug stats.
     void report_performance_time(Performance_time_type perf_time_type, float_t delta_time);

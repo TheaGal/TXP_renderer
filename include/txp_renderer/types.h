@@ -10,6 +10,13 @@
 namespace TXP
 {
 
+/// Performance time types for reporting performance.
+enum Performance_time_type
+{
+    PERF_TIME_TYPE_SIMULATION_LOOP,
+    PERF_TIME_TYPE_RENDERER_LOOP,
+};
+
 /// Frames per second all skeletal animations are imported as.
 constexpr float_t k_skeletal_anim_frames_per_second{ 60.0f };
 

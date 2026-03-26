@@ -35,7 +35,8 @@ struct Renderer::Impl
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
          std::string const& model_asset_dir,
-         std::function<void(bool)>&& set_play_flag_fn)
+         std::function<void(bool)>&& set_play_flag_fn,
+         std::function<bool()>&& get_play_flag_fn)
         : ecs_registry(ecs_registry)
         , title(title)
         , width(width)
@@ -44,8 +45,8 @@ struct Renderer::Impl
         , shader_asset_dir(shader_asset_dir)
         , model_asset_dir(model_asset_dir)
         , set_play_flag_fn(std::move(set_play_flag_fn))
+        , get_play_flag_fn(std::move(get_play_flag_fn))
     {
-        BT::date_deadline(2026, 4, 26);  // @TODO: use `set_play_flag_fn`.
     }
 
     ~Impl()
@@ -65,6 +66,7 @@ struct Renderer::Impl
     std::string model_asset_dir;
 
     std::function<void(bool)> set_play_flag_fn;
+    std::function<bool()> get_play_flag_fn;
 
     /// Able to register assets until assets are starting to be loaded into the GPU.
     std::atomic_bool asset_reg_window_open{ true };
@@ -115,7 +117,8 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir,
-                   std::function<void(bool)>&& set_play_flag_fn)
+                   std::function<void(bool)>&& set_play_flag_fn,
+                   std::function<bool()>&& get_play_flag_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
                                      title,
                                      width,
@@ -123,7 +126,8 @@ Renderer::Renderer(entt::registry& ecs_registry,
                                      texture_asset_dir,
                                      shader_asset_dir,
                                      model_asset_dir,
-                                     std::move(set_play_flag_fn)))
+                                     std::move(set_play_flag_fn),
+                                     std::move(get_play_flag_fn)))
 {   // Ensure only one instance.
     static std::atomic_bool s_init{ false };
     bool expect_init{ false };
@@ -150,7 +154,15 @@ void Renderer::build()
     auto& m{ *m_pimpl };
 
     // Setup renderer.
-    m.graphics = std::make_unique<Graphics>(m.title, m.width, m.height);
+    m.graphics = std::make_unique<Graphics>(
+        m.title,
+        m.width,
+        m.height,
+        Information_hook_struct{
+            .set_play_flag_fn = m.set_play_flag_fn,
+            .get_play_flag_fn = m.get_play_flag_fn,
+            .perf_time_map = m.perf_time_map,
+        });
     auto& g{ *m.graphics };
 
     m.asset_reg_window_open = false;
@@ -449,13 +461,13 @@ void Renderer::add_model(std::string const& model_name,
 
 void Renderer::set_allow_deformed_render_models(bool allow)
 {
-    BT::date_deadline(2026, 4, 46);  // @TODO: do something with this flag!!!
+    BT::date_deadline(2026, 4, 26);  // @TODO: do something with this flag!!!
     m_pimpl->allow_deformed_render_models = allow;
 }
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
 {
-    BT::date_deadline(2026, 4, 46);  // @TODO: do something with this time!!! Like display in a debug window??
+    BT::date_deadline(2026, 4, 26);  // @TODO: do something with this time!!! Like display in a debug window??
     m_pimpl->perf_time_map[perf_time_type] = delta_time;
 }
 

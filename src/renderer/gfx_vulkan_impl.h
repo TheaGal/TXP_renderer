@@ -40,9 +40,13 @@ struct Material_organizer;  // Forward decl.
 
 struct Graphics::Impl
 {
-    Impl(std::string const& title, int32_t width, int32_t height)
+    Impl(std::string const& title,
+         int32_t width,
+         int32_t height,
+         Information_hook_struct info_hook_struct)
         : window_title(title)
         , window_dims{ width, height }
+        , info_hook_struct{ info_hook_struct }
     {
     }
 
@@ -60,6 +64,10 @@ struct Graphics::Impl
     void init_window();
 
     void destroy_glfw();
+
+
+    /// Info hook struct.
+    Information_hook_struct info_hook_struct;
 
 
     /// Holds Vulkan graphics initialization information.

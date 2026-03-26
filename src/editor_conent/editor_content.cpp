@@ -8,6 +8,7 @@
 #include "btuuid.h"
 #include "camera/camera.h"
 #include "imgui.h"
+#include "renderer/gfx.h"
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
@@ -91,11 +92,22 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                                    Render_view_image_content const& render_view_image_content,
                                    std::function<void(bool)> const& lock_cursor_fn,
                                    Camera& camera,
+                                   Information_hook_struct const& info_hook_struct,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
     // Main menu bar.
     if (ImGui::BeginMainMenuBar())
     {
+        if (ImGui::BeginMenu("Simulation"))
+        {
+            static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
+            if (ImGui::MenuItem("Simulation playing", nullptr, s_play_flag))
+            {
+                s_play_flag = !s_play_flag;
+                info_hook_struct.set_play_flag_fn(s_play_flag);
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Window"))
         {
             if (ImGui::MenuItem("Scene Editor"))

@@ -86,12 +86,24 @@ struct Model_asset_create_info
 };
 
 
+/// Set of information useful for graphics.
+struct Information_hook_struct
+{
+    std::function<void(bool)> const& set_play_flag_fn;
+    std::function<bool()> const& get_play_flag_fn;
+    std::unordered_map<Performance_time_type, float_t> const& perf_time_map;
+};
+
+
 /// Renderer backend with implementation depending on the platform using preprocessor macros in the
 /// .cpp source file to differentiate the different implementations.
 class Graphics
 {
 public:
-    Graphics(std::string const& title, int32_t width, int32_t height);
+    Graphics(std::string const& title,
+             int32_t width,
+             int32_t height,
+             Information_hook_struct info_hook_struct);
     ~Graphics();
 
     /// Loads all registered textures.

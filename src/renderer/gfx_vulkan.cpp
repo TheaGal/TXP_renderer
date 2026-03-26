@@ -22,8 +22,11 @@
 
 
 // class Graphics
-TXP::Graphics::Graphics(std::string const& title, int32_t width, int32_t height)
-    : m_pimpl(std::make_unique<Impl>(title, width, height))
+TXP::Graphics::Graphics(std::string const& title,
+                        int32_t width,
+                        int32_t height,
+                        Information_hook_struct info_hook_struct)
+    : m_pimpl(std::make_unique<Impl>(title, width, height, info_hook_struct))
 {
     m_pimpl->init_glfw_no_api();
     m_pimpl->init_window_props();
