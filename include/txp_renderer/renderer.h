@@ -32,12 +32,21 @@ public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Render loop.
 
-    /// Runs render loop until `shutdown_loop()` is called.
-    /// @warning this must be called from the main thread.
-    void run();
+    /// Compiles assets and builds renderer.
+    /// @NOTE: must be run prior to the other render loop functions.
+    void build();
 
     /// Signals for renderer to shut down.
     void shutdown_loop();
+
+    /// Check for whether request to shut down has been signaled.
+    bool is_requesting_shutdown() const;
+
+    /// Updates input state.
+    void poll_input_events();
+
+    /// Renders one singular frame then returns.
+    void render_one_frame(float_t delta_time);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Asset loading.

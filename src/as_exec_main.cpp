@@ -45,6 +45,7 @@ int32_t main()
     r.add_material_palette("default_material_palette", { "default_mat" });
     r.add_model("probuilder_example", ".wobj");
     r.add_model("simple_combat_char", ".glb");
+    r.build();
 
     // @TODO: this may not be wanted way of doing this (see macro POSSIBLY_REMOVE_THIS_LETS_SEE)
     // auto ro0_key = r.create_render_obj({
@@ -52,7 +53,11 @@ int32_t main()
     //     .model_name = "default_model",
     // });
 
-    r.run();
+    while (!r.is_requesting_shutdown())
+    {
+        r.poll_input_events();
+        r.render_one_frame(1.0f / 60.0f);  // @HARDCODE
+    }
 
     return 0;
 }
