@@ -41,7 +41,7 @@ namespace component
 /// Config for a render object (to be used as ECS component).
 struct Render_object_config
 {
-    Render_layer layer;
+    Render_layer render_layer;
     std::string model_name;
 
     mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
@@ -69,7 +69,7 @@ struct Render_object_config
 
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Render_object_config,
-                                   layer,
+                                   render_layer,
                                    model_name,
                                    transform,
                                    material_palette,

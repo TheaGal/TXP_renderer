@@ -235,7 +235,7 @@ void Renderer::render_one_frame(float_t delta_time)
         {   // Need to create new render object.
             rend_obj_cfg.renderer_owned_data.pool_key = m.render_object_list.size();
             m.render_object_list.emplace_back(Render_object{
-                .layer = rend_obj_cfg.layer,
+                .layer = rend_obj_cfg.render_layer,
                 .render_model_idx = m.render_model_data_collection.get_static_model_data_set_idx(
                     rend_obj_cfg.model_name),
                 .material_palette_idx = m.material_organizer.get_material_palette_idx(
