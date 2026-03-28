@@ -1,5 +1,9 @@
 #include "txp_renderer/camera/camera.h"
+
 #include "btdatecheck.h"
+#include "btservice_finder.h"
+#include "camera/camera_internal.h"
+
 #include <memory>
 
 
@@ -9,13 +13,13 @@ namespace TXP
 // struct Impl.
 struct Camera::Impl
 {
-
+    Camera_internal& camera;
 };
 
 
 // class Camera.
 Camera::Camera()
-    : m_pimpl(std::make_unique<Impl>())
+    : m_pimpl(std::make_unique<Impl>(BT::service_finder::find_service<Camera_internal>()))
 {
 }
 
@@ -23,31 +27,27 @@ Camera::~Camera() = default;
 
 void Camera::get_position(vec3 out_position) const
 {
-    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
-    glm_vec3_zero(out_position);
+    m_pimpl->camera.get_main_cam_position(out_position);
 }
 
 void Camera::get_view_direction(vec3 out_direction) const
 {
-    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
-    glm_vec3_zero(out_direction);
+    m_pimpl->camera.get_main_cam_view_direction(out_direction);
 }
 
 bool Camera::is_follow_orbit() const
 {
-    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
-    return false;
+    return m_pimpl->camera.is_main_cam_follow_orbit();
 }
 
 void Camera::get_follow_orbit_follow_pos(vec3 out_position) const
 {
-    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
-    glm_vec3_zero(out_position);
+    m_pimpl->camera.get_main_cam_follow_orbit_follow_pos(out_position);
 }
 
 void Camera::set_follow_orbit_orbits(vec2 orbit_angles)
 {
-    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
+    m_pimpl->camera.set_main_cam_follow_orbit_orbits(orbit_angles);
 }
 
 }  // namespace TXP

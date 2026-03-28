@@ -1,5 +1,6 @@
 #include "camera_internal.h"
 
+#include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
@@ -241,6 +242,23 @@ std::vector<Camera_internal::Cam_matrix> Camera_internal::calc_cam_matrices() co
     return cam_matrices;
 }
 
+void Camera_internal::get_main_cam_position(vec3 out_position) const
+{
+    if (m_camera_states.empty())
+    {
+        BT_WARN(
+            "No camera states, just going to use Z-forward vector as default. Fix this if you feel "
+            "like it.");
+        glm_vec3_zero(out_position);
+        return;
+    }
+
+    BT::date_deadline(2026, 5, 24);  // @TODO: figure out more better way of going from real to float.
+    out_position[0] = m_camera_states.front().position.x;
+    out_position[1] = m_camera_states.front().position.y;
+    out_position[2] = m_camera_states.front().position.z;
+}
+
 void Camera_internal::get_main_cam_view_direction(vec3 out_cam_view_direction) const
 {
     if (m_camera_states.empty())
@@ -254,6 +272,23 @@ void Camera_internal::get_main_cam_view_direction(vec3 out_cam_view_direction) c
 
     glm_vec3_copy(const_cast<float_t*>(m_camera_states.front().view_direction.raw),
                   out_cam_view_direction);
+}
+
+bool Camera_internal::is_main_cam_follow_orbit() const
+{
+    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
+    return false;
+}
+
+void Camera_internal::get_main_cam_follow_orbit_follow_pos(vec3 out_position) const
+{
+    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
+    glm_vec3_zero(out_position);
+}
+
+void Camera_internal::set_main_cam_follow_orbit_orbits(vec2 orbit_angles)
+{
+    BT::date_deadline(2026, 4, 24);  // @TODO: implement.
 }
 
 }  // namespace TXP
