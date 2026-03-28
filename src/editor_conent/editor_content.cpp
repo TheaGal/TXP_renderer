@@ -6,7 +6,7 @@
 
 #include "btlogger.h"
 #include "btuuid.h"
-#include "camera/camera.h"
+#include "camera/camera_internal.h"
 #include "imgui.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
@@ -31,7 +31,7 @@ std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 void imgui_flying_camera_cursor_unlock_prompt_overlay(
     TXP::Input::Input_handler const& input_handler,
     std::function<void(bool)> const& lock_cursor_fn,
-    Camera& camera,
+    Camera_internal& camera,
     ImVec2 topleft_pos)
 {
     constexpr float_t k_padding{ 10.0f };
@@ -91,7 +91,7 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
                                    std::function<void(bool)> const& lock_cursor_fn,
-                                   Camera& camera,
+                                   Camera_internal& camera,
                                    Information_hook_struct const& info_hook_struct,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {

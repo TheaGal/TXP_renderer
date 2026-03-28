@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera_internal.h"
 
 #include "btglm.h"
 #include "btlogger.h"
@@ -14,13 +14,13 @@
 namespace TXP
 {
 
-Camera::Camera()
+Camera_internal::Camera_internal()
     : m_input_handler(BT::service_finder::find_service<Input::Input_handler>())
 {
-    BT_SERVICE_FINDER_ADD_SERVICE(Camera, this);
+    BT_SERVICE_FINDER_ADD_SERVICE(Camera_internal, this);
 }
 
-void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
+void Camera_internal::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
     size_t prev_size{ m_camera_states.size() };
 
@@ -54,18 +54,18 @@ void Camera::set_render_view_sizes(std::vector<Render_view_size> const& rend_vie
     }
 }
 
-void Camera::set_controlling_camera(size_t camera_idx)
+void Camera_internal::set_controlling_camera(size_t camera_idx)
 {
     m_controlling_camera_state_idx = camera_idx;
     m_ignore_mouse_delta_frames = 1;
 }
 
-size_t Camera::get_controlling_camera() const
+size_t Camera_internal::get_controlling_camera() const
 {
     return m_controlling_camera_state_idx;
 }
 
-void Camera::update(float_t delta_time)
+void Camera_internal::update(float_t delta_time)
 {
     if (m_controlling_camera_state_idx >= m_camera_states.size())
     {
@@ -181,7 +181,7 @@ void Camera::update(float_t delta_time)
     m_prev_cursor_state = cursor_state;
 }
 
-std::vector<Camera::Cam_matrix> Camera::calc_cam_matrices() const
+std::vector<Camera_internal::Cam_matrix> Camera_internal::calc_cam_matrices() const
 {
     std::vector<Cam_matrix> cam_matrices;
     cam_matrices.reserve(m_camera_states.size());
@@ -241,7 +241,7 @@ std::vector<Camera::Cam_matrix> Camera::calc_cam_matrices() const
     return cam_matrices;
 }
 
-void Camera::get_main_cam_view_direction(vec3 out_cam_view_direction) const
+void Camera_internal::get_main_cam_view_direction(vec3 out_cam_view_direction) const
 {
     if (m_camera_states.empty())
     {

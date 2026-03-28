@@ -10,11 +10,11 @@
 namespace TXP
 {
 
-/// Camera service.
-class Camera
+/// Camera_internal service.
+class Camera_internal
 {
 public:
-    Camera();
+    Camera_internal();
 
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 

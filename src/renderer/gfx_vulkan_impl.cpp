@@ -1188,7 +1188,7 @@ void Graphics::Impl::poll_input_events()
     glfwPollEvents();
 }
 
-void Graphics::Impl::build_imgui_contents(Camera& camera,
+void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
                                           std::vector<Render_view_size>& out_rend_view_sizes)
 {
     ImGui_ImplVulkan_NewFrame();

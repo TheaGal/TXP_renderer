@@ -108,7 +108,7 @@ void TXP::Graphics::poll_input_events()
     m_pimpl->poll_input_events();
 }
 
-void TXP::Graphics::build_imgui_contents(Camera& camera,
+void TXP::Graphics::build_imgui_contents(Camera_internal& camera,
                                          std::vector<Render_view_size>& out_rend_view_sizes)
 {
     m_pimpl->build_imgui_contents(camera, out_rend_view_sizes);

@@ -35,7 +35,7 @@
 namespace TXP
 {
 
-class Camera;  // Forward decl.
+class Camera_internal;  // Forward decl.
 struct Material_organizer;  // Forward decl.
 
 struct Graphics::Impl
@@ -526,7 +526,8 @@ struct Graphics::Impl
     /// Callback for imgui draw.
     std::function<void()> imgui_build_contents_callback;
 
-    void build_imgui_contents(Camera& camera, std::vector<Render_view_size>& out_rend_view_sizes);
+    void build_imgui_contents(Camera_internal& camera,
+                              std::vector<Render_view_size>& out_rend_view_sizes);
 
     /// Checks whether render view sizes are different from the ones currently applied.
     bool check_render_view_sizes_changed(

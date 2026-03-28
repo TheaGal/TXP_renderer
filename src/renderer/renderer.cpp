@@ -2,7 +2,7 @@
 
 #include "btdatecheck.h"
 #include "btservice_finder.h"
-#include "camera/camera.h"
+#include "camera/camera_internal.h"
 #include "entt/entity/registry.hpp"
 #include "gfx.h"
 #include "material_organizer/material_organizer.h"
@@ -99,7 +99,7 @@ struct Renderer::Impl
     std::atomic_bool shutdown_flag{ false };
 
     /// Camera for renderer and any other threads that desire to access it.
-    Camera camera;
+    Camera_internal camera;
 
     /// Flag for disabling deformed render models.
     std::atomic_bool allow_deformed_render_models{ true };

@@ -191,8 +191,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/bttimer_UNUSED.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btuuid.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
