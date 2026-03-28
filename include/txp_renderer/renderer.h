@@ -2,6 +2,7 @@
 
 #include "btglm.h"
 #include "entt/entity/fwd.hpp"
+#include "txp_renderer/camera/camera.h"
 #include "txp_renderer/types.h"
 
 #include <cstdint>
@@ -97,7 +98,7 @@ public:
     Basic_model get_model_basic_data(std::string const& model_name) const;
 
     /// Gets camera view direction.
-    void get_main_camera_view_direction(vec3 out_cam_view_direction) const;
+    Camera& get_main_camera();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Debug special functions.

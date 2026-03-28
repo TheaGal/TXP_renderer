@@ -101,6 +101,9 @@ struct Renderer::Impl
     /// Camera for renderer and any other threads that desire to access it.
     Camera_internal camera;
 
+    /// Public-facing camera interface.
+    Camera public_external_camera;
+
     /// Flag for disabling deformed render models.
     std::atomic_bool allow_deformed_render_models{ true };
 
@@ -486,9 +489,9 @@ auto Renderer::get_model_basic_data(std::string const& model_name) const -> Basi
     return basic_model;
 }
 
-void Renderer::get_main_camera_view_direction(vec3 out_cam_view_direction) const
+Camera& Renderer::get_main_camera()
 {
-    m_pimpl->camera.get_main_cam_view_direction(out_cam_view_direction);
+    return m_pimpl->public_external_camera;
 }
 
 
