@@ -471,6 +471,14 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] all done!
 
 
+## Getting the orbit cam stuff going.
+
+- Basically just having the orbit cam be done while it's simulation mode.
+- Have a "toggle locking camera into main viewport with shift+C" while during the simulation mode.
+
+- When simulatino starts just start doing orbit camera.
+
+
 ## Performance.
 
 - [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?

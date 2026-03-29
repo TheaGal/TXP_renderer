@@ -8,6 +8,7 @@
 #include "btuuid.h"
 #include "camera/camera_internal.h"
 #include "imgui.h"
+#include "imgui_internal.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
@@ -95,6 +96,8 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                                    Information_hook_struct const& info_hook_struct,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
+    bool focus_main_viewport{ false };
+
     // Main menu bar.
     if (ImGui::BeginMainMenuBar())
     {
@@ -105,6 +108,10 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             {
                 s_play_flag = !s_play_flag;
                 info_hook_struct.set_play_flag_fn(s_play_flag);
+
+                // Focus onto main viewport when starting simulation.
+                if (s_play_flag)
+                    focus_main_viewport = true;
             }
             ImGui::EndMenu();
         }
@@ -140,6 +147,8 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Main Viewport"))
     {
+        auto window_content_pos = ImGui::GetCursorScreenPos();
+
         per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
 
     #if TXP_GFX_BACKEND_VULKAN
@@ -147,10 +156,26 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         ImGui::Image((ImTextureRef)img_descriptor,
                         per_viewport_content_sizes.back());
     #endif // TXP_GFX_BACKEND_VULKAN
+
+        if (camera.get_controlling_camera() == 0)
+        {
+            // @TODO: replace this with a orbit thingy.
+            imgui_flying_camera_cursor_unlock_prompt_overlay(input_handler,
+                                                             lock_cursor_fn,
+                                                             camera,
+                                                             window_content_pos);
+        }
     }
     else
     {   // Put in dummy 1x1 view if view is obfuscated or closed.
         per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
+    }
+    if (focus_main_viewport)
+    {
+        BT_TRACE("ENTER ORBIT CAM MODE");
+        camera.set_controlling_camera(0);
+        lock_cursor_fn(true);
+        ImGui::FocusWindow(ImGui::GetCurrentWindow());
     }
     ImGui::End();
 
@@ -198,6 +223,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                 BT_TRACE("ENTER FLYING CAM MODE");
                 camera.set_controlling_camera(i + 1);
                 lock_cursor_fn(true);
+                ImGui::FocusWindow(ImGui::GetCurrentWindow());
             }
 
             if (camera.get_controlling_camera() == i + 1)
