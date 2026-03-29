@@ -478,6 +478,11 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - When simulatino starts just start doing orbit camera.
 
+- [x] add toggle shift+c prompt and actions.
+    - A bit buggy but good enough for now
+
+- [ ] Change the cam type for idx=0 to orbit cam instead.
+
 
 ## Performance.
 

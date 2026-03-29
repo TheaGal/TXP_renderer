@@ -28,11 +28,11 @@ bool s_show_demo_window{ false };
 size_t s_num_scene_editor_windows{ 1 };
 std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 
-/// Prompt overlay for flying camera cursor to get unlocked.
-void imgui_flying_camera_cursor_unlock_prompt_overlay(
+/// Prompt overlay for a camera mode to get unlocked or toggled with shift+c.
+void imgui_camera_mode_shift_c_ctrl_prompt_overlay(
     TXP::Input::Input_handler const& input_handler,
-    std::function<void(bool)> const& lock_cursor_fn,
-    Camera_internal& camera,
+    std::function<void()> const& press_shift_c_fn,
+    std::string const& prompt_text,
     ImVec2 topleft_pos)
 {
     constexpr float_t k_padding{ 10.0f };
@@ -41,7 +41,7 @@ void imgui_flying_camera_cursor_unlock_prompt_overlay(
                             ImVec2(0, 0));
 
     ImGui::SetNextWindowBgAlpha(0.6f);
-    if (ImGui::BeginChild(ImGui::GetID("Flying camera cursor unlock prompt overlay"),
+    if (ImGui::BeginChild(ImGui::GetID("Camera cursor control prompt overlay"),
                           ImVec2(0, 0),
                           ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX |
                               ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding,
@@ -49,7 +49,7 @@ void imgui_flying_camera_cursor_unlock_prompt_overlay(
                               ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
                               ImGuiWindowFlags_NoMove))
     {
-        ImGui::Text("Press Shift+C to exit \"Flying Camera Mode\".");
+        ImGui::Text("%s", prompt_text.c_str());
 
         static size_t s_prev_key_c_event_tick{ 0 };
         if (auto ks = input_handler.get_keyboard_key_state(BT_KEY_C);
@@ -57,9 +57,9 @@ void imgui_flying_camera_cursor_unlock_prompt_overlay(
         {
             if (ks.pressed && ks.modbits.has_shift())
             {
-                camera.set_controlling_camera(camera.k_controlling_camera_state_none);
-                lock_cursor_fn(false);
+                press_shift_c_fn();
             }
+            s_prev_key_c_event_tick = ks.last_event_tick;
         }
     }
     ImGui::EndChild();
@@ -96,6 +96,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                                    Information_hook_struct const& info_hook_struct,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
+    static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
     bool focus_main_viewport{ false };
 
     // Main menu bar.
@@ -103,7 +104,6 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     {
         if (ImGui::BeginMenu("Simulation"))
         {
-            static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
             if (ImGui::MenuItem("Simulation playing", nullptr, s_play_flag))
             {
                 s_play_flag = !s_play_flag;
@@ -157,13 +157,25 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                         per_viewport_content_sizes.back());
     #endif // TXP_GFX_BACKEND_VULKAN
 
-        if (camera.get_controlling_camera() == 0)
+        if (s_play_flag)
         {
-            // @TODO: replace this with a orbit thingy.
-            imgui_flying_camera_cursor_unlock_prompt_overlay(input_handler,
-                                                             lock_cursor_fn,
-                                                             camera,
-                                                             window_content_pos);
+            imgui_camera_mode_shift_c_ctrl_prompt_overlay(
+                input_handler,
+                [&camera, &lock_cursor_fn, imgui_cur_win = ImGui::GetCurrentWindow()]() {
+                    if (camera.get_controlling_camera() == 0)
+                    {   // Turn off controlled camera.
+                        camera.set_controlling_camera(camera.k_controlling_camera_state_none);
+                        lock_cursor_fn(false);
+                    }
+                    else
+                    {   // Lock in controlled orbit camera.
+                        camera.set_controlling_camera(0);
+                        lock_cursor_fn(true);
+                        ImGui::FocusWindow(imgui_cur_win);
+                    }
+                },
+                "Press Shift+C to toggle \"Orbit Camera Mode\" on/off.",
+                window_content_pos);
         }
     }
     else
@@ -228,10 +240,14 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
 
             if (camera.get_controlling_camera() == i + 1)
             {
-                imgui_flying_camera_cursor_unlock_prompt_overlay(input_handler,
-                                                                 lock_cursor_fn,
-                                                                 camera,
-                                                                 window_content_pos);
+                imgui_camera_mode_shift_c_ctrl_prompt_overlay(
+                    input_handler,
+                    [&camera, &lock_cursor_fn]() {
+                        camera.set_controlling_camera(camera.k_controlling_camera_state_none);
+                        lock_cursor_fn(false);
+                    },
+                    "Press Shift+C to exit \"Flying Camera Mode\".",
+                    window_content_pos);
             }
         }
         ImGui::End();
