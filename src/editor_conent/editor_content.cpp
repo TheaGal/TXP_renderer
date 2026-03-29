@@ -161,7 +161,10 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         {
             imgui_camera_mode_shift_c_ctrl_prompt_overlay(
                 input_handler,
-                [&camera, &lock_cursor_fn, imgui_cur_win = ImGui::GetCurrentWindow()]() {
+                [&camera,
+                 &lock_cursor_fn,
+                 &focus_main_viewport,
+                 imgui_cur_win = ImGui::GetCurrentWindow()]() {
                     if (camera.get_controlling_camera() == 0)
                     {   // Turn off controlled camera.
                         camera.set_controlling_camera(camera.k_controlling_camera_state_none);
@@ -169,9 +172,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                     }
                     else
                     {   // Lock in controlled orbit camera.
-                        camera.set_controlling_camera(0);
-                        lock_cursor_fn(true);
-                        ImGui::FocusWindow(imgui_cur_win);
+                        focus_main_viewport = true;
                     }
                 },
                 "Press Shift+C to toggle \"Orbit Camera Mode\" on/off.",
