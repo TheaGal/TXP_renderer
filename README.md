@@ -129,8 +129,9 @@ gantt
         完 Create ECS-based render objs : a13, after a8, 3d
     section Editor tooling
         完 Render view usage tie-in with ImGui : a15, after a4, 3d
+        完 impl as much as poss in btzc engine : a16, after a6, 15d
     section Animation system
-        中 Load .btafa and .btanitor to model : a9, after m1, 3d
+        中 Load .btafa and .btanitor to model : a9, after a16, 3d
         Compute shader of static mesh into skinned mesh in its own buffer : a10, after a9, 4d
         Control animators via setting state-sets : a11, after a10, 3d
         Control animators via jump queues : a12, after a10, 3d
