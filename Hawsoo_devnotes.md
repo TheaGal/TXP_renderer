@@ -481,7 +481,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] add toggle shift+c prompt and actions.
     - A bit buggy but good enough for now
 
-- [ ] Change the cam type for idx=0 to orbit cam instead.
+- [x] Change the cam type for idx=0 to orbit cam instead.
+
+- [x] Implement the stubbed orbit cam funcs.
 
 
 ## Performance.
