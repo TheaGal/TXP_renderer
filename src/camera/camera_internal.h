@@ -46,6 +46,19 @@ private:
     float_t m_look_sensitivity{ 0.1f };
     float_t m_fly_speed{ 20.0f };
 
+    void update_fly_cam(vec2 look_delta_raw, float_t delta_time);
+
+    float_t m_orbit_sensitivity_x{ 0.01875f * 0.25f * 0.25f };
+    float_t m_orbit_sensitivity_y{ 0.0125f * 0.25f * 0.25f };
+    float_t m_max_orbit_y{ glm_rad(89.0f) };
+    float_t m_orbit_follow_offset_y{ 1.75f };
+
+    vec2 m_orbits{ 0, 0 };
+    float_t m_orbit_cam_distance{ 2.0f };
+    vec3 m_orbit_follow_position = GLM_VEC3_ZERO_INIT;
+
+    void update_orbit_cam(vec2 look_delta_raw);
+
     struct Camera_state
     {
         rvec3s position;

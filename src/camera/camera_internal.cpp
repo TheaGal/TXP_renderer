@@ -8,6 +8,7 @@
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
 
+#include <cassert>
 #include <stdexcept>
 #include <vector>
 
@@ -74,112 +75,40 @@ void Camera_internal::update(float_t delta_time)
         return;  // Exit early since camera doesn't exist.
     }
 
-    auto& camera{ m_camera_states[m_controlling_camera_state_idx] };
-
-    // Get input.
-    auto key_w_state{ m_input_handler.get_keyboard_key_state(BT_KEY_W) };
-    auto key_a_state{ m_input_handler.get_keyboard_key_state(BT_KEY_A) };
-    auto key_s_state{ m_input_handler.get_keyboard_key_state(BT_KEY_S) };
-    auto key_d_state{ m_input_handler.get_keyboard_key_state(BT_KEY_D) };
-    auto key_e_state{ m_input_handler.get_keyboard_key_state(BT_KEY_E) };
-    auto key_q_state{ m_input_handler.get_keyboard_key_state(BT_KEY_Q) };
-    auto cursor_state{ m_input_handler.get_cursor_pos_state() };
-
-    // Calc delta.
-    Input::Cursor_pos_state cursor_delta{ cursor_state.xpos - m_prev_cursor_state.xpos,
-                                          cursor_state.ypos - m_prev_cursor_state.ypos };
-
-    if (!m_prev_cursor_state.valid)
-    {   // Clear delta.
-        cursor_delta.xpos = 0;
-        cursor_delta.ypos = 0;
-    }
-
-    if (m_ignore_mouse_delta_frames > 0)
+    // Calc look delta.
+    vec2 look_delta_raw;
     {
-        m_ignore_mouse_delta_frames--;
+        auto cursor_state{ m_input_handler.get_cursor_pos_state() };
+        Input::Cursor_pos_state cursor_delta{ cursor_state.xpos - m_prev_cursor_state.xpos,
+                                              cursor_state.ypos - m_prev_cursor_state.ypos };
 
-        // Clear delta.
-        cursor_delta.xpos = 0;
-        cursor_delta.ypos = 0;
+        if (!m_prev_cursor_state.valid)
+        {   // Clear delta.
+            cursor_delta.xpos = 0;
+            cursor_delta.ypos = 0;
+        }
+
+        if (m_ignore_mouse_delta_frames > 0)
+        {
+            m_ignore_mouse_delta_frames--;
+
+            // Clear delta.
+            cursor_delta.xpos = 0;
+            cursor_delta.ypos = 0;
+        }
+
+        look_delta_raw[0] = cursor_delta.xpos;
+        look_delta_raw[1] = cursor_delta.ypos;
+
+        // Update previous state.
+        m_prev_cursor_state = cursor_state;
     }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Move camera with camera delta.
-    vec2 cooked_cam_delta;
-    glm_vec2_scale(
-        vec2{ static_cast<float_t>(cursor_delta.xpos), static_cast<float_t>(cursor_delta.ypos) },
-        m_look_sensitivity,
-        cooked_cam_delta);
-
-    vec3 world_up{ 0.0f, 1.0f, 0.0f };
-    vec3 world_down{ 0.0f, -1.0f, 0.0f };
-
-    // Update camera view direction with input.
-    vec3 facing_direction_right;
-    glm_cross(camera.view_direction.raw,
-              world_up,
-              facing_direction_right);
-    glm_normalize(facing_direction_right);
-
-    mat4 rotation = GLM_MAT4_IDENTITY_INIT;
-    glm_rotate(rotation, glm_rad(-cooked_cam_delta[1]), facing_direction_right);
-
-    vec3 new_view_direction;
-    glm_mat4_mulv3(rotation,
-                   camera.view_direction.raw,
-                   0.0f,
-                   new_view_direction);
-
-    if (glm_vec3_angle(new_view_direction, world_up) > glm_rad(5.0f) &&
-        glm_vec3_angle(new_view_direction, world_down) > glm_rad(5.0f))
-    {
-        glm_vec3_copy(new_view_direction, camera.view_direction.raw);
-    }
-
-    glm_mat4_identity(rotation);
-    glm_rotate(rotation, glm_rad(-cooked_cam_delta[0]), world_up);
-    glm_mat4_mulv3(rotation,
-                   camera.view_direction.raw,
-                   0.0f,
-                   camera.view_direction.raw);
-
-    // @NOTE: Need a normalization step at the end to prevent float inaccuracy over time.
-    glm_vec3_normalize(camera.view_direction.raw);
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Move camera position with keys.
-    vec2 cooked_mvt;
-    glm_vec2_scale(
-        vec2{ key_d_state.pressed == key_a_state.pressed ? 0.0f
-                                                         : (key_d_state.pressed ? 1.0f : -1.0f),
-              key_w_state.pressed == key_s_state.pressed ? 0.0f
-                                                         : (key_w_state.pressed ? 1.0f : -1.0f) },
-        m_fly_speed * delta_time,
-        cooked_mvt);
-
-    vec3 cam_delta_f;
-    glm_vec3_scale(camera.view_direction.raw, cooked_mvt[1], cam_delta_f);
-    rvec3 cam_delta_r;
-    cam_delta_r[0] = cam_delta_f[0];
-    cam_delta_r[1] = cam_delta_f[1];
-    cam_delta_r[2] = cam_delta_f[2];
-    btglm_rvec3_add(camera.position.raw, cam_delta_r, camera.position.raw);
-
-    glm_vec3_scale(facing_direction_right, cooked_mvt[0], cam_delta_f);
-    cam_delta_r[0] = cam_delta_f[0];
-    cam_delta_r[1] = cam_delta_f[1];
-    cam_delta_r[2] = cam_delta_f[2];
-    btglm_rvec3_add(camera.position.raw, cam_delta_r, camera.position.raw);
-
-    // Moving camera along Y-axis directly.
-    camera.position.y +=
-        (key_e_state.pressed == key_q_state.pressed ? 0.0f : (key_e_state.pressed ? 1.0f : -1.0f)) *
-        m_fly_speed * delta_time;
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Update previous state.
-    m_prev_cursor_state = cursor_state;
+    // Tick camera controls.
+    if (m_controlling_camera_state_idx == 0)
+        update_orbit_cam(look_delta_raw);
+    else
+        update_fly_cam(look_delta_raw, delta_time);
 }
 
 std::vector<Camera_internal::Cam_matrix> Camera_internal::calc_cam_matrices() const
@@ -289,6 +218,122 @@ void Camera_internal::get_main_cam_follow_orbit_follow_pos(vec3 out_position) co
 void Camera_internal::set_main_cam_follow_orbit_orbits(vec2 orbit_angles)
 {
     BT::date_deadline(2026, 4, 24);  // @TODO: implement.
+}
+
+void Camera_internal::update_fly_cam(vec2 look_delta_raw, float_t delta_time)
+{
+    auto& camera{ m_camera_states[m_controlling_camera_state_idx] };
+
+    // Get input.
+    auto key_w_state{ m_input_handler.get_keyboard_key_state(BT_KEY_W) };
+    auto key_a_state{ m_input_handler.get_keyboard_key_state(BT_KEY_A) };
+    auto key_s_state{ m_input_handler.get_keyboard_key_state(BT_KEY_S) };
+    auto key_d_state{ m_input_handler.get_keyboard_key_state(BT_KEY_D) };
+    auto key_e_state{ m_input_handler.get_keyboard_key_state(BT_KEY_E) };
+    auto key_q_state{ m_input_handler.get_keyboard_key_state(BT_KEY_Q) };
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Move camera with camera delta.
+    vec2 cooked_cam_delta;
+    glm_vec2_scale(look_delta_raw, m_look_sensitivity, cooked_cam_delta);
+
+    vec3 world_up{ 0.0f, 1.0f, 0.0f };
+    vec3 world_down{ 0.0f, -1.0f, 0.0f };
+
+    // Update camera view direction with input.
+    vec3 facing_direction_right;
+    glm_cross(camera.view_direction.raw,
+              world_up,
+              facing_direction_right);
+    glm_normalize(facing_direction_right);
+
+    mat4 rotation = GLM_MAT4_IDENTITY_INIT;
+    glm_rotate(rotation, glm_rad(-cooked_cam_delta[1]), facing_direction_right);
+
+    vec3 new_view_direction;
+    glm_mat4_mulv3(rotation,
+                   camera.view_direction.raw,
+                   0.0f,
+                   new_view_direction);
+
+    if (glm_vec3_angle(new_view_direction, world_up) > glm_rad(5.0f) &&
+        glm_vec3_angle(new_view_direction, world_down) > glm_rad(5.0f))
+    {
+        glm_vec3_copy(new_view_direction, camera.view_direction.raw);
+    }
+
+    glm_mat4_identity(rotation);
+    glm_rotate(rotation, glm_rad(-cooked_cam_delta[0]), world_up);
+    glm_mat4_mulv3(rotation,
+                   camera.view_direction.raw,
+                   0.0f,
+                   camera.view_direction.raw);
+
+    // @NOTE: Need a normalization step at the end to prevent float inaccuracy over time.
+    glm_vec3_normalize(camera.view_direction.raw);
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Move camera position with keys.
+    vec2 cooked_mvt;
+    glm_vec2_scale(
+        vec2{ key_d_state.pressed == key_a_state.pressed ? 0.0f
+                                                         : (key_d_state.pressed ? 1.0f : -1.0f),
+              key_w_state.pressed == key_s_state.pressed ? 0.0f
+                                                         : (key_w_state.pressed ? 1.0f : -1.0f) },
+        m_fly_speed * delta_time,
+        cooked_mvt);
+
+    vec3 cam_delta_f;
+    glm_vec3_scale(camera.view_direction.raw, cooked_mvt[1], cam_delta_f);
+    rvec3 cam_delta_r;
+    cam_delta_r[0] = cam_delta_f[0];
+    cam_delta_r[1] = cam_delta_f[1];
+    cam_delta_r[2] = cam_delta_f[2];
+    btglm_rvec3_add(camera.position.raw, cam_delta_r, camera.position.raw);
+
+    glm_vec3_scale(facing_direction_right, cooked_mvt[0], cam_delta_f);
+    cam_delta_r[0] = cam_delta_f[0];
+    cam_delta_r[1] = cam_delta_f[1];
+    cam_delta_r[2] = cam_delta_f[2];
+    btglm_rvec3_add(camera.position.raw, cam_delta_r, camera.position.raw);
+
+    // Moving camera along Y-axis directly.
+    camera.position.y +=
+        (key_e_state.pressed == key_q_state.pressed ? 0.0f : (key_e_state.pressed ? 1.0f : -1.0f)) *
+        m_fly_speed * delta_time;
+}
+
+void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
+{
+    auto& camera{ m_camera_states[m_controlling_camera_state_idx] };
+
+    // Set new orbit values.
+    float_t look_delta_x{ look_delta_raw[0] * m_orbit_sensitivity_x };
+    float_t look_delta_y{ look_delta_raw[1] * m_orbit_sensitivity_y };
+
+    m_orbits[0] -= look_delta_x;
+    while (m_orbits[0] >= glm_rad(360.0f))
+        m_orbits[0] -= glm_rad(360.0f);
+    while (m_orbits[0] < 0.0f)
+        m_orbits[0] += glm_rad(360.0f);
+
+    m_orbits[1] += look_delta_y;
+    m_orbits[1] = glm_clamp(m_orbits[1], -m_max_orbit_y, m_max_orbit_y);
+
+    // Calculate look offset.
+    vec3 offset_from_follow_obj{ 0.0f, 0.0f, -m_orbit_cam_distance };
+    mat4 look_rotation;
+    glm_euler_zyx(vec3{ m_orbits[1], m_orbits[0], 0.0f }, look_rotation);
+    glm_mat4_mulv3(look_rotation, offset_from_follow_obj, 0.0f, offset_from_follow_obj);
+
+    // Position camera transform.
+    glm_vec3_add(m_orbit_follow_position,
+                 vec3{ 0.0f, m_orbit_follow_offset_y, 0.0f },
+                 camera.position.raw);
+    glm_vec3_add(camera.position.raw, offset_from_follow_obj, camera.position.raw);
+
+    glm_vec3_negate_to(offset_from_follow_obj, camera.view_direction.raw);
+    glm_vec3_normalize(camera.view_direction.raw);
 }
 
 }  // namespace TXP
