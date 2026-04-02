@@ -73,7 +73,9 @@ public:
 
     /// Adds model to renderer.
     void add_model(std::string const& model_name,
-                   std::string const& file_ext);
+                   std::string const& file_ext,
+                   bool load_animator_template,
+                   bool load_anim_frame_action);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Animator controls.

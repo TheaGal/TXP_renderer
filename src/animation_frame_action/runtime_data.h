@@ -319,10 +319,10 @@ struct Runtime_data_controls
 };
 
 // Bank of data controls.
-// @COPYPASTA: See `mesh.h`
 class Bank
 {
 public:
+    // @TODO: change this bank system to the interface of `Animator_template_bank` at some point.  -Thea 2026/03/31
     static void emplace(std::string const& name, Runtime_data_controls&& runtime_state);
     static void replace(std::string const& name, Runtime_data_controls&& runtime_state);
     static Runtime_data_controls const& get(std::string const& name);

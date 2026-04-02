@@ -10,6 +10,7 @@
 #include <vulkan/vulkan_core.h>
 // clang-format on
 
+#include "animation_frame_action/runtime_data.h"
 #include "btdatecheck.h"
 #include "btlogger.h"
 #include "gfx_vulkan/vk_image.h"
@@ -18,6 +19,7 @@
 #include "renderer/types.h"
 
 #include <cassert>
+#include <stdexcept>
 #include <string>
 
 
@@ -101,6 +103,27 @@ void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& mod
 
     m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
     BT_TRACE("Uploaded combined model to GPU.");
+
+    // Load animators and anim frame actions.
+    size_t num_afas_loaded{ 0 };
+    for (auto const& mod_asset : model_assets)
+    {
+        if (mod_asset.load_animator_template)
+        {
+            // @NOTE: animator template is lazy-loaded. No pre-loading at this time.
+
+            if (mod_asset.load_anim_frame_action)
+            {   // Pre-load in AFA.
+                anim_frame_action::Bank::emplace(
+                    mod_asset.model_name,
+                    anim_frame_action::Runtime_data_controls{ mod_asset.model_name + ".btafa" });
+                num_afas_loaded++;
+            }
+        }
+        else if (mod_asset.load_anim_frame_action)
+            throw std::runtime_error("Requires loading animator template if wanting to load AFA.");
+    }
+    BT_TRACEF("Loaded all %zu anim frame action files.", num_afas_loaded);
 }
 
 void TXP::Graphics::poll_input_events()

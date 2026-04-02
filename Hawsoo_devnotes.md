@@ -486,6 +486,71 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] Implement the stubbed orbit cam funcs.
 
 
+## Implementing animation and AFA.
+
+- [ ] Load in .btafa and .btanitor information.
+    - This appears to be the way that it gets loaded in (.btanitor ohh .btafa as well!):
+        ```cpp
+        // Create render object.
+        Render_object new_rend_obj{ rend_obj_settings.render_layer };
+
+        auto const& model{ *Model_bank::get_model(rend_obj_settings.model_name) };
+        if (allow_deformed_creation && rend_obj_settings.is_deformed)
+        {   // Create deformed model w/ animator.
+            auto deformed_model{ std::make_unique<Deformed_model>(model) };
+
+            bool has_root_motion_tag{ reg.any_of<component::Animator_root_motion>(entity) };
+            auto model_animator{ std::make_unique<Model_animator>(model, has_root_motion_tag) };
+
+            service_finder::find_service<Animator_template_bank>()
+                .load_animator_template_into_animator(*model_animator,
+                                                      rend_obj_settings.animator_template_name);    // @HERE
+
+            new_rend_obj.set_deformed_model(std::move(deformed_model));
+            new_rend_obj.set_model_animator(std::move(model_animator));
+
+            // Set first anim as default state-set.
+            assert(new_rend_obj.get_model_animator()->get_animator_states().size() >= 1);
+            new_rend_obj.get_model_animator()->change_state_set(
+                { .anim_state_indices = { 0 }, .loop_final_state = true });
+
+            // Check for anim frame action controller configuration.
+            auto afa_ctrller{ reg.try_get<component::Anim_frame_action_controller>(entity) };
+            if (afa_ctrller != nullptr)
+            {   // Configure anim frame action data.
+                auto const& afa_ctrller_ref{ anim_frame_action::Bank::get(                          // @HERE
+                    afa_ctrller->anim_frame_action_controller_name) };
+
+                new_rend_obj.get_model_animator()->configure_anim_frame_action_controls(            // @HERE
+                    &afa_ctrller_ref,
+                    entity_container.find_entity_uuid(entity),
+                    Model_animator::make_jump_queue_create_list_from_anim_frame_action_controls(
+                        afa_ctrller_ref));
+
+                // Add hitcapsule set driver.
+                reg.emplace_or_replace<component::Animator_driven_hitcapsule_set>(entity);
+            }
+        }
+        else
+        {   // Use static model from bank.
+            new_rend_obj.set_model(Model_bank::get_model(rend_obj_settings.model_name));
+        }
+
+        UUID rend_obj_uuid{ rend_obj_pool.emplace(std::move(new_rend_obj)) };
+
+        // Attach render object id as new component.
+        reg.emplace<component::Created_render_object_reference>(entity, rend_obj_uuid);
+
+        BT_TRACEF("Created and emplaced \"%s\" into render object pool.",
+                  UUID_helper::to_pretty_repr(rend_obj_uuid).c_str());
+        ```
+
+
+- [ ] Create the deformed animation copy.
+
+- [ ] Write compute shader for the animation info.
+
+
 ## Performance.
 
 - [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?

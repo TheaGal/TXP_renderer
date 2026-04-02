@@ -1,0 +1,770 @@
+{
+    "anim_frame_action_timelines": [
+        {
+            "regions": [],
+            "state_name": "_DEBUG_STATE"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [
+                            "turn_speed",
+                            "1000000"
+                        ],
+                        "cmd_name": "var_ov"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 0,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_idle"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [
+                            "turn_speed",
+                            "10"
+                        ],
+                        "cmd_name": "var_ov"
+                    },
+                    "end_frame": 41,
+                    "row_idx": 0,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_running"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 10,
+                    "row_idx": 8,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 41,
+                    "row_idx": 8,
+                    "start_frame": 33
+                }
+            ],
+            "state_name": "st_running_turnaround"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 41,
+                    "row_idx": 6,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_awareness_suspicion_begin"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 41,
+                    "row_idx": 10,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_awareness_suspicion_walking"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 121,
+                    "row_idx": 6,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 111,
+                    "row_idx": 19,
+                    "start_frame": 110
+                }
+            ],
+            "state_name": "st_awareness_suspicion_end"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 61,
+                    "row_idx": 4,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 61,
+                    "row_idx": 10,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_awareness_aware_begin"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 7,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 11,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 12,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 13,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 14,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_jump"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 15,
+                    "row_idx": 10,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 15,
+                    "row_idx": 11,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 15,
+                    "row_idx": 12,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 15,
+                    "row_idx": 13,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 15,
+                    "row_idx": 14,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_fall"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 19,
+                    "row_idx": 2,
+                    "start_frame": 15
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 40,
+                    "row_idx": 3,
+                    "start_frame": 39
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 62,
+                    "row_idx": 3,
+                    "start_frame": 61
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 103,
+                    "row_idx": 4,
+                    "start_frame": 32
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 22,
+                    "row_idx": 5,
+                    "start_frame": 15
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 54,
+                    "row_idx": 5,
+                    "start_frame": 48
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 22,
+                    "row_idx": 6,
+                    "start_frame": 14
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 54,
+                    "row_idx": 6,
+                    "start_frame": 47
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 16,
+                    "row_idx": 8,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 48,
+                    "row_idx": 8,
+                    "start_frame": 21
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 71,
+                    "row_idx": 8,
+                    "start_frame": 53
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 22,
+                    "row_idx": 16,
+                    "start_frame": 14
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 54,
+                    "row_idx": 17,
+                    "start_frame": 47
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 54,
+                    "row_idx": 20,
+                    "start_frame": 47
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 17,
+                    "row_idx": 21,
+                    "start_frame": 16
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 50,
+                    "row_idx": 21,
+                    "start_frame": 49
+                }
+            ],
+            "state_name": "st_attack_0"
+        },
+        {
+            "regions": [],
+            "state_name": "st_cancel_parried_attack"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 17,
+                    "row_idx": 18,
+                    "start_frame": 8
+                }
+            ],
+            "state_name": "st_hurt_parry"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 31,
+                    "row_idx": 18,
+                    "start_frame": 8
+                }
+            ],
+            "state_name": "st_hurt_guard"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 21,
+                    "row_idx": 18,
+                    "start_frame": 8
+                }
+            ],
+            "state_name": "st_hurt_receive"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 21,
+                    "row_idx": 18,
+                    "start_frame": 8
+                }
+            ],
+            "state_name": "st_hurt_receive_from_back"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 12,
+                    "row_idx": 2,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 17,
+                    "row_idx": 4,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 12,
+                    "row_idx": 8,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 17,
+                    "row_idx": 15,
+                    "start_frame": 12
+                }
+            ],
+            "state_name": "st_ready_parry"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 22,
+                    "row_idx": 2,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 49,
+                    "row_idx": 4,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 22,
+                    "row_idx": 8,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 49,
+                    "row_idx": 15,
+                    "start_frame": 22
+                }
+            ],
+            "state_name": "st_ready_parry_from_running"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 4,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 11,
+                    "row_idx": 15,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_hold_guard_idle"
+        },
+        {
+            "regions": [
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 21,
+                    "row_idx": 4,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 41,
+                    "row_idx": 8,
+                    "start_frame": 0
+                },
+                {
+                    "ctrl_cmd": {
+                        "argv": [],
+                        "cmd_name": "nop"
+                    },
+                    "end_frame": 21,
+                    "row_idx": 15,
+                    "start_frame": 0
+                }
+            ],
+            "state_name": "st_hold_guard_walking"
+        }
+    ],
+    "anim_state_set_jump_queues": [
+        {
+            "default_is_watching": true,
+            "name": "jq_grnd_mvt"
+        },
+        {
+            "default_is_watching": true,
+            "name": "jq_midair"
+        },
+        {
+            "default_is_watching": false,
+            "name": "jq_attack"
+        },
+        {
+            "default_is_watching": false,
+            "name": "jq_parry"
+        }
+    ],
+    "animated_model_name": "simple_combat_char",
+    "hitcapsule_group_set_template": {
+        "m_hitcapsule_grps": [
+            {
+                "m_capsules": [
+                    {
+                        "connecting_bone_name": "Head",
+                        "connecting_bone_name_2": "",
+                        "origin_a": {
+                            "x": 0.0,
+                            "y": 1.625,
+                            "z": 0.0
+                        },
+                        "origin_b": {
+                            "x": 0.0,
+                            "y": 1.625,
+                            "z": 0.0
+                        },
+                        "radius": 0.1379999965429306
+                    },
+                    {
+                        "connecting_bone_name": "Upper back",
+                        "connecting_bone_name_2": "",
+                        "origin_a": {
+                            "x": -0.08699999749660492,
+                            "y": 1.375,
+                            "z": -0.02500000037252903
+                        },
+                        "origin_b": {
+                            "x": 0.08699999749660492,
+                            "y": 1.375,
+                            "z": -0.02500000037252903
+                        },
+                        "radius": 0.11299999803304672
+                    },
+                    {
+                        "connecting_bone_name": "Upper back",
+                        "connecting_bone_name_2": "",
+                        "origin_a": {
+                            "x": -0.024000000208616257,
+                            "y": 1.225000023841858,
+                            "z": 0.0
+                        },
+                        "origin_b": {
+                            "x": 0.024000000208616257,
+                            "y": 1.225000023841858,
+                            "z": 0.0
+                        },
+                        "radius": 0.11299999803304672
+                    },
+                    {
+                        "connecting_bone_name": "Lower back",
+                        "connecting_bone_name_2": "",
+                        "origin_a": {
+                            "x": -0.024000000208616257,
+                            "y": 1.0759999752044678,
+                            "z": -0.013000000268220901
+                        },
+                        "origin_b": {
+                            "x": 0.024000000208616257,
+                            "y": 1.0759999752044678,
+                            "z": -0.013000000268220901
+                        },
+                        "radius": 0.1120000034570694
+                    },
+                    {
+                        "connecting_bone_name": "Lower back",
+                        "connecting_bone_name_2": "",
+                        "origin_a": {
+                            "x": -0.06199999898672104,
+                            "y": 0.9120000004768372,
+                            "z": -0.02500000037252903
+                        },
+                        "origin_b": {
+                            "x": 0.06199999898672104,
+                            "y": 0.9120000004768372,
+                            "z": -0.02500000037252903
+                        },
+                        "radius": 0.125
+                    },
+                    {
+                        "connecting_bone_name": "Hand.L",
+                        "connecting_bone_name_2": "Head",
+                        "origin_a": {
+                            "x": 0.7250000238418579,
+                            "y": 1.3880000114440918,
+                            "z": 0.0
+                        },
+                        "origin_b": {
+                            "x": 0.15000000596046448,
+                            "y": 1.3880000114440918,
+                            "z": 0.0
+                        },
+                        "radius": 0.07500000298023224
+                    },
+                    {
+                        "connecting_bone_name": "Hand.R",
+                        "connecting_bone_name_2": "Head",
+                        "origin_a": {
+                            "x": -0.7250000238418579,
+                            "y": 1.3880000114440918,
+                            "z": 0.0
+                        },
+                        "origin_b": {
+                            "x": -0.15000000596046448,
+                            "y": 1.3880000114440918,
+                            "z": 0.0
+                        },
+                        "radius": 0.07500000298023224
+                    },
+                    {
+                        "connecting_bone_name": "Foot.L",
+                        "connecting_bone_name_2": "Lower back",
+                        "origin_a": {
+                            "x": 0.1379999965429306,
+                            "y": 0.10000000149011612,
+                            "z": 0.0
+                        },
+                        "origin_b": {
+                            "x": 0.11299999803304672,
+                            "y": 0.9129999876022339,
+                            "z": -0.02500000037252903
+                        },
+                        "radius": 0.10000000149011612
+                    },
+                    {
+                        "connecting_bone_name": "Foot.R",
+                        "connecting_bone_name_2": "Lower back",
+                        "origin_a": {
+                            "x": -0.1379999965429306,
+                            "y": 0.10000000149011612,
+                            "z": 0.0
+                        },
+                        "origin_b": {
+                            "x": -0.11299999803304672,
+                            "y": 0.9129999876022339,
+                            "z": -0.02500000037252903
+                        },
+                        "radius": 0.10000000149011612
+                    }
+                ],
+                "m_enabled": false,
+                "m_type": 0
+            },
+            {
+                "m_capsules": [
+                    {
+                        "connecting_bone_name": "Sword attachment",
+                        "connecting_bone_name_2": "",
+                        "origin_a": {
+                            "x": -0.6620000004768372,
+                            "y": 1.3880000114440918,
+                            "z": 1.0499999523162842
+                        },
+                        "origin_b": {
+                            "x": -0.7250000238418579,
+                            "y": 1.3880000114440918,
+                            "z": 0.07500000298023224
+                        },
+                        "radius": 0.25
+                    }
+                ],
+                "m_enabled": false,
+                "m_type": 1
+            }
+        ]
+    }
+}

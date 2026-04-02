@@ -45,8 +45,8 @@ int32_t main()
     r.add_material("ProBuilderDefault", "basic_diffuse", { { "texture0", "default_tex" } });
     r.add_material("__gradient_mat", "gradient", { { "image", "__hdr_draw_image_color" } });
     r.add_material_palette("default_material_palette", { "default_mat" });
-    r.add_model("probuilder_example", ".wobj");
-    r.add_model("simple_combat_char", ".glb");
+    r.add_model("probuilder_example", ".wobj", false, false);
+    r.add_model("simple_combat_char", ".glb", true, true);
     r.build();
 
     // @TODO: this may not be wanted way of doing this (see macro POSSIBLY_REMOVE_THIS_LETS_SEE)

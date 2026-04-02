@@ -1,0 +1,151 @@
+{
+    "animator_states": [
+        {
+            "state_name": "st_idle",
+            "state_type": "single_anim",
+            "anim_name": "Idle"
+        },
+        {
+            "state_name": "st_running",
+            "state_type": "blendtree",
+            "blend_var": "mvt_facing_angle",
+            "blend_anims": [
+                {
+                    "anim_name": "Running",
+                    "value": 0.0
+                },
+                {
+                    "anim_name": "Running_strafe_east",
+                    "value": 1.5708
+                },
+                {
+                    "anim_name": "Running_strafe_south",
+                    "value": 3.14159
+                },
+                {
+                    "anim_name": "Running_strafe_west",
+                    "value": 4.71239
+                },
+                {
+                    "anim_name": "Running",
+                    "value": 6.28319
+                }
+            ]
+        },
+        {
+            "state_name": "st_running_turnaround",
+            "state_type": "single_anim",
+            "anim_name": "Running_turnaround"
+        },
+        {
+            "state_name": "st_awareness_suspicion_begin",
+            "state_type": "single_anim",
+            "anim_name": "Awareness_suspicion_begin"
+        },
+        {
+            "state_name": "st_awareness_suspicion_walking",
+            "state_type": "single_anim",
+            "anim_name": "Awareness_suspicion_walking"
+        },
+        {
+            "state_name": "st_awareness_suspicion_end",
+            "state_type": "single_anim",
+            "anim_name": "Awareness_suspicion_end"
+        },
+        {
+            "state_name": "st_awareness_aware_begin",
+            "state_type": "single_anim",
+            "anim_name": "Awareness_aware_begin"
+        },
+        {
+            "state_name": "st_jump",
+            "state_type": "single_anim",
+            "anim_name": "Jump"
+        },
+        {
+            "state_name": "st_fall",
+            "state_type": "single_anim",
+            "anim_name": "Fall"
+        },
+        {
+            "state_name": "st_attack_0",
+            "state_type": "single_anim",
+            "anim_name": "Sample_attack"
+        },
+        {
+            "state_name": "st_cancel_parried_attack",
+            "state_type": "single_anim",
+            "anim_name": "Cancel_parried_attack"
+        },
+        {
+            "state_name": "st_hurt_parry",
+            "state_type": "single_anim",
+            "anim_name": "Hurt_parry_left"
+        },
+        {
+            "state_name": "st_hurt_guard",
+            "state_type": "single_anim",
+            "anim_name": "Hurt_guard"
+        },
+        {
+            "state_name": "st_hurt_receive",
+            "state_type": "single_anim",
+            "anim_name": "Hurt_receive"
+        },
+        {
+            "state_name": "st_hurt_receive_from_back",
+            "state_type": "single_anim",
+            "anim_name": "Hurt_receive_from_back"
+        },
+        {
+            "state_name": "st_ready_parry",
+            "state_type": "single_anim",
+            "anim_name": "Ready_parry"
+        },
+        {
+            "state_name": "st_ready_parry_from_running",
+            "state_type": "single_anim",
+            "anim_name": "Ready_parry_from_running"
+        },
+        {
+            "state_name": "st_hold_guard_idle",
+            "state_type": "single_anim",
+            "anim_name": "Hold_guard"
+        },
+        {
+            "state_name": "st_hold_guard_walking",
+            "state_type": "blendtree",
+            "blend_var": "mvt_facing_angle",
+            "blend_anims": [
+                {
+                    "anim_name": "Hold_guard_walking",
+                    "value": 0.0
+                },
+                {
+                    "anim_name": "Hold_guard_walking_east",
+                    "value": 1.5708
+                },
+                {
+                    "anim_name": "Hold_guard_walking_south",
+                    "value": 3.14159
+                },
+                {
+                    "anim_name": "Hold_guard_walking_west",
+                    "value": 4.71239
+                },
+                {
+                    "anim_name": "Hold_guard_walking",
+                    "value": 6.28319
+                }
+            ]
+        },
+        {
+            "state_name": "_DEBUG_STATE",
+            "state_type": "single_anim",
+            "anim_name": "0_TPose"
+        }
+    ],
+    "variables": [
+        "float mvt_facing_angle"
+    ]
+}

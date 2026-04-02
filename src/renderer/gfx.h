@@ -83,6 +83,8 @@ struct Model_asset_create_info
 {
     std::string model_name;
     std::string file_ext;
+    bool load_animator_template;
+    bool load_anim_frame_action;
 };
 
 

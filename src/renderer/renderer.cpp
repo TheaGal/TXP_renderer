@@ -447,16 +447,22 @@ void Renderer::add_material_palette(std::string const& mat_set_name,
     if (!m_pimpl->asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_pimpl->material_palette_assets.scoped_lock()->emplace_back(mat_set_name, std::move(materials));
+    m_pimpl->material_palette_assets.scoped_lock()->emplace_back(mat_set_name,
+                                                                 std::move(materials));
 }
 
 void Renderer::add_model(std::string const& model_name,
-                         std::string const& file_ext)
+                         std::string const& file_ext,
+                         bool load_animator_template,
+                         bool load_anim_frame_action)
 {
     if (!m_pimpl->asset_reg_window_open.load())
         throw std::runtime_error("Cannot load assets once asset loading stage has started.");
 
-    m_pimpl->model_assets.scoped_lock()->emplace_back(model_name, file_ext);
+    m_pimpl->model_assets.scoped_lock()->emplace_back(model_name,
+                                                      file_ext,
+                                                      load_animator_template,
+                                                      load_anim_frame_action);
 }
 
 

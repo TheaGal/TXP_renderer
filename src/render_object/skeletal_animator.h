@@ -7,7 +7,6 @@
 #include "deformed_render_model.h"
 #include "skeletal_animation.h"
 
-#include <array>
 #include <atomic>
 #include <functional>
 #include <mutex>

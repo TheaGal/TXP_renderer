@@ -141,6 +141,8 @@ endif()
 
 # Resource files inside ASSET_DIR.
 set(ASSET_DIR_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/anim_frame_actions/simple_combat_char.btafa
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/animator_templates/simple_combat_char.btanitor
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/probuilder_example.mtl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/probuilder_example.wobj
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/simple_combat_char.glb
