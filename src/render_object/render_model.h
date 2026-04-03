@@ -48,7 +48,7 @@ struct Static_model_data_set
 };
 
 /// Renderable model (to be used by render object).
-struct Render_model
+struct Render_model  // @THEA: @TODO: delete this if remains unused  -Thea 2026/04/02
 {
     uint16_t static_model_data_set_idx;
 

@@ -920,7 +920,7 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     size_t vertex_count{ 0 };
     size_t index_count{ 0 };
 
-    for (auto model : static_models)
+    for (auto* model : static_models)
     {
         // @NOTE: using `vertex_count` for offset since that is the base of the vertex index.
         model->vertex_index_offset = vertex_count;

@@ -28,7 +28,7 @@ using pool_key_t = std::uint32_t;
 
 /// If pool key is set to this, the renderer will process this render object (effectively
 /// creating/recreating a render object).
-constexpr pool_key_t k_pool_key_process_flag{ 0 };
+constexpr pool_key_t k_pool_key_process_flag{ (pool_key_t)-1 };
 
 /// Bitmask for filtering layers to render.
 enum Render_layer : uint16_t
@@ -56,16 +56,7 @@ struct Render_object_config
     // ^^ Required ^^ / vv Optional vv
 
     std::string material_palette;
-
-    struct Animated_create_config
-    {
-        std::string animator_template;
-        std::string anim_frame_action_control;
-
-        NLOHMANN_DEFINE_TYPE_INTRUSIVE(Animated_create_config,
-                                       animator_template,
-                                       anim_frame_action_control);
-    } deform_config;
+    bool is_deformed{ false };
 
     // ^^ Optional ^^ / vv Set up by Renderer vv
 
@@ -80,7 +71,7 @@ struct Render_object_config
                                                 model_name,
                                                 transform,
                                                 material_palette,
-                                                deform_config);
+                                                is_deformed);
 };
 
 }  // namespace component

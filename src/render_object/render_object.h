@@ -43,7 +43,7 @@ struct Deformed_model_skin;
 struct Deformed_model_animation_set;
 struct Material_palette;
 
-/// Collection that holds pools of render data.
+/// Collection that holds pools of render data.  @TODO: move this to its own file.
 struct Render_model_data_collection
 {
     Render_model_data_collection();
@@ -53,6 +53,8 @@ struct Render_model_data_collection
     std::vector<std::string> get_static_model_data_set_name_list() const;
     uint16_t get_static_model_data_set_idx(std::string const& name) const;
     Static_model_data_set const& get_static_model_data_set(uint16_t idx) const;
+
+    void lock_in_number_of_static_models();
 
     void emplace_deformed_model_skin(std::string const& name, Deformed_model_skin&& data);
     std::vector<std::string> get_deformed_model_skin_name_list() const;
@@ -64,8 +66,15 @@ struct Render_model_data_collection
     uint16_t get_deformed_model_anim_set_idx(std::string const& name) const;
     Deformed_model_animation_set const& get_deformed_model_anim_set(uint16_t idx) const;
 
-    uint16_t emplace_deformed_vertex_buffer(std::string const& name, void* data);
-    uint16_t get_deformed_vertex_buffer(std::string const& name);
+    uint16_t create_deformed_model_from_static_model_data_set(uint16_t static_model_data_set_idx);
+
+    /// Adds a user to the reference/usage counter of a certain model.
+    /// @param render_model_idx index of either static model or deformed model.
+    void report_one_user_added(uint16_t render_model_idx);
+
+    /// Removes a user from the reference/usage counter of a certain model.
+    /// @param render_model_idx index of either static model or deformed model.
+    void report_one_user_removed(uint16_t render_model_idx);
 
     // Pimpl.
     struct Data;

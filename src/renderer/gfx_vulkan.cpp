@@ -88,7 +88,8 @@ void TXP::Graphics::load_material_palettes(
     BT_TRACEF("Loaded all %zu material palettes.", material_palette_assets.size());
 }
 
-void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
+void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
+                                      std::vector<Model_asset_create_info>&& model_assets,
                                       Render_model_data_collection& render_model_data_collection,
                                       Material_organizer& material_organizer)
 {   // Load models.
@@ -101,6 +102,7 @@ void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& mod
     }
     BT_TRACEF("Loaded all %zu models.", model_assets.size());
 
+    render_model_data_collection.lock_in_number_of_static_models();
     m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
     BT_TRACE("Uploaded combined model to GPU.");
 
@@ -116,7 +118,8 @@ void TXP::Graphics::load_model_assets(std::vector<Model_asset_create_info>&& mod
             {   // Pre-load in AFA.
                 anim_frame_action::Bank::emplace(
                     mod_asset.model_name,
-                    anim_frame_action::Runtime_data_controls{ mod_asset.model_name + ".btafa" });
+                    anim_frame_action::Runtime_data_controls{ afa_asset_dir + mod_asset.model_name +
+                                                              ".btafa" });
                 num_afas_loaded++;
             }
         }

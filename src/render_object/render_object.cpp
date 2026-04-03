@@ -12,6 +12,7 @@
 #include <map>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 
 
 namespace TXP
@@ -41,6 +42,12 @@ struct Render_model_data_collection::Data
             // Perform emplace.
             pool[next_ins_pos] = std::move(data);
             name_to_idx_map.emplace(name, static_cast<uint16_t>(next_ins_pos));
+        }
+
+        /// Calculates next available index in pool.
+        size_t get_next_available_idx() const
+        {
+            return name_to_idx_map.size();
         }
 
         /// Gathers name list.
@@ -79,6 +86,22 @@ struct Render_model_data_collection::Data
     Data_pool<Static_model_data_set> static_model_data_set_pool;
     Data_pool<Deformed_model_skin> deformed_model_skin_pool;
     Data_pool<Deformed_model_animation_set> deformed_model_anim_set_pool;
+
+    /// Reference counter.
+    std::unordered_map<uint16_t, size_t> model_reference_count_map;
+
+    /// Starting index for deformed models.
+    uint16_t starting_deformed_model_idx{ (uint16_t)-1 };
+
+    /// Deformed model information struct.
+    struct Deformed_model_info
+    {
+        uint16_t base_static_model_data_set_idx;
+    };
+
+    // Deformed model set.
+    std::unordered_map<uint16_t, Deformed_model_info> deformed_model_idx_map;
+
 };
 
 Render_model_data_collection::Render_model_data_collection()
@@ -92,6 +115,9 @@ Render_model_data_collection::~Render_model_data_collection() = default;
 void Render_model_data_collection::emplace_static_model_data_set(std::string const& name,
                                                                  Static_model_data_set&& data)
 {
+    if (inner_data->starting_deformed_model_idx != (uint16_t)-1)
+        throw std::runtime_error("Number of static models already locked in.");
+
     inner_data->static_model_data_set_pool.emplace(name, std::move(data));
 }
 
@@ -109,6 +135,16 @@ Static_model_data_set const& Render_model_data_collection::get_static_model_data
     uint16_t idx) const
 {
     return inner_data->static_model_data_set_pool.get(idx);
+}
+
+
+void Render_model_data_collection::lock_in_number_of_static_models()
+{
+    if (inner_data->starting_deformed_model_idx != (uint16_t)-1)
+        throw std::runtime_error("Number of static models already locked in.");
+
+    inner_data->starting_deformed_model_idx =
+        inner_data->static_model_data_set_pool.get_next_available_idx();
 }
 
 
@@ -157,14 +193,45 @@ Deformed_model_animation_set const& Render_model_data_collection::get_deformed_m
     return inner_data->deformed_model_anim_set_pool.get(idx);
 }
 
-uint16_t Render_model_data_collection::emplace_deformed_vertex_buffer(std::string const& name, void* data)
+uint16_t Render_model_data_collection::create_deformed_model_from_static_model_data_set(
+    uint16_t static_model_data_set_idx)
 {
-    assert(false);
+    if (inner_data->starting_deformed_model_idx == (uint16_t)-1)
+        throw std::runtime_error("Number of static models not locked in yet.");
+
+    // Find next available idx in deformed model indexes.
+    auto valid_idx = inner_data->starting_deformed_model_idx;
+    for (; valid_idx < (uint16_t)-1; valid_idx++)
+    {
+        if (inner_data->deformed_model_idx_map.find(valid_idx) ==
+            inner_data->deformed_model_idx_map.end())
+            break;  // Found valid index! Break!
+    }
+    if (valid_idx == (uint16_t)-1)
+        throw std::runtime_error("No valid idx found.");
+
+    // Create model.
+    inner_data->deformed_model_idx_map.emplace(
+        valid_idx,
+        Data::Deformed_model_info{
+            .base_static_model_data_set_idx = static_model_data_set_idx,
+        });
+
+    return valid_idx;
 }
 
-uint16_t Render_model_data_collection::get_deformed_vertex_buffer(std::string const& name)
+void Render_model_data_collection::report_one_user_added(uint16_t render_model_idx)
 {
-    assert(false);
+    inner_data->model_reference_count_map[render_model_idx]++;
+}
+
+void Render_model_data_collection::report_one_user_removed(uint16_t render_model_idx)
+{
+    inner_data->model_reference_count_map[render_model_idx]--;
+
+    if (inner_data->model_reference_count_map.at(render_model_idx) <= 0)
+        // @TODO: destroy the deformed model (or unload the static model if need space).
+        assert(false);
 }
 
 }  // namespace TXP

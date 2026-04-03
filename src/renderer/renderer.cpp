@@ -35,6 +35,7 @@ struct Renderer::Impl
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
          std::string const& model_asset_dir,
+         std::string const& afa_asset_dir,
          std::function<void(bool)>&& set_play_flag_fn,
          std::function<bool()>&& get_play_flag_fn)
         : ecs_registry(ecs_registry)
@@ -44,6 +45,7 @@ struct Renderer::Impl
         , texture_asset_dir(texture_asset_dir)
         , shader_asset_dir(shader_asset_dir)
         , model_asset_dir(model_asset_dir)
+        , afa_asset_dir(afa_asset_dir)
         , set_play_flag_fn(std::move(set_play_flag_fn))
         , get_play_flag_fn(std::move(get_play_flag_fn))
     {
@@ -64,6 +66,7 @@ struct Renderer::Impl
     std::string texture_asset_dir;
     std::string shader_asset_dir;
     std::string model_asset_dir;
+    std::string afa_asset_dir;
 
     std::function<void(bool)> set_play_flag_fn;
     std::function<bool()> get_play_flag_fn;
@@ -120,6 +123,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir,
+                   std::string const& afa_asset_dir,
                    std::function<void(bool)>&& set_play_flag_fn,
                    std::function<bool()>&& get_play_flag_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
@@ -129,6 +133,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                                      texture_asset_dir,
                                      shader_asset_dir,
                                      model_asset_dir,
+                                     afa_asset_dir,
                                      std::move(set_play_flag_fn),
                                      std::move(get_play_flag_fn)))
 {   // Ensure only one instance.
@@ -203,7 +208,8 @@ void Renderer::build()
                              m.material_organizer);
 
     // Load models.
-    g.load_model_assets(std::move(*m.model_assets.scoped_lock()),
+    g.load_model_assets(m.afa_asset_dir,
+                        std::move(*m.model_assets.scoped_lock()),
                         m.render_model_data_collection,
                         m.material_organizer);
 
@@ -262,11 +268,29 @@ void Renderer::render_one_frame(float_t delta_time)
 
         if (rend_owned_data.pool_key == k_pool_key_process_flag)
         {   // Need to create new render object.
-            rend_obj_cfg.renderer_owned_data.pool_key = m.render_object_list.size();
+            rend_owned_data.pool_key = m.render_object_list.size();
+
+            uint16_t new_render_model_idx{ (uint16_t)-1 };
+            if (rend_obj_cfg.is_deformed)
+            {
+                auto static_model_data_set_idx =
+                    m.render_model_data_collection.get_static_model_data_set_idx(
+                        rend_obj_cfg.model_name);
+
+                new_render_model_idx =
+                    m.render_model_data_collection.create_deformed_model_from_static_model_data_set(
+                        static_model_data_set_idx);
+            }
+            else
+            {
+                new_render_model_idx = m.render_model_data_collection.get_static_model_data_set_idx(
+                    rend_obj_cfg.model_name);
+            }
+            m.render_model_data_collection.report_one_user_added(new_render_model_idx);
+
             m.render_object_list.emplace_back(Render_object{
                 .layer = rend_obj_cfg.render_layer,
-                .render_model_idx = m.render_model_data_collection.get_static_model_data_set_idx(
-                    rend_obj_cfg.model_name),
+                .render_model_idx = new_render_model_idx,
                 .material_palette_idx = m.material_organizer.get_material_palette_idx(
                     !rend_obj_cfg.material_palette.empty()
                         ? rend_obj_cfg.material_palette
@@ -275,13 +299,13 @@ void Renderer::render_one_frame(float_t delta_time)
         }
         else
         {   // Mark as non-stale.
-            m.render_object_list[rend_obj_cfg.renderer_owned_data.pool_key].is_stale = false;
+            m.render_object_list[rend_owned_data.pool_key].is_stale = false;
         }
 
         // Update transform.
         // @TODO: adding interpolation here (i.e. just copying both the a->b transforms).
         glm_mat4_copy(rend_obj_cfg.transform.raw,
-                      m.render_object_list[rend_obj_cfg.renderer_owned_data.pool_key].transform);
+                      m.render_object_list[rend_owned_data.pool_key].transform);
     }
 
     // Delete stale render objects.
@@ -292,6 +316,9 @@ void Renderer::render_one_frame(float_t delta_time)
     {
         if (m.render_object_list[i].is_stale)
         {
+            m.render_model_data_collection.report_one_user_removed(
+                m.render_object_list[i].render_model_idx);
+
             m.render_object_list.erase(m.render_object_list.begin() + i);
             removed_render_object = true;
         }

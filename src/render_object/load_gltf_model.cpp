@@ -908,8 +908,11 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     }
 
     // Place data into collection.
-    data_collection.emplace_deformed_model_skin(model_name, std::move(new_deformed_model_skin));
     data_collection.emplace_static_model_data_set(model_name, std::move(new_static_model_data_set));
-    data_collection.emplace_deformed_model_anim_set(model_name,
-                                                    std::move(new_deformed_model_anim_set));
+    if (!animations.empty())
+    {
+        data_collection.emplace_deformed_model_skin(model_name, std::move(new_deformed_model_skin));
+        data_collection.emplace_deformed_model_anim_set(model_name,
+                                                        std::move(new_deformed_model_anim_set));
+    }
 }

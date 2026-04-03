@@ -115,7 +115,8 @@ public:
         std::vector<Material_asset_create_info>&& material_assets,
         std::vector<Material_palette_asset_create_info>&& material_palette_assets,
         Material_organizer& material_organizer);
-    void load_model_assets(std::vector<Model_asset_create_info>&& model_assets,
+    void load_model_assets(std::string const& afa_asset_dir,
+                           std::vector<Model_asset_create_info>&& model_assets,
                            Render_model_data_collection& render_model_data_collection,
                            Material_organizer& material_organizer);
 

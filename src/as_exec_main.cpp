@@ -24,8 +24,26 @@ int32_t main()
 
         rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "probuilder_example";
-        glm_scale_make(rend_obj_cfg.transform.raw, vec3{ 0.5f, 0.5f, 0.5f });
+        glm_scale_make(rend_obj_cfg.transform.raw, vec3{ 0.25f, 0.25f, 0.25f });
         glm_translate(rend_obj_cfg.transform.raw, vec3{ 100, 0, 0 });
+    }
+    {   // Create sample entity 3.
+        auto ecs_entity = ecs_registry.create();
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
+
+        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.model_name = "simple_combat_char";
+        glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 6 });
+        rend_obj_cfg.is_deformed = false;
+    }
+    {   // Create sample entity 4.
+        auto ecs_entity = ecs_registry.create();
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
+
+        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.model_name = "simple_combat_char";
+        glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 0 });
+        rend_obj_cfg.is_deformed = true;
     }
 
     TXP::Input::Input_handler input_handler;
@@ -37,6 +55,7 @@ int32_t main()
                      "assets/textures/",
                      "assets/shaders/",
                      "assets/models/",
+                     "assets/anim_frame_actions/",
                      [](bool) { },
                      []() { return false; } };
 
