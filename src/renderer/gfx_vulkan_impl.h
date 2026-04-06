@@ -354,6 +354,12 @@ struct Graphics::Impl
     /// Add models.
     void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
 
+    /// Loads in deformed models using a combined vertex buffer.
+    void build_deformed_combined_model(Render_model_data_collection& render_model_data_collection);
+
+    /// Helper func to upload models to gpu.
+    
+
     struct Model_buffer
     {
         Vk_Buffer::Allocated_buffer vertex_index_buffer;  // Vertex part first, index part second.
@@ -370,6 +376,7 @@ struct Graphics::Impl
         }
     };
     Model_buffer combined_static_model;
+    Model_buffer combined_deformed_model;
 
     /// Descriptor type information.
     struct Descriptor_type_info

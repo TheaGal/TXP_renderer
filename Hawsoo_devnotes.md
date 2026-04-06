@@ -548,12 +548,14 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] Create the deformed animation copy.
     - [x] use the static model for per-instance placement.
-    - [ ] Allocate space for vertices of the deformed mesh.
+    - [x] Allocate space for vertices of the deformed mesh.
         - Maybe for now just do a copy?
         - Aaaaa do i wanna share the same buffer for the deformed meshes and static ones?
             - Nope nop enop. it'll be a lot of copying just for this.
             - combining the deformed meshes might work tho? mmmm it would mean that there would be stuttering for when deformed models are added and removed.
                 - eh ig it would just be best if that just happened since making 2 buffers would suck.
+        - Ok so i decided on combined model and it just seems like it's just rly similar to `upload_model_entries_to_gpu()`.
+    - [ ] Use deformed model instead of static model.
 
 - [ ] Write compute shader for the animation info.
 

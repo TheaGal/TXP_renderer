@@ -770,6 +770,7 @@ void Graphics::Impl::destroy_vulkan()
     }
 
     combined_static_model.vertex_index_buffer.destroy();
+    combined_deformed_model.vertex_index_buffer.destroy();
 
     for (auto& render_view : render_views)
     {
@@ -943,7 +944,7 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     vertex_count = 0;
     index_count = 0;
 
-    for (auto model : static_models)
+    for (auto* model : static_models)
     {
         std::memcpy(combined_vertices.data() + vertex_count,
                     model->vertices.data(),
@@ -992,6 +993,98 @@ void Graphics::Impl::upload_model_entries_to_gpu(
                 combined_indices.data(),
                 index_buf_size);
 }
+
+void Graphics::Impl::build_deformed_combined_model(
+        Render_model_data_collection& data_collection)  // @COPYPASTA of `upload_model_entries_to_gpu()`
+{   // Get deformed model information.
+    // @TODO: change this to getting a list of model-data-set indexes, instead of getting names then translating list of names to indexes.
+    std::vector<Deformed_model_data_set*> deformed_models =
+        data_collection.get_all_deformed_models();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Transform to singular deformed model.
+
+    // Reserve space for vertices and indices.
+    size_t vertex_count{ 0 };
+    size_t index_count{ 0 };
+
+    for (auto* model : deformed_models)
+    {
+        // @NOTE: using `vertex_count` for offset since that is the base of the vertex index.
+        model->deformed_model.vertex_index_offset = vertex_count;
+
+        auto const& base_static_model{ data_collection.get_static_model_data_set(
+            model->base_static_model_idx) };
+        vertex_count += base_static_model.vertices.size();
+
+        for (auto& mesh : model->deformed_model.meshes)
+        {   // Mark where to start in index buffer for this mesh.
+            model->deformed_model.first_index_offsets.emplace_back(index_count);
+
+            index_count += mesh.indices.size();
+        }
+    }
+
+    // Copy vertices and indices.
+    std::vector<Vertex> combined_vertices(vertex_count);
+    std::vector<uint32_t> combined_indices(index_count);
+
+    vertex_count = 0;
+    index_count = 0;
+
+    for (auto const* model : deformed_models)
+    {
+        auto const& base_static_model{ data_collection.get_static_model_data_set(
+            model->base_static_model_idx) };
+
+        std::memcpy(combined_vertices.data() + vertex_count,
+                    base_static_model.vertices.data(),
+                    base_static_model.vertices.size() * sizeof(Vertex));
+        vertex_count += base_static_model.vertices.size();
+
+        for (auto const& mesh : model->deformed_model.meshes)
+        {
+            std::memcpy(combined_indices.data() + index_count,
+                        mesh.indices.data(),
+                        mesh.indices.size() * sizeof(uint32_t));
+            index_count += mesh.indices.size();
+        }
+    }
+
+    // Upload to GPU.
+    // @REF: using method from "https://howtovulkan.com/#loading-meshes" instead of staging buffers.
+    //         -Thea 2026/02/21
+    VkDeviceSize vertex_buf_size{ sizeof(Vertex) * combined_vertices.size() };
+    VkDeviceSize index_buf_size{ sizeof(uint32_t) * combined_indices.size() };
+
+    if (vertex_buf_size == 0)
+    {
+        BT_WARN("No models to upload in combined static model.");
+        return;
+    }
+
+    combined_deformed_model.vertex_index_buffer.create(
+        gfx.device,
+        gfx.allocator,
+        vertex_buf_size + index_buf_size,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+            VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+    combined_deformed_model.offset_to_index_buffer = vertex_buf_size;
+
+    void* p_mapped_data{ combined_deformed_model.vertex_index_buffer.get_p_mapped_data() };
+    auto offset_to_idx_buf{ combined_deformed_model.offset_to_index_buffer };
+
+    std::memcpy(p_mapped_data,
+                combined_vertices.data(),
+                vertex_buf_size);
+    std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
+                combined_indices.data(),
+                index_buf_size);
+}
+
 
 VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
     Descriptor_binding_set_t&& bindings,

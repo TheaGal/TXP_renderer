@@ -120,6 +120,9 @@ public:
                            Render_model_data_collection& render_model_data_collection,
                            Material_organizer& material_organizer);
 
+    /// Loads in deformed models using a combined model.
+    void build_deformed_combined_model(Render_model_data_collection& render_model_data_collection);
+
     /// Polls for input events.
     void poll_input_events();
 

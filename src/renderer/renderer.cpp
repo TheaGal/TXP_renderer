@@ -131,9 +131,11 @@ struct Renderer::Impl
         //        simulation loop)
 
         auto& m{ *this };  // @HACK
+        auto& g{ *m.graphics };
 
         bool appended_render_object{ false };
         bool removed_render_object{ false };
+        bool deformed_model_count_changed{ false };
 
         // Mark all as stale.
         for (auto& rend_obj : m.render_object_list)
@@ -208,6 +210,8 @@ struct Renderer::Impl
                             .emplace_or_replace<component::Animator_driven_hitcapsule_set>(
                                 ecs_entity);
                     }
+
+                    deformed_model_count_changed = true;
                 }
                 else
                 {
@@ -225,6 +229,7 @@ struct Renderer::Impl
                             ? rend_obj_cfg.material_palette
                             : rend_obj_cfg.model_name + "__default_material_palette_name__"),
                 });
+                appended_render_object = true;
             }
             else
             {   // Mark as non-stale.
@@ -234,7 +239,7 @@ struct Renderer::Impl
             // Update transform.
             // @TODO: adding interpolation here (i.e. just copying both the a->b transforms).
             glm_mat4_copy(rend_obj_cfg.transform.raw,
-                        m.render_object_list[rend_owned_data.pool_key].transform);
+                          m.render_object_list[rend_owned_data.pool_key].transform);
         }
 
         // Delete stale render objects.
@@ -245,8 +250,16 @@ struct Renderer::Impl
         {
             if (m.render_object_list[i].is_stale)
             {
+                bool is_model_unused;
                 m.render_model_data_collection.report_one_user_removed(
-                    m.render_object_list[i].render_model_idx);
+                    m.render_object_list[i].render_model_idx,
+                    is_model_unused);
+
+                if (is_model_unused && m.render_object_list[i].is_animated())
+                {
+                    deformed_model_count_changed = true;
+                    assert(false);  // @TODO: ensure that the model gets deleted as well. maybe make a `prune()` func in the render model data collection?
+                }
 
                 m.render_object_list.erase(m.render_object_list.begin() + i);
                 removed_render_object = true;
@@ -256,8 +269,9 @@ struct Renderer::Impl
                 old_to_new_idx_map.emplace(i, old_to_new_idx_map.size());
             }
         }
-        for (auto& [_, new_idx] : old_to_new_idx_map)
+        for (auto& elem : old_to_new_idx_map)
         {   // Flip since last loop was iterating backwards.
+            auto& new_idx{ elem.second };
             new_idx = (old_to_new_idx_map.size() - 1 - new_idx);
         }
 
@@ -269,6 +283,13 @@ struct Renderer::Impl
 
             rend_obj_cfg.renderer_owned_data.pool_key =
                 old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);
+        }
+
+        // Ensure that deformed models are created/removed.
+        if (deformed_model_count_changed)
+        {
+            g.wait_until_gpu_idle();
+            g.build_deformed_combined_model(m.render_model_data_collection);
         }
     }
 };
@@ -404,10 +425,7 @@ void Renderer::render_one_frame(float_t delta_time)
 
     BT::logger::notify_start_new_mainloop_iteration();
 
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    // Process render object changes.
     m.process_render_object_changes();
-    
 
     ////////////////////////////////////////////////////////////////////////////////////////////
     // Update renderer-timed things.
@@ -565,9 +583,9 @@ void Renderer::add_model(std::string const& model_name,
 
 auto Renderer::get_model_basic_data(std::string const& model_name) const -> Basic_model
 {
-    auto& rend_mod_dat_coll{ m_pimpl->render_model_data_collection };
-    auto const& static_model_dat_set = rend_mod_dat_coll.get_static_model_data_set(
-        rend_mod_dat_coll.get_static_model_data_set_idx(model_name));
+    auto const& static_model_dat_set =
+        m_pimpl->render_model_data_collection.get_static_model_data_set(
+            m_pimpl->render_model_data_collection.get_static_model_data_set_idx(model_name));
 
     Basic_model basic_model;
 

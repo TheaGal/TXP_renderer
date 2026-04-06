@@ -47,6 +47,13 @@ struct Static_model_data_set
     int32_t vertex_index_offset;
 };
 
+/// Deformed model based off static model.
+struct Deformed_model_data_set
+{
+    uint16_t base_static_model_idx;
+    Static_model_data_set deformed_model;
+};
+
 /// Renderable model (to be used by render object).
 struct Render_model  // @THEA: @TODO: delete this if remains unused  -Thea 2026/04/02
 {

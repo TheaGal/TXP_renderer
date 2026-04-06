@@ -27,6 +27,11 @@ struct Render_object
     uint32_t padding2;
 
     mat4 transform = GLM_MAT4_IDENTITY_INIT;
+
+    bool is_animated() const
+    {
+        return (animator_idx != (uint16_t)-1);
+    }
 };
 
 /// Holds reference for a render object's model mesh.
@@ -39,6 +44,7 @@ struct Render_object_model_mesh_reference
 
 // Forward declarations for collection.
 struct Static_model_data_set;
+struct Deformed_model_data_set;
 struct Deformed_model_skin;
 struct Deformed_model_animation_set;
 struct Material_palette;
@@ -68,6 +74,7 @@ struct Render_model_data_collection
 
     uint16_t create_deformed_model_from_static_model_data_set(uint16_t static_model_data_set_idx);
     uint16_t translate_to_static_model_data_set_idx(uint16_t render_model_idx) const;
+    std::vector<Deformed_model_data_set*> get_all_deformed_models();
 
     /// Adds a user to the reference/usage counter of a certain model.
     /// @param render_model_idx index of either static model or deformed model.
@@ -75,7 +82,7 @@ struct Render_model_data_collection
 
     /// Removes a user from the reference/usage counter of a certain model.
     /// @param render_model_idx index of either static model or deformed model.
-    void report_one_user_removed(uint16_t render_model_idx);
+    void report_one_user_removed(uint16_t render_model_idx, bool& out_now_unused);
 
     // Pimpl.
     struct Data;

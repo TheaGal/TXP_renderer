@@ -1,5 +1,6 @@
 #include "render_object.h"
 
+#include "btdatecheck.h"
 #include "btglm.h"
 #include "render_object/deformed_render_model.h"
 #include "render_object/render_model.h"
@@ -93,15 +94,8 @@ struct Render_model_data_collection::Data
     /// Starting index for deformed models.
     uint16_t starting_deformed_model_idx{ (uint16_t)-1 };
 
-    /// Deformed model information struct.
-    struct Deformed_model_info
-    {
-        uint16_t base_static_model_data_set_idx;
-    };
-
     // Deformed model set.
-    std::unordered_map<uint16_t, Deformed_model_info> deformed_model_idx_map;
-
+    std::unordered_map<uint16_t, Deformed_model_data_set> deformed_model_idx_map;
 };
 
 Render_model_data_collection::Render_model_data_collection()
@@ -211,11 +205,19 @@ uint16_t Render_model_data_collection::create_deformed_model_from_static_model_d
         throw std::runtime_error("No valid idx found.");
 
     // Create model.
-    inner_data->deformed_model_idx_map.emplace(
-        valid_idx,
-        Data::Deformed_model_info{
-            .base_static_model_data_set_idx = static_model_data_set_idx,
-        });
+    auto const& base_static_model{ get_static_model_data_set(static_model_data_set_idx) };
+    Static_model_data_set partial_copy{
+        .meshes = base_static_model.meshes,
+        .vertices = {},  // Don't store vertices since these will be calculated in the gpu skinning.
+        .model_aabb = base_static_model.model_aabb,
+    };
+
+    Deformed_model_data_set new_deformed_model{
+        .base_static_model_idx = static_model_data_set_idx,
+        .deformed_model = std::move(partial_copy),
+    };
+
+    inner_data->deformed_model_idx_map.emplace(valid_idx, std::move(new_deformed_model));
 
     return valid_idx;
 }
@@ -230,7 +232,28 @@ uint16_t Render_model_data_collection::translate_to_static_model_data_set_idx(
     if (render_model_idx < inner_data->starting_deformed_model_idx)
         return render_model_idx;
 
-    return inner_data->deformed_model_idx_map.at(render_model_idx).base_static_model_data_set_idx;
+    return inner_data->deformed_model_idx_map.at(render_model_idx).base_static_model_idx;
+}
+
+std::vector<Deformed_model_data_set*> Render_model_data_collection::get_all_deformed_models()
+{
+    std::vector<uint16_t> jojo;  // @TEST: @DEBUG: @NOCHECKIN
+    std::vector<Deformed_model_data_set*> deformed_refs;
+    deformed_refs.reserve(inner_data->deformed_model_idx_map.size());
+
+    for (auto& elem : inner_data->deformed_model_idx_map)
+    {
+        jojo.emplace_back(elem.first);
+        deformed_refs.emplace_back(&elem.second);
+    }
+    jojo.emplace_back(6969);
+    for (auto& elem : inner_data->deformed_model_idx_map)
+    {
+        jojo.emplace_back(elem.first);
+    }
+    BT::date_deadline(2026, 4, 10);  // @TODO: CHECK THAT THE `jojo` ORDER IS CONSISTENT!!
+
+    return deformed_refs;
 }
 
 void Render_model_data_collection::report_one_user_added(uint16_t render_model_idx)
@@ -238,13 +261,12 @@ void Render_model_data_collection::report_one_user_added(uint16_t render_model_i
     inner_data->model_reference_count_map[render_model_idx]++;
 }
 
-void Render_model_data_collection::report_one_user_removed(uint16_t render_model_idx)
+void Render_model_data_collection::report_one_user_removed(uint16_t render_model_idx,
+                                                           bool& out_now_unused)
 {
     inner_data->model_reference_count_map[render_model_idx]--;
 
-    if (inner_data->model_reference_count_map.at(render_model_idx) <= 0)
-        // @TODO: destroy the deformed model (or unload the static model if need space).
-        assert(false);
+    out_now_unused = (inner_data->model_reference_count_map.at(render_model_idx) <= 0);
 }
 
 }  // namespace TXP

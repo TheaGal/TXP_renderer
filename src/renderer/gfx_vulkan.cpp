@@ -129,6 +129,12 @@ void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
     BT_TRACEF("Loaded all %zu anim frame action files.", num_afas_loaded);
 }
 
+void TXP::Graphics::build_deformed_combined_model(
+        Render_model_data_collection& render_model_data_collection)
+{
+    m_pimpl->build_deformed_combined_model(render_model_data_collection);
+}
+
 void TXP::Graphics::poll_input_events()
 {
     m_pimpl->poll_input_events();
