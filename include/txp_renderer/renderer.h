@@ -31,6 +31,7 @@ public:
              std::string const& shader_asset_dir,
              std::string const& model_asset_dir,
              std::string const& afa_asset_dir,
+             std::string const& animator_asset_dir,
              std::function<void(bool)>&& set_play_flag_fn,
              std::function<bool()>&& get_play_flag_fn);
 

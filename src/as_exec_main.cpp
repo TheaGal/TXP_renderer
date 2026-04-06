@@ -1,7 +1,8 @@
-#include "entt/entity/registry.hpp"
-#include "txp_renderer_public.h"
+#include "btuuid.h"
 #define BT_SERVICE_FINDER_IMPLEMENTATION
 #include "btservice_finder.h"  // @TODO: put in public folder.
+#include "entt/entity/registry.hpp"
+#include "txp_renderer_public.h"
 
 #include <cstdint>
 
@@ -13,15 +14,21 @@ int32_t main()
     entt::registry ecs_registry;
     {   // Create sample entity.
         auto ecs_entity = ecs_registry.create();
-        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
 
+        auto& meta = ecs_registry.emplace<TXP::component::Entity_metadata>(ecs_entity);
+        meta.uuid = BT::UUID_helper::generate_uuid();
+
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
         rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "probuilder_example";
     }
     {   // Create sample entity 2.
         auto ecs_entity = ecs_registry.create();
-        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
 
+        auto& meta = ecs_registry.emplace<TXP::component::Entity_metadata>(ecs_entity);
+        meta.uuid = BT::UUID_helper::generate_uuid();
+
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
         rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "probuilder_example";
         glm_scale_make(rend_obj_cfg.transform.raw, vec3{ 0.25f, 0.25f, 0.25f });
@@ -29,8 +36,11 @@ int32_t main()
     }
     {   // Create sample entity 3.
         auto ecs_entity = ecs_registry.create();
-        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
 
+        auto& meta = ecs_registry.emplace<TXP::component::Entity_metadata>(ecs_entity);
+        meta.uuid = BT::UUID_helper::generate_uuid();
+
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
         rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "simple_combat_char";
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 6 });
@@ -38,8 +48,11 @@ int32_t main()
     }
     {   // Create sample entity 4.
         auto ecs_entity = ecs_registry.create();
-        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
 
+        auto& meta = ecs_registry.emplace<TXP::component::Entity_metadata>(ecs_entity);
+        meta.uuid = BT::UUID_helper::generate_uuid();
+
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
         rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "simple_combat_char";
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 0 });
@@ -56,6 +69,7 @@ int32_t main()
                      "assets/shaders/",
                      "assets/models/",
                      "assets/anim_frame_actions/",
+                     "assets/animator_templates/",
                      [](bool) { },
                      []() { return false; } };
 

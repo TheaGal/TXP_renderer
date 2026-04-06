@@ -1,6 +1,7 @@
 #pragma once
 
 #include "btglm.h"
+#include "btuuid.h"
 #include "nlohmann/detail/macro_scope.hpp"
 
 #include <cstdint>
@@ -45,6 +46,19 @@ enum Render_layer : uint16_t
 namespace component
 {
 
+/// Metadata of an entity.
+struct Entity_metadata
+{
+    std::string name;
+    BT::UUID uuid;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(
+        Entity_metadata,
+        name,
+        uuid
+    );
+};
+
 /// Config for a render object (to be used as ECS component).
 struct Render_object_config
 {
@@ -72,6 +86,32 @@ struct Render_object_config
                                                 transform,
                                                 material_palette,
                                                 is_deformed);
+};
+
+/// Component to store data from animator and AFA data for root motion.
+struct Animator_root_motion
+{   // Settings and also captured.
+    float_t root_motion_multiplier{ 1.0f };  // @TODO: @THINK: Should this automatically set the AFA data when initialized that?
+
+    // Captured values.
+    vec3 delta_pos = GLM_VEC3_ZERO_INIT;
+    float_t turn_speed{ 0 };
+    bool can_do_turnaround_anim{ false };
+
+    struct Mvt_input
+    {
+        bool enabled{ false };
+        float_t max_speed{ 0 };
+        float_t accel{ 0 };
+        float_t decel{ 0 };
+    } mvt_input;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Animator_root_motion, root_motion_multiplier);
+};
+
+/// Tag component to be used in the hitcapsule update function.
+struct Animator_driven_hitcapsule_set
+{
 };
 
 }  // namespace component

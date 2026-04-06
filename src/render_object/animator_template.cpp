@@ -12,7 +12,8 @@
 #include <string>
 
 
-TXP::Animator_template_bank::Animator_template_bank()
+TXP::Animator_template_bank::Animator_template_bank(std::string const& animator_template_asset_dir)
+    : m_animator_template_asset_dir(animator_template_asset_dir)
 {
     // Add self as service.
     BT_SERVICE_FINDER_ADD_SERVICE(Animator_template_bank, this);
@@ -23,8 +24,8 @@ TXP::Animator_template const& TXP::Animator_template_bank::load_animator_templat
 {
     if (m_anim_template_cache.find(anim_template_name) == m_anim_template_cache.end())
     {   // Load from disk.
-        json root = BT::json_load_from_disk("BTZC_GAME_ENGINE_ASSET_ANIMATOR_TEMPLATES_PATH" +  // @NOCHECKIN: @THEA: turned this into a string bc then I would definitely look at it agina in the future lol
-                                            anim_template_name);
+        json root = BT::json_load_from_disk(m_animator_template_asset_dir + anim_template_name +
+                                            ".btanitor");
 
         // Fill in new struct.
         Animator_template new_template = root;
@@ -65,7 +66,7 @@ TXP::Animator_template const& TXP::Animator_template_bank::load_animator_templat
 }
 
 void TXP::Animator_template_bank::load_animator_template_into_animator(
-    Model_animator& animator,
+    component_internal::Model_animator& animator,
     std::string const& anim_template_name)
 {
     auto const& anim_temp{ load_animator_template(anim_template_name) };

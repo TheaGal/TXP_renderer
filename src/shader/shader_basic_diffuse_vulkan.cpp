@@ -329,9 +329,14 @@ void Shader_basic_diffuse::allocate_per_instance_data_slots(
     uint16_t render_obj_idx{ 0 };
     for (auto const& rend_obj : render_object_list)
     {
+        auto rend_model_idx{
+            m_pimpl->render_model_data_collection.translate_to_static_model_data_set_idx(
+                rend_obj.render_model_idx)
+        };
+
         // Find number of instances needed for the model.
         auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
-            rend_obj.render_model_idx) };
+            rend_model_idx) };
         size_t num_meshes_in_model{ model.meshes.size() };
 
         // Collect meshes for this shader.
@@ -418,8 +423,14 @@ void Shader_basic_diffuse::draw(
         auto const& rend_obj{
             render_object_list[modmesh_ref.render_obj_idx]
         };
+
+        auto rend_model_idx{
+            m_pimpl->render_model_data_collection.translate_to_static_model_data_set_idx(
+                rend_obj.render_model_idx)
+        };
+
         auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
-            rend_obj.render_model_idx) };
+            rend_model_idx) };
         vkCmdDrawIndexed(cmd,
                          model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
                          1,

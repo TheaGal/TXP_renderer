@@ -18,8 +18,11 @@
 
 namespace TXP
 {
+namespace component_internal
+{
 
-class Model_animator
+/// Internal unserializable component for render object animator.
+class Model_animator  // @TODO: rename to `Skeletal_animator`.
 {
 public:
     Model_animator(Deformed_model_animation_set const& model_anim_set,
@@ -254,4 +257,5 @@ private:
         anim_tmpl_types::Animator_state const& anim_state) const;
 };
 
+}  // namespace component_internal
 }  // namespace TXP

@@ -11,7 +11,7 @@
 
 
 // Hitcapsule.
-void TXP::Hitcapsule::init_calc_info(Model_animator const& animator)
+void TXP::Hitcapsule::init_calc_info(component_internal::Model_animator const& animator)
 {
     auto& joint_name_to_idx{ animator.get_model_skin().joint_name_to_idx };
 
@@ -182,7 +182,7 @@ void TXP::Hitcapsule_group_set::unregister_from_overlap_solver()
     }
 }
 
-void TXP::Hitcapsule_group_set::connect_animator(Model_animator const& animator)
+void TXP::Hitcapsule_group_set::connect_animator(component_internal::Model_animator const& animator)
 {
     for (auto& group : m_hitcapsule_grps)
     for (auto& capsule : group.get_capsules())

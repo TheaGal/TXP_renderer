@@ -14,7 +14,10 @@
 namespace TXP
 {
 
+namespace component_internal
+{
 class Model_animator;
+}  // namespace component_internal
 
 struct Animator_template
 {
@@ -62,13 +65,14 @@ struct Animator_template
 class Animator_template_bank
 {
 public:
-    Animator_template_bank();
+    Animator_template_bank(std::string const& animator_template_asset_dir);
 
     Animator_template const& load_animator_template(std::string const& anim_template_name);
-    void load_animator_template_into_animator(Model_animator& animator,
+    void load_animator_template_into_animator(component_internal::Model_animator& animator,
                                               std::string const& anim_template_name);
 
 private:
+    std::string m_animator_template_asset_dir;
     std::unordered_map<std::string, Animator_template> m_anim_template_cache;
 };
 

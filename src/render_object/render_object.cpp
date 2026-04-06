@@ -220,6 +220,19 @@ uint16_t Render_model_data_collection::create_deformed_model_from_static_model_d
     return valid_idx;
 }
 
+uint16_t Render_model_data_collection::translate_to_static_model_data_set_idx(
+    uint16_t render_model_idx) const
+{
+    if (inner_data->starting_deformed_model_idx == (uint16_t)-1)
+        throw std::runtime_error("Number of static models not locked in yet.");
+
+    // Ignore translation if already in static model idx range.
+    if (render_model_idx < inner_data->starting_deformed_model_idx)
+        return render_model_idx;
+
+    return inner_data->deformed_model_idx_map.at(render_model_idx).base_static_model_data_set_idx;
+}
+
 void Render_model_data_collection::report_one_user_added(uint16_t render_model_idx)
 {
     inner_data->model_reference_count_map[render_model_idx]++;

@@ -13,8 +13,10 @@
 namespace TXP
 {
 
-// class Model;  @TODO: this is the wrong data type.
+namespace component_internal
+{
 class Model_animator;
+}  // namespace component_internal
 
 namespace anim_frame_action
 {
@@ -234,7 +236,7 @@ public:
     std::unordered_map<size_t, size_t> anim_state_idx_to_timeline_idx_map;
 
     /// Calculates the mapping of animator state indices to timeline indices.
-    void map_animator_to_control_regions(Model_animator const& animator,
+    void map_animator_to_control_regions(component_internal::Model_animator const& animator,
                                          Runtime_data_controls const& data_controls);
 
     // Controlled hitcapsule group set.
@@ -325,6 +327,7 @@ public:
     // @TODO: change this bank system to the interface of `Animator_template_bank` at some point.  -Thea 2026/03/31
     static void emplace(std::string const& name, Runtime_data_controls&& runtime_state);
     static void replace(std::string const& name, Runtime_data_controls&& runtime_state);
+    static bool has(std::string const& name);
     static Runtime_data_controls const& get(std::string const& name);
     static std::vector<std::string> get_all_names();
 

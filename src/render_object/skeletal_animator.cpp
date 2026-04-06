@@ -269,21 +269,22 @@ void TXP::Model_joint_animation::get_root_motion_delta_pos_at_frame(
 }
 
 
-TXP::Model_animator::Model_animator(Deformed_model_animation_set const& model_anim_set,
-                                    Deformed_model_skin const& model_skin,
-                                    bool use_root_motion)
+TXP::component_internal::Model_animator::Model_animator(
+    Deformed_model_animation_set const& model_anim_set,
+    Deformed_model_skin const& model_skin,
+    bool use_root_motion)
     : m_model_anim_set{ model_anim_set }
     , m_model_skin{ model_skin }
     , m_is_using_root_motion{ use_root_motion }
 {
 }
 
-TXP::Deformed_model_skin const& TXP::Model_animator::get_model_skin() const
+TXP::Deformed_model_skin const& TXP::component_internal::Model_animator::get_model_skin() const
 {
     return m_model_skin;
 }
 
-void TXP::Model_animator::configure_animator_states(
+void TXP::component_internal::Model_animator::configure_animator_states(
     std::vector<anim_tmpl_types::Animator_state> animator_states,
     std::vector<anim_tmpl_types::Animator_variable> animator_variables)
 {
@@ -293,8 +294,9 @@ void TXP::Model_animator::configure_animator_states(
     m_animator_variables = animator_variables;
 }
 
-std::vector<TXP::Model_animator::Jump_queue_create> TXP::Model_animator::
-    make_jump_queue_create_list_from_anim_frame_action_controls(
+std::vector<TXP::component_internal::Model_animator::Jump_queue_create>
+TXP::component_internal::
+    Model_animator::make_jump_queue_create_list_from_anim_frame_action_controls(
         anim_frame_action::Runtime_data_controls const& anim_frame_action_controls)
 {
     std::vector<Jump_queue_create> jqc;
@@ -308,7 +310,7 @@ std::vector<TXP::Model_animator::Jump_queue_create> TXP::Model_animator::
     return jqc;
 }
 
-void TXP::Model_animator::configure_anim_frame_action_controls(
+void TXP::component_internal::Model_animator::configure_anim_frame_action_controls(
     anim_frame_action::Runtime_data_controls const* anim_frame_action_controls,
     BT::UUID resp_entity_uuid,
     std::vector<Jump_queue_create> const& jump_queues)
@@ -345,12 +347,13 @@ void TXP::Model_animator::configure_anim_frame_action_controls(
 }
 
 std::vector<TXP::anim_tmpl_types::Animator_state> const&
-TXP::Model_animator::get_animator_states() const
+TXP::component_internal::Model_animator::get_animator_states() const
 {
     return m_animator_states;
 }
 
-uint32_t TXP::Model_animator::get_animator_state_idx(std::string const& state_name) const
+uint32_t TXP::component_internal::Model_animator::get_animator_state_idx(
+    std::string const& state_name) const
 {
     uint32_t idx{ (uint32_t)-1 };
 
@@ -373,18 +376,19 @@ uint32_t TXP::Model_animator::get_animator_state_idx(std::string const& state_na
 }
 
 TXP::anim_tmpl_types::Animator_state const&
-TXP::Model_animator::get_animator_state(size_t idx) const
+TXP::component_internal::Model_animator::get_animator_state(size_t idx) const
 {
     return m_animator_states[idx];
 }
 
 TXP::anim_tmpl_types::Animator_state&
-TXP::Model_animator::get_animator_state_write_handle(size_t idx)
+TXP::component_internal::Model_animator::get_animator_state_write_handle(size_t idx)
 {
     return m_animator_states[idx];
 }
 
-void TXP::Model_animator::change_state_set(Animator_state_set const& to_state_set)
+void TXP::component_internal::Model_animator::change_state_set(
+    Animator_state_set const& to_state_set)
 {
     if (to_state_set.anim_state_indices.empty())
     {
@@ -409,7 +413,7 @@ void TXP::Model_animator::change_state_set(Animator_state_set const& to_state_se
     (void)change_state_set_state_idx_goto_next(true);
 }
 
-size_t TXP::Model_animator::get_model_animation_idx(std::string anim_name) const
+size_t TXP::component_internal::Model_animator::get_model_animation_idx(std::string anim_name) const
 {
     size_t idx{ (size_t)-1 };
 
@@ -432,12 +436,14 @@ size_t TXP::Model_animator::get_model_animation_idx(std::string anim_name) const
     return idx;
 }
 
-TXP::Model_joint_animation const& TXP::Model_animator::get_model_animation(size_t idx) const
+TXP::Model_joint_animation const& TXP::component_internal::Model_animator::get_model_animation(
+    size_t idx) const
 {
     return m_model_anim_set.animations[idx];
 }
 
-void TXP::Model_animator::set_float_variable(std::string const& var_name, float_t value)
+void TXP::component_internal::Model_animator::set_float_variable(std::string const& var_name,
+                                                                 float_t value)
 {
     auto& var_handle{ find_animator_variable(var_name) };
 
@@ -450,7 +456,8 @@ void TXP::Model_animator::set_float_variable(std::string const& var_name, float_
     var_handle.var_value = value;
 }
 
-float_t TXP::Model_animator::get_float_variable(std::string const& var_name) const
+float_t TXP::component_internal::Model_animator::get_float_variable(
+    std::string const& var_name) const
 {
     auto const& var_handle{ find_animator_variable_const(var_name) };
 
@@ -463,13 +470,13 @@ float_t TXP::Model_animator::get_float_variable(std::string const& var_name) con
     return var_handle.var_value;
 }
 
-void TXP::Model_animator::reset_time()
+void TXP::component_internal::Model_animator::reset_time()
 {
     set_time(0.0f);
     m_sim_prev_frame = (uint32_t)-1;
 }
 
-void TXP::Model_animator::set_time(float_t time)
+void TXP::component_internal::Model_animator::set_time(float_t time)
 {
     // @NOTE: since SIMULATION_PROFILE floors for calc frame idx, set to start at 1/2 one frame to
     //        prevent floating-pt error accumulation.  -Thea 2026/01/17
@@ -482,12 +489,13 @@ void TXP::Model_animator::set_time(float_t time)
     m_rend_time = time;
 }
 
-void TXP::Model_animator::set_paused(bool paused)
+void TXP::component_internal::Model_animator::set_paused(bool paused)
 {
     m_is_paused.store(paused);
 }
 
-void TXP::Model_animator::update(Animator_timer_profile profile, float_t delta_time)
+void TXP::component_internal::Model_animator::update(Animator_timer_profile profile,
+                                                     float_t delta_time)
 {   // @TODO: There needs to be some kind of time syncing between timers. Since the creation of
     //        setting triggers and variables to switch states, there will be issues when changing
     //        states.
@@ -647,9 +655,10 @@ void TXP::Model_animator::update(Animator_timer_profile profile, float_t delta_t
     }
 }
 
-void TXP::Model_animator::calc_anim_pose(Animator_timer_profile profile,
-                                         bool root_motion_zeroing,
-                                         std::vector<mat4s>& out_joint_matrices) const
+void TXP::component_internal::Model_animator::calc_anim_pose(
+    Animator_timer_profile profile,
+    bool root_motion_zeroing,
+    std::vector<mat4s>& out_joint_matrices) const
 {
     auto time{ get_profile_time_handle(profile).load() };
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
@@ -706,14 +715,15 @@ void TXP::Model_animator::calc_anim_pose(Animator_timer_profile profile,
     }
 }
 
-bool TXP::Model_animator::get_is_using_root_motion() const
+bool TXP::component_internal::Model_animator::get_is_using_root_motion() const
 {
     return m_is_using_root_motion;
 }
 
-void TXP::Model_animator::get_anim_floored_frame_pose(Animator_timer_profile profile,
-                                                      bool root_motion_zeroing,
-                                                      std::vector<mat4s>& out_joint_matrices) const
+void TXP::component_internal::Model_animator::get_anim_floored_frame_pose(
+    Animator_timer_profile profile,
+    bool root_motion_zeroing,
+    std::vector<mat4s>& out_joint_matrices) const
 {
     auto time{ get_profile_time_handle(profile).load() };
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
@@ -770,8 +780,9 @@ void TXP::Model_animator::get_anim_floored_frame_pose(Animator_timer_profile pro
     }
 }
 
-void TXP::Model_animator::get_anim_root_motion_delta_pos(Animator_timer_profile profile,
-                                                         vec3& out_root_motion_delta_pos) const
+void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
+    Animator_timer_profile profile,
+    vec3& out_root_motion_delta_pos) const
 {
     auto time{ get_profile_time_handle(profile).load() };
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
@@ -838,13 +849,13 @@ void TXP::Model_animator::get_anim_root_motion_delta_pos(Animator_timer_profile 
 }
 
 TXP::anim_frame_action::Runtime_controllable_data&
-TXP::Model_animator::get_anim_frame_action_data_handle()
+TXP::component_internal::Model_animator::get_anim_frame_action_data_handle()
 {
     return m_anim_frame_action_data;
 }
 
-std::vector<TXP::Model_animator::Ctrl_cmd_documentation> const& TXP::Model_animator::
-    get_control_command_codes_documentation()
+std::vector<TXP::component_internal::Model_animator::Ctrl_cmd_documentation> const&
+TXP::component_internal::Model_animator::get_control_command_codes_documentation()
 {
     static std::vector<Ctrl_cmd_documentation> const k_all_cmd_docs{
         {
@@ -1050,22 +1061,23 @@ namespace
     static std::atomic<double_t> s_sim_timer{ 0 };
 }
 
-void TXP::Model_animator::advance_sim_timer(float_t delta_time)
+void TXP::component_internal::Model_animator::advance_sim_timer(float_t delta_time)
 {   // @NOTE: this does not pay attention to time-scale (if it is ever implemented) because
     //        `s_sim_timer` is used for expiring queue items, not for the actual animator.
     //          -Thea 2026/01/25
     s_sim_timer += delta_time;
 }
 
-void TXP::Model_animator::emplace_jump_queue_state_set(std::string const& jump_queue_name,
-                                                       Animator_state_set const& state_set,
-                                                       float_t queue_expire_time)
+void TXP::component_internal::Model_animator::emplace_jump_queue_state_set(
+    std::string const& jump_queue_name,
+    Animator_state_set const& state_set,
+    float_t queue_expire_time)
 {
     m_jump_queue_name_to_jump_queue_map.at(jump_queue_name)
         .state_set_queue.emplace_back(state_set, s_sim_timer + queue_expire_time);
 }
 
-void TXP::Model_animator::reset_jump_queue_watchlist()
+void TXP::component_internal::Model_animator::reset_jump_queue_watchlist()
 {   // Reset back to defaults.
     for (auto& [_, jq] : m_jump_queue_name_to_jump_queue_map)
     {
@@ -1074,9 +1086,10 @@ void TXP::Model_animator::reset_jump_queue_watchlist()
     }
 }
 
-bool TXP::Model_animator::set_watch_jump_queue(std::string const& jump_queue_name,
-                                               bool watch,
-                                               uint32_t priority)
+bool TXP::component_internal::Model_animator::set_watch_jump_queue(
+    std::string const& jump_queue_name,
+    bool watch,
+    uint32_t priority)
 {
     auto& jq{ m_jump_queue_name_to_jump_queue_map.at(jump_queue_name) };
     if (jq.is_watching != watch)
@@ -1091,7 +1104,8 @@ bool TXP::Model_animator::set_watch_jump_queue(std::string const& jump_queue_nam
     }
 }
 
-std::optional<TXP::Model_animator::Animator_state_set> TXP::Model_animator::pop_one_state_set()
+std::optional<TXP::component_internal::Model_animator::Animator_state_set>
+TXP::component_internal::Model_animator::pop_one_state_set()
 {
     std::optional<Animator_state_set> state_set{ std::nullopt };
 
@@ -1148,8 +1162,8 @@ std::optional<TXP::Model_animator::Animator_state_set> TXP::Model_animator::pop_
 
 // Please ignore the const_cast's below!! (^_^;)
 
-TXP::Model_animator::animator_time_t& TXP::Model_animator::get_profile_time_handle(
-    Animator_timer_profile profile) const
+auto TXP::component_internal::Model_animator::get_profile_time_handle(
+    Animator_timer_profile profile) const -> animator_time_t&
 {
     switch (profile)
     {
@@ -1163,8 +1177,8 @@ TXP::Model_animator::animator_time_t& TXP::Model_animator::get_profile_time_hand
     }
 }
 
-TXP::Model_animator::animator_frame_t& TXP::Model_animator::get_profile_prev_frame_handle(
-    Animator_timer_profile profile) const
+auto TXP::component_internal::Model_animator::get_profile_prev_frame_handle(
+    Animator_timer_profile profile) const -> animator_frame_t&
 {
     switch (profile)
     {
@@ -1177,10 +1191,10 @@ TXP::Model_animator::animator_frame_t& TXP::Model_animator::get_profile_prev_fra
     }
 }
 
-void TXP::Model_animator::execute_command_code(cmd_code_t const& cmd_code,
-                                               uint32_t row_idx,
-                                               bool is_reg_first_frame,
-                                               bool is_reg_last_frame)
+void TXP::component_internal::Model_animator::execute_command_code(cmd_code_t const& cmd_code,
+                                                                   uint32_t row_idx,
+                                                                   bool is_reg_first_frame,
+                                                                   bool is_reg_last_frame)
 {
     auto const& cmd_docs{ get_control_command_codes_documentation() };
     bool executed{ false };
@@ -1201,7 +1215,7 @@ void TXP::Model_animator::execute_command_code(cmd_code_t const& cmd_code,
     }
 }
 
-bool TXP::Model_animator::change_state_set_state_idx_goto_next(bool reset_count)
+bool TXP::component_internal::Model_animator::change_state_set_state_idx_goto_next(bool reset_count)
 {
     uint32_t from_state_copy{ m_current_state_set_state_idx.load() };
     uint32_t to_state{ reset_count ? 0 : from_state_copy + 1 };
@@ -1238,8 +1252,8 @@ bool TXP::Model_animator::change_state_set_state_idx_goto_next(bool reset_count)
     return true;
 }
 
-TXP::Model_animator::Pair_state_set_info TXP::Model_animator::
-    get_animator_state_info_from_current_state_set() const
+auto TXP::component_internal::Model_animator::get_animator_state_info_from_current_state_set() const
+    -> Pair_state_set_info
 {
     std::lock_guard<std::mutex> lock{ m_current_state_set.mutex };
 
@@ -1260,13 +1274,14 @@ TXP::Model_animator::Pair_state_set_info TXP::Model_animator::
              .loop = is_final_state && m_current_state_set.state_set.loop_final_state };
 }
 
-TXP::anim_tmpl_types::Animator_variable& TXP::Model_animator::find_animator_variable(
-    std::string const& var_name)
+TXP::anim_tmpl_types::Animator_variable&
+TXP::component_internal::Model_animator::find_animator_variable(std::string const& var_name)
 {
     return const_cast<anim_tmpl_types::Animator_variable&>(find_animator_variable_const(var_name));
 }
 
-TXP::anim_tmpl_types::Animator_variable const& TXP::Model_animator::find_animator_variable_const(
+TXP::anim_tmpl_types::Animator_variable const&
+TXP::component_internal::Model_animator::find_animator_variable_const(
     std::string const& var_name) const
 {
     for (auto& anim_var : m_animator_variables)
@@ -1280,8 +1295,8 @@ TXP::anim_tmpl_types::Animator_variable const& TXP::Model_animator::find_animato
     throw std::runtime_error(("Did not find var name: " + var_name).c_str());
 }
 
-TXP::Model_animator::Blend_value_result TXP::Model_animator::calc_blend_value_of_blendtree(
-    anim_tmpl_types::Animator_state const& anim_state) const
+auto TXP::component_internal::Model_animator::calc_blend_value_of_blendtree(
+    anim_tmpl_types::Animator_state const& anim_state) const -> Blend_value_result
 {   // Look for two animations that are closest.
     float_t blend_var_value{ get_float_variable(anim_state.blend_var) };
 

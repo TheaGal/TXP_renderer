@@ -12,7 +12,10 @@
 namespace TXP
 {
 
+namespace component_internal
+{
 class Model_animator;
+}  // namespace component_internal
 
 /// Individual hit-capsule. Multiple grouped together form a `Hitcapsule_group`.
 struct Hitcapsule
@@ -41,7 +44,7 @@ struct Hitcapsule
     size_t  calcd_bone_mat_idx{ (size_t)-1 };
     size_t  calcd_bone_mat_idx_2{ (size_t)-1 };  // -1 means same as `calcd_bone_mat_idx`.
 
-    void init_calc_info(Model_animator const& animator);
+    void init_calc_info(component_internal::Model_animator const& animator);
     void update_transform(mat4 base_transform, std::vector<mat4s> const& joint_matrices);
     void calc_orig_pt_distance();
 
@@ -87,7 +90,7 @@ public:
     void replace_and_reregister(Hitcapsule_group_set const& other, BT::UUID resp_entity_uuid);
     void unregister_from_overlap_solver();
 
-    void connect_animator(Model_animator const& animator);
+    void connect_animator(component_internal::Model_animator const& animator);
 
     std::vector<Hitcapsule_group>& get_hitcapsule_groups();
 

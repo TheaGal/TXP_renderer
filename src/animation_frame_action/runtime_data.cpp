@@ -143,7 +143,7 @@ void TXP::anim_frame_action::Runtime_controllable_data::clear_all_data_overrides
 }
 
 void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_regions(
-    Model_animator const& animator,
+    component_internal::Model_animator const& animator,
     Runtime_data_controls const& data_controls)
 {
     anim_state_idx_to_timeline_idx_map.clear();
@@ -275,6 +275,11 @@ void TXP::anim_frame_action::Bank::replace(std::string const& name,
                                            Runtime_data_controls&& runtime_state)
 {
     s_runtime_states.at(name) = std::move(runtime_state);
+}
+
+bool TXP::anim_frame_action::Bank::has(std::string const& name)
+{
+    return (s_runtime_states.find(name) != s_runtime_states.end());
 }
 
 TXP::anim_frame_action::Runtime_data_controls const& TXP::anim_frame_action::Bank::get(

@@ -488,7 +488,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 ## Implementing animation and AFA.
 
-- [ ] Load in .btafa and .btanitor information.
+- [x] Load in .btafa and .btanitor information.
     - This appears to be the way that it gets loaded in (.btanitor ohh .btafa as well!):
         ```cpp
         // Create render object.
@@ -547,6 +547,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 
 - [ ] Create the deformed animation copy.
+    - [x] use the static model for per-instance placement.
+    - [ ] Allocate space for vertices of the deformed mesh.
+        - Maybe for now just do a copy?
 
 - [ ] Write compute shader for the animation info.
 

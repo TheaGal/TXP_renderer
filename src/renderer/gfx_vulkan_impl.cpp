@@ -902,6 +902,7 @@ void Graphics::Impl::destroy_texture_entries()
 void Graphics::Impl::upload_model_entries_to_gpu(
     Render_model_data_collection& data_collection)
 {   // Get static model information.
+    // @TODO: change this to getting a list of model-data-set indexes, instead of getting names then translating list of names to indexes.
     std::vector<std::string> static_model_names =
         data_collection.get_static_model_data_set_name_list();
 

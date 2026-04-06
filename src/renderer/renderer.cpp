@@ -1,5 +1,6 @@
 #include "txp_renderer/renderer.h"
 
+#include "animation_frame_action/runtime_data.h"
 #include "btdatecheck.h"
 #include "btservice_finder.h"
 #include "camera/camera_internal.h"
@@ -7,8 +8,10 @@
 #include "gfx.h"
 #include "material_organizer/material_organizer.h"
 #include "mutex_wrapper/mutex_wrapper.h"
+#include "render_object/animator_template.h"
 #include "render_object/render_model.h"
 #include "render_object/render_object.h"
+#include "render_object/skeletal_animator.h"
 #include "renderer/types.h"
 #include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
@@ -36,9 +39,11 @@ struct Renderer::Impl
          std::string const& shader_asset_dir,
          std::string const& model_asset_dir,
          std::string const& afa_asset_dir,
+         std::string const& animator_asset_dir,
          std::function<void(bool)>&& set_play_flag_fn,
          std::function<bool()>&& get_play_flag_fn)
         : ecs_registry(ecs_registry)
+        , anim_template_bank(animator_asset_dir)
         , title(title)
         , width(width)
         , height(height)
@@ -58,6 +63,10 @@ struct Renderer::Impl
     }
 
     entt::registry& ecs_registry;
+
+    Animator_template_bank anim_template_bank;
+
+    Hitcapsule_group_overlap_solver hitcapsule_solver;  // Just needs to be created and stored somewhere.  -Thea 2026/04/05
 
     std::string title;
     int32_t width;
@@ -124,6 +133,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir,
                    std::string const& afa_asset_dir,
+                   std::string const& animator_asset_dir,
                    std::function<void(bool)>&& set_play_flag_fn,
                    std::function<bool()>&& get_play_flag_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
@@ -134,6 +144,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                                      shader_asset_dir,
                                      model_asset_dir,
                                      afa_asset_dir,
+                                     animator_asset_dir,
                                      std::move(set_play_flag_fn),
                                      std::move(get_play_flag_fn)))
 {   // Ensure only one instance.
@@ -263,7 +274,7 @@ void Renderer::render_one_frame(float_t delta_time)
     for (auto ecs_entity : rend_obj_cfg_view)
     {
         auto& rend_obj_cfg =
-            rend_obj_cfg_view.get<TXP::component::Render_object_config>(ecs_entity);
+            rend_obj_cfg_view.get<component::Render_object_config>(ecs_entity);
         auto& rend_owned_data = rend_obj_cfg.renderer_owned_data;
 
         if (rend_owned_data.pool_key == k_pool_key_process_flag)
@@ -272,7 +283,7 @@ void Renderer::render_one_frame(float_t delta_time)
 
             uint16_t new_render_model_idx{ (uint16_t)-1 };
             if (rend_obj_cfg.is_deformed)
-            {
+            {   // Create new deformed model.
                 auto static_model_data_set_idx =
                     m.render_model_data_collection.get_static_model_data_set_idx(
                         rend_obj_cfg.model_name);
@@ -280,6 +291,46 @@ void Renderer::render_one_frame(float_t delta_time)
                 new_render_model_idx =
                     m.render_model_data_collection.create_deformed_model_from_static_model_data_set(
                         static_model_data_set_idx);
+
+                // Add animator.
+                bool has_root_motion_tag{ m.ecs_registry.any_of<component::Animator_root_motion>(
+                    ecs_entity) };
+
+                auto& skeletal_animator{ m.ecs_registry.emplace<component_internal::Model_animator>(
+                    ecs_entity,
+                    m.render_model_data_collection.get_deformed_model_anim_set(
+                        m.render_model_data_collection.get_deformed_model_anim_set_idx(
+                            rend_obj_cfg.model_name)),
+                    m.render_model_data_collection.get_deformed_model_skin(
+                        m.render_model_data_collection.get_deformed_model_skin_idx(
+                            rend_obj_cfg.model_name)),
+                    has_root_motion_tag) };
+
+                BT::service_finder::find_service<Animator_template_bank>()
+                    .load_animator_template_into_animator(skeletal_animator,
+                                                          rend_obj_cfg.model_name);
+
+                // Set first anim as default state-set.
+                assert(!skeletal_animator.get_animator_states().empty());
+                skeletal_animator.change_state_set(
+                    { .anim_state_indices = { 0 }, .loop_final_state = true });
+
+                // Add anim frame action controller.
+                if (anim_frame_action::Bank::has(rend_obj_cfg.model_name))
+                {
+                    auto& afa_ctrller_ref{ anim_frame_action::Bank::get(rend_obj_cfg.model_name) };
+
+                    skeletal_animator.configure_anim_frame_action_controls(
+                        &afa_ctrller_ref,
+                        m.ecs_registry.get<component::Entity_metadata>(ecs_entity).uuid,
+                        component_internal::Model_animator::
+                            make_jump_queue_create_list_from_anim_frame_action_controls(
+                                afa_ctrller_ref));
+
+                    // Add hitcapsule set driver.
+                    m.ecs_registry.emplace_or_replace<component::Animator_driven_hitcapsule_set>(
+                        ecs_entity);
+                }
             }
             else
             {

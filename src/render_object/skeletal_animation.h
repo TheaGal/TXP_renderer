@@ -18,7 +18,7 @@
 namespace TXP
 {
 
-struct Model_joint_animation_frame
+struct Model_joint_animation_frame  // @TODO: rename to `Skeletal_animation_frame`.
 {
     struct Joint_local_transform
     {
@@ -45,7 +45,7 @@ struct Model_joint_animation_frame
     vec3 root_motion_delta_pos;
 };
 
-class Model_joint_animation
+class Model_joint_animation  // @TODO: rename to `Skeletal_animation`.
 {
 public:
     Model_joint_animation(Deformed_model_skin const& skin,
