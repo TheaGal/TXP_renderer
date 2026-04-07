@@ -63,8 +63,8 @@ void compute_main(uint3 thread_idx : SV_DispatchThreadID,
              + deform_mesh_joint_transforms[joint.z] * weight.z
              + deform_mesh_joint_transforms[joint.w] * weight.w);
 
-        float3 output_position = float3(deform_transform * float4(input_pos, 1.0));
-        float3 output_normal   = normalize(float3x3(deform_transform) * input_norm);
+        float3 output_position = mul(deform_transform, float4(input_pos, 1.0)).xyz;
+        float3 output_normal   = normalize(mul(float3x3(deform_transform), input_norm));
 
         // Spit out the data!
         output_vertex.position_x  = output_position.x;
