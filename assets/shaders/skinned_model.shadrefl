@@ -2,98 +2,12 @@
     "parameters": [
         {
             "name": "Uniforms",
-            "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 5},
+            "binding": {"kind": "descriptorTableSlot", "index": 0},
             "type": {
                 "kind": "constantBuffer",
                 "elementType": {
                     "kind": "struct",
                     "fields": [
-                        {
-                            "name": "static_combined_model",
-                            "type": {
-                                "kind": "resource",
-                                "baseShape": "structuredBuffer",
-                                "resultType": {
-                                    "kind": "struct",
-                                    "name": "Vertex",
-                                    "fields": [
-                                        {
-                                            "name": "position_x",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 0, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "position_y",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 4, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "position_z",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 8, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "normal_x",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 12, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "normal_y",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 16, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "normal_z",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 20, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "uv_x",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 24, "size": 4, "elementStride": 0}
-                                        },
-                                        {
-                                            "name": "uv_y",
-                                            "type": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 28, "size": 4, "elementStride": 0}
-                                        }
-                                    ]
-                                }
-                            },
-                            "binding": {"kind": "descriptorTableSlot", "index": 1}
-                        },
-                        {
-                            "name": "static_model_vertex_start",
-                            "type": {
-                                "kind": "scalar",
-                                "scalarType": "uint32"
-                            },
-                            "binding": {"kind": "uniform", "offset": 0, "size": 4, "elementStride": 0}
-                        },
                         {
                             "name": "deformed_combined_model",
                             "type": {
@@ -171,174 +85,17 @@
                                     ]
                                 }
                             },
-                            "binding": {"kind": "descriptorTableSlot", "index": 2}
-                        },
-                        {
-                            "name": "deformed_model_vertex_start",
-                            "type": {
-                                "kind": "scalar",
-                                "scalarType": "uint32"
-                            },
-                            "binding": {"kind": "uniform", "offset": 4, "size": 4, "elementStride": 0}
-                        },
-                        {
-                            "name": "num_vertices",
-                            "type": {
-                                "kind": "scalar",
-                                "scalarType": "uint32"
-                            },
-                            "binding": {"kind": "uniform", "offset": 8, "size": 4, "elementStride": 0}
-                        },
-                        {
-                            "name": "vertex_skin_datas",
-                            "type": {
-                                "kind": "resource",
-                                "baseShape": "structuredBuffer",
-                                "resultType": {
-                                    "kind": "struct",
-                                    "name": "Vertex_skin_data",
-                                    "fields": [
-                                        {
-                                            "name": "joint_mat_idxs",
-                                            "type": {
-                                                "kind": "vector",
-                                                "elementCount": 4,
-                                                "elementType": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "uint32"
-                                                }
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 0, "size": 16, "elementStride": 4}
-                                        },
-                                        {
-                                            "name": "weights",
-                                            "type": {
-                                                "kind": "vector",
-                                                "elementCount": 4,
-                                                "elementType": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                }
-                                            },
-                                            "binding": {"kind": "uniform", "offset": 16, "size": 16, "elementStride": 4}
-                                        }
-                                    ]
-                                }
-                            },
-                            "binding": {"kind": "descriptorTableSlot", "index": 3}
-                        },
-                        {
-                            "name": "deform_mesh_joint_transforms",
-                            "type": {
-                                "kind": "resource",
-                                "baseShape": "structuredBuffer",
-                                "resultType": {
-                                    "kind": "matrix",
-                                    "rowCount": 4,
-                                    "columnCount": 4,
-                                    "elementType": {
-                                        "kind": "scalar",
-                                        "scalarType": "float32"
-                                    }
-                                }
-                            },
-                            "binding": {"kind": "descriptorTableSlot", "index": 4}
+                            "binding": {"kind": "descriptorTableSlot", "index": 0}
                         }
                     ]
                 },
                 "containerVarLayout": {
-                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+
                 },
                 "elementVarLayout": {
                     "type": {
                         "kind": "struct",
                         "fields": [
-                            {
-                                "name": "static_combined_model",
-                                "type": {
-                                    "kind": "resource",
-                                    "baseShape": "structuredBuffer",
-                                    "resultType": {
-                                        "kind": "struct",
-                                        "name": "Vertex",
-                                        "fields": [
-                                            {
-                                                "name": "position_x",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 0, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "position_y",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 4, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "position_z",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 8, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "normal_x",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 12, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "normal_y",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 16, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "normal_z",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 20, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "uv_x",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 24, "size": 4, "elementStride": 0}
-                                            },
-                                            {
-                                                "name": "uv_y",
-                                                "type": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 28, "size": 4, "elementStride": 0}
-                                            }
-                                        ]
-                                    }
-                                },
-                                "binding": {"kind": "descriptorTableSlot", "index": 0}
-                            },
-                            {
-                                "name": "static_model_vertex_start",
-                                "type": {
-                                    "kind": "scalar",
-                                    "scalarType": "uint32"
-                                },
-                                "binding": {"kind": "uniform", "offset": 0, "size": 4, "elementStride": 0}
-                            },
                             {
                                 "name": "deformed_combined_model",
                                 "type": {
@@ -416,85 +173,11 @@
                                         ]
                                     }
                                 },
-                                "binding": {"kind": "descriptorTableSlot", "index": 1}
-                            },
-                            {
-                                "name": "deformed_model_vertex_start",
-                                "type": {
-                                    "kind": "scalar",
-                                    "scalarType": "uint32"
-                                },
-                                "binding": {"kind": "uniform", "offset": 4, "size": 4, "elementStride": 0}
-                            },
-                            {
-                                "name": "num_vertices",
-                                "type": {
-                                    "kind": "scalar",
-                                    "scalarType": "uint32"
-                                },
-                                "binding": {"kind": "uniform", "offset": 8, "size": 4, "elementStride": 0}
-                            },
-                            {
-                                "name": "vertex_skin_datas",
-                                "type": {
-                                    "kind": "resource",
-                                    "baseShape": "structuredBuffer",
-                                    "resultType": {
-                                        "kind": "struct",
-                                        "name": "Vertex_skin_data",
-                                        "fields": [
-                                            {
-                                                "name": "joint_mat_idxs",
-                                                "type": {
-                                                    "kind": "vector",
-                                                    "elementCount": 4,
-                                                    "elementType": {
-                                                        "kind": "scalar",
-                                                        "scalarType": "uint32"
-                                                    }
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 0, "size": 16, "elementStride": 4}
-                                            },
-                                            {
-                                                "name": "weights",
-                                                "type": {
-                                                    "kind": "vector",
-                                                    "elementCount": 4,
-                                                    "elementType": {
-                                                        "kind": "scalar",
-                                                        "scalarType": "float32"
-                                                    }
-                                                },
-                                                "binding": {"kind": "uniform", "offset": 16, "size": 16, "elementStride": 4}
-                                            }
-                                        ]
-                                    }
-                                },
-                                "binding": {"kind": "descriptorTableSlot", "index": 2}
-                            },
-                            {
-                                "name": "deform_mesh_joint_transforms",
-                                "type": {
-                                    "kind": "resource",
-                                    "baseShape": "structuredBuffer",
-                                    "resultType": {
-                                        "kind": "matrix",
-                                        "rowCount": 4,
-                                        "columnCount": 4,
-                                        "elementType": {
-                                            "kind": "scalar",
-                                            "scalarType": "float32"
-                                        }
-                                    }
-                                },
-                                "binding": {"kind": "descriptorTableSlot", "index": 3}
+                                "binding": {"kind": "descriptorTableSlot", "index": 0}
                             }
                         ]
                     },
-                    "bindings": [
-                        {"kind": "descriptorTableSlot", "index": 1, "count": 4},
-                        {"kind": "uniform", "offset": 0, "size": 16, "elementStride": 0}
-                    ]
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
                 }
             }
         }
@@ -504,6 +187,54 @@
             "name": "compute_main",
             "stage": "compute",
             "parameters": [
+                {
+                    "name": "input_model",
+                    "binding": {"kind": "uniform", "offset": 0, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Vertex_collection"
+                    }
+                },
+                {
+                    "name": "skin_data_coll",
+                    "binding": {"kind": "uniform", "offset": 8, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Vertex_skin_data_collection"
+                    }
+                },
+                {
+                    "name": "joint_trans_coll",
+                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Deform_mesh_joint_transform_collection"
+                    }
+                },
+                {
+                    "name": "input_model_vertex_start",
+                    "binding": {"kind": "uniform", "offset": 24, "size": 4, "elementStride": 0},
+                    "type": {
+                        "kind": "scalar",
+                        "scalarType": "uint32"
+                    }
+                },
+                {
+                    "name": "output_model_vertex_start",
+                    "binding": {"kind": "uniform", "offset": 28, "size": 4, "elementStride": 0},
+                    "type": {
+                        "kind": "scalar",
+                        "scalarType": "uint32"
+                    }
+                },
+                {
+                    "name": "num_model_vertices",
+                    "binding": {"kind": "uniform", "offset": 32, "size": 4, "elementStride": 0},
+                    "type": {
+                        "kind": "scalar",
+                        "scalarType": "uint32"
+                    }
+                },
                 {
                     "name": "thread_idx",
                     "semanticName": "SV_DISPATCHTHREADID",
@@ -533,7 +264,7 @@
             "bindings": [
                 {
                     "name": "Uniforms",
-                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 5}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
                 }
             ]
         }

@@ -12,38 +12,59 @@ struct Vertex  // std430 aligned.
     float uv_y;
 };
 
+struct Vertex_collection
+{
+    Vertex verts[];
+};
+
 struct Vertex_skin_data
 {
     uint4  joint_mat_idxs;
     float4 weights;
 };
 
+struct Vertex_skin_data_collection
+{
+    Vertex_skin_data vertex_skin_datas[];
+};
+
+struct Deform_mesh_joint_transform_collection
+{
+    float4x4 transforms[];
+};
+
 
 cbuffer Uniforms
 {
-    StructuredBuffer<Vertex> static_combined_model;
-    uint static_model_vertex_start;
+    // StructuredBuffer<Vertex> static_combined_model;
+    // uint static_model_vertex_start;
     RWStructuredBuffer<Vertex> deformed_combined_model;
-    uint deformed_model_vertex_start;
+    // uint deformed_model_vertex_start;
 
-    uint num_vertices;
+    // uint num_vertices;
 
-    StructuredBuffer<Vertex_skin_data> vertex_skin_datas;
-    StructuredBuffer<float4x4> deform_mesh_joint_transforms;
+    // StructuredBuffer<Vertex_skin_data> vertex_skin_datas;
+    // StructuredBuffer<float4x4> deform_mesh_joint_transforms;
 }
 
 
 [shader("compute")]
 [numthreads(128, 1, 1)]
-void compute_main(uint3 thread_idx : SV_DispatchThreadID,
+void compute_main(uniform Vertex_collection* input_model,
+                  uniform Vertex_skin_data_collection* skin_data_coll,
+                  uniform Deform_mesh_joint_transform_collection* joint_trans_coll,
+                  uniform uint input_model_vertex_start,
+                  uniform uint output_model_vertex_start,
+                  uniform uint num_model_vertices,
+                  uint3 thread_idx : SV_DispatchThreadID,
                   uint3 local_thread_idx : SV_GroupThreadID)
 {
     uint x = thread_idx.x;
 
-    if (x < num_vertices)
+    if (x < num_model_vertices)
     {
-        const Vertex input_vertex = static_combined_model[static_model_vertex_start + x];
-        Vertex* output_vertex = &deformed_combined_model[deformed_model_vertex_start + x];
+        const Vertex input_vertex = input_model->verts[input_model_vertex_start + x];
+        Vertex* output_vertex = &deformed_combined_model[output_model_vertex_start + x];
 
         float3 input_pos       = float3(input_vertex.position_x,
                                         input_vertex.position_y,
@@ -53,15 +74,15 @@ void compute_main(uint3 thread_idx : SV_DispatchThreadID,
                                         input_vertex.normal_z);
         float2 input_tex_coord = float2(input_vertex.uv_x,
                                         input_vertex.uv_y);
-        uint4 joint            = vertex_skin_datas[x].joint_mat_idxs;
-        float4 weight          = vertex_skin_datas[x].weights;
+        uint4 joint            = skin_data_coll->vertex_skin_datas[x].joint_mat_idxs;
+        float4 weight          = skin_data_coll->vertex_skin_datas[x].weights;
 
         // Compute deformed mesh.
         float4x4 deform_transform =
-            (deform_mesh_joint_transforms[joint.x] * weight.x
-             + deform_mesh_joint_transforms[joint.y] * weight.y
-             + deform_mesh_joint_transforms[joint.z] * weight.z
-             + deform_mesh_joint_transforms[joint.w] * weight.w);
+            (joint_trans_coll->transforms[joint.x] * weight.x
+             + joint_trans_coll->transforms[joint.y] * weight.y
+             + joint_trans_coll->transforms[joint.z] * weight.z
+             + joint_trans_coll->transforms[joint.w] * weight.w);
 
         float3 output_position = mul(deform_transform, float4(input_pos, 1.0)).xyz;
         float3 output_normal   = normalize(mul(float3x3(deform_transform), input_norm));
