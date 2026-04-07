@@ -222,17 +222,20 @@ uint16_t Render_model_data_collection::create_deformed_model_from_static_model_d
     return valid_idx;
 }
 
-uint16_t Render_model_data_collection::translate_to_static_model_data_set_idx(
-    uint16_t render_model_idx) const
+bool Render_model_data_collection::is_static_model_idx(uint16_t render_model_idx) const
 {
     if (inner_data->starting_deformed_model_idx == (uint16_t)-1)
         throw std::runtime_error("Number of static models not locked in yet.");
 
-    // Ignore translation if already in static model idx range.
-    if (render_model_idx < inner_data->starting_deformed_model_idx)
-        return render_model_idx;
+    return (render_model_idx < inner_data->starting_deformed_model_idx);
+}
 
-    return inner_data->deformed_model_idx_map.at(render_model_idx).base_static_model_idx;
+uint16_t Render_model_data_collection::translate_to_static_model_data_set_idx(
+    uint16_t render_model_idx) const
+{
+    return (is_static_model_idx(render_model_idx)
+                ? render_model_idx
+                : inner_data->deformed_model_idx_map.at(render_model_idx).base_static_model_idx);
 }
 
 std::vector<Deformed_model_data_set*> Render_model_data_collection::get_all_deformed_models()
@@ -254,6 +257,12 @@ std::vector<Deformed_model_data_set*> Render_model_data_collection::get_all_defo
     BT::date_deadline(2026, 4, 10);  // @TODO: CHECK THAT THE `jojo` ORDER IS CONSISTENT!!
 
     return deformed_refs;
+}
+
+Deformed_model_data_set const& Render_model_data_collection::get_deformed_model_data_set(
+    uint16_t render_model_idx) const
+{
+    return inner_data->deformed_model_idx_map.at(render_model_idx);
 }
 
 void Render_model_data_collection::report_one_user_added(uint16_t render_model_idx)

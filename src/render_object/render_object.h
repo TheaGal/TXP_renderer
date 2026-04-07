@@ -73,8 +73,10 @@ struct Render_model_data_collection
     Deformed_model_animation_set const& get_deformed_model_anim_set(uint16_t idx) const;
 
     uint16_t create_deformed_model_from_static_model_data_set(uint16_t static_model_data_set_idx);
+    bool is_static_model_idx(uint16_t render_model_idx) const;
     uint16_t translate_to_static_model_data_set_idx(uint16_t render_model_idx) const;
     std::vector<Deformed_model_data_set*> get_all_deformed_models();
+    Deformed_model_data_set const& get_deformed_model_data_set(uint16_t render_model_idx) const;
 
     /// Adds a user to the reference/usage counter of a certain model.
     /// @param render_model_idx index of either static model or deformed model.

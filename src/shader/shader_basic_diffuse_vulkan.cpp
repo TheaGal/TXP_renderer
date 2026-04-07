@@ -17,6 +17,7 @@
 #include "vulkan/vulkan_core.h"
 
 #include <array>
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <memory>
@@ -365,10 +366,9 @@ void Shader_basic_diffuse::draw(
     std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
     void* render_view_param)
 {
-    if (m_pimpl->draw_inst_list_start_end.back() - m_pimpl->draw_inst_list_start_end.front() == 0)
-        return;  // Nothing to draw. Exit early.
-
     auto& p{ *m_pimpl };
+    if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
+        return;  // Nothing to draw. Exit early.
 
     auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
 
@@ -394,7 +394,6 @@ void Shader_basic_diffuse::draw(
                             1, &p.g.all_textures_descriptor_set,
                             0, nullptr);
 
-    p.g.combined_static_model.bind(cmd);
 
     Shader_basic_diffuse_push_constants push_consts{
         .environment_data_dev_addr =
@@ -414,9 +413,13 @@ void Shader_basic_diffuse::draw(
                        sizeof(Shader_basic_diffuse_push_constants),
                        &push_consts);
 
+    // Combined model binding state.
+    int32_t bound_combined_model{ -1 };  // -1:unbound  0:static-model  1:deformed-model
+    int32_t num_combined_model_binding_changes{ 0 };
+
     // Render instances.
-    for (auto draw_instance = m_pimpl->draw_inst_list_start_end.front();
-         draw_instance < m_pimpl->draw_inst_list_start_end.back();
+    for (auto draw_instance = p.draw_inst_list_start_end.front();
+         draw_instance < p.draw_inst_list_start_end.back();
          draw_instance++)
     {
         auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
@@ -424,13 +427,39 @@ void Shader_basic_diffuse::draw(
             render_object_list[modmesh_ref.render_obj_idx]
         };
 
-        auto rend_model_idx{
-            m_pimpl->render_model_data_collection.translate_to_static_model_data_set_idx(
-                rend_obj.render_model_idx)
-        };
+        bool is_static_model{ p.render_model_data_collection.is_static_model_idx(
+            rend_obj.render_model_idx) };
 
-        auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
-            rend_model_idx) };
+        // Bind new combined model if needs different one than last bound one.
+        int32_t needed_combined_model{ is_static_model ? 0 : 1 };
+        if (needed_combined_model != bound_combined_model)
+        {
+            bound_combined_model = needed_combined_model;
+            num_combined_model_binding_changes++;
+
+            switch (needed_combined_model)
+            {
+            case 0: p.g.combined_static_model.bind(cmd); break;
+            case 1: p.g.combined_deformed_model.bind(cmd); break;
+            default: assert(false); break;
+            }
+
+            if (num_combined_model_binding_changes >= 3)
+            {
+                BT_ERROR(
+                    "Number of combined model binding changes exceeded 3. Performance is bad: need "
+                    "a new system for managing binding changes between static and deformed "
+                    "combined models!!!  -Thea");
+                assert(false);
+            }
+        }
+
+        // Draw single model.
+        auto const& model{ is_static_model
+                               ? p.render_model_data_collection.get_static_model_data_set(
+                                     rend_obj.render_model_idx)
+                               : p.render_model_data_collection.get_deformed_model_data_set(
+                                     rend_obj.render_model_idx).deformed_model };
         vkCmdDrawIndexed(cmd,
                          model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
                          1,
