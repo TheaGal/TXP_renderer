@@ -36,15 +36,7 @@ struct Deform_mesh_joint_transform_collection
 
 cbuffer Uniforms
 {
-    // StructuredBuffer<Vertex> static_combined_model;
-    // uint static_model_vertex_start;
     RWStructuredBuffer<Vertex> deformed_combined_model;
-    // uint deformed_model_vertex_start;
-
-    // uint num_vertices;
-
-    // StructuredBuffer<Vertex_skin_data> vertex_skin_datas;
-    // StructuredBuffer<float4x4> deform_mesh_joint_transforms;
 }
 
 
