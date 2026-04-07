@@ -560,6 +560,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - Pretty sure it is if the bindings are changing.
 
 - [ ] Write compute shader for the animation info.
+    - [x] Make initial implementation of the compute shader.
 
 
 ## Performance.
