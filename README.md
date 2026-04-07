@@ -131,8 +131,9 @@ gantt
         完 Render view usage tie-in with ImGui : a15, after a4, 3d
         完 impl as much as poss in btzc engine : a16, after a6, 15d
     section Animation system
-        中 Load .btafa and .btanitor to model : a9, after a16, 3d
-        Compute shader of static mesh into skinned mesh in its own buffer : a10, after a9, 4d
+        完 Load .btafa and .btanitor to model : a9, after a16, 3d
+        完 Switch between deformed and static model : a17, after a9, 4d
+        中 Compute shader of static mesh into skinned mesh in its own buffer : a10, after a17, 5d
         Control animators via setting state-sets : a11, after a10, 3d
         Control animators via jump queues : a12, after a10, 3d
     section Milestones
