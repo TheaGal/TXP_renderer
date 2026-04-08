@@ -21,6 +21,17 @@ namespace TXP
 namespace Shader
 {
 
+/// Struct for push constants.
+struct Shader_skinned_model_push_constants
+{
+    VkDeviceAddress input_model_dev_addr;
+    VkDeviceAddress skin_data_coll_dev_addr;
+    VkDeviceAddress joint_trans_coll_dev_addr;
+    uint32_t input_model_vertex_start;
+    uint32_t output_model_vertex_start;
+    uint32_t num_model_vertices;
+};
+
 // struct Shader_skinned_model::Impl
 struct Shader_skinned_model::Impl
 {
@@ -47,11 +58,13 @@ struct Shader_skinned_model::Impl
         // Descriptor layouts.
         shader_pipeline.descriptor_layout = g.build_descriptor_layout(
             {
-                { 0, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+                { 0, { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER } },
             },
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);
 
+        assert(false);  // Do vv below vv
+        #if 0  // @TODO: @THEA: put this in its own func that gets called whenever the combined deformed model buffer is rebuilt!!!  -Thea 2026/04/08
         // Descriptors.
         shader_pipeline.descriptor_set =
             g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
@@ -73,6 +86,7 @@ struct Shader_skinned_model::Impl
         };
 
         vkUpdateDescriptorSets(device, 1, &img_write, 0, nullptr);
+        #endif // 0  // @TODO: @THEA: put this in its own func that gets called whenever the combined deformed model buffer is rebuilt!!!  -Thea 2026/04/08
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Pipeline.
@@ -80,13 +94,16 @@ struct Shader_skinned_model::Impl
         VkResult err;
 
         // Create pipeline layout.
+        VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+                                                 .size =
+                                                     sizeof(Shader_skinned_model_push_constants) };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .setLayoutCount = 1,
             .pSetLayouts = &shader_pipeline.descriptor_layout,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &push_constant_range,
         };
 
         err = vkCreatePipelineLayout(device,
@@ -196,9 +213,10 @@ void Shader_skinned_model::compute(void* render_frame)
 
     auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
 
-    Vk_Image::Image::transition_to(
-        cmd,
-        { { &p.g.render_views[0].color_image.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
+    // @THEA: @TODO: Is transitioning the buffer necessary in this case???
+    // Vk_Image::Image::transition_to(
+    //     cmd,
+    //     { { &p.g.render_views[0].color_image.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.shader_pipeline.pipeline);
     vkCmdBindDescriptorSets(cmd,
@@ -208,19 +226,48 @@ void Shader_skinned_model::compute(void* render_frame)
                             1, &p.shader_pipeline.descriptor_set,
                             0, nullptr);
 
+    // Push constants.
+    Shader_skinned_model_push_constants push_consts{
+        .input_model_dev_addr =
+            current_frame.environment_data_buffers[render_view.render_view_idx]
+                .get_device_address(),
+        .skin_data_coll_dev_addr =
+            current_frame.per_instance_data_collection_buffer.get_device_address(),
+        .joint_trans_coll_dev_addr =
+            current_frame.model_transform_set_buffer.get_device_address(),
+        .input_model_vertex_start = 123,
+        .output_model_vertex_start = 123,
+        .num_model_vertices = 123,
+    };
+    vkCmdPushConstants(cmd,
+                       p.shader_pipeline.pipeline_layout,
+                       VK_SHADER_STAGE_COMPUTE_BIT,
+                       0,
+                       sizeof(Shader_skinned_model_push_constants),
+                       &push_consts);
+
     // @TODO: move this into a real function.
     static auto const k_cmd_dispatch_fn =
         [](VkCommandBuffer cmd, VkExtent3D dispatch_thread_sizes, VkExtent3D thread_group_sizes) {
             vkCmdDispatch(cmd,
-                          (dispatch_thread_sizes.width + thread_group_sizes.width - 1) /
-                              thread_group_sizes.width,
-                          (dispatch_thread_sizes.height + thread_group_sizes.height - 1) /
-                              thread_group_sizes.height,
-                          (dispatch_thread_sizes.depth + thread_group_sizes.depth - 1) /
-                              thread_group_sizes.depth);
+                          std::max(1u,
+                                   (dispatch_thread_sizes.width + thread_group_sizes.width - 1) /
+                                       thread_group_sizes.width),
+                          std::max(1u,
+                                   (dispatch_thread_sizes.height + thread_group_sizes.height - 1) /
+                                       thread_group_sizes.height),
+                          std::max(1u,
+                                   (dispatch_thread_sizes.depth + thread_group_sizes.depth - 1) /
+                                       thread_group_sizes.depth));
         };
 
-    k_cmd_dispatch_fn(cmd, p.g.render_views[0].color_image.get_extent(), p.thread_grp_sizes);
+    k_cmd_dispatch_fn(cmd,
+                      VkExtent3D{
+                          .width = push_consts.num_model_vertices,
+                          .height = 0,
+                          .depth = 0,
+                      },
+                      p.thread_grp_sizes);
 }
 
 }  // namespace Shader
