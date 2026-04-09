@@ -564,9 +564,15 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Create data structures/ifc for accessing needed model skin and joint trnas buffers.
     - [ ] Create skin data buffer from skin data after loaded from gltf.
     - [ ] Create joint transforms buffer.
+        - [x] marked
     - [ ] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).
+        - [x] marked
     - [ ] Update joint transforms buffer with animator stuff while it's playing.
+        - [x] marked
+        - [x] kinda stubbed out w pseudocode
     - [ ] Actually call the shader for each deformed model.
+        - [x] marked
+        - [x] kinda stubbed out w pseudocode
 
 
 ## Performance.

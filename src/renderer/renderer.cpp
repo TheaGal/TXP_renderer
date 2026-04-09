@@ -290,6 +290,10 @@ struct Renderer::Impl
         {
             g.wait_until_gpu_idle();
             g.build_deformed_combined_model(m.render_model_data_collection);
+            assert(false);  // @TODO: @HERE: Create joint transforms buffer.
+            assert(false);  // @TODO: @HERE: Create descriptor set for the combined deformed vertex
+                            //   set (and keep it updated whenever that combined model changes or
+                            //   gets rebuilt).
         }
     }
 };
@@ -457,6 +461,27 @@ void Renderer::render_one_frame(float_t delta_time)
     // Avoid drawing with deleted GPU data or frame acquire failed.
     if (render_view_sizes_changed || !frame_acquired)
         return;
+
+    // Update animators.
+    for (auto&& [_, animator] : m.ecs_registry.view<component_internal::Model_animator>().each())
+    {   // Tick animator.
+        animator.update(animator.RENDERER_PROFILE, delta_time);
+
+        std::vector<mat4s> joint_matrices;
+        animator.calc_anim_pose(animator.RENDERER_PROFILE,
+                                animator.get_is_using_root_motion(),
+                                joint_matrices);
+
+        auto const& def_mod{ animator.get_deformed_model() };
+
+        // Update joint transform buffer.
+        std::memcpy(def_mod.joint_transforms_buffer.get_p_mapped_data(),
+                    joint_matrices.data(),
+                    joint_matrices.size() * sizeof(mat4s));
+
+        // Execute compute shader for corresponding deformed model,
+        m.shad_skinned_model->compute(&def_mod);
+    }
 
     // Populate render object model mesh references for organizing per-instance data.
     size_t cur_modmesh_ref_idx{ 0 };
