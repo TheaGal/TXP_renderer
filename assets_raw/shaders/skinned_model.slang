@@ -52,7 +52,6 @@ void compute_main(uniform Vertex_collection* input_model,
                   uint3 local_thread_idx : SV_GroupThreadID)
 {
     uint x = thread_idx.x;
-
     if (x < num_model_vertices)
     {
         const Vertex input_vertex = input_model->verts[input_model_vertex_start + x];

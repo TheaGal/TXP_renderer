@@ -11,6 +11,7 @@ namespace TXP
 {
 
 struct Material_organizer;  // Forward decl.
+struct Render_model_data_collection;  // Forward decl.
 struct Render_object;  // Forward decl.
 struct Render_object_model_mesh_reference;  // Forward decl.
 
@@ -23,7 +24,9 @@ class Shader_skinned_model
 public:
     static constexpr char const* k_name{ "skinned_model" };
 
-    Shader_skinned_model(Material_organizer& material_organizer, void* graphics);
+    Shader_skinned_model(Material_organizer& material_organizer,
+                         Render_model_data_collection& rend_model_data_coll,
+                         void* graphics);
     ~Shader_skinned_model();
 
     void make_material(std::string const& material_name,

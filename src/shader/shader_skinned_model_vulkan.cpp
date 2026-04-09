@@ -6,7 +6,7 @@
 
 #include "btlogger.h"
 #include "material_organizer/material_organizer.h"
-#include "renderer/gfx_vulkan/vk_image.h"
+#include "render_object/render_object.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader/shader_support.h"
 #include "shader_creation/shader_creation.h"
@@ -35,8 +35,11 @@ struct Shader_skinned_model_push_constants
 // struct Shader_skinned_model::Impl
 struct Shader_skinned_model::Impl
 {
-    Impl(TXP::Material_organizer& mat_coll, TXP::Graphics::Impl& graphics)
+    Impl(TXP::Material_organizer& mat_coll,
+         TXP::Render_model_data_collection& rmd_coll,
+         TXP::Graphics::Impl& graphics)
         : material_organizer(mat_coll)
+        , rend_model_data_coll(rmd_coll)
         , g(graphics)
         , device(g.gfx.device)
     {
@@ -155,6 +158,7 @@ struct Shader_skinned_model::Impl
 
 
     TXP::Material_organizer& material_organizer;
+    TXP::Render_model_data_collection& rend_model_data_coll;
 
     TXP::Graphics::Impl& g;
     VkDevice device;
@@ -174,9 +178,12 @@ struct Shader_skinned_model::Impl
 
 
 // class Shader_skinned_model
-Shader_skinned_model::Shader_skinned_model(Material_organizer& material_organizer, void* graphics)
-    : m_pimpl(
-          std::make_unique<Impl>(material_organizer, *static_cast<TXP::Graphics::Impl*>(graphics)))
+Shader_skinned_model::Shader_skinned_model(Material_organizer& material_organizer,
+                                           Render_model_data_collection& rend_model_data_coll,
+                                           void* graphics)
+    : m_pimpl(std::make_unique<Impl>(material_organizer,
+                                     rend_model_data_coll,
+                                     *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
@@ -226,18 +233,19 @@ void Shader_skinned_model::compute(void* render_frame)
                             1, &p.shader_pipeline.descriptor_set,
                             0, nullptr);
 
+    // Get base static model of deformed model.
+    auto const& base_static_model{ p.rend_model_data_coll.get_static_model_data_set(
+        deformed_model.base_static_model_idx) };
+
     // Push constants.
     Shader_skinned_model_push_constants push_consts{
-        .input_model_dev_addr =
-            current_frame.environment_data_buffers[render_view.render_view_idx]
-                .get_device_address(),
+        .input_model_dev_addr = p.g.combined_static_model.vertex_index_buffer.get_device_address(),
         .skin_data_coll_dev_addr =
-            current_frame.per_instance_data_collection_buffer.get_device_address(),
-        .joint_trans_coll_dev_addr =
-            current_frame.model_transform_set_buffer.get_device_address(),
-        .input_model_vertex_start = 123,
-        .output_model_vertex_start = 123,
-        .num_model_vertices = 123,
+            deformed_model.model_skin.vert_skin_data_buffer.get_device_address(),
+        .joint_trans_coll_dev_addr = deformed_model.joint_transforms_buffer.get_device_address(),
+        .input_model_vertex_start = base_static_model.vertex_index_offset,
+        .output_model_vertex_start = deformed_model.deformed_model.vertex_index_offset,
+        .num_model_vertices = base_static_model.vertices.size(),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,

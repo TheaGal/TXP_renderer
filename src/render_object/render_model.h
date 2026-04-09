@@ -1,5 +1,8 @@
 #pragma once
 
+#if TXP_GFX_BACKEND_VULKAN
+#include "renderer/gfx_vulkan/vk_buffer.h"
+#endif // TXP_GFX_BACKEND_VULKAN
 #include "vertex.h"
 
 #include <cassert>
@@ -47,11 +50,17 @@ struct Static_model_data_set
     int32_t vertex_index_offset;
 };
 
+struct Deformed_model_skin;  // Forward decl.
+
 /// Deformed model based off static model.
 struct Deformed_model_data_set
 {
     uint16_t base_static_model_idx;
     Static_model_data_set deformed_model;
+    Deformed_model_skin const& model_skin;
+#if TXP_GFX_BACKEND_VULKAN
+    Vk_Buffer::Allocated_buffer joint_transforms_buffer;
+#endif // TXP_GFX_BACKEND_VULKAN
 };
 
 /// Renderable model (to be used by render object).

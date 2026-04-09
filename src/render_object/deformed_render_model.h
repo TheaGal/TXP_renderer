@@ -1,6 +1,9 @@
 #pragma once
 
 #include "btglm.h"
+#if TXP_GFX_BACKEND_VULKAN
+#include "renderer/gfx_vulkan/vk_buffer.h"
+#endif // TXP_GFX_BACKEND_VULKAN
 #include "vertex.h"
 
 #include <unordered_map>
@@ -23,6 +26,10 @@ struct Model_joint
 struct Deformed_model_skin
 {
     std::vector<Vertex_skin_data> vert_skin_datas;  // @TODO: See if this needs to be stored CPU-side.
+
+#if TXP_GFX_BACKEND_VULKAN
+    Vk_Buffer::Allocated_buffer vert_skin_data_buffer;
+#endif // TXP_GFX_BACKEND_VULKAN
 
     mat4 baseline_transform = GLM_MAT4_IDENTITY_INIT;
     mat4 inverse_global_transform = GLM_MAT4_IDENTITY_INIT;
