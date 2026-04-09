@@ -38,7 +38,7 @@ public:
         std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
         size_t& in_out_cur_modmesh_ref_idx);
 
-    void compute(void* render_frame);
+    void compute(void* deformed_model_ptr);
 
 private:
     struct Impl;

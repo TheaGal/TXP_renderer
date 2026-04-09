@@ -561,6 +561,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 
 - [ ] Write compute shader for the animation info.
     - [x] Make initial implementation of the compute shader.
+    - [x] Create data structures/ifc for accessing needed model skin and joint trnas buffers.
+    - [ ] Create skin data buffer from skin data after loaded from gltf.
+    - [ ] Create joint transforms buffer.
+    - [ ] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).
+    - [ ] Update joint transforms buffer with animator stuff while it's playing.
+    - [ ] Actually call the shader for each deformed model.
 
 
 ## Performance.

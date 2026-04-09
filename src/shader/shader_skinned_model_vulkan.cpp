@@ -6,6 +6,8 @@
 
 #include "btlogger.h"
 #include "material_organizer/material_organizer.h"
+#include "render_object/deformed_render_model.h"
+#include "render_object/render_model.h"
 #include "render_object/render_object.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader/shader_support.h"
@@ -214,11 +216,13 @@ void Shader_skinned_model::allocate_per_instance_data_slots(
     // BT_TRACE("Shader_skinned_model has no per-instance data.");
 }
 
-void Shader_skinned_model::compute(void* render_frame)
+void Shader_skinned_model::compute(void* deformed_model_ptr)
 {
     auto& p{ *m_pimpl };
 
     auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
+
+    auto const& deformed_model{ *static_cast<Deformed_model_data_set*>(deformed_model_ptr) };
 
     // @THEA: @TODO: Is transitioning the buffer necessary in this case???
     // Vk_Image::Image::transition_to(
@@ -239,13 +243,18 @@ void Shader_skinned_model::compute(void* render_frame)
 
     // Push constants.
     Shader_skinned_model_push_constants push_consts{
-        .input_model_dev_addr = p.g.combined_static_model.vertex_index_buffer.get_device_address(),
+        .input_model_dev_addr =
+            p.g.combined_static_model.vertex_index_buffer.get_device_address(),
         .skin_data_coll_dev_addr =
             deformed_model.model_skin.vert_skin_data_buffer.get_device_address(),
-        .joint_trans_coll_dev_addr = deformed_model.joint_transforms_buffer.get_device_address(),
-        .input_model_vertex_start = base_static_model.vertex_index_offset,
-        .output_model_vertex_start = deformed_model.deformed_model.vertex_index_offset,
-        .num_model_vertices = base_static_model.vertices.size(),
+        .joint_trans_coll_dev_addr =
+            deformed_model.joint_transforms_buffer.get_device_address(),
+        .input_model_vertex_start =
+            static_cast<uint32_t>(base_static_model.vertex_index_offset),
+        .output_model_vertex_start =
+            static_cast<uint32_t>(deformed_model.deformed_model.vertex_index_offset),
+        .num_model_vertices =
+            static_cast<uint32_t>(base_static_model.vertices.size()),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
