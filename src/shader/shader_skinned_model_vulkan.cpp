@@ -68,31 +68,6 @@ struct Shader_skinned_model::Impl
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);
 
-        assert(false);  // Do vv below vv
-        #if 0  // @TODO: @THEA: put this in its own func that gets called whenever the combined deformed model buffer is rebuilt!!!  -Thea 2026/04/08
-        // Descriptors.
-        shader_pipeline.descriptor_set =
-            g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
-
-        VkDescriptorImageInfo img_info{
-            .imageView = g.render_views[0].color_image.get_image_view(),
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-        };
-
-        VkWriteDescriptorSet img_write{
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
-
-            .dstSet = shader_pipeline.descriptor_set,
-            .dstBinding = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &img_info,
-        };
-
-        vkUpdateDescriptorSets(device, 1, &img_write, 0, nullptr);
-        #endif // 0  // @TODO: @THEA: put this in its own func that gets called whenever the combined deformed model buffer is rebuilt!!!  -Thea 2026/04/08
-
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Pipeline.
 
