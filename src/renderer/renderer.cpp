@@ -476,7 +476,7 @@ void Renderer::render_one_frame(float_t delta_time)
                                 animator.get_is_using_root_motion(),
                                 joint_matrices);
 
-        auto const& def_mod{ animator.get_deformed_model() };
+        auto& def_mod{ animator.get_deformed_model() };
 
         // Update joint transform buffer.
         std::memcpy(def_mod.joint_transforms_buffer.get_p_mapped_data(),

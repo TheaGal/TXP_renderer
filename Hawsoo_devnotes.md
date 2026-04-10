@@ -571,12 +571,13 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).
         - [x] marked
         - [x] stubbed in shader class
-    - [ ] Update joint transforms buffer with animator stuff while it's playing.
+    - [x] Update joint transforms buffer with animator stuff while it's playing.
         - [x] marked
         - [x] kinda stubbed out w pseudocode
-    - [ ] Actually call the shader for each deformed model.
+    - [x] Actually call the shader for each deformed model.
         - [x] marked
         - [x] kinda stubbed out w pseudocode
+    - [ ] fix compiler errors
 
 
 ## Performance.

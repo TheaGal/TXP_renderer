@@ -5,7 +5,7 @@
 #include "btglm.h"
 #include "btlogger.h"
 #include "btuuid.h"
-// #include "mesh.h"  @TODO
+#include "render_model.h"  // for Deformed_model_data_set (@TODO: remove this after moving)
 #include "txp_renderer/types.h"
 
 #include <algorithm>
@@ -271,17 +271,22 @@ void TXP::Model_joint_animation::get_root_motion_delta_pos_at_frame(
 
 TXP::component_internal::Model_animator::Model_animator(
     Deformed_model_animation_set const& model_anim_set,
-    Deformed_model_skin const& model_skin,
+    Deformed_model_data_set const& deformed_model,
     bool use_root_motion)
     : m_model_anim_set{ model_anim_set }
-    , m_model_skin{ model_skin }
+    , m_deformed_model{ deformed_model }
     , m_is_using_root_motion{ use_root_motion }
 {
 }
 
+TXP::Deformed_model_data_set& TXP::component_internal::Model_animator::get_deformed_model() const
+{
+    return const_cast<Deformed_model_data_set&>(m_deformed_model);
+}
+
 TXP::Deformed_model_skin const& TXP::component_internal::Model_animator::get_model_skin() const
 {
-    return m_model_skin;
+    return m_deformed_model.model_skin;
 }
 
 void TXP::component_internal::Model_animator::configure_animator_states(

@@ -18,6 +18,9 @@
 
 namespace TXP
 {
+
+struct Deformed_model_data_set;  // Forward decl.
+
 namespace component_internal
 {
 
@@ -26,9 +29,10 @@ class Model_animator  // @TODO: rename to `Skeletal_animator`.
 {
 public:
     Model_animator(Deformed_model_animation_set const& model_anim_set,
-                   Deformed_model_skin const& model_skin,
+                   Deformed_model_data_set const& deformed_model,
                    bool use_root_motion);
 
+    Deformed_model_data_set& get_deformed_model() const;
     Deformed_model_skin const& get_model_skin() const;
 
     void configure_animator_states(
@@ -174,7 +178,7 @@ public:
 
 private:
     Deformed_model_animation_set const& m_model_anim_set;
-    Deformed_model_skin const& m_model_skin;
+    Deformed_model_data_set const& m_deformed_model;
 
     // @NOTE: Times need to be atomic since `change_state_idx()` and `set_time()` can be called from
     //        any thread.

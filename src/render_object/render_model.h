@@ -53,7 +53,7 @@ struct Static_model_data_set
 struct Deformed_model_skin;  // Forward decl.
 
 /// Deformed model based off static model.
-struct Deformed_model_data_set
+struct Deformed_model_data_set  // @TODO: @THEA: move this to `deformed_render_model.h`
 {
     uint16_t base_static_model_idx;
     Static_model_data_set deformed_model;
