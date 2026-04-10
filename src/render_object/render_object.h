@@ -72,7 +72,7 @@ struct Render_model_data_collection
     uint16_t get_deformed_model_anim_set_idx(std::string const& name) const;
     Deformed_model_animation_set const& get_deformed_model_anim_set(uint16_t idx) const;
 
-    uint16_t create_deformed_model_from_static_model_data_set(uint16_t static_model_data_set_idx);
+    uint16_t create_deformed_model_from_static_model_data_set(std::string const& static_model_name);
     bool is_static_model_idx(uint16_t render_model_idx) const;
     uint16_t translate_to_static_model_data_set_idx(uint16_t render_model_idx) const;
     std::vector<Deformed_model_data_set*> get_all_deformed_models();

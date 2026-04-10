@@ -564,6 +564,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Create data structures/ifc for accessing needed model skin and joint trnas buffers.
     - [x] Create skin data buffer from skin data after loaded from gltf.
         - [x] marked
+    - [x] get the model skin reference assigned to deformed model.
     - [ ] Create joint transforms buffer.
         - [x] marked
     - [ ] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).

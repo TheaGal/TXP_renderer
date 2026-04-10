@@ -188,7 +188,7 @@ Deformed_model_animation_set const& Render_model_data_collection::get_deformed_m
 }
 
 uint16_t Render_model_data_collection::create_deformed_model_from_static_model_data_set(
-    uint16_t static_model_data_set_idx)
+    std::string const& static_model_name)
 {
     if (inner_data->starting_deformed_model_idx == (uint16_t)-1)
         throw std::runtime_error("Number of static models not locked in yet.");
@@ -205,6 +205,7 @@ uint16_t Render_model_data_collection::create_deformed_model_from_static_model_d
         throw std::runtime_error("No valid idx found.");
 
     // Create model.
+    auto static_model_data_set_idx{ get_static_model_data_set_idx(static_model_name) };
     auto const& base_static_model{ get_static_model_data_set(static_model_data_set_idx) };
     Static_model_data_set partial_copy{
         .meshes = base_static_model.meshes,
@@ -215,6 +216,7 @@ uint16_t Render_model_data_collection::create_deformed_model_from_static_model_d
     Deformed_model_data_set new_deformed_model{
         .base_static_model_idx = static_model_data_set_idx,
         .deformed_model = std::move(partial_copy),
+        .model_skin = get_deformed_model_skin(get_deformed_model_skin_idx(static_model_name)),
     };
 
     inner_data->deformed_model_idx_map.emplace(valid_idx, std::move(new_deformed_model));

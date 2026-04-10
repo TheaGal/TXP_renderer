@@ -164,7 +164,7 @@ struct Renderer::Impl
 
                     new_render_model_idx = m.render_model_data_collection
                                                .create_deformed_model_from_static_model_data_set(
-                                                   static_model_data_set_idx);
+                                                   rend_obj_cfg.model_name);
 
                     // Add animator.
                     bool has_root_motion_tag{
