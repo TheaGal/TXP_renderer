@@ -290,7 +290,7 @@ struct Renderer::Impl
         {
             g.wait_until_gpu_idle();
             g.build_deformed_combined_model(m.render_model_data_collection);
-            assert(false);  // @TODO: @HERE: Create joint transforms buffer.
+            g.create_joint_transforms_buffers(m.render_model_data_collection);
             assert(false);  // @TODO: @HERE: Create descriptor set for the combined deformed vertex
                             //   set (and keep it updated whenever that combined model changes or
                             //   gets rebuilt).

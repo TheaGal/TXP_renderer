@@ -18,6 +18,8 @@ namespace Vk_Buffer
 class Allocated_buffer
 {
 public:
+    ~Allocated_buffer();
+
     /// Creates buffer.
     void create(VkDevice device,
                 VmaAllocator allocator,
@@ -28,6 +30,10 @@ public:
     /// Destroys the created buffer.
     void destroy();
 
+    /// Checks whether the buffer is created.
+    bool is_created() const;
+
+    /// Gets buffer.
     VkBuffer const& get_buffer() const;
 
     /// Gets the `.pMappedData` pointer.
@@ -37,6 +43,7 @@ public:
     VkDeviceAddress get_device_address() const;
 
 private:
+    bool m_created{ false };
     VmaAllocator m_used_allocator;
     VkBuffer m_buffer;
     VmaAllocation m_buffer_allocation;

@@ -26,6 +26,7 @@
 // clang-format on
 
 #include "btdatecheck.h"
+#include "btglm.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
 #include "editor_conent/editor_content.h"
@@ -1120,6 +1121,33 @@ void Graphics::Impl::build_deformed_combined_model(
     std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
                 combined_indices.data(),
                 index_buf_size);
+}
+
+void Graphics::Impl::create_joint_transforms_buffers(Render_model_data_collection& data_collection)
+{
+    for (auto* def_mod : data_collection.get_all_deformed_models())
+    {
+        if (!def_mod->joint_transforms_buffer.is_created())
+        {   // Create joint transforms buffer.
+            def_mod->joint_transforms_buffer.create(
+                gfx.device,
+                gfx.allocator,
+                def_mod->model_skin.joints_sorted_breadth_first.size() * sizeof(mat4s),
+                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                    VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                    VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+            // Load identity transform onto GPU.
+            for (size_t i = 0; i < def_mod->model_skin.joints_sorted_breadth_first.size(); i++)
+            {
+                auto* joint_trans_buf_ptr{ static_cast<mat4s*>(
+                    def_mod->joint_transforms_buffer.get_p_mapped_data()) };
+                glm_mat4_identity(joint_trans_buf_ptr->raw);
+                joint_trans_buf_ptr++;
+            }
+        }
+    }
 }
 
 

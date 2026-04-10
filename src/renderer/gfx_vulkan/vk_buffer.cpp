@@ -8,6 +8,9 @@
 #include <vk_mem_alloc.h>
 // clang-format on
 
+#include "btlogger.h"
+
+#include <cassert>
 #include <stdexcept>
 
 
@@ -16,12 +19,24 @@ namespace TXP
 namespace Vk_Buffer
 {
 
+Allocated_buffer::~Allocated_buffer()
+{
+    if (m_created)
+    {
+        BT_ERROR("Failed to destroy buffer before deletion.");
+        assert(false);
+    }
+}
+
 void Allocated_buffer::create(VkDevice device,
                               VmaAllocator allocator,
                               VkDeviceSize buffer_size,
                               VkBufferUsageFlags buffer_usage_flags,
                               VmaAllocationCreateFlags buffer_allocation_flags)
 {
+    if (m_created)
+        throw std::runtime_error("Trying to double create");
+
     m_used_allocator = allocator;
 
     VkBufferCreateInfo buffer_info{ .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
@@ -46,11 +61,22 @@ void Allocated_buffer::create(VkDevice device,
         };
         m_device_address = vkGetBufferDeviceAddress(device, &buffer_bda_info);
     }
+
+    m_created = true;
 }
 
 void Allocated_buffer::destroy()
 {
+    if (!m_created)
+        throw std::runtime_error("Trying to destroy something not created.");
+
     vmaDestroyBuffer(m_used_allocator, m_buffer, m_buffer_allocation);
+    m_created = false;
+}
+
+bool Allocated_buffer::is_created() const
+{
+    return m_created;
 }
 
 VkBuffer const& Allocated_buffer::get_buffer() const

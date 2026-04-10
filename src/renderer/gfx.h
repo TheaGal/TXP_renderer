@@ -123,6 +123,10 @@ public:
     /// Loads in deformed models using a combined model.
     void build_deformed_combined_model(Render_model_data_collection& render_model_data_collection);
 
+    /// Creates joint transforms buffers for new deformed models.
+    void create_joint_transforms_buffers(
+        Render_model_data_collection& render_model_data_collection);
+
     /// Polls for input events.
     void poll_input_events();
 

@@ -358,7 +358,10 @@ struct Graphics::Impl
 
     /// Loads in deformed models using a combined vertex buffer.
     void build_deformed_combined_model(Render_model_data_collection& render_model_data_collection);
-    
+    /// Creates separate joint transforms buffers for deformed models.
+    void create_joint_transforms_buffers(
+        Render_model_data_collection& render_model_data_collection);
+
 
     struct Model_buffer
     {

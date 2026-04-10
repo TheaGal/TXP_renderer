@@ -139,6 +139,12 @@ void TXP::Graphics::build_deformed_combined_model(
     m_pimpl->build_deformed_combined_model(render_model_data_collection);
 }
 
+void TXP::Graphics::create_joint_transforms_buffers(
+        Render_model_data_collection& render_model_data_collection)
+{
+    m_pimpl->create_joint_transforms_buffers(render_model_data_collection);
+}
+
 void TXP::Graphics::poll_input_events()
 {
     m_pimpl->poll_input_events();

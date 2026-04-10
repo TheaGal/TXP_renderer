@@ -565,8 +565,9 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Create skin data buffer from skin data after loaded from gltf.
         - [x] marked
     - [x] get the model skin reference assigned to deformed model.
-    - [ ] Create joint transforms buffer.
+    - [x] Create joint transforms buffer.
         - [x] marked
+        - Should use "is_created()" in vk_buffer::allocated_buffer.
     - [ ] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).
         - [x] marked
     - [ ] Update joint transforms buffer with animator stuff while it's playing.
