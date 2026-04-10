@@ -28,7 +28,7 @@ struct Deformed_model_skin
     std::vector<Vertex_skin_data> vert_skin_datas;  // @TODO: See if this needs to be stored CPU-side.
 
 #if TXP_GFX_BACKEND_VULKAN
-    Vk_Buffer::Allocated_buffer vert_skin_data_buffer;
+    Vk_Buffer::Allocated_buffer vert_skin_data_buffer;  // Created and uploaded after loading model.
 #endif // TXP_GFX_BACKEND_VULKAN
 
     mat4 baseline_transform = GLM_MAT4_IDENTITY_INIT;

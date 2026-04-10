@@ -106,6 +106,10 @@ void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
     m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
     BT_TRACE("Uploaded combined model to GPU.");
 
+    // Upload all skins to GPU.
+    m_pimpl->upload_model_skins_to_gpu(render_model_data_collection);
+    BT_TRACE("Uploaded all model skins to GPU.");
+
     // Load animators and anim frame actions.
     size_t num_afas_loaded{ 0 };
     for (auto const& mod_asset : model_assets)

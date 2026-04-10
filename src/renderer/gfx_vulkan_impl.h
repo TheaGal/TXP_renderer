@@ -353,11 +353,11 @@ struct Graphics::Impl
 
     /// Add models.
     void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
+    /// Upload model skins.
+    void upload_model_skins_to_gpu(Render_model_data_collection& data_collection);
 
     /// Loads in deformed models using a combined vertex buffer.
     void build_deformed_combined_model(Render_model_data_collection& render_model_data_collection);
-
-    /// Helper func to upload models to gpu.
     
 
     struct Model_buffer

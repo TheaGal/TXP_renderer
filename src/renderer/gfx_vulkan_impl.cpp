@@ -32,6 +32,7 @@
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "material_organizer/material_organizer.h"
+#include "render_object/deformed_render_model.h"
 #include "render_object/render_model.h"
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
@@ -993,6 +994,40 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
                 combined_indices.data(),
                 index_buf_size);
+}
+
+void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& data_collection)
+{   // Get static model information.
+    // @TODO: change this to getting a list of model-skin indexes, instead of getting names then translating list of names to indexes.
+    std::vector<std::string> model_skin_names =
+        data_collection.get_deformed_model_skin_name_list();
+
+    std::vector<Deformed_model_skin*> model_skins;
+    model_skins.reserve(model_skin_names.size());
+
+    for (auto const& name : model_skin_names)
+        model_skins.emplace_back(
+            const_cast<Deformed_model_skin*>(&data_collection.get_deformed_model_skin(
+                data_collection.get_deformed_model_skin_idx(name))));
+
+    // Process each model skin.
+    for (auto* model_skin : model_skins)
+    {
+        // Create buffer for model skins.
+        model_skin->vert_skin_data_buffer.create(
+            gfx.device,
+            gfx.allocator,
+            model_skin->vert_skin_datas.size() * sizeof(Vertex_skin_data),
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+        // Upload data.
+        std::memcpy(model_skin->vert_skin_data_buffer.get_p_mapped_data(),
+                    model_skin->vert_skin_datas.data(),
+                    model_skin->vert_skin_datas.size() * sizeof(Vertex_skin_data));
+    }
 }
 
 void Graphics::Impl::build_deformed_combined_model(
