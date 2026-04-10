@@ -577,7 +577,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Actually call the shader for each deformed model.
         - [x] marked
         - [x] kinda stubbed out w pseudocode
-    - [ ] fix compiler errors
+    - [x] fix compiler errors
+    - [ ] It looks like that check for the allocated buffer fails for render view buffers. Should fix that eh!
 
 
 ## Performance.
