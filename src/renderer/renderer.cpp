@@ -15,6 +15,7 @@
 #include "renderer/types.h"
 #include "shader/shader_basic_diffuse.h"
 #include "shader/shader_gradient.h"
+#include "shader/shader_skinned_model.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/types.h"
 
@@ -99,6 +100,7 @@ struct Renderer::Impl
 
     /// Shaders.
     std::unique_ptr<Shader::Shader_gradient> shad_gradient;
+    std::unique_ptr<Shader::Shader_skinned_model> shad_skinned_model;
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
 
     /// List of render objects.
@@ -291,9 +293,7 @@ struct Renderer::Impl
             g.wait_until_gpu_idle();
             g.build_deformed_combined_model(m.render_model_data_collection);
             g.create_joint_transforms_buffers(m.render_model_data_collection);
-            assert(false);  // @TODO: @HERE: Create descriptor set for the combined deformed vertex
-                            //   set (and keep it updated whenever that combined model changes or
-                            //   gets rebuilt).
+            m.shad_skinned_model->build_combined_deformed_vertex_set_descriptor_set();
         }
     }
 };
@@ -368,6 +368,10 @@ void Renderer::build()
     // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
     //                enough of an interface.
     m.shad_gradient = std::make_unique<Shader::Shader_gradient>(m.material_organizer, g.get_impl());
+    m.shad_skinned_model =
+        std::make_unique<Shader::Shader_skinned_model>(m.material_organizer,
+                                                       m.render_model_data_collection,
+                                                       g.get_impl());
     m.shad_basic_diffuse =
         std::make_unique<Shader::Shader_basic_diffuse>(m.material_organizer,
                                                        m.render_model_data_collection,

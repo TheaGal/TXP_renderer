@@ -216,6 +216,13 @@ void Shader_skinned_model::allocate_per_instance_data_slots(
     // BT_TRACE("Shader_skinned_model has no per-instance data.");
 }
 
+void Shader_skinned_model::build_combined_deformed_vertex_set_descriptor_set()
+{
+    assert(false);  // @TODO: @HERE: Create descriptor set for the combined deformed vertex
+                    //   set (and keep it updated whenever that combined model changes or
+                    //   gets rebuilt).
+}
+
 void Shader_skinned_model::compute(void* deformed_model_ptr)
 {
     auto& p{ *m_pimpl };

@@ -38,6 +38,8 @@ public:
         std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
         size_t& in_out_cur_modmesh_ref_idx);
 
+    void build_combined_deformed_vertex_set_descriptor_set();
+
     void compute(void* deformed_model_ptr);
 
 private:
