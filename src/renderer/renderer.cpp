@@ -179,9 +179,8 @@ struct Renderer::Impl
                             m.render_model_data_collection.get_deformed_model_anim_set(
                                 m.render_model_data_collection.get_deformed_model_anim_set_idx(
                                     rend_obj_cfg.model_name)),
-                            m.render_model_data_collection.get_deformed_model_skin(
-                                m.render_model_data_collection.get_deformed_model_skin_idx(
-                                    rend_obj_cfg.model_name)),
+                            m.render_model_data_collection.get_deformed_model_data_set(
+                                new_render_model_idx),
                             has_root_motion_tag)
                     };
 
