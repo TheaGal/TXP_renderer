@@ -173,7 +173,7 @@ struct Shader_skinned_model::Impl
     {
         VkPipeline pipeline;
         VkPipelineLayout pipeline_layout;
-        VkDescriptorSet descriptor_set;
+        VkDescriptorSet descriptor_set{ VK_NULL_HANDLE };
         VkDescriptorSetLayout descriptor_layout;
     } shader_pipeline;
 };
@@ -218,9 +218,32 @@ void Shader_skinned_model::allocate_per_instance_data_slots(
 
 void Shader_skinned_model::build_combined_deformed_vertex_set_descriptor_set()
 {
-    assert(false);  // @TODO: @HERE: Create descriptor set for the combined deformed vertex
-                    //   set (and keep it updated whenever that combined model changes or
-                    //   gets rebuilt).
+    auto& m{ *m_pimpl };
+
+    if (m.shader_pipeline.descriptor_set == VK_NULL_HANDLE)
+    {
+        m.shader_pipeline.descriptor_set =
+            m.g.global_descriptor_allocator.allocate(m.shader_pipeline.descriptor_layout);
+    }
+
+    VkDescriptorBufferInfo buf_info{
+        .buffer = m.g.combined_deformed_model.vertex_index_buffer.get_buffer(),
+        .offset = 0,
+        .range = m.g.combined_deformed_model.offset_to_index_buffer,  // Only cover vertex portion.
+    };
+
+    VkWriteDescriptorSet buf_write{
+        .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        .pNext = nullptr,
+
+        .dstSet = m.shader_pipeline.descriptor_set,
+        .dstBinding = 0,
+        .descriptorCount = 1,
+        .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .pBufferInfo = &buf_info,
+    };
+
+    vkUpdateDescriptorSets(m.device, 1, &buf_write, 0, nullptr);
 }
 
 void Shader_skinned_model::compute(void* deformed_model_ptr)

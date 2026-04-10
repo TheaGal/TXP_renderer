@@ -568,7 +568,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] Create joint transforms buffer.
         - [x] marked
         - Should use "is_created()" in vk_buffer::allocated_buffer.
-    - [ ] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).
+    - [x] Create descriptor set for the combined deformed vertex set (and keep it updated whenever that combined model changes or gets rebuilt).
         - [x] marked
         - [x] stubbed in shader class
     - [ ] Update joint transforms buffer with animator stuff while it's playing.
