@@ -396,7 +396,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     Deformed_model_skin dummy_model_skin;
     auto& emplaced_model_skin{  // Attempt to get reference to model skin that was emplaced earlier.
         !overall_has_skin
-            ? dummy_model_skin  // In case no skin in this model.
+            ? dummy_model_skin  // In case no skin in this model, give dummy reference.
             : const_cast<Deformed_model_skin&>(data_collection.get_deformed_model_skin(
                   data_collection.get_deformed_model_skin_idx(model_name)))
     };

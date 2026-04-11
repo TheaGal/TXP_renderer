@@ -559,7 +559,7 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] CHECK: that the deformed model is being used.
         - Pretty sure it is if the bindings are changing.
 
-- [ ] Write compute shader for the animation info.
+- [x] Write compute shader for the animation info.
     - [x] Make initial implementation of the compute shader.
     - [x] Create data structures/ifc for accessing needed model skin and joint trnas buffers.
     - [x] Create skin data buffer from skin data after loaded from gltf.

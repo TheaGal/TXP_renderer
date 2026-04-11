@@ -133,8 +133,8 @@ gantt
     section Animation system
         完 Load .btafa and .btanitor to model : a9, after a16, 3d
         完 Switch between deformed and static model : a17, after a9, 4d
-        中 Compute shader of static mesh into skinned mesh in its own buffer : a10, after a17, 5d
-        Control animators via setting state-sets : a11, after a10, 3d
+        完 Compute shader of static mesh into skinned mesh in its own buffer : a10, after a17, 5d
+        中 Control animators via setting state-sets : a11, after a10, 3d
         Control animators via jump queues : a12, after a10, 3d
     section Milestones
         Finish basic material-based geometry renderer : milestone, m1, after a15, 0d
