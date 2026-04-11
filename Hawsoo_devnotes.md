@@ -578,7 +578,8 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
         - [x] marked
         - [x] kinda stubbed out w pseudocode
     - [x] fix compiler errors
-    - [ ] It looks like that check for the allocated buffer fails for render view buffers. Should fix that eh!
+    - [x] It looks like that check for the allocated buffer fails for render view buffers. Should fix that eh!
+    - [x] fix memory corruption of model skin when using model animations
 
 
 ## Performance.

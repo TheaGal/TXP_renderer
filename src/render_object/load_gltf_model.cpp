@@ -139,10 +139,6 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     }
 
     // Data structures to load into.
-    Deformed_model_skin new_deformed_model_skin;
-
-    auto& vert_skin_datas{ new_deformed_model_skin.vert_skin_datas };
-
     Static_model_data_set new_static_model_data_set;
 
     auto& meshes{ new_static_model_data_set.meshes };
@@ -169,7 +165,10 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     bool first_skin_w_joints{ true };
     for (auto& skin : asset.skins)
     if (!skin.joints.empty())
-    {   // Ensure that only one skin is processed.
+    {
+        Deformed_model_skin new_deformed_model_skin;
+
+        // Ensure that only one skin is processed.
         assert(first_skin_w_joints);
         first_skin_w_joints = false;
 
@@ -340,6 +339,12 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 }
         }
 
+        // Place skin into collection.
+        // @NOTE: this is placed into the collection here instead of at the end since other types
+        //        use model-skin as a reference upon construction. Performing this move actually
+        //        breaks the reference (on macOS).  -Thea 2026/04/11
+        data_collection.emplace_deformed_model_skin(model_name, std::move(new_deformed_model_skin));
+
         // @NOTE: Ignore the `skeleton` property in the `Skin` struct.
     }
 
@@ -387,6 +392,15 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     meshes.reserve(num_meshes);  // @NOTE: Reserve prevents calling dtor() which messes up the meshes.
 
     first_index_offsets.reserve(meshes.size());  // @NOTE: reserved now for memory continuity on heap.
+
+    Deformed_model_skin dummy_model_skin;
+    auto& emplaced_model_skin{  // Attempt to get reference to model skin that was emplaced earlier.
+        !overall_has_skin
+            ? dummy_model_skin  // In case no skin in this model.
+            : const_cast<Deformed_model_skin&>(data_collection.get_deformed_model_skin(
+                  data_collection.get_deformed_model_skin_idx(model_name)))
+    };
+    auto& vert_skin_datas{ emplaced_model_skin.vert_skin_datas };
 
     for (auto& mesh : asset.meshes)
     {
@@ -859,12 +873,12 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 // Create animation frame from pose.
                 Model_joint_animation_frame new_frame;
                 new_frame.joint_transforms_in_order.reserve(
-                    new_deformed_model_skin.joints_sorted_breadth_first.size());
+                    emplaced_model_skin.joints_sorted_breadth_first.size());
 
                 // @NOTE: This uses `i` the index of the model joint list (sorted breadth first)
                 //   to access the local trans map (instead of contents of `node_index_insert_order`
                 //   which is WRONG)  -Thea 2025/07/20
-                for (size_t i = 0; i < new_deformed_model_skin.joints_sorted_breadth_first.size(); i++)
+                for (size_t i = 0; i < emplaced_model_skin.joints_sorted_breadth_first.size(); i++)
                 {
                     new_frame.joint_transforms_in_order.emplace_back(
                         std::move(joint_idx_to_local_trans_map.at(i)));
@@ -902,7 +916,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         }
 
         // Create animation.
-        animations.emplace_back(std::ref(new_deformed_model_skin),
+        animations.emplace_back(std::ref(emplaced_model_skin),
                                 anim_name,
                                 std::move(new_anim_frames));
     }
@@ -911,7 +925,6 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     data_collection.emplace_static_model_data_set(model_name, std::move(new_static_model_data_set));
     if (!animations.empty())
     {
-        data_collection.emplace_deformed_model_skin(model_name, std::move(new_deformed_model_skin));
         data_collection.emplace_deformed_model_anim_set(model_name,
                                                         std::move(new_deformed_model_anim_set));
     }

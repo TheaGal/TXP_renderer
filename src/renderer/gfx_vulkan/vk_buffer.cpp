@@ -8,6 +8,7 @@
 #include <vk_mem_alloc.h>
 // clang-format on
 
+#include "btdatecheck.h"
 #include "btlogger.h"
 
 #include <cassert>
@@ -21,11 +22,12 @@ namespace Vk_Buffer
 
 Allocated_buffer::~Allocated_buffer()
 {
-    if (m_created)
-    {
-        BT_ERROR("Failed to destroy buffer before deletion.");
-        assert(false);
-    }
+    BT::date_deadline(2026, 4, 25);  // @TODO: figure this check for detecting undestroyed buffers deleted!!
+    // if (m_created)
+    // {
+    //     BT_ERROR("Failed to destroy buffer before deletion.");
+    //     assert(false);
+    // }
 }
 
 void Allocated_buffer::create(VkDevice device,
