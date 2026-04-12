@@ -586,6 +586,14 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - just disables the check right when doing the resizing (for only the elems that aren't getting deleted).
 
 
+## Implement imgui for interacting w/ animated things.
+
+- [ ] ~~Imgui skeleton~~
+- [ ] ~~For each ~~
+
+> Honestly, this isn't very fun rn so I'm gonna go do implementation stuff.
+
+
 ## Performance.
 
 - [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?
