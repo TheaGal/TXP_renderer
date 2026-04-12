@@ -420,9 +420,9 @@ void Shader_basic_diffuse::draw(
     // Render instances.
     for (auto using_static_model : { true, false })
     {
-        (using_static_model
-             ? p.g.combined_static_model
-             : p.g.combined_deformed_model).bind(cmd);
+        auto& using_model{ using_static_model ? p.g.combined_static_model
+                                              : p.g.combined_deformed_model };
+        bool bound_using_model{ false };
 
         for (auto draw_instance = p.draw_inst_list_start_end.front();
              draw_instance < p.draw_inst_list_start_end.back();
@@ -436,6 +436,13 @@ void Shader_basic_diffuse::draw(
             
             if (is_static_model != using_static_model)
                 continue;  // Skip this draw instance since wrong model bound rn.
+
+            // Bind combined model if not done so already.
+            if (!bound_using_model)
+            {
+                using_model.bind(cmd);
+                bound_using_model = true;
+            }
 
             // Draw single model.
             auto const& model{ is_static_model

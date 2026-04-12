@@ -279,6 +279,9 @@ struct Renderer::Impl
 
                 m.render_object_list.erase(m.render_object_list.begin() + i);
                 removed_render_object = true;
+
+                // In case rend obj does exist still but just is going to be recreated.
+                old_to_new_idx_map.emplace(i, k_pool_key_process_flag);
             }
             else
             {
@@ -288,17 +291,23 @@ struct Renderer::Impl
         for (auto& elem : old_to_new_idx_map)
         {   // Flip since last loop was iterating backwards.
             auto& new_idx{ elem.second };
-            new_idx = (old_to_new_idx_map.size() - 1 - new_idx);
+            if (new_idx != k_pool_key_process_flag)
+                new_idx = (old_to_new_idx_map.size() - 1 - new_idx);
         }
 
         // Apply new pool keys.
         for (auto ecs_entity : rend_obj_cfg_view)
         {
             auto& rend_obj_cfg =
-                rend_obj_cfg_view.get<TXP::component::Render_object_config>(ecs_entity);
+                rend_obj_cfg_view.get<component::Render_object_config>(ecs_entity);
 
             rend_obj_cfg.renderer_owned_data.pool_key =
                 old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);
+            
+            if (rend_obj_cfg.renderer_owned_data.pool_key == k_pool_key_process_flag)
+            {   // Remove skeletal animator if still attached to render object.
+                m.ecs_registry.remove<component_internal::Model_animator>(ecs_entity);
+            }
         }
 
         // Ensure that deformed models are created/removed.

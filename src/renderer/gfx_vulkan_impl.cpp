@@ -1101,6 +1101,9 @@ void Graphics::Impl::build_deformed_combined_model(
         return;
     }
 
+    if (combined_deformed_model.vertex_index_buffer.is_created())
+        combined_deformed_model.vertex_index_buffer.destroy();  // Destroy before recreating.
+
     combined_deformed_model.vertex_index_buffer.create(
         gfx.device,
         gfx.allocator,
