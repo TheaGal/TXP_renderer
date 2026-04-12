@@ -733,6 +733,7 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     std::vector<Descriptor_allocator::Pool_size_ratio> sizes{
         { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 },
     };
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
@@ -1105,7 +1106,7 @@ void Graphics::Impl::build_deformed_combined_model(
         gfx.allocator,
         vertex_buf_size + index_buf_size,
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-            VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT);
@@ -1437,16 +1438,25 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         ImGui_ImplVulkan_RemoveTexture(render_view.imgui_color_image_descriptor);
     }
 
+    // Disable buffer deletion check (since moving from the container resizing).
+    for (auto& b : current_frame.environment_data_buffers)
+        b.set_created_check(false);
+
     // Destroy environment data buffers if shrinking its list's size.
     for (size_t i = rend_view_sizes.size(); i < prev_env_data_buffers_size; i++)
     {
         ensure_gpu_idle_fn();
         current_frame.environment_data_buffers[i].destroy();
+        current_frame.environment_data_buffers[i].set_created_check(true);  // Enable bc deleting.
     }
 
     // Resize.
     render_views.resize(rend_view_sizes.size());
     current_frame.environment_data_buffers.resize(rend_view_sizes.size());
+
+    // Re-enable buffer deletion check.
+    for (auto& b : current_frame.environment_data_buffers)
+        b.set_created_check(false);
 
     // Create new/changed render views.
     for (size_t i = 0; i < render_views.size(); i++)

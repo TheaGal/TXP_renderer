@@ -581,6 +581,10 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
     - [x] It looks like that check for the allocated buffer fails for render view buffers. Should fix that eh!
     - [x] fix memory corruption of model skin when using model animations
 
+- [x] fixes dangling vulkan buffers.
+- [x] fixes buffer missing deletion check false-positive when resizing render view list.
+    - just disables the check right when doing the resizing (for only the elems that aren't getting deleted).
+
 
 ## Performance.
 

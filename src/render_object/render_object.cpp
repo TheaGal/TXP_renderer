@@ -78,6 +78,18 @@ struct Render_model_data_collection::Data
             return pool[idx];
         }
 
+        /// Gets list of all.
+        std::vector<T*> each()
+        {
+            std::vector<T*> each_all;
+            each_all.reserve(name_to_idx_map.size());
+
+            for (auto const& [_, idx] : name_to_idx_map)
+                each_all.emplace_back(&pool[idx]);
+
+            return each_all;
+        }
+
     private:
         std::array<T, k_array_pool_size> pool;
         std::map<std::string, uint16_t> name_to_idx_map;
@@ -103,7 +115,13 @@ Render_model_data_collection::Render_model_data_collection()
 {
 }
 
-Render_model_data_collection::~Render_model_data_collection() = default;
+Render_model_data_collection::~Render_model_data_collection()
+{
+    for (auto* skin : inner_data->deformed_model_skin_pool.each())
+        skin->vert_skin_data_buffer.destroy();
+    for (auto& [_, model] : inner_data->deformed_model_idx_map)
+        model.joint_transforms_buffer.destroy();
+}
 
 
 void Render_model_data_collection::emplace_static_model_data_set(std::string const& name,

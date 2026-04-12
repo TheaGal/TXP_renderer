@@ -89,14 +89,14 @@ struct Renderer::Impl
     BT::Mutex_wrapper<std::vector<Material_palette_asset_create_info>> material_palette_assets;
     BT::Mutex_wrapper<std::vector<Model_asset_create_info>> model_assets;
 
+    /// Built renderer.
+    std::unique_ptr<Graphics> graphics;
+
     /// Material information tracker.
     Material_organizer material_organizer;
 
     /// Loaded information of model assets.
     Render_model_data_collection render_model_data_collection;
-
-    /// Built renderer.
-    std::unique_ptr<Graphics> graphics;
 
     /// Shaders.
     std::unique_ptr<Shader::Shader_gradient> shad_gradient;

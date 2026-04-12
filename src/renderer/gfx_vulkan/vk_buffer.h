@@ -33,6 +33,9 @@ public:
     /// Checks whether the buffer is created.
     bool is_created() const;
 
+    /// Enables or disables `is_created` check upon deletion.
+    void set_created_check(bool do_check);
+
     /// Gets buffer.
     VkBuffer const& get_buffer() const;
 
@@ -44,6 +47,7 @@ public:
 
 private:
     bool m_created{ false };
+    bool m_check_whether_created{ true };
     VmaAllocator m_used_allocator;
     VkBuffer m_buffer;
     VmaAllocation m_buffer_allocation;

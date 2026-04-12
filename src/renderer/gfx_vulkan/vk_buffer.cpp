@@ -22,12 +22,11 @@ namespace Vk_Buffer
 
 Allocated_buffer::~Allocated_buffer()
 {
-    BT::date_deadline(2026, 4, 25);  // @TODO: figure this check for detecting undestroyed buffers deleted!!
-    // if (m_created)
-    // {
-    //     BT_ERROR("Failed to destroy buffer before deletion.");
-    //     assert(false);
-    // }
+    if (m_check_whether_created && m_created)
+    {
+        BT_ERROR("Failed to destroy buffer before deletion.");
+        assert(false);
+    }
 }
 
 void Allocated_buffer::create(VkDevice device,
@@ -79,6 +78,11 @@ void Allocated_buffer::destroy()
 bool Allocated_buffer::is_created() const
 {
     return m_created;
+}
+
+void Allocated_buffer::set_created_check(bool do_check)
+{
+    m_check_whether_created = do_check;
 }
 
 VkBuffer const& Allocated_buffer::get_buffer() const
