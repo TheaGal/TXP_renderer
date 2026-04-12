@@ -594,6 +594,11 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 > Honestly, this isn't very fun rn so I'm gonna go do implementation stuff.
 
 
+## Extra implementation for btanitor/btafa
+
+- [x] add check for "allow_deformed_render_models".
+
+
 ## Performance.
 
 - [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?

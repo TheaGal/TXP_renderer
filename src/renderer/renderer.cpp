@@ -121,6 +121,9 @@ struct Renderer::Impl
     /// Flag for disabling deformed render models.
     std::atomic_bool allow_deformed_render_models{ true };
 
+    /// Internal current config of allowing deformed render models.
+    bool internal_allowing_deformed_render_models{ allow_deformed_render_models };
+
     /// Debug stats' performance times.
     std::unordered_map<Performance_time_type, float_t> perf_time_map;
 
@@ -145,8 +148,20 @@ struct Renderer::Impl
             rend_obj.is_stale = true;
         }
 
-        // Add new render objects and mark existing render objects as non-stale.
+        // Get all render obj configs.
         auto rend_obj_cfg_view = m.ecs_registry.view<TXP::component::Render_object_config>();
+
+        // Check for a config switch.
+        bool ext_allow_def_rend_mod{ m.allow_deformed_render_models.load() };
+        if (m.internal_allowing_deformed_render_models != m.allow_deformed_render_models.load())
+        {
+            // Switch configuration; let all rend objs go stale.
+            m.internal_allowing_deformed_render_models =
+                !m.internal_allowing_deformed_render_models;
+        }
+        else
+        {
+        // Add new render objects and mark existing render objects as non-stale.
         for (auto ecs_entity : rend_obj_cfg_view)
         {
             auto& rend_obj_cfg =
@@ -241,6 +256,7 @@ struct Renderer::Impl
             // @TODO: adding interpolation here (i.e. just copying both the a->b transforms).
             glm_mat4_copy(rend_obj_cfg.transform.raw,
                           m.render_object_list[rend_owned_data.pool_key].transform);
+        }
         }
 
         // Delete stale render objects.
