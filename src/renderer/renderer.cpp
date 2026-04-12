@@ -152,111 +152,110 @@ struct Renderer::Impl
         auto rend_obj_cfg_view = m.ecs_registry.view<TXP::component::Render_object_config>();
 
         // Check for a config switch.
-        bool ext_allow_def_rend_mod{ m.allow_deformed_render_models.load() };
         if (m.internal_allowing_deformed_render_models != m.allow_deformed_render_models.load())
         {
-            // Switch configuration; let all rend objs go stale.
+            // Switch configuration; let all rend objs go stale for this tick.
             m.internal_allowing_deformed_render_models =
                 !m.internal_allowing_deformed_render_models;
         }
         else
-        {
-        // Add new render objects and mark existing render objects as non-stale.
-        for (auto ecs_entity : rend_obj_cfg_view)
-        {
-            auto& rend_obj_cfg =
-                rend_obj_cfg_view.get<component::Render_object_config>(ecs_entity);
-            auto& rend_owned_data = rend_obj_cfg.renderer_owned_data;
+        {   // Add new render objects and mark existing render objects as non-stale.
+            for (auto ecs_entity : rend_obj_cfg_view)
+            {
+                auto& rend_obj_cfg =
+                    rend_obj_cfg_view.get<component::Render_object_config>(ecs_entity);
+                auto& rend_owned_data = rend_obj_cfg.renderer_owned_data;
 
-            if (rend_owned_data.pool_key == k_pool_key_process_flag)
-            {   // Need to create new render object.
-                rend_owned_data.pool_key = m.render_object_list.size();
+                if (rend_owned_data.pool_key == k_pool_key_process_flag)
+                {   // Need to create new render object.
+                    rend_owned_data.pool_key = m.render_object_list.size();
 
-                uint16_t new_render_model_idx{ (uint16_t)-1 };
-                if (rend_obj_cfg.is_deformed)
-                {   // Create new deformed model.
-                    auto static_model_data_set_idx =
-                        m.render_model_data_collection.get_static_model_data_set_idx(
-                            rend_obj_cfg.model_name);
+                    uint16_t new_render_model_idx{ (uint16_t)-1 };
+                    if (m.internal_allowing_deformed_render_models && rend_obj_cfg.is_deformed)
+                    {   // Create new deformed model.
+                        auto static_model_data_set_idx =
+                            m.render_model_data_collection.get_static_model_data_set_idx(
+                                rend_obj_cfg.model_name);
 
-                    new_render_model_idx = m.render_model_data_collection
-                                               .create_deformed_model_from_static_model_data_set(
-                                                   rend_obj_cfg.model_name);
+                        new_render_model_idx =
+                            m.render_model_data_collection
+                                .create_deformed_model_from_static_model_data_set(
+                                    rend_obj_cfg.model_name);
 
-                    // Add animator.
-                    bool has_root_motion_tag{
-                        m.ecs_registry.any_of<component::Animator_root_motion>(ecs_entity)
-                    };
+                        // Add animator.
+                        bool has_root_motion_tag{
+                            m.ecs_registry.any_of<component::Animator_root_motion>(ecs_entity)
+                        };
 
-                    auto& skeletal_animator{
-                        m.ecs_registry.emplace<component_internal::Model_animator>(
-                            ecs_entity,
-                            m.render_model_data_collection.get_deformed_model_anim_set(
-                                m.render_model_data_collection.get_deformed_model_anim_set_idx(
-                                    rend_obj_cfg.model_name)),
-                            m.render_model_data_collection.get_deformed_model_data_set(
-                                new_render_model_idx),
-                            has_root_motion_tag)
-                    };
+                        auto& skeletal_animator{
+                            m.ecs_registry.emplace<component_internal::Model_animator>(
+                                ecs_entity,
+                                m.render_model_data_collection.get_deformed_model_anim_set(
+                                    m.render_model_data_collection.get_deformed_model_anim_set_idx(
+                                        rend_obj_cfg.model_name)),
+                                m.render_model_data_collection.get_deformed_model_data_set(
+                                    new_render_model_idx),
+                                has_root_motion_tag)
+                        };
 
-                    BT::service_finder::find_service<Animator_template_bank>()
-                        .load_animator_template_into_animator(skeletal_animator,
-                                                            rend_obj_cfg.model_name);
+                        BT::service_finder::find_service<Animator_template_bank>()
+                            .load_animator_template_into_animator(skeletal_animator,
+                                                                  rend_obj_cfg.model_name);
 
-                    // Set first anim as default state-set.
-                    assert(!skeletal_animator.get_animator_states().empty());
-                    skeletal_animator.change_state_set(
-                        { .anim_state_indices = { 0 }, .loop_final_state = true });
+                        // Set first anim as default state-set.
+                        assert(!skeletal_animator.get_animator_states().empty());
+                        skeletal_animator.change_state_set(
+                            { .anim_state_indices = { 0 }, .loop_final_state = true });
 
-                    // Add anim frame action controller.
-                    if (anim_frame_action::Bank::has(rend_obj_cfg.model_name))
-                    {
-                        auto& afa_ctrller_ref{ anim_frame_action::Bank::get(
-                            rend_obj_cfg.model_name) };
+                        // Add anim frame action controller.
+                        if (anim_frame_action::Bank::has(rend_obj_cfg.model_name))
+                        {
+                            auto& afa_ctrller_ref{ anim_frame_action::Bank::get(
+                                rend_obj_cfg.model_name) };
 
-                        skeletal_animator.configure_anim_frame_action_controls(
-                            &afa_ctrller_ref,
-                            m.ecs_registry.get<component::Entity_metadata>(ecs_entity).uuid,
-                            component_internal::Model_animator::
-                                make_jump_queue_create_list_from_anim_frame_action_controls(
-                                    afa_ctrller_ref));
+                            skeletal_animator.configure_anim_frame_action_controls(
+                                &afa_ctrller_ref,
+                                m.ecs_registry.get<component::Entity_metadata>(ecs_entity).uuid,
+                                component_internal::Model_animator::
+                                    make_jump_queue_create_list_from_anim_frame_action_controls(
+                                        afa_ctrller_ref));
 
-                        // Add hitcapsule set driver.
-                        m.ecs_registry
-                            .emplace_or_replace<component::Animator_driven_hitcapsule_set>(
-                                ecs_entity);
+                            // Add hitcapsule set driver.
+                            m.ecs_registry
+                                .emplace_or_replace<component::Animator_driven_hitcapsule_set>(
+                                    ecs_entity);
+                        }
+
+                        deformed_model_count_changed = true;
                     }
+                    else
+                    {
+                        new_render_model_idx =
+                            m.render_model_data_collection.get_static_model_data_set_idx(
+                                rend_obj_cfg.model_name);
+                    }
+                    m.render_model_data_collection.report_one_user_added(new_render_model_idx);
 
-                    deformed_model_count_changed = true;
+                    m.render_object_list.emplace_back(Render_object{
+                        .layer = rend_obj_cfg.render_layer,
+                        .render_model_idx = new_render_model_idx,
+                        .material_palette_idx = m.material_organizer.get_material_palette_idx(
+                            !rend_obj_cfg.material_palette.empty()
+                                ? rend_obj_cfg.material_palette
+                                : rend_obj_cfg.model_name + "__default_material_palette_name__"),
+                    });
+                    appended_render_object = true;
                 }
                 else
-                {
-                    new_render_model_idx =
-                        m.render_model_data_collection.get_static_model_data_set_idx(
-                            rend_obj_cfg.model_name);
+                {   // Mark as non-stale.
+                    m.render_object_list[rend_owned_data.pool_key].is_stale = false;
                 }
-                m.render_model_data_collection.report_one_user_added(new_render_model_idx);
 
-                m.render_object_list.emplace_back(Render_object{
-                    .layer = rend_obj_cfg.render_layer,
-                    .render_model_idx = new_render_model_idx,
-                    .material_palette_idx = m.material_organizer.get_material_palette_idx(
-                        !rend_obj_cfg.material_palette.empty()
-                            ? rend_obj_cfg.material_palette
-                            : rend_obj_cfg.model_name + "__default_material_palette_name__"),
-                });
-                appended_render_object = true;
+                // Update transform.
+                // @TODO: adding interpolation here (i.e. just copying both the a->b transforms).
+                glm_mat4_copy(rend_obj_cfg.transform.raw,
+                              m.render_object_list[rend_owned_data.pool_key].transform);
             }
-            else
-            {   // Mark as non-stale.
-                m.render_object_list[rend_owned_data.pool_key].is_stale = false;
-            }
-
-            // Update transform.
-            // @TODO: adding interpolation here (i.e. just copying both the a->b transforms).
-            glm_mat4_copy(rend_obj_cfg.transform.raw,
-                          m.render_object_list[rend_owned_data.pool_key].transform);
-        }
         }
 
         // Delete stale render objects.
@@ -662,8 +661,7 @@ Camera& Renderer::get_main_camera()
 
 void Renderer::set_allow_deformed_render_models(bool allow)
 {
-    BT::date_deadline(2026, 4, 26);  // @TODO: do something with this flag!!!
-    m_pimpl->allow_deformed_render_models = allow;
+    m_pimpl->allow_deformed_render_models.store(allow);
 }
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
