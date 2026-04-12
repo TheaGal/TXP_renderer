@@ -584,6 +584,7 @@ void Renderer::render_one_frame(float_t delta_time)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Asset loading.
+
 void Renderer::add_texture(std::string const& texture_name, std::string const& file_ext)
 {
     if (!m_pimpl->asset_reg_window_open.load())
@@ -627,6 +628,15 @@ void Renderer::add_model(std::string const& model_name,
                                                       file_ext,
                                                       load_animator_template,
                                                       load_anim_frame_action);
+}
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Animator controls.
+
+void Renderer::advance_afa_sim_timer(float_t delta_time)
+{
+    component_internal::Model_animator::advance_sim_timer(delta_time);
 }
 
 
