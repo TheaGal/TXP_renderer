@@ -418,54 +418,39 @@ void Shader_basic_diffuse::draw(
     int32_t num_combined_model_binding_changes{ 0 };
 
     // Render instances.
-    for (auto draw_instance = p.draw_inst_list_start_end.front();
-         draw_instance < p.draw_inst_list_start_end.back();
-         draw_instance++)
+    for (auto using_static_model : { true, false })
     {
-        auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
-        auto const& rend_obj{
-            render_object_list[modmesh_ref.render_obj_idx]
-        };
+        (using_static_model
+             ? p.g.combined_static_model
+             : p.g.combined_deformed_model).bind(cmd);
 
-        bool is_static_model{ p.render_model_data_collection.is_static_model_idx(
-            rend_obj.render_model_idx) };
-
-        // Bind new combined model if needs different one than last bound one.
-        int32_t needed_combined_model{ is_static_model ? 0 : 1 };
-        if (needed_combined_model != bound_combined_model)
+        for (auto draw_instance = p.draw_inst_list_start_end.front();
+             draw_instance < p.draw_inst_list_start_end.back();
+             draw_instance++)
         {
-            bound_combined_model = needed_combined_model;
-            num_combined_model_binding_changes++;
+            auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
+            auto const& rend_obj{ render_object_list[modmesh_ref.render_obj_idx] };
 
-            switch (needed_combined_model)
-            {
-            case 0: p.g.combined_static_model.bind(cmd); break;
-            case 1: p.g.combined_deformed_model.bind(cmd); break;
-            default: assert(false); break;
-            }
+            bool is_static_model{ p.render_model_data_collection.is_static_model_idx(
+                rend_obj.render_model_idx) };
+            
+            if (is_static_model != using_static_model)
+                continue;  // Skip this draw instance since wrong model bound rn.
 
-            if (num_combined_model_binding_changes >= 3)
-            {
-                BT_ERROR(
-                    "Number of combined model binding changes exceeded 3. Performance is bad: need "
-                    "a new system for managing binding changes between static and deformed "
-                    "combined models!!!  -Thea");
-                assert(false);
-            }
+            // Draw single model.
+            auto const& model{ is_static_model
+                                   ? p.render_model_data_collection.get_static_model_data_set(
+                                         rend_obj.render_model_idx)
+                                   : p.render_model_data_collection
+                                         .get_deformed_model_data_set(rend_obj.render_model_idx)
+                                         .deformed_model };
+            vkCmdDrawIndexed(cmd,
+                             model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
+                             1,
+                             model.first_index_offsets[modmesh_ref.model_mesh_idx],
+                             model.vertex_index_offset,
+                             draw_instance);
         }
-
-        // Draw single model.
-        auto const& model{ is_static_model
-                               ? p.render_model_data_collection.get_static_model_data_set(
-                                     rend_obj.render_model_idx)
-                               : p.render_model_data_collection.get_deformed_model_data_set(
-                                     rend_obj.render_model_idx).deformed_model };
-        vkCmdDrawIndexed(cmd,
-                         model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
-                         1,
-                         model.first_index_offsets[modmesh_ref.model_mesh_idx],
-                         model.vertex_index_offset,
-                         draw_instance);
     }
 }
 
