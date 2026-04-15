@@ -17,11 +17,13 @@
 #include "shader/shader_gradient.h"
 #include "shader/shader_skinned_model.h"
 #include "shader_creation/shader_creation.h"
+#include "txp_renderer/animator/skeletal_animator.h"
 #include "txp_renderer/types.h"
 
 #include <atomic>
 #include <cassert>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <unordered_map>
 
@@ -637,6 +639,17 @@ void Renderer::add_model(std::string const& model_name,
 void Renderer::advance_afa_sim_timer(float_t delta_time)
 {
     component_internal::Model_animator::advance_sim_timer(delta_time);
+}
+
+std::optional<Skeletal_animator> Renderer::try_get_skeletal_animator(entt::entity ecs_entity)
+{
+    auto* animator = m_pimpl->ecs_registry.try_get<component_internal::Model_animator>(ecs_entity);
+
+    if (!animator)
+        return std::nullopt;  // Return failed optional.
+
+    // Wrap internal animator.
+    return Skeletal_animator{ animator };
 }
 
 

@@ -172,6 +172,7 @@ endif()
 
 # Main source files.
 set(MAIN_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animator/skeletal_animator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/camera/camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
@@ -220,6 +221,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animation.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/skeletal_animator_external.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/render_object/vertex.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/gfx_vulkan.cpp

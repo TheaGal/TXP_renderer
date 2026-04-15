@@ -25,7 +25,7 @@ namespace component_internal
 {
 
 /// Internal unserializable component for render object animator.
-class Model_animator  // @TODO: rename to `Skeletal_animator`.
+class Model_animator  // @TODO: rename to `Skeletal_animator_internal`.
 {
 public:
     Model_animator(Deformed_model_animation_set const& model_anim_set,

@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -15,6 +16,8 @@
 
 namespace TXP
 {
+
+class Skeletal_animator;  // Forward decl.
 
 /// Engine that handles render processes and presenting.
 /// @warning this must run on the main thread due to windowing limitations.
@@ -84,6 +87,9 @@ public:
 
     /// Advances global AFA simulation timer (should be called before updating AFAs).
     static void advance_afa_sim_timer(float_t delta_time);
+
+    /// Tries to get a skeletal animator from the ECS entity ID.
+    std::optional<Skeletal_animator> try_get_skeletal_animator(entt::entity ecs_entity);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Model information.
