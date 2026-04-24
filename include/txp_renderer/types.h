@@ -46,8 +46,8 @@ enum Render_layer : uint16_t
 /// Profile enum for which timing of the animator to base calculations off of.
 enum Animator_timer_profile
 {
-    SIMULATION_PROFILE,
-    RENDERER_PROFILE,
+    SIMULATION_TIMER_PROFILE,
+    RENDERER_TIMER_PROFILE,
 };
 
 /// State set. Once an animation state finishes, the animator changes to the next state in the

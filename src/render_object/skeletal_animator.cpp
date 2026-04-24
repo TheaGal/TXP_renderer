@@ -514,7 +514,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process anim frame action controls.
-    if (profile == SIMULATION_PROFILE &&
+    if (profile == SIMULATION_TIMER_PROFILE &&
         m_anim_frame_action_controls != nullptr)
     {
         // Process anim frame action runtime.
@@ -586,7 +586,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     // Process animator state transitions.
     bool performed_state_transition{ false };
 
-    if (profile == SIMULATION_PROFILE)
+    if (profile == SIMULATION_TIMER_PROFILE)
     {
         bool state_set_changed{ false };
 
@@ -646,7 +646,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
         time_handle += delta_time;
 
         // @NOTE: time dilation in the simulation profile is not allowed.
-        if (profile == SIMULATION_PROFILE && delta_time != k_simulation_delta_time)
+        if (profile == SIMULATION_TIMER_PROFILE && delta_time != k_simulation_delta_time)
         {
             BT_ERRORF(
                 "SIMULATION_PROFILE animator tick did not match simulation delta-time.  "
@@ -1171,8 +1171,8 @@ auto TXP::component_internal::Model_animator::get_profile_time_handle(
 {
     switch (profile)
     {
-    case SIMULATION_PROFILE: return const_cast<animator_time_t&>(m_sim_time);
-    case RENDERER_PROFILE:   return const_cast<animator_time_t&>(m_rend_time);
+    case SIMULATION_TIMER_PROFILE: return const_cast<animator_time_t&>(m_sim_time);
+    case RENDERER_TIMER_PROFILE:   return const_cast<animator_time_t&>(m_rend_time);
 
     default:
         assert(false);
@@ -1186,7 +1186,7 @@ auto TXP::component_internal::Model_animator::get_profile_prev_frame_handle(
 {
     switch (profile)
     {
-    case SIMULATION_PROFILE: return const_cast<animator_frame_t&>(m_sim_prev_frame);
+    case SIMULATION_TIMER_PROFILE: return const_cast<animator_frame_t&>(m_sim_prev_frame);
 
     default:
         assert(false);
