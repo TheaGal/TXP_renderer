@@ -6,7 +6,7 @@
 namespace TXP
 {
 
-Skeletal_animator::Skeletal_animator(void* internal_animator)
+Skeletal_animator::Skeletal_animator(component_internal::Model_animator* internal_animator)
     : m_animator(internal_animator)
 {
 }

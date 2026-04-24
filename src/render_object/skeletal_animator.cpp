@@ -1109,8 +1109,7 @@ bool TXP::component_internal::Model_animator::set_watch_jump_queue(
     }
 }
 
-std::optional<TXP::component_internal::Model_animator::Animator_state_set>
-TXP::component_internal::Model_animator::pop_one_state_set()
+std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::pop_one_state_set()
 {
     std::optional<Animator_state_set> state_set{ std::nullopt };
 

@@ -43,6 +43,23 @@ enum Render_layer : uint16_t
 };
 
 
+/// Profile enum for which timing of the animator to base calculations off of.
+enum Animator_timer_profile
+{
+    SIMULATION_PROFILE,
+    RENDERER_PROFILE,
+};
+
+/// State set. Once an animation state finishes, the animator changes to the next state in the
+/// `anim_state_indices` list. Once the final state finishes, it will either stop, or loop
+/// depending on `loop_final_state`.
+struct Animator_state_set
+{
+    std::vector<uint32_t> anim_state_indices;
+    bool loop_final_state;
+};
+
+
 namespace component
 {
 

@@ -6,6 +6,7 @@
 #include "btuuid.h"
 #include "deformed_render_model.h"
 #include "skeletal_animation.h"
+#include "txp_renderer/types.h"
 
 #include <atomic>
 #include <functional>
@@ -60,15 +61,6 @@ public:
     anim_tmpl_types::Animator_state const& get_animator_state(size_t idx) const;
     anim_tmpl_types::Animator_state& get_animator_state_write_handle(size_t idx);
 
-    /// State set. Once an animation state finishes, the animator changes to the next state in the
-    /// `anim_state_indices` list. Once the final state finishes, it will either stop, or loop
-    /// depending on `loop_final_state`.
-    struct Animator_state_set
-    {
-        std::vector<uint32_t> anim_state_indices;
-        bool loop_final_state;
-    };
-
     /// Changes state-set.
     /// @note Public for being able to manually change state-sets instead of thru watching
     ///       jump-queues.
@@ -100,13 +92,6 @@ public:
 
     /// Sets whether animator is paused.
     void set_paused(bool paused);
-
-    /// Profile enum for which timing of the animator to base calculations off of.
-    enum Animator_timer_profile
-    {
-        SIMULATION_PROFILE,
-        RENDERER_PROFILE,
-    };
 
     /// Updates the animator, supplying a deltatime.
     /// There are two animator timers, so you need to give which timer to update.

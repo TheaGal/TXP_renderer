@@ -494,10 +494,10 @@ void Renderer::render_one_frame(float_t delta_time)
     // Update animators.
     for (auto&& [_, animator] : m.ecs_registry.view<component_internal::Model_animator>().each())
     {   // Tick animator.
-        animator.update(animator.RENDERER_PROFILE, delta_time);
+        animator.update(TXP::RENDERER_PROFILE, delta_time);
 
         std::vector<mat4s> joint_matrices;
-        animator.calc_anim_pose(animator.RENDERER_PROFILE,
+        animator.calc_anim_pose(TXP::RENDERER_PROFILE,
                                 animator.get_is_using_root_motion(),
                                 joint_matrices);
 
