@@ -12,7 +12,7 @@ namespace TXP
 
 namespace component_internal
 {
-class Model_animator;  // Forward decl.
+class Model_animator;  // Forward decl (not available externally).
 }  // namespace component_internal
 
 namespace anim_frame_action
