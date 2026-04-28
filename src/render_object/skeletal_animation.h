@@ -1,7 +1,5 @@
 #pragma once
 
-#include "animation_frame_action/runtime_data.h"
-#include "animator_template_types.h"
 #include "btglm.h"
 #include "deformed_render_model.h"
 

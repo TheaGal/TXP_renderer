@@ -1,4 +1,7 @@
-#include "runtime_data.h"
+// clang-format off
+#include "txp_renderer/animation_frame_action/runtime_data.h"  // @TODO: split this cpp file into 2 files for each of these .h files
+#include "runtime_data_controls.h"
+// clang-format on
 
 #include "animation_driven_hitcapsule/hitcapsule.h"
 #include "render_object/animator_template.h"

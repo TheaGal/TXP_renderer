@@ -1,11 +1,12 @@
 #include "skeletal_animator.h"
 
-#include "animation_frame_action/runtime_data.h"
+#include "animation_frame_action/runtime_data_controls.h"
 #include "animator_template_types.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "btuuid.h"
 #include "render_model.h"  // for Deformed_model_data_set (@TODO: remove this after moving)
+#include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "txp_renderer/types.h"
 
 #include <algorithm>
