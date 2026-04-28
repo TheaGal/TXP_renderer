@@ -3,10 +3,10 @@
 #include "runtime_data_controls.h"
 // clang-format on
 
-#include "animation_driven_hitcapsule/hitcapsule.h"
 #include "render_object/animator_template.h"
 // #include "../renderer/mesh.h"
 #include "render_object/skeletal_animator.h"
+#include "txp_renderer/animation_driven_hitcapsule/hitcapsule.h"
 
 #include "btjson.h"
 #include "btlogger.h"

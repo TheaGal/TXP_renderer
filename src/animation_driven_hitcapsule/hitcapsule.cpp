@@ -1,4 +1,4 @@
-#include "hitcapsule.h"
+#include "txp_renderer/animation_driven_hitcapsule/hitcapsule.h"
 
 #include "btservice_finder.h"
 #include "btglm.h"

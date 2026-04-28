@@ -1,8 +1,8 @@
 #pragma once
 
-#include "animation_driven_hitcapsule/hitcapsule.h"  // for `Hitcapsule_group_set`
 #include "btglm.h"
 #include "btjson.h"
+#include "txp_renderer/animation_driven_hitcapsule/hitcapsule.h"  // for `Hitcapsule_group_set`
 
 #include <string>
 #include <unordered_map>
