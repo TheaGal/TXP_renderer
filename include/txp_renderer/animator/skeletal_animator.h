@@ -1,6 +1,7 @@
 #pragma once
 
 #include "btglm.h"
+#include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "txp_renderer/types.h"
 
 #include <cmath>
@@ -14,12 +15,6 @@ namespace component_internal
 {
 class Model_animator;  // Forward decl (not available externally).
 }  // namespace component_internal
-
-namespace anim_frame_action
-{
-struct Runtime_controllable_data;  // @NOCHECKIN: @THEA: Forward decl. (but see if should split out api into external and internal part).
-}  // namespace anim_frame_action
-
 
 /// Externally facing skeletal animator.
 class Skeletal_animator
