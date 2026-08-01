@@ -177,6 +177,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animator/skeletal_animator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/camera/camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_render_job.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
@@ -202,6 +203,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
