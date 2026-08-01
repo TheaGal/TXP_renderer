@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.28 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.29 FATAL_ERROR)
 
 # Project.
 project(txp_renderer
@@ -18,6 +18,7 @@ message(
     "-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-\n")
 
 # C/C++ standard.
+# set(CMAKE_UNITY_BUILD ON)  # Fails????
 set(CMAKE_C_STANDARD 17)
 set(CMAKE_C_STANDARD_REQUIRED True)
 set(CMAKE_CXX_STANDARD 20)
@@ -67,7 +68,7 @@ add_subdirectory(third_party/efsw)
 add_subdirectory(third_party/fastgltf)
 add_subdirectory(third_party/KTX-Software/lib ktx)
 
-if (NOT TARGET nlohmann_json::nlohmann_json)
+if (NOT TARGET stduuid)
     add_subdirectory(third_party/stduuid)
 endif()
 

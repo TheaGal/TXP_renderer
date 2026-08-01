@@ -182,7 +182,7 @@ void Camera_internal::get_main_cam_position(vec3 out_position) const
         return;
     }
 
-    BT::date_deadline(2026, 5, 24);  // @TODO: figure out more better way of going from real to float.
+    BT::date_deadline(2026, 8, 24);  // @TODO: figure out more better way of going from real to float.
     out_position[0] = m_camera_states.front().position.x;
     out_position[1] = m_camera_states.front().position.y;
     out_position[2] = m_camera_states.front().position.z;
