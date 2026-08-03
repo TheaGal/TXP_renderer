@@ -86,6 +86,8 @@ struct Render_object_config
 
     // ^^ Required ^^ / vv Optional vv
 
+    std::string sub_mesh_name;
+
     std::string material_palette;
     bool is_deformed{ false };
 

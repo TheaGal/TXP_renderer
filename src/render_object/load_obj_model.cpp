@@ -68,6 +68,12 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
     std::vector<std::string> material_palette_material_names;
     for (auto& shape : shapes)
     {
+        if (shape.mesh.indices.empty())
+        {
+            // Skip non-mesh shapes.
+            continue;
+        }
+
         int32_t material_idx{ shape.mesh.material_ids.front() };
         if (material_idx < 0)
             material_palette_material_names.emplace_back("default_mat");
