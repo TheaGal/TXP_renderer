@@ -173,6 +173,9 @@ std::vector<std::string> Render_model_data_collection::get_deformed_model_skin_n
 
 uint16_t Render_model_data_collection::get_deformed_model_skin_idx(std::string const& name) const
 {
+    // If an exception occurs inside the function below, it's probably a configuration error.
+    // Likely that a render object's `.is_deformed` is true, but the render model does not support
+    // deformation.  -Thea 2026/08/03
     return inner_data->deformed_model_skin_pool.get_idx(name);
 }
 

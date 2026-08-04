@@ -20,6 +20,8 @@ struct Render_object
     Render_layer layer{ RENDER_LAYER_DEFAULT };
 
     uint16_t render_model_idx;
+    uint16_t sub_mesh_idx{ (uint16_t)-1 }; // opt: -1 means draw all meshes.
+    bool sub_mesh_zero_origin_position{ false }; // opt: only applicable if `sub_mesh_idx!=-1`.
     uint16_t material_palette_idx;  // Default: pulls from render model material palette.
     uint16_t animator_idx{ (uint16_t)-1 };  // opt: -1 means no animator.
 

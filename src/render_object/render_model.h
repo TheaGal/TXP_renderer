@@ -8,6 +8,7 @@
 #include <cassert>
 #include <cstdint>
 #include <limits>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -48,6 +49,25 @@ struct Static_model_data_set
     /// Value added to the vertex index before indexing into the vertex buffer.
     // @NOTE: calculated in `upload_model_entries_to_gpu()` call.
     int32_t vertex_index_offset;
+
+    /// Gets the mesh index via name.
+    uint16_t get_mesh_idx(std::string const& mesh_name) const
+    {
+        uint16_t idx{ (uint16_t)-1 };
+        for (size_t i = 0; i < meshes.size(); i++)
+            if (meshes[i].mesh_name == mesh_name)
+            {
+                if (i >= std::numeric_limits<uint16_t>::max())
+                    throw std::runtime_error("i is too large to be supported.");
+                idx = i;
+                break;
+            }
+
+        if (idx == (uint16_t)-1)
+            throw std::runtime_error("idx not resolved.");
+
+        return idx;
+    }
 };
 
 struct Deformed_model_skin;  // Forward decl.

@@ -11,6 +11,7 @@ namespace TXP
 
 struct Mesh
 {
+    std::string mesh_name;
     std::vector<uint32_t> indices;
 };
 

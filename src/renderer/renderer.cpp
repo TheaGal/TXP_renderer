@@ -173,6 +173,7 @@ struct Renderer::Impl
                     rend_owned_data.pool_key = m.render_object_list.size();
 
                     uint16_t new_render_model_idx{ (uint16_t)-1 };
+                    uint16_t new_sub_mesh_idx{ (uint16_t)-1 };
                     if (m.internal_allowing_deformed_render_models && rend_obj_cfg.is_deformed)
                     {   // Create new deformed model.
                         auto static_model_data_set_idx =
@@ -183,6 +184,15 @@ struct Renderer::Impl
                             m.render_model_data_collection
                                 .create_deformed_model_from_static_model_data_set(
                                     rend_obj_cfg.model_name);
+
+                        // Get sub mesh index (if applicable).
+                        if (!rend_obj_cfg.sub_mesh_name.empty())
+                        {
+                            new_sub_mesh_idx =
+                                m.render_model_data_collection
+                                    .get_static_model_data_set(static_model_data_set_idx)
+                                    .get_mesh_idx(rend_obj_cfg.sub_mesh_name);
+                        }
 
                         // Add animator.
                         bool has_root_motion_tag{
@@ -235,12 +245,23 @@ struct Renderer::Impl
                         new_render_model_idx =
                             m.render_model_data_collection.get_static_model_data_set_idx(
                                 rend_obj_cfg.model_name);
+
+                        // Get sub mesh index (if applicable).
+                        if (!rend_obj_cfg.sub_mesh_name.empty())
+                        {
+                            new_sub_mesh_idx =
+                                m.render_model_data_collection
+                                    .get_static_model_data_set(new_render_model_idx)
+                                    .get_mesh_idx(rend_obj_cfg.sub_mesh_name);
+                        }
                     }
                     m.render_model_data_collection.report_one_user_added(new_render_model_idx);
 
                     m.render_object_list.emplace_back(Render_object{
                         .layer = rend_obj_cfg.render_layer,
                         .render_model_idx = new_render_model_idx,
+                        .sub_mesh_idx = new_sub_mesh_idx,
+                        .sub_mesh_zero_origin_position = rend_obj_cfg.sub_mesh_zero_origin_position,
                         .material_palette_idx = m.material_organizer.get_material_palette_idx(
                             !rend_obj_cfg.material_palette.empty()
                                 ? rend_obj_cfg.material_palette

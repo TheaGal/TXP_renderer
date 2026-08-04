@@ -545,7 +545,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             }
 
             // Create mesh in model.
-            meshes.emplace_back(std::move(indices));
+            meshes.emplace_back(std::string(mesh.name), std::move(indices));
         }
     }
 
