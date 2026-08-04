@@ -58,6 +58,20 @@ int32_t main()
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 0 });
         rend_obj_cfg.is_deformed = true;
     }
+    {   // Create sample entity 5.
+        auto ecs_entity = ecs_registry.create();
+
+        auto& meta = ecs_registry.emplace<TXP::component::Entity_metadata>(ecs_entity);
+        meta.uuid = BT::UUID_helper::generate_uuid();
+
+        auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
+        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.model_name = "rails";
+        rend_obj_cfg.sub_mesh_name = "CurveRail.L.001";
+        rend_obj_cfg.sub_mesh_zero_origin_position = true;
+        glm_translate_make(rend_obj_cfg.transform.raw, vec3{ 0, 10, 0 });
+        rend_obj_cfg.is_deformed = false;
+    }
 
     TXP::Input::Input_handler input_handler;
 
@@ -80,6 +94,7 @@ int32_t main()
     r.add_material_palette("default_material_palette", { "default_mat" });
     r.add_model("probuilder_example", ".wobj", false, false);
     r.add_model("simple_combat_char", ".glb", true, true);
+    r.add_model("rails", ".wobj", false, false);
     r.build();
 
     // @TODO: this may not be wanted way of doing this (see macro POSSIBLY_REMOVE_THIS_LETS_SEE)
