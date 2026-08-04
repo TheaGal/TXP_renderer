@@ -209,7 +209,7 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
         }
 
         // Create mesh.
-        meshes.emplace_back(shape.name, std::move(indices));
+        meshes.emplace_back(shape.name, vec3s{ 0, 0, 0 }, std::move(indices));
     }
 
     // Place data into collection.

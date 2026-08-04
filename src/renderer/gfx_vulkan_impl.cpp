@@ -45,6 +45,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <cstdint>
 #include <iostream>
 #include <sstream>
 #include <stdexcept>
@@ -1572,8 +1573,33 @@ void Graphics::Impl::set_render_object_per_instance_data(
 
     for (size_t i = 0; i < num_transforms; i++)
     {
-        glm_mat4_copy(const_cast<vec4*>(rend_obj_list[i].transform),
-                      reinterpret_cast<vec4*>(model_transform_ptr));
+        auto const& rend_obj{ rend_obj_list[i] };
+        if (rend_obj.sub_mesh_idx != (uint16_t)-1 && rend_obj.sub_mesh_zero_origin_position)
+        {
+            // Hey so, it turns out that sub-mesh origin position zeroing doesn't work due to
+            // limitations to the gltf importer (wonkiness) and the wavefront obj file format (no
+            // origins preserved in file format). So this is essentially @DEPRECATED
+            //   -Thea 2026/08/04
+            assert(false);
+
+            // @TODO: @CHECK: is this branch more expensive or doing the extra mat4 multiplication?
+            //                  -Thea 2026/08/04
+            vec3 inv_orig_pos;
+            glm_vec3_negate_to(const_cast<float_t*>(rend_obj.sub_mesh_origin_position),
+                               inv_orig_pos);
+
+            mat4 zero_out_trans;
+            glm_translate_make(zero_out_trans, inv_orig_pos);
+
+            glm_mat4_mul(zero_out_trans,
+                         const_cast<vec4*>(rend_obj.transform),
+                         reinterpret_cast<vec4*>(model_transform_ptr));
+        }
+        else
+        {
+            glm_mat4_copy(const_cast<vec4*>(rend_obj.transform),
+                          reinterpret_cast<vec4*>(model_transform_ptr));
+        }
         model_transform_ptr += sizeof(mat4);  // Increment to next model transform.
     }
 

@@ -21,12 +21,15 @@ struct Render_object
 
     uint16_t render_model_idx;
     uint16_t sub_mesh_idx{ (uint16_t)-1 }; // opt: -1 means draw all meshes.
-    bool sub_mesh_zero_origin_position{ false }; // opt: only applicable if `sub_mesh_idx!=-1`.
     uint16_t material_palette_idx;  // Default: pulls from render model material palette.
     uint16_t animator_idx{ (uint16_t)-1 };  // opt: -1 means no animator.
 
-    uint16_t padding1;
-    uint32_t padding2;
+    vec3 sub_mesh_origin_position = GLM_VEC3_ZERO_INIT;
+    bool sub_mesh_zero_origin_position{ false }; // opt: only applicable if `sub_mesh_idx!=-1`.
+
+    bool padding1;
+    uint16_t padding2;
+    uint32_t padding3;
 
     mat4 transform = GLM_MAT4_IDENTITY_INIT;
 

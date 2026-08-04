@@ -19,6 +19,7 @@
 #include <array>
 #include <cassert>
 #include <cstddef>
+#include <cstdint>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
@@ -341,10 +342,15 @@ void Shader_basic_diffuse::allocate_per_instance_data_slots(
         size_t num_meshes_in_model{ model.meshes.size() };
 
         // Collect meshes for this shader.
+        bool use_all_meshes{ rend_obj.sub_mesh_idx == (uint16_t)-1 };
+
         auto this_shader_id{ m_pimpl->material_organizer.get_shader_id(k_name) };
         auto const& material_palette{ m_pimpl->material_organizer.get_material_palette(
             rend_obj.material_palette_idx) };
-        for (size_t mesh_idx = 0; mesh_idx < num_meshes_in_model; mesh_idx++)
+
+        for (size_t mesh_idx = (use_all_meshes ? 0 : rend_obj.sub_mesh_idx);
+             mesh_idx < num_meshes_in_model;
+             mesh_idx++)
         {
             auto const& material{ material_palette.at(mesh_idx) };
             if (material.shader_id == this_shader_id)
@@ -353,6 +359,9 @@ void Shader_basic_diffuse::allocate_per_instance_data_slots(
                 modmesh_ref_entry.render_obj_idx = render_obj_idx;
                 modmesh_ref_entry.model_mesh_idx = mesh_idx;
             }
+
+            if (!use_all_meshes)
+                break;
         }
 
         render_obj_idx++;

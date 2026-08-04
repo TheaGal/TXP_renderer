@@ -12,6 +12,7 @@ namespace TXP
 struct Mesh
 {
     std::string mesh_name;
+    vec3s origin_pos;  // @TODO: unused at this point???
     std::vector<uint32_t> indices;
 };
 

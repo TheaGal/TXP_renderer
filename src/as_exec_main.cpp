@@ -67,8 +67,8 @@ int32_t main()
         auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
         rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
         rend_obj_cfg.model_name = "rails";
-        rend_obj_cfg.sub_mesh_name = "CurveRail.L.001";
-        rend_obj_cfg.sub_mesh_zero_origin_position = true;
+        // rend_obj_cfg.sub_mesh_name = "CurveRail.L.001";
+        // rend_obj_cfg.sub_mesh_zero_origin_position = true;
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ 0, 10, 0 });
         rend_obj_cfg.is_deformed = false;
     }

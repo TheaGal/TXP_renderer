@@ -127,7 +127,6 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             glm_scale(node_transform.raw, trs.scale.data());
 
             glm_mat4_mul(parent_transform, node_transform.raw, node_transform.raw);
-            // glm_mat4_mul(node_transform.raw, parent_transform, node_transform.raw);
 
             node_idx_to_global_transform_map.emplace(process_node.my_idx,
                                                      std::move(node_transform));
@@ -380,7 +379,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                                                           "default_material_palette");
 
     // Load meshes.
-    bool overall_has_skin{ !asset.skins.empty() };
+    bool const overall_has_skin{ !asset.skins.empty() };
     vertices.clear();
     model_aabb.reset();
 
@@ -402,8 +401,27 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     };
     auto& vert_skin_datas{ emplaced_model_skin.vert_skin_datas };
 
-    for (auto& mesh : asset.meshes)
+    for (size_t i = 0; i < asset.meshes.size(); i++)
     {
+        auto& mesh{ asset.meshes[i] };
+
+        // Find the mesh origin position.
+        // @TODO: @INEFFICIENT
+        vec3s mesh_origin_position = GLM_VEC3_ZERO_INIT;
+        std::string node_name;  // @NOTE: using node name instead of mesh name for gltf.
+
+        for (auto const& node : asset.nodes)
+        {
+            if (node.meshIndex.has_value() && node.meshIndex.value() == i)
+            {
+                auto trs{ std::get<fastgltf::TRS>(node.transform) };
+                glm_vec3_copy(trs.translation.data(), mesh_origin_position.raw);
+
+                node_name = node.name;
+                break;
+            }
+        }
+
         for (auto& primitive : mesh.primitives)
         {   // Load vertices.
             // Find all wanted accessors.
@@ -425,18 +443,22 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             fastgltf::Accessor* weights_accessor{ nullptr };
             bool has_skin{ false };
 
-            if (joints_attribute != nullptr && weights_attribute != nullptr)
+            // @NOTE: ignore joints/weights attributes if there are no skins in model.
+            if (overall_has_skin && joints_attribute != nullptr && weights_attribute != nullptr)
             {   // Include skinning accessors.
                 joints_accessor = &asset.accessors[joints_attribute->accessorIndex];
                 weights_accessor = &asset.accessors[weights_attribute->accessorIndex];
                 has_skin = true;
             }
 
-            // Either all meshes must have/not have a skin, with the exception of
-            // overall meshes having skins but this one in particular doesn't.
-            // A dummy set of skin weights will be applied later for this exception.
-            assert(overall_has_skin == has_skin ||
-                   (overall_has_skin && !has_skin));
+            // @NOTE: bc of adding `overall_has_skin` condition to above if statement, the assert
+            // below is moot.
+            //
+            // // Either all meshes must have/not have a skin, with the exception of
+            // // overall meshes having skins but this one in particular doesn't.
+            // // A dummy set of skin weights will be applied later for this exception.
+            // assert(overall_has_skin == has_skin ||
+            //        (overall_has_skin && !has_skin));
 
             // Resize to include new vertices.
             auto base_vertex_idx{ vertices.size() };
@@ -545,7 +567,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             }
 
             // Create mesh in model.
-            meshes.emplace_back(std::string(mesh.name), std::move(indices));
+            meshes.emplace_back(node_name, mesh_origin_position, std::move(indices));
         }
     }
 

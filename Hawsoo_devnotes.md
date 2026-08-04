@@ -599,6 +599,12 @@ slangc -lang slang -profile glsl_460 -target glsl assets_raw/shaders/gradient.sl
 - [x] add check for "allow_deformed_render_models".
 
 
+## Changes for sub-mesh rendering and origin zeroing
+
+- So it turns out origin zeroing is not possible, bc of gltf importer being a bit wonky and .obj (wobj) file not supporting node origin points.
+
+- [x] get sub-mesh rendering.
+
 ## Performance.
 
 - [ ] For some reason the window seems to be running at 30fps or so on gpu, but the imgui metrics say ">500fps" when measuring on the cpu side. What's going on?

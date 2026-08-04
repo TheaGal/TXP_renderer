@@ -172,8 +172,12 @@ struct Renderer::Impl
                 {   // Need to create new render object.
                     rend_owned_data.pool_key = m.render_object_list.size();
 
+                    bool const use_sub_mesh_idx{ !rend_obj_cfg.sub_mesh_name.empty() };
+
                     uint16_t new_render_model_idx{ (uint16_t)-1 };
                     uint16_t new_sub_mesh_idx{ (uint16_t)-1 };
+                    vec3 new_sub_mesh_origin_position = GLM_VEC3_ZERO_INIT;
+
                     if (m.internal_allowing_deformed_render_models && rend_obj_cfg.is_deformed)
                     {   // Create new deformed model.
                         auto static_model_data_set_idx =
@@ -186,12 +190,22 @@ struct Renderer::Impl
                                     rend_obj_cfg.model_name);
 
                         // Get sub mesh index (if applicable).
-                        if (!rend_obj_cfg.sub_mesh_name.empty())
+                        if (use_sub_mesh_idx)
                         {
+                            auto const& static_model{
+                                m.render_model_data_collection.get_static_model_data_set(
+                                    static_model_data_set_idx)
+                            };
                             new_sub_mesh_idx =
-                                m.render_model_data_collection
-                                    .get_static_model_data_set(static_model_data_set_idx)
-                                    .get_mesh_idx(rend_obj_cfg.sub_mesh_name);
+                                static_model.get_mesh_idx(rend_obj_cfg.sub_mesh_name);
+
+                            if (rend_obj_cfg.sub_mesh_zero_origin_position)
+                            {
+                                glm_vec3_copy(
+                                    const_cast<float_t*>(
+                                        static_model.meshes[new_sub_mesh_idx].origin_pos.raw),
+                                    new_sub_mesh_origin_position);
+                            }
                         }
 
                         // Add animator.
@@ -247,12 +261,22 @@ struct Renderer::Impl
                                 rend_obj_cfg.model_name);
 
                         // Get sub mesh index (if applicable).
-                        if (!rend_obj_cfg.sub_mesh_name.empty())
+                        if (use_sub_mesh_idx)
                         {
+                            auto const& static_model{
+                                m.render_model_data_collection.get_static_model_data_set(
+                                    new_render_model_idx)
+                            };
                             new_sub_mesh_idx =
-                                m.render_model_data_collection
-                                    .get_static_model_data_set(new_render_model_idx)
-                                    .get_mesh_idx(rend_obj_cfg.sub_mesh_name);
+                                static_model.get_mesh_idx(rend_obj_cfg.sub_mesh_name);
+
+                            if (rend_obj_cfg.sub_mesh_zero_origin_position)
+                            {
+                                glm_vec3_copy(
+                                    const_cast<float_t*>(
+                                        static_model.meshes[new_sub_mesh_idx].origin_pos.raw),
+                                    new_sub_mesh_origin_position);
+                            }
                         }
                     }
                     m.render_model_data_collection.report_one_user_added(new_render_model_idx);
@@ -261,12 +285,16 @@ struct Renderer::Impl
                         .layer = rend_obj_cfg.render_layer,
                         .render_model_idx = new_render_model_idx,
                         .sub_mesh_idx = new_sub_mesh_idx,
-                        .sub_mesh_zero_origin_position = rend_obj_cfg.sub_mesh_zero_origin_position,
                         .material_palette_idx = m.material_organizer.get_material_palette_idx(
                             !rend_obj_cfg.material_palette.empty()
                                 ? rend_obj_cfg.material_palette
                                 : rend_obj_cfg.model_name + "__default_material_palette_name__"),
+                        .sub_mesh_zero_origin_position = rend_obj_cfg.sub_mesh_zero_origin_position,
                     });
+
+                    glm_vec3_copy(new_sub_mesh_origin_position,
+                                  m.render_object_list.back().sub_mesh_origin_position);
+
                     appended_render_object = true;
                 }
                 else
