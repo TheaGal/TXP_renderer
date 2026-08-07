@@ -96,6 +96,8 @@ int32_t main()
     r.add_model("rails", ".wobj", false, false);
     r.build();
 
+    r.set_imgui_build_contents_callback([]() {});
+
     // @TODO: this may not be wanted way of doing this (see macro POSSIBLY_REMOVE_THIS_LETS_SEE)
     // auto ro0_key = r.create_render_obj({
     //     .layer      = TXP::RENDER_LAYER_DEFAULT,

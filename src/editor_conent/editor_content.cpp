@@ -15,6 +15,7 @@
 #include "txp_renderer/input_handler/input_key_codes.h"
 
 #include <cmath>
+#include <functional>
 #include <vector>
 
 
@@ -27,6 +28,8 @@ bool s_show_demo_window{ false };
 
 size_t s_num_scene_editor_windows{ 1 };
 std::vector<BT::UUID> s_active_scene_editor_window_uuids;
+
+std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
 
 /// Prompt overlay for a camera mode to get unlocked or toggled with shift+c.
 void imgui_camera_mode_shift_c_ctrl_prompt_overlay(
@@ -88,6 +91,11 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 
 }  // namespace
 
+
+void editor_content::set_imgui_build_contents_callback(std::function<void()>&& callback)
+{
+    s_imgui_build_contents_callback_fn = callback;
+}
 
 void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
@@ -264,10 +272,10 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     // .
     imgui_demo_window_content(input_handler);
 
-    // if (!imgui_build_contents_callback)  @TODO
-    //     throw std::runtime_error("ImGui build contents callback not defined!");
-    // imgui_build_contents_callback();
-
+    // Custom imgui information.
+    if (!s_imgui_build_contents_callback_fn)
+        throw std::runtime_error("ImGui build contents callback not defined!");
+    s_imgui_build_contents_callback_fn();
 
     // Report back render view sizes.
     out_rend_view_sizes.reserve(per_viewport_content_sizes.size());

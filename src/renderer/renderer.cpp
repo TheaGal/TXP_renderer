@@ -4,6 +4,7 @@
 #include "btdatecheck.h"
 #include "btservice_finder.h"
 #include "camera/camera_internal.h"
+#include "editor_conent/editor_content.h"
 #include "entt/entity/registry.hpp"
 #include "gfx.h"
 #include "material_organizer/material_organizer.h"
@@ -739,6 +740,11 @@ Camera& Renderer::get_main_camera()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
 // Debug special functions.
+
+void Renderer::set_imgui_build_contents_callback(std::function<void()>&& callback)
+{
+    editor_content::set_imgui_build_contents_callback(std::move(callback));
+}
 
 void Renderer::set_allow_deformed_render_models(bool allow)
 {

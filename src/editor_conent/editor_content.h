@@ -33,6 +33,9 @@ struct Render_view_image_content
 #endif // TXP_GFX_BACKEND_VULKAN
 };
 
+/// Set the callback function for imgui build contents.
+void set_imgui_build_contents_callback(std::function<void()>&& callback);
+
 /// Builds ImGui content for the frame.
 void build_content(TXP::Input::Input_handler const& input_handler,
                    Render_view_image_content const& render_view_image_content,

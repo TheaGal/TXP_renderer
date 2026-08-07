@@ -114,6 +114,9 @@ public:
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Debug special functions.
 
+    /// Set the callback function for imgui build contents.
+    void set_imgui_build_contents_callback(std::function<void()>&& callback);
+
     /// Can force a disable. (e.g. during level editor)
     void set_allow_deformed_render_models(bool allow);
 
