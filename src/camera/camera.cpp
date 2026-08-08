@@ -35,6 +35,11 @@ void Camera::get_view_direction(vec3 out_direction) const
     m_pimpl->camera.get_main_cam_view_direction(out_direction);
 }
 
+std::vector<Cam_matrix> const& Camera::get_calculated_camera_matrices() const
+{
+    return m_pimpl->camera.get_calcd_cam_matrices();
+}
+
 bool Camera::is_follow_orbit() const
 {
     return m_pimpl->camera.is_main_cam_follow_orbit();

@@ -111,7 +111,7 @@ void Camera_internal::update(float_t delta_time)
         update_fly_cam(look_delta_raw, delta_time);
 }
 
-std::vector<Camera_internal::Cam_matrix> Camera_internal::calc_cam_matrices() const
+void Camera_internal::calc_cam_matrices()
 {
     std::vector<Cam_matrix> cam_matrices;
     cam_matrices.reserve(m_camera_states.size());
@@ -168,7 +168,12 @@ std::vector<Camera_internal::Cam_matrix> Camera_internal::calc_cam_matrices() co
         cam_matrices.emplace_back(std::move(new_cam_matrix));
     }
 
-    return cam_matrices;
+    m_camera_matrices = std::move(cam_matrices);
+}
+
+std::vector<Cam_matrix> const& Camera_internal::get_calcd_cam_matrices() const
+{
+    return m_camera_matrices;
 }
 
 void Camera_internal::get_main_cam_position(vec3 out_position) const

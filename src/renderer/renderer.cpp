@@ -578,8 +578,10 @@ void Renderer::render_one_frame(float_t delta_time)
                                           cur_modmesh_ref_idx);
 
     // Render for each render view.
+    m.camera.calc_cam_matrices();
+
     size_t render_view_idx{ 0 };
-    for (auto const& cam_matrix : m.camera.calc_cam_matrices())
+    for (auto const& cam_matrix : m.camera.get_calcd_cam_matrices())
     {
         bool main_cam_matrix{ render_view_idx == 0 };
 

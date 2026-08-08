@@ -25,13 +25,8 @@ public:
 
     void update(float_t delta_time);
 
-    struct Cam_matrix
-    {
-        mat4 projection;
-        mat4 view;
-    };
-
-    std::vector<Cam_matrix> calc_cam_matrices() const;
+    void calc_cam_matrices();
+    std::vector<Cam_matrix> const& get_calcd_cam_matrices() const;
 
     void get_main_cam_position(vec3 out_cam_position) const;
     void get_main_cam_view_direction(vec3 out_cam_view_direction) const;
@@ -74,6 +69,8 @@ private:
         float_t aspect;
     };
     std::vector<Camera_state> m_camera_states;
+
+    std::vector<Cam_matrix> m_camera_matrices;
 
     size_t m_controlling_camera_state_idx{ k_controlling_camera_state_none };
     int32_t m_ignore_mouse_delta_frames{ 0 };

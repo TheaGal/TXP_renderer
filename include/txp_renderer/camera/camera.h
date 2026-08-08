@@ -1,6 +1,7 @@
 #pragma once
 
 #include "btglm.h"
+#include "renderer/types.h"
 
 #include <memory>
 
@@ -17,6 +18,8 @@ public:
 
     void get_position(vec3 out_position) const;
     void get_view_direction(vec3 out_direction) const;
+
+    std::vector<Cam_matrix> const& get_calculated_camera_matrices() const;
 
     bool is_follow_orbit() const;
     void get_follow_orbit_follow_pos(vec3 out_position) const;
