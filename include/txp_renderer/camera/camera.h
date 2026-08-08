@@ -1,13 +1,19 @@
 #pragma once
 
 #include "btglm.h"
-#include "renderer/types.h"
 
 #include <memory>
 
 
 namespace TXP
 {
+
+/// Projection and view matrices for a camera.
+struct Cam_matrix
+{
+    mat4 projection;
+    mat4 view;
+};
 
 /// Externally-facing camera class.
 class Camera

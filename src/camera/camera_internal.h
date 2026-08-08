@@ -2,6 +2,7 @@
 
 #include "btglm.h"
 #include "renderer/types.h"
+#include "txp_renderer/camera/camera.h"
 #include "txp_renderer/input_handler/input_handler.h"
 
 #include <vector>
