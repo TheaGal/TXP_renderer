@@ -50,4 +50,10 @@ void Camera::set_follow_orbit_orbits(vec2 orbit_angles)
     m_pimpl->camera.set_main_cam_follow_orbit_orbits(orbit_angles);
 }
 
+bool Camera::is_cursor_free() const
+{
+    return (m_pimpl->camera.get_controlling_camera() ==
+            Camera_internal::k_controlling_camera_state_none);
+}
+
 }  // namespace TXP

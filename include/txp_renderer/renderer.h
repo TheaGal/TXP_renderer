@@ -108,7 +108,7 @@ public:
     /// Gets model's basic data.
     Basic_model get_model_basic_data(std::string const& model_name) const;
 
-    /// Gets camera view direction.
+    /// Gets camera struct.
     Camera& get_main_camera();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
