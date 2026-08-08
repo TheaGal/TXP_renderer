@@ -55,7 +55,7 @@ set(DEPENDENCY_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/entt/src  # Header only.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/fastgltf/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui  # Header only.
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/src
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/json/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/KTX-Software/lib/include
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb  # Header only (essentially).
@@ -279,10 +279,10 @@ set(SUPPORT_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/thea_imgui/misc/cpp/imgui_stdlib.h
 
     # ImGuizmo source files.
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/ImGuizmo.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/ImGuizmo.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/ImSequencer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/ImSequencer.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/src/ImGuizmo.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/src/ImGuizmo.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/src/ImSequencer.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ImGuizmo/src/ImSequencer.h
 
     # stb header files.
     ${CMAKE_CURRENT_SOURCE_DIR}/third_party/stb/stb_image.h
