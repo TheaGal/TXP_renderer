@@ -17,6 +17,7 @@
 #include "VkBootstrap.h"
 
 #include "imgui.h"
+#include "ImGuizmo.h"
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 
@@ -693,6 +694,10 @@ void Graphics::Impl::init_vulkan_for_imgui()
     init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
 
     ImGui_ImplVulkan_Init(&init_info);
+
+    ImGuizmo::SetImGuiContext(ImGui::GetCurrentContext());
+    ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());  // @TEMPORARY: move imguizmo to draw for each window eventually.
+    BT::date_deadline(2026, 8, 30);
 }
 
 void Graphics::Impl::init_vulkan_render_graph_resources()
@@ -1358,6 +1363,7 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+    ImGuizmo::BeginFrame();
 
     editor_content::Render_view_image_content render_view_image_content;
     render_view_image_content.content_image_descriptors.reserve(render_views.size());
