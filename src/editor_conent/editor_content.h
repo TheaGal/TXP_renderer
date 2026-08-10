@@ -36,6 +36,14 @@ struct Render_view_image_content
 /// Set the callback function for imgui build contents.
 void set_imgui_build_contents_callback(std::function<void()>&& callback);
 
+/// Enables or disables ImGuizmo.
+void set_imguizmo_enabled(bool flag);
+
+/// Adds transform to manipulate with ImGuizmo next tick (note: if exec within the imgui
+/// callback, it will get processed the same tick).
+void add_to_imguizmo_manipulate(mat4 transform,
+                                std::function<void(mat4 const)>&& changed_callback);
+
 /// Builds ImGui content for the frame.
 void build_content(TXP::Input::Input_handler const& input_handler,
                    Render_view_image_content const& render_view_image_content,

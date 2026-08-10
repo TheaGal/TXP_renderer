@@ -9,6 +9,7 @@
 #include "camera/camera_internal.h"
 #include "imgui.h"
 #include "imgui_internal.h"
+#include "ImGuizmo.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
@@ -30,6 +31,13 @@ size_t s_num_scene_editor_windows{ 1 };
 std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 
 std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
+
+struct Manipulate_transform
+{
+    mat4 transform;
+    std::function<void(mat4 const)> manipulated_callback;
+};
+std::vector<Manipulate_transform> s_manipulate_transform_list;
 
 /// Prompt overlay for a camera mode to get unlocked or toggled with shift+c.
 void imgui_camera_mode_shift_c_ctrl_prompt_overlay(
@@ -97,6 +105,20 @@ void editor_content::set_imgui_build_contents_callback(std::function<void()>&& c
     s_imgui_build_contents_callback_fn = callback;
 }
 
+void editor_content::set_imguizmo_enabled(bool flag)
+{
+    ImGuizmo::Enable(flag);
+}
+
+void editor_content::add_to_imguizmo_manipulate(mat4 transform,
+                                                std::function<void(mat4 const)>&& changed_callback)
+{
+    Manipulate_transform nt{ .manipulated_callback = std::move(changed_callback) };
+    glm_mat4_copy(transform, nt.transform);
+
+    s_manipulate_transform_list.emplace_back(std::move(nt));
+}
+
 void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
                                    std::function<void(bool)> const& lock_cursor_fn,
@@ -146,6 +168,14 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     ImGui::DockSpaceOverViewport(0,
                                  ImGui::GetMainViewport(),
                                  0);
+
+    // Just a check.
+    assert(s_manipulate_transform_list.empty());
+
+    // Custom imgui information.
+    if (!s_imgui_build_contents_callback_fn)
+        throw std::runtime_error("ImGui build contents callback not defined!");
+    s_imgui_build_contents_callback_fn();
 
     // Collect size of available content in viewports.
     std::vector<ImVec2> per_viewport_content_sizes;
@@ -210,6 +240,9 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         s_prev_rmb_event_tick = rmb.last_event_tick;
     }
 
+    // Get cam matrices.
+    auto const& cam_matrices{ camera.get_calcd_cam_matrices() };
+
     // Draw all scene editor windows.
     for (size_t i = 0; i < s_num_scene_editor_windows; i++)
     {
@@ -258,6 +291,32 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                     "Press Shift+C to exit \"Flying Camera Mode\".",
                     window_content_pos);
             }
+
+            // Draw ImGuizmo manipulate transforms.
+            ImGuizmo::SetDrawlist();
+
+            auto win_rect{ ImGui::GetCurrentWindowRead()->Rect() };  // @TODO: needed???
+            ImGuizmo::SetRect(win_rect.GetTL().x,
+                              win_rect.GetTL().y,
+                              win_rect.GetWidth(),
+                              win_rect.GetHeight());
+
+            auto const& cam_mat{ cam_matrices[i + 1] };
+
+            for (auto& manip_trans : s_manipulate_transform_list)
+            {
+                // Draw Imguizmo gizmo.
+                mat4 transdebug = GLM_MAT4_IDENTITY_INIT;
+                bool manipulated{ false };
+                if (ImGuizmo::Manipulate(&cam_mat.view[0][0],
+                                         &cam_mat.projection[0][0],
+                                         ImGuizmo::UNIVERSAL,
+                                         false ? ImGuizmo::WORLD : ImGuizmo::LOCAL,
+                                         &manip_trans.transform[0][0]))
+                {
+                    manip_trans.manipulated_callback(manip_trans.transform);
+                }
+            }
         }
         ImGui::End();
 
@@ -269,13 +328,11 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         }
     }
 
+    // Clear used manipulate transform list.
+    s_manipulate_transform_list.clear();
+
     // .
     imgui_demo_window_content(input_handler);
-
-    // Custom imgui information.
-    if (!s_imgui_build_contents_callback_fn)
-        throw std::runtime_error("ImGui build contents callback not defined!");
-    s_imgui_build_contents_callback_fn();
 
     // Report back render view sizes.
     out_rend_view_sizes.reserve(per_viewport_content_sizes.size());

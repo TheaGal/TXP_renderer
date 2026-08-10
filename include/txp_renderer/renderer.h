@@ -117,6 +117,14 @@ public:
     /// Set the callback function for imgui build contents.
     void set_imgui_build_contents_callback(std::function<void()>&& callback);
 
+    /// Enables or disables ImGuizmo.
+    void set_imguizmo_enabled(bool flag);
+
+    /// Adds transform to manipulate with ImGuizmo next tick (note: if exec within the imgui
+    /// callback, it will get processed the same tick).
+    void add_to_imguizmo_manipulate(mat4 transform,
+                                    std::function<void(mat4 const)>&& changed_callback);
+
     /// Can force a disable. (e.g. during level editor)
     void set_allow_deformed_render_models(bool allow);
 

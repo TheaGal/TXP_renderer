@@ -748,6 +748,17 @@ void Renderer::set_imgui_build_contents_callback(std::function<void()>&& callbac
     editor_content::set_imgui_build_contents_callback(std::move(callback));
 }
 
+void Renderer::set_imguizmo_enabled(bool flag)
+{
+    editor_content::set_imguizmo_enabled(flag);
+}
+
+void Renderer::add_to_imguizmo_manipulate(mat4 transform,
+                                          std::function<void(mat4 const)>&& changed_callback)
+{
+    editor_content::add_to_imguizmo_manipulate(transform, std::move(changed_callback));
+}
+
 void Renderer::set_allow_deformed_render_models(bool allow)
 {
     m_pimpl->allow_deformed_render_models.store(allow);
