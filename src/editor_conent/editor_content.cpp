@@ -1,4 +1,5 @@
 #include "editor_content.h"
+#include "cglm/mat4.h"
 
 #if TXP_GFX_BACKEND_VULKAN
 #include "backends/imgui_impl_vulkan.h"
@@ -303,13 +304,17 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
 
             auto const& cam_mat{ cam_matrices[i + 1] };
 
+            mat4 proj_negated;
+            glm_mat4_copy(const_cast<vec4*>(cam_mat.projection), proj_negated);
+            proj_negated[1][1] *= -1;  // Undo neg-Y issue fix.
+
             for (auto& manip_trans : s_manipulate_transform_list)
             {
                 // Draw Imguizmo gizmo.
                 mat4 transdebug = GLM_MAT4_IDENTITY_INIT;
                 bool manipulated{ false };
                 if (ImGuizmo::Manipulate(&cam_mat.view[0][0],
-                                         &cam_mat.projection[0][0],
+                                         &proj_negated[0][0],
                                          ImGuizmo::UNIVERSAL,
                                          false ? ImGuizmo::WORLD : ImGuizmo::LOCAL,
                                          &manip_trans.transform[0][0]))
