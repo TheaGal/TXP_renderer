@@ -313,6 +313,7 @@ struct Renderer::Impl
         // Delete stale render objects.
         std::unordered_map<int32_t, int32_t> old_to_new_idx_map;
         old_to_new_idx_map.reserve(rend_obj_cfg_view.size());
+        int32_t num_non_stale_idxs{ 0 };
 
         for (auto i = static_cast<int32_t>(m.render_object_list.size()) - 1; i >= 0; i--)
         {
@@ -330,21 +331,22 @@ struct Renderer::Impl
                 }
 
                 m.render_object_list.erase(m.render_object_list.begin() + i);
-                removed_render_object = true;
+                removed_render_object = true;  // Why?? unused??
 
                 // In case rend obj does exist still but just is going to be recreated.
                 old_to_new_idx_map.emplace(i, k_pool_key_process_flag);
             }
             else
             {
-                old_to_new_idx_map.emplace(i, old_to_new_idx_map.size());
+                old_to_new_idx_map.emplace(i, num_non_stale_idxs);
+                num_non_stale_idxs++;
             }
         }
         for (auto& elem : old_to_new_idx_map)
         {   // Flip since last loop was iterating backwards.
             auto& new_idx{ elem.second };
             if (new_idx != k_pool_key_process_flag)
-                new_idx = (old_to_new_idx_map.size() - 1 - new_idx);
+                new_idx = (num_non_stale_idxs - 1 - new_idx);
         }
 
         // Apply new pool keys.
@@ -355,7 +357,7 @@ struct Renderer::Impl
 
             rend_obj_cfg.renderer_owned_data.pool_key =
                 old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);
-            
+
             if (rend_obj_cfg.renderer_owned_data.pool_key == k_pool_key_process_flag)
             {   // Remove skeletal animator if still attached to render object.
                 m.ecs_registry.remove<component_internal::Model_animator>(ecs_entity);
