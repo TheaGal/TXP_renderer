@@ -296,25 +296,31 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             // Draw ImGuizmo manipulate transforms.
             ImGuizmo::SetDrawlist();
 
-            auto win_rect{ ImGui::GetCurrentWindowRead()->Rect() };  // @TODO: needed???
+            auto win_rect{ ImGui::GetCurrentWindowRead()->Rect() };
             ImGuizmo::SetRect(win_rect.GetTL().x,
                               win_rect.GetTL().y,
                               win_rect.GetWidth(),
                               win_rect.GetHeight());
 
-            auto const& cam_mat{ cam_matrices[i + 1] };
+            mat4 manip_trans_cam_view;
+            mat4 manip_trans_cam_proj;
+            if (!s_manipulate_transform_list.empty())
+            {
+                auto const& cam_mat{ cam_matrices[i + 1] };
 
-            mat4 proj_negated;
-            glm_mat4_copy(const_cast<vec4*>(cam_mat.projection), proj_negated);
-            proj_negated[1][1] *= -1;  // Undo neg-Y issue fix.
+                glm_mat4_copy(const_cast<vec4*>(cam_mat.view), manip_trans_cam_view);
+
+                glm_mat4_copy(const_cast<vec4*>(cam_mat.projection), manip_trans_cam_proj);
+                manip_trans_cam_proj[1][1] *= -1;  // Undo neg-Y issue fix.
+            }
 
             for (auto& manip_trans : s_manipulate_transform_list)
             {
                 // Draw Imguizmo gizmo.
                 mat4 transdebug = GLM_MAT4_IDENTITY_INIT;
                 bool manipulated{ false };
-                if (ImGuizmo::Manipulate(&cam_mat.view[0][0],
-                                         &proj_negated[0][0],
+                if (ImGuizmo::Manipulate(&manip_trans_cam_view[0][0],
+                                         &manip_trans_cam_proj[0][0],
                                          ImGuizmo::UNIVERSAL,
                                          false ? ImGuizmo::WORLD : ImGuizmo::LOCAL,
                                          &manip_trans.transform[0][0]))
