@@ -768,7 +768,7 @@ void Renderer::set_allow_deformed_render_models(bool allow)
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
 {
-    BT::date_deadline(2026, 8, 10);  // @TODO: do something with this time!!! Like display in a debug window??
+    BT::date_deadline(2026, 8, 12);  // @TODO: do something with this time!!! Like display in a debug window??
     m_pimpl->perf_time_map[perf_time_type] = delta_time;
 }
 
