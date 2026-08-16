@@ -391,9 +391,9 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                 quality = PERFQ_ABOVE_15fps;
 
             ImGui::Text("PERF TIMER: %s", k_performance_time_type_labels[perf_time_type]);
-            ImGui::Text(" %.3f ms (%.0f FPS)", ms, fps);
+            ImGui::Text(" %.2f ms (%.0f FPS)", ms, fps);
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, k_perf_quality_color_map[quality]);
-            ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 4), "");
+            ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 2), "");
             ImGui::PopStyleColor();
 
             ImGui::PlotLines(("##plotlines" + std::to_string(i)).c_str(),
@@ -403,7 +403,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                              nullptr,
                              0,
                              k_ms_max_scale,
-                             ImVec2(200, 64));
+                             ImVec2(ImGui::GetContentRegionAvail().x, 32));
 
             ImGui::PopID();
         }
