@@ -1,12 +1,14 @@
 #pragma once
 
 #include "btglm.h"
+#include "btjson.h"
 #include "btuuid.h"
-#include "nlohmann/detail/macro_scope.hpp"
 
 #include <array>
+#include <cassert>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 
 namespace TXP
@@ -21,10 +23,61 @@ enum Performance_time_type : uint32_t
     NUM_PERF_TIME_TYPES
 };
 
+/// Labels for performance time types.
 constexpr std::array<char const* const, NUM_PERF_TIME_TYPES> k_performance_time_type_labels{
     "Simulation Loop",
     "Renderer Loop",
 };
+
+/// Collects samples, overwriting old ones.
+class Rolling_sampler
+{
+public:
+    Rolling_sampler()
+    {
+        for (auto& s : m_samples)
+            s = -1;  // Init w invalid samples
+    }
+
+    void add_sample(float_t sample)
+    {
+        assert(sample >= 0);
+
+        auto cur = (m_cursor++) % m_samples.size();
+        m_samples[cur] = sample;
+    }
+
+    std::vector<float_t> get_samples() const
+    {
+        std::vector<float_t> valid_samples;
+
+        auto cur{ m_cursor };
+        auto end_pos{ cur % m_samples.size() };
+
+        while (true)
+        {
+            cur = (cur + 1) % m_samples.size();
+
+            if (auto s = m_samples[cur]; s >= 0)
+            {
+                valid_samples.emplace_back(s);
+            }
+
+            if (cur == end_pos)
+                break;
+        }
+
+        return valid_samples;
+    }
+
+private:
+    uint16_t m_cursor{ 0 };
+    std::array<float_t, 512> m_samples;  // Ensure size is power of 2.
+};
+
+/// Type for storing performance times.
+/// @NOTE: this doesn't have to be public.
+using Performance_time_map_t = std::unordered_map<Performance_time_type, Rolling_sampler>;
 
 /// Frames per second all skeletal animations are imported as.
 constexpr float_t k_skeletal_anim_frames_per_second{ 60.0f };

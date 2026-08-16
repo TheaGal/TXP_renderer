@@ -93,7 +93,7 @@ struct Information_hook_struct
 {
     std::function<void(bool)> const& set_play_flag_fn;
     std::function<bool()> const& get_play_flag_fn;
-    std::unordered_map<Performance_time_type, float_t> const& perf_time_map;
+    Performance_time_map_t const& perf_time_map;
 };
 
 

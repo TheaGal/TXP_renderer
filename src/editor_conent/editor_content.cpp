@@ -372,8 +372,13 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                 ImGui::GetColorU32(ImVec4(1, 0, 0, 1)),
             };
 
-            float_t ms = info_hook_struct.perf_time_map.at(perf_time_type);
+            auto perf_samples = info_hook_struct.perf_time_map.at(perf_time_type).get_samples();
+            ImGui::PushID(&perf_samples);
+
+            float_t ms = perf_samples.back();
             float_t fps = 1000.0f / ms;
+
+            constexpr float_t k_ms_max_scale{ 500 };
 
             Perf_quality quality = PERFQ_GARBAGE;
             if (fps >= 120)
@@ -388,8 +393,19 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             ImGui::Text("PERF TIMER: %s", k_performance_time_type_labels[perf_time_type]);
             ImGui::Text(" %.3f ms (%.0f FPS)", ms, fps);
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, k_perf_quality_color_map[quality]);
-            ImGui::ProgressBar(ms / 1000.0f, ImVec2(-FLT_MIN, 4), "");
+            ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 4), "");
             ImGui::PopStyleColor();
+
+            ImGui::PlotLines(("##plotlines" + std::to_string(i)).c_str(),
+                             perf_samples.data(),
+                             perf_samples.size(),
+                             0,
+                             nullptr,
+                             0,
+                             k_ms_max_scale,
+                             ImVec2(200, 64));
+
+            ImGui::PopID();
         }
     }
     ImGui::End();

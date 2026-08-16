@@ -128,7 +128,7 @@ struct Renderer::Impl
     bool internal_allowing_deformed_render_models{ allow_deformed_render_models };
 
     /// Debug stats' performance times.
-    std::unordered_map<Performance_time_type, float_t> perf_time_map;
+    Performance_time_map_t perf_time_map;
 
 
     // ---- Functions ------------------------------------------------------------------------------
@@ -768,7 +768,7 @@ void Renderer::set_allow_deformed_render_models(bool allow)
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
 {
-    m_pimpl->perf_time_map[perf_time_type] = delta_time;
+    m_pimpl->perf_time_map[perf_time_type].add_sample(delta_time);
 }
 
 }  // namespace TXP
