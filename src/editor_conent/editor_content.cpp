@@ -375,8 +375,9 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
             auto perf_samples = info_hook_struct.perf_time_map.at(perf_time_type).get_samples();
             ImGui::PushID(&perf_samples);
 
-            float_t ms = perf_samples.back() * 1000.0f;
-            float_t fps = 1.0f / ms;
+            float_t latest_sample = perf_samples.back();
+            float_t ms = latest_sample * 1000.0f;
+            float_t fps = 1.0f / latest_sample;
 
             constexpr float_t k_ms_max_scale{ 500 };
 
