@@ -371,9 +371,25 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
                 ImGui::GetColorU32(ImVec4(1, 0, 1, 1)),
                 ImGui::GetColorU32(ImVec4(1, 0, 0, 1)),
             };
+            static auto const k_calc_perf_quality = [](float_t fps) {
+                Perf_quality quality = PERFQ_GARBAGE;
+                if (fps >= 120)
+                    quality = PERFQ_ABOVE_120fps;
+                else if (fps >= 60)
+                    quality = PERFQ_ABOVE_60fps;
+                else if (fps >= 30)
+                    quality = PERFQ_ABOVE_30fps;
+                else if (fps >= 15)
+                    quality = PERFQ_ABOVE_15fps;
+                return quality;
+            };
 
             auto perf_samples = info_hook_struct.perf_time_map.at(perf_time_type).get_samples();
             ImGui::PushID(&perf_samples);
+
+            float_t highest_sample = 0;
+            for (auto s : perf_samples)
+                highest_sample = glm_max(highest_sample, s);
 
             float_t latest_sample = perf_samples.back();
             float_t ms = latest_sample * 1000.0f;
@@ -381,29 +397,24 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
 
             constexpr float_t k_ms_max_scale{ 500 };
 
-            Perf_quality quality = PERFQ_GARBAGE;
-            if (fps >= 120)
-                quality = PERFQ_ABOVE_120fps;
-            else if (fps >= 60)
-                quality = PERFQ_ABOVE_60fps;
-            else if (fps >= 30)
-                quality = PERFQ_ABOVE_30fps;
-            else if (fps >= 15)
-                quality = PERFQ_ABOVE_15fps;
-
+            // Draw stats.
             ImGui::Text("PERF TIMER: %s", k_performance_time_type_labels[perf_time_type]);
             ImGui::Text(" %.2f ms (%.0f FPS)", ms, fps);
-            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, k_perf_quality_color_map[quality]);
+
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram,
+                                  k_perf_quality_color_map[k_calc_perf_quality(fps)]);
             ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 2), "");
             ImGui::PopStyleColor();
 
+            constexpr float_t round_interval{ 10 / 1000.0f };
+            float_t cur_ms_max_scale = ceilf(highest_sample / round_interval) * round_interval;
             ImGui::PlotLines(("##plotlines" + std::to_string(i)).c_str(),
                              perf_samples.data(),
                              perf_samples.size(),
                              0,
                              nullptr,
                              0,
-                             k_ms_max_scale,
+                             glm_min(cur_ms_max_scale, k_ms_max_scale),
                              ImVec2(ImGui::GetContentRegionAvail().x, 32));
 
             ImGui::PopID();
