@@ -1,5 +1,4 @@
 #include "editor_content.h"
-#include "cglm/mat4.h"
 
 #if TXP_GFX_BACKEND_VULKAN
 #include "backends/imgui_impl_vulkan.h"
@@ -15,9 +14,11 @@
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
+#include "txp_renderer/types.h"
 
 #include <cmath>
 #include <functional>
+#include <unordered_map>
 #include <vector>
 
 
@@ -341,6 +342,57 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
 
     // Clear used manipulate transform list.
     s_manipulate_transform_list.clear();
+
+    // Render performance timers.
+    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Performance timers"))
+    {
+        for (uint32_t i = 0; i < NUM_PERF_TIME_TYPES; i++)
+        {
+            auto perf_time_type{ static_cast<Performance_time_type>(i) };
+            if (info_hook_struct.perf_time_map.find(perf_time_type) ==
+                info_hook_struct.perf_time_map.end())
+                continue;
+
+            enum Perf_quality
+            {
+                PERFQ_ABOVE_120fps = 0,
+                PERFQ_ABOVE_60fps,
+                PERFQ_ABOVE_30fps,
+                PERFQ_ABOVE_15fps,
+                PERFQ_GARBAGE,
+
+                NUM_PERF_QLYS
+            };
+            static std::array<ImU32, NUM_PERF_QLYS> const k_perf_quality_color_map{
+                ImGui::GetColorU32(ImVec4(0, 1, 0, 1)),
+                ImGui::GetColorU32(ImVec4(1, 1, 1, 1)),
+                ImGui::GetColorU32(ImVec4(1, 1, 0, 1)),
+                ImGui::GetColorU32(ImVec4(1, 0, 1, 1)),
+                ImGui::GetColorU32(ImVec4(1, 0, 0, 1)),
+            };
+
+            float_t ms = info_hook_struct.perf_time_map.at(perf_time_type);
+            float_t fps = 1000.0f / ms;
+
+            Perf_quality quality = PERFQ_GARBAGE;
+            if (fps >= 120)
+                quality = PERFQ_ABOVE_120fps;
+            else if (fps >= 60)
+                quality = PERFQ_ABOVE_60fps;
+            else if (fps >= 30)
+                quality = PERFQ_ABOVE_30fps;
+            else if (fps >= 15)
+                quality = PERFQ_ABOVE_15fps;
+
+            ImGui::Text("PERF TIMER: %s", k_performance_time_type_labels[perf_time_type]);
+            ImGui::Text(" %.3f ms (%.0f FPS)", ms, fps);
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, k_perf_quality_color_map[quality]);
+            ImGui::ProgressBar(ms / 1000.0f, ImVec2(-FLT_MIN, 4), "");
+            ImGui::PopStyleColor();
+        }
+    }
+    ImGui::End();
 
     // .
     imgui_demo_window_content(input_handler);

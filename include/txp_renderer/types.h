@@ -4,6 +4,7 @@
 #include "btuuid.h"
 #include "nlohmann/detail/macro_scope.hpp"
 
+#include <array>
 #include <cstdint>
 #include <string>
 
@@ -12,10 +13,17 @@ namespace TXP
 {
 
 /// Performance time types for reporting performance.
-enum Performance_time_type
+enum Performance_time_type : uint32_t
 {
-    PERF_TIME_TYPE_SIMULATION_LOOP,
+    PERF_TIME_TYPE_SIMULATION_LOOP = 0,
     PERF_TIME_TYPE_RENDERER_LOOP,
+
+    NUM_PERF_TIME_TYPES
+};
+
+constexpr std::array<char const* const, NUM_PERF_TIME_TYPES> k_performance_time_type_labels{
+    "Simulation Loop",
+    "Renderer Loop",
 };
 
 /// Frames per second all skeletal animations are imported as.

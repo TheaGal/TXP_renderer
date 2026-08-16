@@ -108,6 +108,9 @@ int32_t main()
     {
         r.poll_input_events();
         r.render_one_frame(1.0f / 60.0f);  // @HARDCODE
+
+        r.report_performance_time(TXP::PERF_TIME_TYPE_SIMULATION_LOOP, 123);
+        r.report_performance_time(TXP::PERF_TIME_TYPE_RENDERER_LOOP, 456);
     }
 
     return 0;
