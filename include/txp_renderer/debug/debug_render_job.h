@@ -1,5 +1,7 @@
 #pragma once
 
+#include "btglm.h"
+
 #include <string>
 
 
@@ -22,6 +24,9 @@ debug_model_id_t emplace_debug_model(std::string const& model_name, Material_typ
 
 /// Removes render job for a model.
 void remove_debug_model(debug_model_id_t model_id);
+
+/// Updates transform of model.
+void update_debug_model_transform(debug_model_id_t model_id, mat4 transform);
 
 } // namespace debug
 } // namespace TXP

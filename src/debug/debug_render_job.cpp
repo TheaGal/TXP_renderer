@@ -1,6 +1,7 @@
 #include "txp_renderer/debug/debug_render_job.h"
 
 #include "btdatecheck.h"
+#include "btglm.h"
 
 #include <string>
 
@@ -16,6 +17,11 @@ debug::debug_model_id_t debug::emplace_debug_model(std::string const& model_name
 }
 
 void debug::remove_debug_model(debug_model_id_t model_id)
+{
+    BT::date_deadline(2026, 8, 20);
+}
+
+void debug::update_debug_model_transform(debug_model_id_t model_id, mat4 transform)
 {
     BT::date_deadline(2026, 8, 20);
 }
