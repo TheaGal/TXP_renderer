@@ -563,7 +563,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
                 prev_frame_idx,
                 frame_idx,
                 num_frames);
-            assert(false);
+            assert(false);  // Happened once (2026/08/18) just randomly. If again, investigate.
         }
 
         // Process timeline regions.
