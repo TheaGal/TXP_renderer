@@ -356,7 +356,7 @@ struct Renderer::Impl
                 rend_obj_cfg_view.get<component::Render_object_config>(ecs_entity);
 
             rend_obj_cfg.renderer_owned_data.pool_key =
-                old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);
+                old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);  // @THEA: this is failing for smoe reason when doing "play simulation"
 
             if (rend_obj_cfg.renderer_owned_data.pool_key == k_pool_key_process_flag)
             {   // Remove skeletal animator if still attached to render object.
