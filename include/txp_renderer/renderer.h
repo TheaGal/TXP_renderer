@@ -29,7 +29,6 @@ struct Renderer_settings
 
     bool is_resizable{ true };
     bool has_border{ true };
-    bool is_maximized{ false };
     bool is_fullscreen{ false };
 };
 

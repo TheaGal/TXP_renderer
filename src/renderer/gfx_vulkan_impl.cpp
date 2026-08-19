@@ -149,6 +149,11 @@ void Graphics::Impl::init_glfw_no_api()
 
 void Graphics::Impl::init_window_props(bool pre_creation)
 {
+    if (pre_creation && settings.is_fullscreen)
+    {
+        throw std::runtime_error("Window must not be fullscreen on default settings.");
+    }
+
     assert(!settings.is_fullscreen);  // @TODO: implement fullscreen stuff in the future!!
 
     int32_t window_dims[2]{
@@ -172,6 +177,9 @@ void Graphics::Impl::init_window_props(bool pre_creation)
             target_monitor = glfwGetPrimaryMonitor();
         }
     }
+
+    // Get monitor scaling.
+    monitor_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(target_monitor);
 
     // Apply centering hints.
     struct Monitor_workarea
@@ -199,13 +207,6 @@ void Graphics::Impl::init_window_props(bool pre_creation)
         glfwWindowHint(GLFW_POSITION_X, centered_window_pos[0]);
         glfwWindowHint(GLFW_POSITION_Y, centered_window_pos[1]);
 
-        // Get monitor scaling.
-        monitor_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(target_monitor);
-
-        glfwWindowHint(GLFW_RESIZABLE, settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
-        glfwWindowHint(GLFW_DECORATED, settings.has_border ? GLFW_TRUE : GLFW_FALSE);
-        glfwWindowHint(GLFW_MAXIMIZED, settings.is_maximized ? GLFW_TRUE : GLFW_FALSE);
-
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
     }
     else
@@ -214,7 +215,15 @@ void Graphics::Impl::init_window_props(bool pre_creation)
 
         if (settings.is_fullscreen)
         {
-            assert(false);  // @TODO: implement.
+            assert(false);  // @TODO: fix wrong size of fullscreen on macos.  -Thea 2026/08/19
+            GLFWvidmode const* mode = glfwGetVideoMode(target_monitor);
+            glfwSetWindowMonitor(window,
+                                 target_monitor,
+                                 0,
+                                 0,
+                                 mode->width,
+                                 mode->height,
+                                 mode->refreshRate);
         }
         else
         {
@@ -226,6 +235,9 @@ void Graphics::Impl::init_window_props(bool pre_creation)
                                  window_dims[1],
                                  GLFW_DONT_CARE);
         }
+
+        glfwSetWindowAttrib(window, GLFW_RESIZABLE, settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
+        glfwSetWindowAttrib(window, GLFW_DECORATED, settings.has_border ? GLFW_TRUE : GLFW_FALSE);
     }
 }
 
