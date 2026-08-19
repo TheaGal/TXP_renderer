@@ -76,8 +76,6 @@ int32_t main()
 
     TXP::Renderer r{ ecs_registry,
                      "My renderer test!",
-                     1280,
-                     720,
                      "assets/textures/",
                      "assets/shaders/",
                      "assets/models/",

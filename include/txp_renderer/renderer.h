@@ -19,6 +19,20 @@ namespace TXP
 
 class Skeletal_animator;  // Forward decl.
 
+/// Settings for renderer.
+struct Renderer_settings
+{
+    int32_t monitor_idx{ 0 };
+
+    int32_t windowed_width{ 640 };
+    int32_t windowed_height{ 360 };
+
+    bool is_resizable{ true };
+    bool has_border{ true };
+    bool is_maximized{ false };
+    bool is_fullscreen{ false };
+};
+
 /// Engine that handles render processes and presenting.
 /// @warning this must run on the main thread due to windowing limitations.
 /// @note "Asset loading" must be run prior to the `.run()` function.
@@ -28,8 +42,6 @@ class Renderer
 public:
     Renderer(entt::registry& ecs_registry,
              std::string const& title,
-             int32_t width,
-             int32_t height,
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
              std::string const& model_asset_dir,
@@ -39,6 +51,15 @@ public:
              std::function<bool()>&& get_play_flag_fn);
 
     ~Renderer();
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Settings.
+
+    /// Sets settings and triggers renderer consumption of new settings.
+    void send_new_settings(Renderer_settings const& settings);
+
+    /// Gets read-only snapshot of current settings.
+    Renderer_settings get_current_settings() const;
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Render loop.
