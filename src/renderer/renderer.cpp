@@ -379,8 +379,6 @@ struct Renderer::Impl
 // class Renderer
 Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& title,
-                   int32_t width,
-                   int32_t height,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir,
@@ -390,8 +388,8 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::function<bool()>&& get_play_flag_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
                                      title,
-                                     width,
-                                     height,
+                                     640,
+                                     360,
                                      texture_asset_dir,
                                      shader_asset_dir,
                                      model_asset_dir,
@@ -416,6 +414,20 @@ Renderer::Renderer(entt::registry& ecs_registry,
 }
 
 Renderer::~Renderer() = default;  // for pimpl.
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////
+// Settings.
+
+void Renderer::send_new_settings(Renderer_settings const& settings)
+{
+    assert(false);
+}
+
+Renderer_settings Renderer::get_current_settings() const
+{
+    assert(false);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////
