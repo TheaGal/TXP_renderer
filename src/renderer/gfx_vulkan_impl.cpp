@@ -147,7 +147,7 @@ void Graphics::Impl::init_glfw_no_api()
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 }
 
-void Graphics::Impl::init_window_props()
+void Graphics::Impl::init_window_props(bool pre_creation)
 {
     assert(!settings.is_fullscreen);  // @TODO: implement fullscreen stuff in the future!!
 
@@ -194,19 +194,39 @@ void Graphics::Impl::init_window_props()
             static_cast<int32_t>(monitor_workarea.height * 0.5 - window_dims[1] * 0.5),
     };
 
-    glfwWindowHint(GLFW_POSITION_X, centered_window_pos[0]);
-    glfwWindowHint(GLFW_POSITION_Y, centered_window_pos[1]);
+    if (pre_creation)
+    {
+        glfwWindowHint(GLFW_POSITION_X, centered_window_pos[0]);
+        glfwWindowHint(GLFW_POSITION_Y, centered_window_pos[1]);
 
-    // Get monitor scaling.
-    monitor_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(target_monitor);
+        // Get monitor scaling.
+        monitor_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(target_monitor);
 
-    glfwWindowHint(GLFW_RESIZABLE, settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
-    glfwWindowHint(GLFW_DECORATED, settings.has_border ? GLFW_TRUE : GLFW_FALSE);
-    glfwWindowHint(GLFW_MAXIMIZED, settings.is_maximized ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint(GLFW_RESIZABLE, settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint(GLFW_DECORATED, settings.has_border ? GLFW_TRUE : GLFW_FALSE);
+        glfwWindowHint(GLFW_MAXIMIZED, settings.is_maximized ? GLFW_TRUE : GLFW_FALSE);
 
-    // submit_window_dims(win_dims.width, win_dims.height);  // @TODO
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+    }
+    else
+    {
+        assert(window != nullptr);
 
-    glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        if (settings.is_fullscreen)
+        {
+            assert(false);  // @TODO: implement.
+        }
+        else
+        {
+            glfwSetWindowMonitor(window,
+                                 nullptr,
+                                 centered_window_pos[0],
+                                 centered_window_pos[1],
+                                 window_dims[0],
+                                 window_dims[1],
+                                 GLFW_DONT_CARE);
+        }
+    }
 }
 
 void Graphics::Impl::init_window()
@@ -275,7 +295,6 @@ void Graphics::Impl::destroy_glfw()
 void Graphics::Impl::request_load_settings()
 {
     load_settings_flag = true;
-    assert(false);  // @TODO: process flag
 }
 
 
@@ -1394,6 +1413,12 @@ void Graphics::Impl::create_all_textures_descriptor()
 
 void Graphics::Impl::poll_input_events()
 {
+    if (load_settings_flag)
+    {
+        load_settings_flag = false;
+        init_window_props(false);
+    }
+
     glfwPollEvents();
 }
 

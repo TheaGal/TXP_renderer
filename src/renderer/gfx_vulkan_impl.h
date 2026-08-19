@@ -61,7 +61,7 @@ struct Graphics::Impl
 
 
     void init_glfw_no_api();
-    void init_window_props();
+    void init_window_props(bool pre_creation = true);
     void init_window();
 
     void destroy_glfw();
