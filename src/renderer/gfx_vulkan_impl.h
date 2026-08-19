@@ -35,17 +35,17 @@
 namespace TXP
 {
 
+struct Renderer_settings;  // Forward decl.
 class Camera_internal;  // Forward decl.
 struct Material_organizer;  // Forward decl.
 
 struct Graphics::Impl
 {
     Impl(std::string const& title,
-         int32_t width,
-         int32_t height,
+         Renderer_settings& settings,
          Information_hook_struct info_hook_struct)
         : window_title(title)
-        , window_dims{ width, height }
+        , settings(settings)
         , info_hook_struct{ info_hook_struct }
     {
     }
@@ -55,8 +55,9 @@ struct Graphics::Impl
     GLFWwindow* window{ nullptr };
     std::function<void(bool)> lock_cursor_fn;
 
-    int32_t window_dims[2];
+    Renderer_settings& settings;
     float_t monitor_scale{ 1.0f };
+    bool load_settings_flag{ false };
 
 
     void init_glfw_no_api();
@@ -64,6 +65,8 @@ struct Graphics::Impl
     void init_window();
 
     void destroy_glfw();
+
+    void request_load_settings();
 
 
     /// Info hook struct.

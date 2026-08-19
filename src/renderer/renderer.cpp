@@ -37,8 +37,6 @@ struct Renderer::Impl
 {
     Impl(entt::registry& ecs_registry,
          std::string const& title,
-         int32_t width,
-         int32_t height,
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
          std::string const& model_asset_dir,
@@ -49,8 +47,6 @@ struct Renderer::Impl
         : ecs_registry(ecs_registry)
         , anim_template_bank(animator_asset_dir)
         , title(title)
-        , width(width)
-        , height(height)
         , texture_asset_dir(texture_asset_dir)
         , shader_asset_dir(shader_asset_dir)
         , model_asset_dir(model_asset_dir)
@@ -73,8 +69,7 @@ struct Renderer::Impl
     Hitcapsule_group_overlap_solver hitcapsule_solver;  // Just needs to be created and stored somewhere.  -Thea 2026/04/05
 
     std::string title;
-    int32_t width;
-    int32_t height;
+    Renderer_settings settings;
 
     std::string texture_asset_dir;
     std::string shader_asset_dir;
@@ -388,8 +383,6 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::function<bool()>&& get_play_flag_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
                                      title,
-                                     640,
-                                     360,
                                      texture_asset_dir,
                                      shader_asset_dir,
                                      model_asset_dir,
@@ -421,12 +414,14 @@ Renderer::~Renderer() = default;  // for pimpl.
 
 void Renderer::send_new_settings(Renderer_settings const& settings)
 {
-    assert(false);
+    auto& m{ *m_pimpl };
+    m.settings = settings;
+    m.graphics->request_load_settings();
 }
 
 Renderer_settings Renderer::get_current_settings() const
 {
-    assert(false);
+    return m_pimpl->settings;
 }
 
 
@@ -439,8 +434,7 @@ void Renderer::build()
     // Setup renderer.
     m.graphics = std::make_unique<Graphics>(
         m.title,
-        m.width,
-        m.height,
+        m.settings,
         Information_hook_struct{
             .set_play_flag_fn = m.set_play_flag_fn,
             .get_play_flag_fn = m.get_play_flag_fn,

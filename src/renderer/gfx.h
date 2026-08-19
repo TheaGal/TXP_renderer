@@ -13,6 +13,7 @@
 namespace TXP
 {
 
+struct Renderer_settings;  // Forward decl.
 class Camera_internal;  // Forward decl.
 struct Material_organizer;  // Forward decl.
 
@@ -103,10 +104,12 @@ class Graphics
 {
 public:
     Graphics(std::string const& title,
-             int32_t width,
-             int32_t height,
+             Renderer_settings& settings,
              Information_hook_struct info_hook_struct);
     ~Graphics();
+
+    /// Sends a request flag to read the settings reference and update accordingly.
+    void request_load_settings();
 
     /// Loads all registered textures.
     void load_texture_assets(std::string const& texture_asset_dir,

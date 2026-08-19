@@ -113,11 +113,19 @@ static void window_iconify_callback(GLFWwindow* window,
     s_input_handler->window_iconify_event(iconified == GLFW_TRUE);
 }
 
-static void window_resize_callback(GLFWwindow* window,
-                                   int32_t width,
-                                   int32_t height)
+static void window_resize_callback(GLFWwindow* window, int32_t width, int32_t height)
 {
     s_input_handler->window_resize_event(width, height);
+}
+
+static void window_content_scale_callback(GLFWwindow* window, float_t xscale, float_t yscale)
+{
+    BT_WARNF("%s(%p, %f, %f)", __func__, window, xscale, yscale);
+}
+
+static void window_maximize_callback(GLFWwindow* window, int32_t maximized)
+{
+    BT_WARNF("%s(%p, %i)", __func__, window, maximized);
 }
 
 static void window_close_callback(GLFWwindow* window)
@@ -141,9 +149,29 @@ void Graphics::Impl::init_glfw_no_api()
 
 void Graphics::Impl::init_window_props()
 {
+    assert(!settings.is_fullscreen);  // @TODO: implement fullscreen stuff in the future!!
+
+    int32_t window_dims[2]{
+        settings.windowed_width,
+        settings.windowed_height,
+    };
     assert(window_dims[0] > 0 && window_dims[1] > 0);
 
-    auto target_monitor{ glfwGetPrimaryMonitor() };
+    GLFWmonitor* target_monitor{ nullptr };
+    {
+        int32_t monitor_count;
+        auto** monitors{ glfwGetMonitors(&monitor_count) };
+        if (settings.monitor_idx >= 0 && settings.monitor_idx < monitor_count)
+        {
+            target_monitor = monitors[settings.monitor_idx];
+        }
+        else
+        {
+            // Reset monitor idx setting.
+            settings.monitor_idx = 0;
+            target_monitor = glfwGetPrimaryMonitor();
+        }
+    }
 
     // Apply centering hints.
     struct Monitor_workarea
@@ -172,10 +200,9 @@ void Graphics::Impl::init_window_props()
     // Get monitor scaling.
     monitor_scale = ImGui_ImplGlfw_GetContentScaleForMonitor(target_monitor);
 
-    // @TODO: implement vv below vv
-    // glfwWindowHint(GLFW_RESIZABLE, app_window_settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
-    // glfwWindowHint(GLFW_DECORATED, app_window_settings.has_border ? GLFW_TRUE : GLFW_FALSE);
-    // glfwWindowHint(GLFW_MAXIMIZED, app_window_settings.is_maximized ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, settings.is_resizable ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_DECORATED, settings.has_border ? GLFW_TRUE : GLFW_FALSE);
+    glfwWindowHint(GLFW_MAXIMIZED, settings.is_maximized ? GLFW_TRUE : GLFW_FALSE);
 
     // submit_window_dims(win_dims.width, win_dims.height);  // @TODO
 
@@ -184,7 +211,12 @@ void Graphics::Impl::init_window_props()
 
 void Graphics::Impl::init_window()
 {
+    int32_t window_dims[2]{
+        settings.windowed_width,
+        settings.windowed_height,
+    };
     assert(window_dims[0] > 0 && window_dims[1] > 0);
+
     assert(window == nullptr);
 
     window = glfwCreateWindow(window_dims[0],
@@ -215,6 +247,9 @@ void Graphics::Impl::init_window()
     glfwSetJoystickCallback(joystick_callback);
     glfwSetWindowFocusCallback(window, window_focus_callback);
     glfwSetWindowIconifyCallback(window, window_iconify_callback);
+    glfwSetWindowSizeCallback(window, window_resize_callback);
+    glfwSetWindowContentScaleCallback(window, window_content_scale_callback);
+    glfwSetWindowMaximizeCallback(window, window_maximize_callback);
     glfwSetWindowCloseCallback(window, window_close_callback);
 
     // Lock cursor func.
@@ -234,6 +269,13 @@ void Graphics::Impl::destroy_glfw()
 {
     glfwDestroyWindow(window);
     glfwTerminate();
+}
+
+
+void Graphics::Impl::request_load_settings()
+{
+    load_settings_flag = true;
+    assert(false);  // @TODO: process flag
 }
 
 

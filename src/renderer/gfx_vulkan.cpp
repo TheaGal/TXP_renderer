@@ -25,10 +25,9 @@
 
 // class Graphics
 TXP::Graphics::Graphics(std::string const& title,
-                        int32_t width,
-                        int32_t height,
+                        Renderer_settings& settings,
                         Information_hook_struct info_hook_struct)
-    : m_pimpl(std::make_unique<Impl>(title, width, height, info_hook_struct))
+    : m_pimpl(std::make_unique<Impl>(title, settings, info_hook_struct))
 {
     m_pimpl->init_glfw_no_api();
     m_pimpl->init_window_props();
@@ -52,6 +51,11 @@ TXP::Graphics::~Graphics()
     m_pimpl->destroy_texture_entries();
     m_pimpl->destroy_vulkan();
     m_pimpl->destroy_glfw();
+}
+
+void TXP::Graphics::request_load_settings()
+{
+    m_pimpl->request_load_settings();
 }
 
 void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
