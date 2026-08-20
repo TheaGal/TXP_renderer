@@ -850,7 +850,16 @@ void Graphics::Impl::destroy_vulkan()
     }
 
     combined_static_model.vertex_index_buffer.destroy();
-    combined_deformed_model.vertex_index_buffer.destroy();
+
+    if (!combined_deformed_model.vertex_index_buffer.is_created())
+    {
+        BT_WARN("`combined_deformed_model.vertex_index_buffer` was never created.");
+        combined_deformed_model.vertex_index_buffer.set_created_check(false);
+    }
+    else
+    {
+        combined_deformed_model.vertex_index_buffer.destroy();
+    }
 
     for (auto& render_view : render_views)
     {
