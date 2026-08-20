@@ -267,21 +267,26 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     auto const& cam_matrices{ camera.get_calcd_cam_matrices() };
 
     // Draw all scene editor windows.
+    int32_t request_close_scene_editor_window_idx{ -1 };
+
+    static auto const k_create_scene_editor_window_name = [](std::string const& sub_name) {
+        return ("Scene Editor##" + sub_name);
+    };
+
     for (size_t i = 0; i < settings.open_scene_view_ids.size(); i++)
     {
         bool is_open{ true };
 
-        static auto const k_create_scene_editor_window_name = [](TXP::Renderer_settings& settings,
-                                                                 size_t i) {
-            return ("Scene Editor#" + settings.open_scene_view_ids[i]);
-        };
-
         ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(k_create_scene_editor_window_name(settings, i).c_str(), &is_open))
+        if (ImGui::Begin(k_create_scene_editor_window_name(settings.open_scene_view_ids[i]).c_str(),
+                         &is_open))
         {
             auto window_content_pos = ImGui::GetCursorScreenPos();
 
-            per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
+            auto viewport_size = ImGui::GetContentRegionAvail();
+            viewport_size.x = glm_max(viewport_size.x, 1);
+            viewport_size.y = glm_max(viewport_size.y, 1);
+            per_viewport_content_sizes.emplace_back(viewport_size);
 
         #if TXP_GFX_BACKEND_VULKAN
             auto& img_descriptor{
@@ -353,9 +358,17 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
         if (!is_open)
         {   // Close window.
-            settings.open_scene_view_ids.erase(settings.open_scene_view_ids.begin() + i);
-            ImGui::ClearWindowSettings(k_create_scene_editor_window_name(settings, i).c_str());
+            request_close_scene_editor_window_idx = i;
         }
+    }
+    if (request_close_scene_editor_window_idx >= 0)
+    {   // Perform real close window.
+        size_t i = request_close_scene_editor_window_idx;
+
+        auto window_name = k_create_scene_editor_window_name(settings.open_scene_view_ids[i]);
+        ImGui::ClearWindowSettings(window_name.c_str());
+
+        settings.open_scene_view_ids.erase(settings.open_scene_view_ids.begin() + i);
     }
 
     // Clear used manipulate transform list.
