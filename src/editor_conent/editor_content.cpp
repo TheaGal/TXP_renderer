@@ -14,6 +14,7 @@
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
+#include "txp_renderer/renderer.h"
 #include "txp_renderer/types.h"
 
 #include <cmath>
@@ -29,7 +30,6 @@ namespace
 
 bool s_show_demo_window{ false };
 
-size_t s_num_scene_editor_windows{ 1 };
 std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 
 std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
@@ -121,7 +121,8 @@ void editor_content::add_to_imguizmo_manipulate(mat4 transform,
     s_manipulate_transform_list.emplace_back(std::move(nt));
 }
 
-void editor_content::build_content(TXP::Input::Input_handler const& input_handler,
+void editor_content::build_content(TXP::Renderer_settings& settings,
+                                   TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
                                    std::function<void(bool)> const& lock_cursor_fn,
                                    Camera_internal& camera,
@@ -151,7 +152,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         {
             if (ImGui::MenuItem("Scene Editor"))
             {   // Adds an editor window.
-                s_num_scene_editor_windows++;
+                settings.num_scene_view_windows++;
             }
             ImGui::EndMenu();
         }
@@ -181,7 +182,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
 
     // Collect size of available content in viewports.
     std::vector<ImVec2> per_viewport_content_sizes;
-    per_viewport_content_sizes.reserve(1 + s_num_scene_editor_windows);  // +1 for main viewport.
+    per_viewport_content_sizes.reserve(1 + settings.num_scene_view_windows);  // +1 for main viewport.
 
     // Draw main viewport window (only 1).
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
@@ -246,7 +247,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
     auto const& cam_matrices{ camera.get_calcd_cam_matrices() };
 
     // Draw all scene editor windows.
-    for (size_t i = 0; i < s_num_scene_editor_windows; i++)
+    for (size_t i = 0; i < settings.num_scene_view_windows; i++)
     {
         if (i >= s_active_scene_editor_window_uuids.size())
         {   // Register new window id.
@@ -336,7 +337,7 @@ void editor_content::build_content(TXP::Input::Input_handler const& input_handle
         {   // Close window.
             s_active_scene_editor_window_uuids.erase(s_active_scene_editor_window_uuids.begin() +
                                                      i);
-            s_num_scene_editor_windows--;
+            settings.num_scene_view_windows--;
         }
     }
 

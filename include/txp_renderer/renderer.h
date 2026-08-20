@@ -30,6 +30,8 @@ struct Renderer_settings
     bool is_resizable{ true };
     bool has_border{ true };
     bool is_fullscreen{ false };
+
+    int32_t num_scene_view_windows{ 1 };
 };
 
 /// Engine that handles render processes and presenting.

@@ -13,6 +13,7 @@
 namespace TXP
 {
 
+struct Renderer_settings;  // Forward decl.
 class Camera_internal;  // Forward decl.
 struct Information_hook_struct;  // Forward decl.
 
@@ -45,7 +46,8 @@ void add_to_imguizmo_manipulate(mat4 transform,
                                 std::function<void(mat4 const)>&& changed_callback);
 
 /// Builds ImGui content for the frame.
-void build_content(TXP::Input::Input_handler const& input_handler,
+void build_content(TXP::Renderer_settings& settings,
+                   TXP::Input::Input_handler const& input_handler,
                    Render_view_image_content const& render_view_image_content,
                    std::function<void(bool)> const& lock_cursor_fn,
                    Camera_internal& camera,

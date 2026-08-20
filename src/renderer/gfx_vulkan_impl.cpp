@@ -1467,7 +1467,8 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
             rv.imgui_color_image_descriptor);
     }
 
-    editor_content::build_content(*s_input_handler,
+    editor_content::build_content(settings,
+                                  *s_input_handler,
                                   render_view_image_content,
                                   lock_cursor_fn,
                                   camera,
