@@ -1570,7 +1570,7 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         auto const& rend_view_size{ rend_view_sizes[i] };
 
         if (rend_view_size.width <= 0 || rend_view_size.height <= 0)
-            throw std::runtime_error("Invalid render view size.");
+            throw std::runtime_error("Invalid render view size.");  // Huh?
 
         if (i < prev_render_views_size)
         {

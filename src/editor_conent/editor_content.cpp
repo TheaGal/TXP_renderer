@@ -18,7 +18,9 @@
 #include "txp_renderer/types.h"
 
 #include <cmath>
+#include <cstddef>
 #include <functional>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -29,8 +31,6 @@ namespace
 {
 
 bool s_show_demo_window{ false };
-
-std::vector<BT::UUID> s_active_scene_editor_window_uuids;
 
 std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
 
@@ -152,7 +152,27 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
         {
             if (ImGui::MenuItem("Scene Editor"))
             {   // Adds an editor window.
-                settings.num_scene_view_windows++;
+                size_t new_id{ 0 };
+
+                bool is_id_unique{ false };
+                while (!is_id_unique)
+                {
+                    auto new_id_as_str{ std::to_string(new_id) };
+                    bool found{ false };
+                    for (auto const& id : settings.open_scene_view_ids)
+                        if (id == new_id_as_str)
+                        {
+                            found = true;
+                            break;
+                        }
+
+                    if (!found)
+                        is_id_unique = true;
+                    else
+                        new_id++;
+                }
+
+                settings.open_scene_view_ids.emplace_back(std::to_string(new_id));
             }
             ImGui::EndMenu();
         }
@@ -182,7 +202,7 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
     // Collect size of available content in viewports.
     std::vector<ImVec2> per_viewport_content_sizes;
-    per_viewport_content_sizes.reserve(1 + settings.num_scene_view_windows);  // +1 for main viewport.
+    per_viewport_content_sizes.reserve(1 + settings.open_scene_view_ids.size());  // +1 for main viewport.
 
     // Draw main viewport window (only 1).
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
@@ -247,19 +267,17 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     auto const& cam_matrices{ camera.get_calcd_cam_matrices() };
 
     // Draw all scene editor windows.
-    for (size_t i = 0; i < settings.num_scene_view_windows; i++)
+    for (size_t i = 0; i < settings.open_scene_view_ids.size(); i++)
     {
-        if (i >= s_active_scene_editor_window_uuids.size())
-        {   // Register new window id.
-            s_active_scene_editor_window_uuids.emplace_back(BT::UUID_helper::generate_uuid());
-        }
-
         bool is_open{ true };
+
+        static auto const k_create_scene_editor_window_name = [](TXP::Renderer_settings& settings,
+                                                                 size_t i) {
+            return ("Scene Editor#" + settings.open_scene_view_ids[i]);
+        };
+
         ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
-        if (ImGui::Begin(("Scene Editor##" +
-                          BT::UUID_helper::to_pretty_repr(s_active_scene_editor_window_uuids[i]))
-                             .c_str(),
-                         &is_open))
+        if (ImGui::Begin(k_create_scene_editor_window_name(settings, i).c_str(), &is_open))
         {
             auto window_content_pos = ImGui::GetCursorScreenPos();
 
@@ -335,9 +353,8 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
         if (!is_open)
         {   // Close window.
-            s_active_scene_editor_window_uuids.erase(s_active_scene_editor_window_uuids.begin() +
-                                                     i);
-            settings.num_scene_view_windows--;
+            settings.open_scene_view_ids.erase(settings.open_scene_view_ids.begin() + i);
+            ImGui::ClearWindowSettings(k_create_scene_editor_window_name(settings, i).c_str());
         }
     }
 

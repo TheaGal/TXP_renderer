@@ -31,7 +31,7 @@ struct Renderer_settings
     bool has_border{ true };
     bool is_fullscreen{ false };
 
-    int32_t num_scene_view_windows{ 1 };
+    std::vector<std::string> open_scene_view_ids{ "0" };
 };
 
 /// Engine that handles render processes and presenting.
