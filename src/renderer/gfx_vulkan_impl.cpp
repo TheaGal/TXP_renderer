@@ -60,6 +60,7 @@ namespace
 
 // Helper pointers for GLFW callbacks.
 static TXP::Input::Input_handler* s_input_handler{ nullptr };
+static TXP::Graphics::Impl* s_gfx_impl{ nullptr };
 
 // GLFW window callbacks.
 static void key_callback(GLFWwindow* window,
@@ -116,6 +117,8 @@ static void window_iconify_callback(GLFWwindow* window,
 static void window_resize_callback(GLFWwindow* window, int32_t width, int32_t height)
 {
     s_input_handler->window_resize_event(width, height);
+    s_gfx_impl->settings.windowed_width = width;
+    s_gfx_impl->settings.windowed_height = height;
 }
 
 static void window_content_scale_callback(GLFWwindow* window, float_t xscale, float_t yscale)
@@ -271,6 +274,8 @@ void Graphics::Impl::init_window()
     s_input_handler = &BT::service_finder::find_service<Input::Input_handler>();
     if (s_input_handler == nullptr)
         throw std::runtime_error("No Input_handler service found.");
+
+    s_gfx_impl = this;
 
     glfwSetKeyCallback(window, key_callback);
     glfwSetMouseButtonCallback(window, mouse_button_callback);
