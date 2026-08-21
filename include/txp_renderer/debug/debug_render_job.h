@@ -28,5 +28,17 @@ void remove_debug_model(debug_model_id_t model_id);
 /// Updates transform of model.
 void update_debug_model_transform(debug_model_id_t model_id, mat4 transform);
 
+/// Line struct.
+struct Debug_line
+{
+    vec3 pos1;
+    vec3 pos2;
+    vec4 color1;
+    vec4 color2;
+};
+
+/// Submits one debug line for a certain amount of time.
+void emplace_debug_line(Debug_line&& line, float_t duration);
+
 } // namespace debug
 } // namespace TXP
