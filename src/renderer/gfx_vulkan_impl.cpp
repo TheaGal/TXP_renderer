@@ -1456,9 +1456,6 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
 
-    ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());  // @TEMPORARY: move imguizmo to draw for each window eventually.
-    BT::date_deadline(2026, 8, 30);
-
     editor_content::Render_view_image_content render_view_image_content;
     render_view_image_content.content_image_descriptors.reserve(render_views.size());
     for (auto const& rv : render_views)
