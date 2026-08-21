@@ -263,21 +263,13 @@ uint16_t Render_model_data_collection::translate_to_static_model_data_set_idx(
 
 std::vector<Deformed_model_data_set*> Render_model_data_collection::get_all_deformed_models()
 {
-    std::vector<uint16_t> jojo;  // @TEST: @DEBUG: @NOCHECKIN
     std::vector<Deformed_model_data_set*> deformed_refs;
     deformed_refs.reserve(inner_data->deformed_model_idx_map.size());
 
     for (auto& elem : inner_data->deformed_model_idx_map)
     {
-        jojo.emplace_back(elem.first);
         deformed_refs.emplace_back(&elem.second);
     }
-    jojo.emplace_back(6969);
-    for (auto& elem : inner_data->deformed_model_idx_map)
-    {
-        jojo.emplace_back(elem.first);
-    }
-    BT::date_deadline(2026, 8, 20);  // @TODO: CHECK THAT THE `jojo` ORDER IS CONSISTENT!!
 
     return deformed_refs;
 }
