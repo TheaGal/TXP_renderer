@@ -31,4 +31,13 @@ void debug::emplace_debug_line(Debug_line&& line, float_t duration)
     BT::date_deadline(2026, 8, 25);
 }
 
+void debug::emplace_debug_line_based_capsule(vec3 origin_a,
+                                             vec3 origin_b,
+                                             float_t radius,
+                                             vec4 color,
+                                             float_t timeout)
+{
+    BT::date_deadline(2026, 8, 25);
+}
+
 } // namespace TXP
