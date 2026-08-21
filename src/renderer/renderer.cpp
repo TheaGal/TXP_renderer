@@ -350,6 +350,10 @@ struct Renderer::Impl
             auto& rend_obj_cfg =
                 rend_obj_cfg_view.get<component::Render_object_config>(ecs_entity);
 
+            if (rend_obj_cfg.renderer_owned_data.pool_key == k_pool_key_process_flag)
+                // Already ready for recreation; skip.
+                continue;
+
             rend_obj_cfg.renderer_owned_data.pool_key =
                 old_to_new_idx_map.at(rend_obj_cfg.renderer_owned_data.pool_key);  // @THEA: this is failing for smoe reason when doing "play simulation"
 
