@@ -4,8 +4,8 @@
 #include "btglm.h"
 #include "btlogger.h"
 #include "btuuid.h"
-// #include "../renderer/debug_render_job.h"
 #include "render_object/skeletal_animator.h"
+#include "txp_renderer/debug/debug_render_job.h"
 
 #include <cassert>
 
@@ -83,18 +83,17 @@ void TXP::Hitcapsule::calc_orig_pt_distance()
 
 void TXP::Hitcapsule::emplace_debug_render_repr(vec4 color) const
 {
-    assert(false);  // @TODO
-//     get_main_debug_line_pool().emplace_debug_line_based_capsule(
-//         const_cast<float_t*>(calcd_origin_a),
-//         const_cast<float_t*>(calcd_origin_b),
-//         radius,
-//         color,
-// #define BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD 0
-// #if BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD
-//         0.5f);
-// #else
-//         0.03f);
-// #endif
+    debug::emplace_debug_line_based_capsule(
+        const_cast<float_t*>(calcd_origin_a),
+        const_cast<float_t*>(calcd_origin_b),
+        radius,
+        color,
+#define BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD 0
+#if BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD
+        0.5f);
+#else
+        0.03f);
+#endif
 }
 
 
@@ -379,7 +378,7 @@ bool TXP::Hitcapsule_group_overlap_solver::check_broad_phase_hitcapsule_pair(
         //           cap_b_orig_pts_dist,
         //           cap_b_radius);
 
-        get_main_debug_line_pool().emplace_debug_line_based_capsule(
+        debug::emplace_debug_line_based_capsule(
             a_mdpt_origin,
             a_mdpt_origin,
             a_bp_sphere_rad,
@@ -390,7 +389,7 @@ bool TXP::Hitcapsule_group_overlap_solver::check_broad_phase_hitcapsule_pair(
             0.03f);
         #endif
 
-        get_main_debug_line_pool().emplace_debug_line_based_capsule(
+        debug::emplace_debug_line_based_capsule(
             b_mdpt_origin,
             b_mdpt_origin,
             b_bp_sphere_rad,
@@ -582,31 +581,30 @@ bool TXP::Hitcapsule_group_overlap_solver::check_narrow_phase_hitcapsule_pair(
         found_overlap = true;
     }
 
-    assert(false);  // @TODO: uncomment the below!!! (@THEA @NOCHECKIN)
-    // if (found_overlap)
-    // {   // @DEBUG show collision spheres.
-    //     get_main_debug_line_pool().emplace_debug_line_based_capsule(
-    //         best_a,
-    //         best_a,
-    //         cap_a_radius,
-    //         vec4{ 0.610, 0.00, 0.254 },
-    //     #if BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD
-    //         0.5f);
-    //     #else
-    //         0.03f);
-    //     #endif
+    if (found_overlap)
+    {   // @DEBUG show collision spheres.
+        debug::emplace_debug_line_based_capsule(
+            best_a,
+            best_a,
+            cap_a_radius,
+            vec4{ 0.610, 0.00, 0.254 },
+        #if BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD
+            0.5f);
+        #else
+            0.03f);
+        #endif
 
-    //     get_main_debug_line_pool().emplace_debug_line_based_capsule(
-    //         best_b,
-    //         best_b,
-    //         cap_b_radius,
-    //         vec4{ 0.560, 0.00560, 0.514 },
-    //     #if BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD
-    //         0.5f);
-    //     #else
-    //         0.03f);
-    //     #endif
-    // }
+        debug::emplace_debug_line_based_capsule(
+            best_b,
+            best_b,
+            cap_b_radius,
+            vec4{ 0.560, 0.00560, 0.514 },
+        #if BT_HITCAPSULE_DEBUG_RENDER_REPRESENTATION_LONG_HOLD
+            0.5f);
+        #else
+            0.03f);
+        #endif
+    }
 
     return found_overlap;
 }
