@@ -50,11 +50,23 @@ anim_frame_action::Runtime_controllable_data& Skeletal_animator::get_anim_frame_
     return m_animator->get_anim_frame_action_data_handle();
 }
 
+void Skeletal_animator::get_simulation_profile_frame_pose(
+    bool root_motion_zeroing,
+    std::vector<mat4s>& out_joint_matrices) const
+{
+    m_animator->get_anim_floored_frame_pose(SIMULATION_TIMER_PROFILE,
+                                            root_motion_zeroing,
+                                            out_joint_matrices);
+}
+
+uint32_t Skeletal_animator::get_joint_idx(std::string const& joint_name) const
+{
+    return m_animator->get_model_skin().joint_name_to_idx.at(joint_name);
+}
+
 Skeletal_animator::Skeletal_animator(component_internal::Model_animator* internal_animator)
     : m_animator(internal_animator)
 {
 }
 
-
 }  // namespace TXP
-

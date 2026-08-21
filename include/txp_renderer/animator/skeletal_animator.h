@@ -47,6 +47,13 @@ public:
     /// Gets reference to AFA (animation frame action) data.
     anim_frame_action::Runtime_controllable_data& get_anim_frame_action_data_handle();
 
+    /// Calculates set of joint matrices for simulation profile.
+    void get_simulation_profile_frame_pose(bool root_motion_zeroing,
+                                           std::vector<mat4s>& out_joint_matrices) const;
+
+    /// Gets joint index in animator skin from name.
+    uint32_t get_joint_idx(std::string const& joint_name) const;
+
 private:
     component_internal::Model_animator* m_animator;
 
