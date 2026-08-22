@@ -17,20 +17,31 @@ namespace
 
 using namespace debug;
 
-static std::unordered_map<Material_type, char*> const k_material_type_str_map{
-
+static std::unordered_map<Material_type, char const*> const k_material_type_str_map{
+    { PHYSICS_WIREFRAME, "__debug_color_wireframe_physics_mesh_mat_pal" },
+    { SELECTED_WIREFRAME, "__debug_color_wireframe_selected_mesh_mat_pal" },
 };
 
 entt::registry* g_reg{ nullptr };
+
+std::function<entt::entity()> g_create_ecs_entity_fn{ nullptr };
+std::function<void(entt::entity)> g_destroy_ecs_entity_fn{ nullptr };
+
 BT::Mutex_wrapper<std::unordered_map<debug_model_id_t, entt::entity>> g_debug_models;
 
 } // namespace
 
 
-void debug::set_ecs_registry_reference(entt::registry& reg)
+void debug::set_callbacks_and_references(
+    entt::registry& reg,
+    std::function<entt::entity()>&& create_ecs_entity_callback,
+    std::function<void(entt::entity)>&& destroy_ecs_entity_callback)
 {
     g_reg = &reg;
+    g_create_ecs_entity_fn = create_ecs_entity_callback;
+    g_destroy_ecs_entity_fn = destroy_ecs_entity_callback;
 }
+
 
 debug::debug_model_id_t debug::emplace_debug_model(std::string const& model_name,
                                                    Material_type material)
@@ -43,20 +54,21 @@ debug::debug_model_id_t debug::emplace_debug_model(std::string const& model_name
         new_id++;
     }
 
-    entt::entity ent = debug_models->emplace(new_id, g_reg->create()).first->second;
+    entt::entity ent = debug_models->emplace(new_id, g_create_ecs_entity_fn()).first->second;
 
     auto& rend_obj_cfg = g_reg->emplace<component::Render_object_config>(ent);
     rend_obj_cfg.render_layer = RENDER_LAYER_DEFAULT;
     rend_obj_cfg.model_name = model_name;
     rend_obj_cfg.material_palette = k_material_type_str_map.at(material);
 
-    return 0;
+    return new_id;
 }
 
 void debug::remove_debug_model(debug_model_id_t model_id)
 {
     auto debug_models{ g_debug_models.scoped_lock() };
 
+    g_destroy_ecs_entity_fn(debug_models->at(model_id));
     debug_models->erase(model_id);
 }
 

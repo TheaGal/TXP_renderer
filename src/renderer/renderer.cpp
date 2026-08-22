@@ -15,6 +15,7 @@
 #include "render_object/skeletal_animator.h"
 #include "renderer/types.h"
 #include "shader/shader_basic_diffuse.h"
+#include "shader/shader_debug_color_wireframe.h"
 #include "shader/shader_gradient.h"
 #include "shader/shader_skinned_model.h"
 #include "shader_creation/shader_creation.h"
@@ -100,6 +101,7 @@ struct Renderer::Impl
     std::unique_ptr<Shader::Shader_gradient> shad_gradient;
     std::unique_ptr<Shader::Shader_skinned_model> shad_skinned_model;
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
+    std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
 
     /// List of render objects.
     std::vector<Render_object> render_object_list;
@@ -446,6 +448,24 @@ void Renderer::build()
         });
     auto& g{ *m.graphics };
 
+    // Final add-ins internally before closing window.
+    add_material("__debug_color_wireframe_physics_mesh",
+                 "__debug_color_wireframe",
+                 {
+                     { "color", "0 1 0 1" },
+                 });
+    add_material_palette("__debug_color_wireframe_physics_mesh_mat_pal",
+                         { "__debug_color_wireframe_physics_mesh" });
+
+    add_material("__debug_color_wireframe_selected_mesh",
+                 "__debug_color_wireframe",
+                 {
+                     { "color", "1 0 1 1" },
+                 });
+    add_material_palette("__debug_color_wireframe_selected_mesh_mat_pal",
+                         { "__debug_color_wireframe_selected_mesh" });
+
+    // Close asset addition window.
     m.asset_reg_window_open = false;
 
     // Load textures.
@@ -463,14 +483,19 @@ void Renderer::build()
         std::make_unique<Shader::Shader_basic_diffuse>(m.material_organizer,
                                                        m.render_model_data_collection,
                                                        g.get_impl());
+    m.shad_debug_color_wireframe =
+        std::make_unique<Shader::Shader_debug_color_wireframe>(m.material_organizer,
+                                                               m.render_model_data_collection,
+                                                               g.get_impl());
 
     // Insert material params.
     auto material_assets{ m.material_assets.scoped_lock() };
     for (auto const& mat_asset : *material_assets)
     {   // Find shader.
         // clang-format off
-        if      (mat_asset.shader_name == m.shad_gradient->k_name)       m.shad_gradient->make_material(mat_asset.material_name, mat_asset.shader_params);
-        else if (mat_asset.shader_name == m.shad_basic_diffuse->k_name)  m.shad_basic_diffuse->make_material(mat_asset.material_name, mat_asset.shader_params);
+        if      (mat_asset.shader_name == m.shad_gradient->k_name)               m.shad_gradient->make_material(mat_asset.material_name, mat_asset.shader_params);
+        else if (mat_asset.shader_name == m.shad_basic_diffuse->k_name)          m.shad_basic_diffuse->make_material(mat_asset.material_name, mat_asset.shader_params);
+        else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
         else throw std::runtime_error("Unknown shader name");
         // clang-format on
     }
@@ -478,6 +503,7 @@ void Renderer::build()
     // Organize material param collections into shaders.
     m.shad_gradient->organize_materials();
     m.shad_basic_diffuse->organize_materials();
+    m.shad_debug_color_wireframe->organize_materials();
 
     // Load material palettes (aligns with meshes inside models to assign materials).
     g.load_material_palettes(std::move(*material_assets),
@@ -582,6 +608,9 @@ void Renderer::render_one_frame(float_t delta_time)
     m.shad_basic_diffuse->allocate_per_instance_data_slots(m.render_object_list,
                                                            m.model_mesh_ref_list,
                                                            cur_modmesh_ref_idx);
+    m.shad_debug_color_wireframe->allocate_per_instance_data_slots(m.render_object_list,
+                                                                   m.model_mesh_ref_list,
+                                                                   cur_modmesh_ref_idx);
 
     // Set per-instance data from render objects.
     g.set_render_object_per_instance_data(m.material_organizer,
@@ -622,6 +651,9 @@ void Renderer::render_one_frame(float_t delta_time)
         // Render all graphics shaders.
         g.begin_rendering_render_view(render_view_idx);
         m.shad_basic_diffuse->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
+        m.shad_debug_color_wireframe->draw(m.render_object_list,
+                                           m.model_mesh_ref_list,
+                                           render_view);
         g.end_rendering_render_view(render_view_idx);
 
         if (main_cam_matrix)

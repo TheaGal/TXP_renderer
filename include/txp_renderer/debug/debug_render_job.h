@@ -11,7 +11,10 @@ namespace TXP
 namespace debug
 {
 
-void set_ecs_registry_reference(entt::registry& reg);
+// Callbacks.
+void set_callbacks_and_references(entt::registry& reg,
+                                  std::function<entt::entity()>&& create_ecs_entity_callback,
+                                  std::function<void(entt::entity)>&& destroy_ecs_entity_callback);
 
 using debug_model_id_t = uint64_t;
 
