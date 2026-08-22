@@ -1,6 +1,7 @@
 #pragma once
 
 #include "btglm.h"
+#include "entt/entity/fwd.hpp"
 
 #include <string>
 
@@ -10,12 +11,15 @@ namespace TXP
 namespace debug
 {
 
+void set_ecs_registry_reference(entt::registry& reg);
+
 using debug_model_id_t = uint64_t;
 
-enum Material_type
+enum Material_type : uint32_t
 {
     PHYSICS_WIREFRAME,
     SELECTED_WIREFRAME,
+
     NUM_MATERIAL_TYPES
 };
 
