@@ -437,16 +437,26 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
             ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 2), "");
             ImGui::PopStyleColor();
 
-            constexpr float_t round_interval{ 10 / 1000.0f };
-            float_t cur_ms_max_scale = ceilf(highest_sample / round_interval) * round_interval;
+            float_t cur_ms_max_scale = (10 / 1000.0f);
+            while (highest_sample > cur_ms_max_scale)
+                cur_ms_max_scale *= 2;
+            while (highest_sample <= cur_ms_max_scale * 0.5f)
+                cur_ms_max_scale *= 0.5f;
+
+            float_t content_width{ ImGui::GetContentRegionAvail().x };
+
+            size_t clamped_perf_samples_size = glm_min(perf_samples.size(), content_width);
+            size_t right_align_perf_samples_idx_offset =
+                glm_max(0, perf_samples.size() - 1 - content_width);
+
             ImGui::PlotLines(("##plotlines" + std::to_string(i)).c_str(),
-                             perf_samples.data(),
-                             perf_samples.size(),
+                             perf_samples.data() + right_align_perf_samples_idx_offset,
+                             clamped_perf_samples_size,
                              0,
                              nullptr,
                              0,
                              glm_min(cur_ms_max_scale, k_ms_max_scale),
-                             ImVec2(ImGui::GetContentRegionAvail().x, 32));
+                             ImVec2(content_width, 32));
 
             ImGui::PopID();
         }
