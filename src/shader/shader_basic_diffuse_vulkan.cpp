@@ -32,6 +32,8 @@ namespace Shader
 {
 namespace gpu_type
 {
+namespace
+{
 
 /// Material parameters for this shader.
 struct Material_param_set
@@ -39,6 +41,7 @@ struct Material_param_set
     uint32_t texture0_idx;
 };
 
+}  // namespace
 }  // namespace gpu_type
 
 /// Struct for push constants.
@@ -248,7 +251,8 @@ struct Shader_basic_diffuse::Impl
     } shader_pipeline;
 
     // Parameters for a material.
-    std::unordered_map<std::string, gpu_type::Material_param_set> material_name_to_params_map;
+    std::unordered_map<std::string, size_t> material_name_to_idx_map;
+    std::vector<gpu_type::Material_param_set> material_param_sets;
     Vk_Buffer::Allocated_buffer material_param_set_collection_buffer;
 
     // Drawing list.
@@ -287,14 +291,15 @@ void Shader_basic_diffuse::make_material(
     if (shader_params.size() != 1)
         throw std::runtime_error("Wrong number of shader params.");
 
-    m_pimpl->material_name_to_params_map.emplace(material_name, std::move(new_param_set));
+    m_pimpl->material_name_to_idx_map.emplace(material_name, m_pimpl->material_param_sets.size());
+    m_pimpl->material_param_sets.emplace_back(std::move(new_param_set));
 
     m_pimpl->material_organizer.emplace_material(material_name, k_name);
 }
 
 void Shader_basic_diffuse::organize_materials()
 {
-    if (m_pimpl->material_name_to_params_map.empty())
+    if (m_pimpl->material_param_sets.empty())
     {
         BT_WARN("There are no materials registered with this shader.");
         return;
@@ -304,7 +309,7 @@ void Shader_basic_diffuse::organize_materials()
     m_pimpl->material_param_set_collection_buffer.create(
         m_pimpl->device,
         m_pimpl->allocator,
-        sizeof(gpu_type::Material_param_set) * m_pimpl->material_name_to_params_map.size(),
+        sizeof(gpu_type::Material_param_set) * m_pimpl->material_param_sets.size(),
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
@@ -314,7 +319,7 @@ void Shader_basic_diffuse::organize_materials()
     char* buffer_addr{ static_cast<char*>(
         m_pimpl->material_param_set_collection_buffer.get_p_mapped_data()) };
 
-    for (auto const& [_, mat_params] : m_pimpl->material_name_to_params_map)
+    for (auto const& mat_params : m_pimpl->material_param_sets)
     {
         std::memcpy(buffer_addr, &mat_params, sizeof(mat_params));
         buffer_addr += sizeof(mat_params);
