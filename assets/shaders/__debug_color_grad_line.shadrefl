@@ -10,7 +10,7 @@
                 {
                     "name": "input",
                     "stage": "vertex",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 2},
                     "type": {
                         "kind": "struct",
                         "name": "VS_input",
@@ -29,10 +29,10 @@
                                 "binding": {"kind": "varyingInput", "index": 0}
                             },
                             {
-                                "name": "normal",
+                                "name": "color",
                                 "type": {
                                     "kind": "vector",
-                                    "elementCount": 3,
+                                    "elementCount": 4,
                                     "elementType": {
                                         "kind": "scalar",
                                         "scalarType": "float32"
@@ -40,19 +40,6 @@
                                 },
                                 "stage": "vertex",
                                 "binding": {"kind": "varyingInput", "index": 1}
-                            },
-                            {
-                                "name": "uv",
-                                "type": {
-                                    "kind": "vector",
-                                    "elementCount": 2,
-                                    "elementType": {
-                                        "kind": "scalar",
-                                        "scalarType": "float32"
-                                    }
-                                },
-                                "stage": "vertex",
-                                "binding": {"kind": "varyingInput", "index": 2}
                             }
                         ]
                     }
@@ -63,38 +50,6 @@
                     "type": {
                         "kind": "pointer",
                         "valueType": "Environment_data"
-                    }
-                },
-                {
-                    "name": "per_instance_data_collection",
-                    "binding": {"kind": "uniform", "offset": 8, "size": 8, "elementStride": 0},
-                    "type": {
-                        "kind": "pointer",
-                        "valueType": "Per_instance_data_collection"
-                    }
-                },
-                {
-                    "name": "model_transform_set",
-                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
-                    "type": {
-                        "kind": "pointer",
-                        "valueType": "Model_transform_set"
-                    }
-                },
-                {
-                    "name": "material_param_set_collection",
-                    "binding": {"kind": "uniform", "offset": 24, "size": 8, "elementStride": 0},
-                    "type": {
-                        "kind": "pointer",
-                        "valueType": "Material_param_set_collection"
-                    }
-                },
-                {
-                    "name": "instance_index",
-                    "semanticName": "SV_VULKANINSTANCEID",
-                    "type": {
-                        "kind": "scalar",
-                        "scalarType": "uint32"
                     }
                 }
             ],
@@ -118,25 +73,14 @@
                             "semanticName": "SV_POSITION"
                         },
                         {
-                            "name": "mat_param_set",
+                            "name": "color",
                             "type": {
-                                "kind": "struct",
-                                "name": "Material_param_set",
-                                "fields": [
-                                    {
-                                        "name": "color",
-                                        "type": {
-                                            "kind": "vector",
-                                            "elementCount": 4,
-                                            "elementType": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            }
-                                        },
-                                        "stage": "vertex",
-                                        "binding": {"kind": "varyingOutput", "index": 0}
-                                    }
-                                ]
+                                "kind": "vector",
+                                "elementCount": 4,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 0}
@@ -173,25 +117,14 @@
                                 "semanticName": "SV_POSITION"
                             },
                             {
-                                "name": "mat_param_set",
+                                "name": "color",
                                 "type": {
-                                    "kind": "struct",
-                                    "name": "Material_param_set",
-                                    "fields": [
-                                        {
-                                            "name": "color",
-                                            "type": {
-                                                "kind": "vector",
-                                                "elementCount": 4,
-                                                "elementType": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                }
-                                            },
-                                            "stage": "fragment",
-                                            "binding": {"kind": "varyingInput", "index": 0}
-                                        }
-                                    ]
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 0}

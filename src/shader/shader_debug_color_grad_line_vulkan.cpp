@@ -1,11 +1,12 @@
 #if TXP_GFX_BACKEND_VULKAN
 
 // clang-format off
-#include "shader_debug_color_wireframe.h"
+#include "shader_debug_color_grad_line.h"
 // clang-format on
 
 #include "btglm.h"
 #include "btlogger.h"
+#include "debug/debug_render_job_internal.h"
 #include "material_organizer/material_organizer.h"
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
@@ -30,31 +31,15 @@ namespace TXP
 {
 namespace Shader
 {
-namespace gpu_type
-{
-namespace
-{
-
-/// Material parameters for this shader.
-struct Material_param_set
-{
-    vec4 color;
-};
-
-}  // namespace
-}  // namespace gpu_type
 
 /// Struct for push constants.
-struct Shader_debug_color_wireframe_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
+struct Shader_debug_color_grad_line_push_constants
 {
     VkDeviceAddress environment_data_dev_addr;
-    VkDeviceAddress per_instance_data_collection_dev_addr;
-    VkDeviceAddress model_transform_set_dev_addr;
-    VkDeviceAddress material_param_set_collection_dev_addr;
 };
 
-// struct Shader_debug_color_wireframe::Impl
-struct Shader_debug_color_wireframe::Impl
+// struct Shader_debug_color_grad_line::Impl
+struct Shader_debug_color_grad_line::Impl
 {
     Impl(TXP::Material_organizer& mat_coll,
          TXP::Render_model_data_collection& rend_mod_data_coll,
@@ -85,7 +70,7 @@ struct Shader_debug_color_wireframe::Impl
         // Create pipeline layout.
         VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                                                  .size =
-                                                     sizeof(Shader_debug_color_wireframe_push_constants) };
+                                                     sizeof(Shader_debug_color_grad_line_push_constants) };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
@@ -104,21 +89,18 @@ struct Shader_debug_color_wireframe::Impl
 
         // Create pipeline.
         VkVertexInputBindingDescription vertex_binding{ .binding = 0,
-                                                        .stride = sizeof(Vertex),
+                                                        .stride = sizeof(debug::Debug_line_vertex),
                                                         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
         std::vector<VkVertexInputAttributeDescription> vertex_attributes{
+            // @THEA: this is different!!
             { .location = 0,
               .binding = 0,
               .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(Vertex, position_x) },
+              .offset = offsetof(debug::Debug_line_vertex, pos_x) },
             { .location = 1,
               .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(Vertex, normal_x) },
-            { .location = 2,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32_SFLOAT,
-              .offset = offsetof(Vertex, uv_x) },
+              .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+              .offset = offsetof(debug::Debug_line_vertex, color_r) },
         };
         VkPipelineVertexInputStateCreateInfo vertex_input_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -130,7 +112,7 @@ struct Shader_debug_color_wireframe::Impl
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+            .topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST,  // @THEA: this is different.
         };
 
         VkShaderModule shader_module{ g.load_shader_module(
@@ -194,8 +176,7 @@ struct Shader_debug_color_wireframe::Impl
         };
         VkPipelineRasterizationStateCreateInfo rasterization_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-            .polygonMode = VK_POLYGON_MODE_LINE,  // For wireframe
-            .cullMode = VK_CULL_MODE_BACK_BIT,
+            // .cullMode = VK_CULL_MODE_BACK_BIT,  @THEA: this is different.
             .lineWidth = 1.0f,
         };
         VkPipelineMultisampleStateCreateInfo multisample_state{
@@ -236,7 +217,7 @@ struct Shader_debug_color_wireframe::Impl
     {
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
-        material_param_set_collection_buffer.destroy();
+        debug_lines_vertex_buffer.destroy();
     }
 
 
@@ -257,18 +238,16 @@ struct Shader_debug_color_wireframe::Impl
         VkPipelineLayout pipeline_layout;
     } shader_pipeline;
 
-    // Parameters for a material.
-    std::unordered_map<std::string, size_t> material_name_to_idx_map;
-    std::vector<gpu_type::Material_param_set> material_param_sets;
-    Vk_Buffer::Allocated_buffer material_param_set_collection_buffer;
-
-    // Drawing list.
-    std::array<size_t, 2> draw_inst_list_start_end;  // End is exclusive.
+    // Vertex buffer for all lines.
+    Vk_Buffer::Allocated_buffer debug_lines_vertex_buffer;
+    static constexpr size_t vertex_buffer_page_size{ 1024 };
+    size_t vertex_buffer_current_size{ vertex_buffer_page_size };
+    size_t num_vertexes_to_draw;
 };
 
 
-// class Shader_debug_color_wireframe
-Shader_debug_color_wireframe::Shader_debug_color_wireframe(
+// class Shader_debug_color_grad_line
+Shader_debug_color_grad_line::Shader_debug_color_grad_line(
     Material_organizer& material_organizer,
     Render_model_data_collection& render_model_data_collection,
     void* graphics)
@@ -278,122 +257,80 @@ Shader_debug_color_wireframe::Shader_debug_color_wireframe(
 {
 }
 
-Shader_debug_color_wireframe::~Shader_debug_color_wireframe() = default;
+Shader_debug_color_grad_line::~Shader_debug_color_grad_line() = default;
 
-void Shader_debug_color_wireframe::make_material(
+void Shader_debug_color_grad_line::make_material(
     std::string const& material_name,
     std::unordered_map<std::string, std::string> const& shader_params)
 {
-    gpu_type::Material_param_set new_param_set;
-
-    for (auto& [param_key, param_val] : shader_params)
-    {
-        if (param_key == "color")
-        {
-            std::istringstream iss(param_val);
-            iss >> new_param_set.color[0];
-            iss >> new_param_set.color[1];
-            iss >> new_param_set.color[2];
-            iss >> new_param_set.color[3];
-        }
-        else
-            BT_WARNF("Unknown shader param: %s", param_key.c_str());
-    }
-    if (shader_params.size() != 1)
-        throw std::runtime_error("Wrong number of shader params.");
-
-    m_pimpl->material_name_to_idx_map.emplace(material_name, m_pimpl->material_param_sets.size());
-    m_pimpl->material_param_sets.emplace_back(std::move(new_param_set));
+    // Do nothing.
+    BT_WARN("This material has no shader params.");
 
     m_pimpl->material_organizer.emplace_material(material_name, k_name);
 }
 
-void Shader_debug_color_wireframe::organize_materials()
+void Shader_debug_color_grad_line::organize_materials()
 {
-    if (m_pimpl->material_param_sets.empty())
-    {
-        BT_WARN("There are no materials registered with this shader.");
-        return;
-    }
-
     // Create buffer.
-    m_pimpl->material_param_set_collection_buffer.create(
+    m_pimpl->debug_lines_vertex_buffer.create(
         m_pimpl->device,
         m_pimpl->allocator,
-        sizeof(gpu_type::Material_param_set) * m_pimpl->material_param_sets.size(),
+        m_pimpl->vertex_buffer_current_size,
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT);
 
-    // Upload data.
-    char* buffer_addr{ static_cast<char*>(
-        m_pimpl->material_param_set_collection_buffer.get_p_mapped_data()) };
-
-    for (auto const& mat_params : m_pimpl->material_param_sets)
-    {
-        std::memcpy(buffer_addr, &mat_params, sizeof(mat_params));
-        buffer_addr += sizeof(mat_params);
-    }
+    // @NOTE: upload data happens on-demand.
 }
 
-void Shader_debug_color_wireframe::allocate_per_instance_data_slots(
+void Shader_debug_color_grad_line::allocate_per_instance_data_slots(
     std::vector<Render_object> const& render_object_list,
     std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
     size_t& in_out_cur_modmesh_ref_idx)
 {
-    m_pimpl->draw_inst_list_start_end.front() = in_out_cur_modmesh_ref_idx;
+    (void)render_object_list;
+    (void)out_model_mesh_ref_list;
+    (void)in_out_cur_modmesh_ref_idx;
 
-    uint16_t render_obj_idx{ 0 };
-    for (auto const& rend_obj : render_object_list)
+    // Resize buffer if needed.
+    m_pimpl->num_vertexes_to_draw = debug::calc_num_debug_lines();
+    size_t vertex_size_requirement{ sizeof(debug::Debug_line_vertex) *
+                                    m_pimpl->num_vertexes_to_draw };
+
+    bool vertex_buffer_resize_needed{ false };
+    while (vertex_size_requirement > m_pimpl->vertex_buffer_current_size)
     {
-        auto rend_model_idx{
-            m_pimpl->render_model_data_collection.translate_to_static_model_data_set_idx(
-                rend_obj.render_model_idx)
-        };
-
-        // Find number of instances needed for the model.
-        auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
-            rend_model_idx) };
-        size_t num_meshes_in_model{ model.meshes.size() };
-
-        // Collect meshes for this shader.
-        bool use_all_meshes{ rend_obj.sub_mesh_idx == (uint16_t)-1 };
-
-        auto this_shader_id{ m_pimpl->material_organizer.get_shader_id(k_name) };
-        auto const& material_palette{ m_pimpl->material_organizer.get_material_palette(
-            rend_obj.material_palette_idx) };
-
-        for (size_t mesh_idx = (use_all_meshes ? 0 : rend_obj.sub_mesh_idx);
-             mesh_idx < num_meshes_in_model;
-             mesh_idx++)
-        {
-            auto const& material{ material_palette.at(mesh_idx) };
-            if (material.shader_id == this_shader_id)
-            {   // Uses this shader!
-                auto& modmesh_ref_entry{ out_model_mesh_ref_list[in_out_cur_modmesh_ref_idx++] };
-                modmesh_ref_entry.render_obj_idx = render_obj_idx;
-                modmesh_ref_entry.model_mesh_idx = mesh_idx;
-            }
-
-            if (!use_all_meshes)
-                break;
-        }
-
-        render_obj_idx++;
+        m_pimpl->vertex_buffer_current_size += Impl::vertex_buffer_page_size;
+        vertex_buffer_resize_needed = true;
     }
 
-    m_pimpl->draw_inst_list_start_end.back() = in_out_cur_modmesh_ref_idx;
+    if (vertex_buffer_resize_needed)
+    {
+        m_pimpl->debug_lines_vertex_buffer.destroy();
+        m_pimpl->debug_lines_vertex_buffer.create(
+            m_pimpl->device,
+            m_pimpl->allocator,
+            m_pimpl->vertex_buffer_current_size,
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+    }
+
+    // Write to vertex buffer.
+    debug::write_debug_line_mem(m_pimpl->debug_lines_vertex_buffer.get_p_mapped_data());
 }
 
-void Shader_debug_color_wireframe::draw(
+void Shader_debug_color_grad_line::draw(
     std::vector<Render_object> const& render_object_list,
     std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
     void* render_view_param)
 {
+    (void)render_object_list;
+    (void)model_mesh_ref_list;
+
     auto& p{ *m_pimpl };
-    if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
-        return;  // Nothing to draw. Exit early.
 
     auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
 
@@ -421,70 +358,23 @@ void Shader_debug_color_wireframe::draw(
     //                         0, nullptr);
 
 
-    Shader_debug_color_wireframe_push_constants push_consts{
+    Shader_debug_color_grad_line_push_constants push_consts{
         .environment_data_dev_addr =
             current_frame.environment_data_buffers[render_view.render_view_idx]
                 .get_device_address(),
-        .per_instance_data_collection_dev_addr =
-            current_frame.per_instance_data_collection_buffer.get_device_address(),
-        .model_transform_set_dev_addr =
-            current_frame.model_transform_set_buffer.get_device_address(),
-        .material_param_set_collection_dev_addr =
-            p.material_param_set_collection_buffer.get_device_address(),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
                        VK_SHADER_STAGE_VERTEX_BIT,
                        0,
-                       sizeof(Shader_debug_color_wireframe_push_constants),
+                       sizeof(Shader_debug_color_grad_line_push_constants),
                        &push_consts);
 
-    // Combined model binding state.
-    int32_t bound_combined_model{ -1 };  // -1:unbound  0:static-model  1:deformed-model
-    int32_t num_combined_model_binding_changes{ 0 };
+    // Render lines.
+    VkDeviceSize offset{ 0 };
+    vkCmdBindVertexBuffers(cmd, 0, 1, &p.debug_lines_vertex_buffer.get_buffer(), &offset);
 
-    // Render instances.
-    for (auto using_static_model : { true, false })
-    {
-        auto& using_model{ using_static_model ? p.g.combined_static_model
-                                              : p.g.combined_deformed_model };
-        bool bound_using_model{ false };
-
-        for (auto draw_instance = p.draw_inst_list_start_end.front();
-             draw_instance < p.draw_inst_list_start_end.back();
-             draw_instance++)
-        {
-            auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
-            auto const& rend_obj{ render_object_list[modmesh_ref.render_obj_idx] };
-
-            bool is_static_model{ p.render_model_data_collection.is_static_model_idx(
-                rend_obj.render_model_idx) };
-            
-            if (is_static_model != using_static_model)
-                continue;  // Skip this draw instance since wrong model bound rn.
-
-            // Bind combined model if not done so already.
-            if (!bound_using_model)
-            {
-                using_model.bind(cmd);
-                bound_using_model = true;
-            }
-
-            // Draw single model.
-            auto const& model{ is_static_model
-                                   ? p.render_model_data_collection.get_static_model_data_set(
-                                         rend_obj.render_model_idx)
-                                   : p.render_model_data_collection
-                                         .get_deformed_model_data_set(rend_obj.render_model_idx)
-                                         .deformed_model };
-            vkCmdDrawIndexed(cmd,
-                             model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
-                             1,
-                             model.first_index_offsets[modmesh_ref.model_mesh_idx],
-                             model.vertex_index_offset,
-                             draw_instance);
-        }
-    }
+    vkCmdDraw(cmd, p.num_vertexes_to_draw, 1, 0, 0);
 }
 
 }  // namespace Shader

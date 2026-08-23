@@ -35,8 +35,6 @@ struct Model_transform_set
     float4x4 transforms[65535];
 };
 
-Sampler2D textures[];
-
 struct Material_param_set
 {
     float4 color;

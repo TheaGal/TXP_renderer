@@ -150,6 +150,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/rails.mtl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/rails.wobj
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/models/simple_combat_char.glb
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/__debug_color_grad_line.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/__debug_color_grad_line.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/__debug_color_wireframe.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/__debug_color_wireframe.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shader
@@ -247,6 +249,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_grad_line.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_grad_line_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_wireframe.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_wireframe_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h

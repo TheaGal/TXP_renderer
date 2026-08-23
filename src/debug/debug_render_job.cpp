@@ -295,14 +295,16 @@ void debug::tick_debug_render_jobs(float_t delta_time)
     assert(false);
 }
 
-size_t calc_debug_line_mem_size()
+size_t debug::calc_num_debug_lines()
 {
     assert(false);
 }
 
-void write_debug_line_mem(void* dest)
+void debug::write_debug_line_mem(void* dest)
 {
     assert(false);
+
+    auto* data = static_cast<Debug_line_vertex*>(dest);
 }
 
 } // namespace TXP
