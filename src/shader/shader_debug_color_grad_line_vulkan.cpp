@@ -96,7 +96,7 @@ struct Shader_debug_color_grad_line::Impl
             { .location = 0,
               .binding = 0,
               .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(debug::Debug_line_vertex, pos_x) },
+              .offset = offsetof(debug::Debug_line_vertex, position_x) },
             { .location = 1,
               .binding = 0,
               .format = VK_FORMAT_R32G32B32A32_SFLOAT,
@@ -294,7 +294,7 @@ void Shader_debug_color_grad_line::allocate_per_instance_data_slots(
     (void)in_out_cur_modmesh_ref_idx;
 
     // Resize buffer if needed.
-    m_pimpl->num_vertexes_to_draw = debug::calc_num_debug_lines();
+    m_pimpl->num_vertexes_to_draw = (debug::calc_num_debug_lines() * 2);
     size_t vertex_size_requirement{ sizeof(debug::Debug_line_vertex) *
                                     m_pimpl->num_vertexes_to_draw };
 

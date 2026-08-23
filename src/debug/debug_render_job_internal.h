@@ -12,9 +12,9 @@ namespace debug
 /// Custom vertex information for drawing debug lines.
 struct Debug_line_vertex
 {
-    float_t pos_x;
-    float_t pos_y;
-    float_t pos_z;
+    float_t position_x;
+    float_t position_y;
+    float_t position_z;
     float_t color_r;
     float_t color_g;
     float_t color_b;
@@ -22,7 +22,7 @@ struct Debug_line_vertex
 
     float_t* position()
     {
-        return &pos_x;
+        return &position_x;
     }
 
     float_t* color()

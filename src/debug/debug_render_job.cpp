@@ -292,19 +292,80 @@ void debug::emplace_debug_line_based_capsule(vec3 origin_a,
 
 void debug::tick_debug_render_jobs(float_t delta_time)
 {
-    assert(false);
+    auto dbg_line_info_coll{ g_dbg_line_info_coll.scoped_lock() };
+
+    // Check over non-expired indexes to see if they are expired.
+    std::vector<uint32_t> expired_indexes_copy(dbg_line_info_coll->expired_indexes.begin(),
+                                               dbg_line_info_coll->expired_indexes.end());
+    static std::vector<uint32_t> const k_dummy_list{ (uint32_t)-1 };
+
+    auto it{ !expired_indexes_copy.empty() ? expired_indexes_copy.begin() : k_dummy_list.begin() };
+    uint32_t i{ 0 };
+
+    for (float_t& timeout : dbg_line_info_coll->dbg_lines_timeouts)
+    {
+        if (i == *it)
+        {   // Expired.
+            it++;
+        }
+        else
+        {
+            // Check if job is expired.
+            if (timeout < 0)
+            {
+                dbg_line_info_coll->expired_indexes.emplace(i);
+            }
+            else
+            {
+                timeout -= delta_time;
+            }
+        }
+
+        // Move to next.
+        i++;
+    }
 }
 
 size_t debug::calc_num_debug_lines()
 {
-    assert(false);
+    auto dlic{ g_dbg_line_info_coll.scoped_lock() };
+    return (dlic->dbg_lines.size() - dlic->expired_indexes.size());
 }
 
 void debug::write_debug_line_mem(void* dest)
 {
-    assert(false);
-
     auto* data = static_cast<Debug_line_vertex*>(dest);
+
+    // Copy information to memory position.
+    auto dbg_line_info_coll{ g_dbg_line_info_coll.scoped_lock() };
+
+    static std::set<uint32_t> const k_dummy_set{ (uint32_t)-1 };
+
+    auto it{ !dbg_line_info_coll->expired_indexes.empty()
+                 ? dbg_line_info_coll->expired_indexes.begin()
+                 : k_dummy_set.begin() };
+    uint32_t i{ 0 };
+
+    for (auto& dbg_line : dbg_line_info_coll->dbg_lines)
+    {
+        if (i == *it)
+        {   // Expired.
+            it++;
+        }
+        else
+        {
+            // Copy information.
+            glm_vec3_copy(dbg_line.pos1, data->position());
+            glm_vec4_copy(dbg_line.color1, data->color());
+            data++;
+            glm_vec3_copy(dbg_line.pos2, data->position());
+            glm_vec4_copy(dbg_line.color2, data->color());
+            data++;
+        }
+
+        // Move to next.
+        i++;
+    }
 }
 
 } // namespace TXP

@@ -42,5 +42,5 @@ VS_output vertex_main(VS_input input,
 [shader("fragment")]
 float4 fragment_main(VS_output input)
 {
-    return input.color;
+    return float4(input.color.rgb, 1.0);
 }
