@@ -4,6 +4,7 @@
 #include "btdatecheck.h"
 #include "btservice_finder.h"
 #include "camera/camera_internal.h"
+#include "debug/debug_render_job_internal.h"
 #include "editor_conent/editor_content.h"
 #include "entt/entity/registry.hpp"
 #include "gfx.h"
@@ -559,6 +560,9 @@ void Renderer::render_one_frame(float_t delta_time)
 
     // Poll for input events.
     m.camera.update(delta_time);
+
+    // Update debug render jobs.
+    debug::tick_debug_render_jobs(delta_time);
 
     // Build imgui for this frame.
     std::vector<Render_view_size> render_view_sizes;

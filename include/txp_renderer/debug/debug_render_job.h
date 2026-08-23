@@ -45,7 +45,7 @@ struct Debug_line
 };
 
 /// Submits one debug line for a certain amount of time.
-void emplace_debug_line(Debug_line&& line, float_t duration);
+void emplace_debug_line(Debug_line&& line, float_t timeout);
 
 /// Emplaces a capsule made up of a bunch of debug lines in a batch into the pool. Only one color
 /// param is provided for consistency.
