@@ -22,7 +22,7 @@ namespace Shader
 class Shader_debug_color_grad_line
 {
 public:
-    static constexpr char const* k_name{ "__debug_color_gradient_line" };
+    static constexpr char const* k_name{ "__debug_color_grad_line" };
 
     Shader_debug_color_grad_line(Material_organizer& material_organizer,
                                  Render_model_data_collection& render_model_data_collection,

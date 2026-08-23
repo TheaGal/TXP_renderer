@@ -24,7 +24,14 @@ if __name__ == '__main__':
                               '-target spirv',
                               f'-reflection-json {reflect_fname}',
                               '-O2',
-                              '-obfuscate',
+                              # @THEA: turning on obfuscate caused a weird error in __debug_color_grad_line.slang when loading.
+                              #   Here is the error below:
+                              #   program_source:48:91: error: illegal vector component name 'd'
+                              #   out.gl_Position = (float4(in.m_5.xyz, 1.0) * float4x4(float4(entryPointParams._m0->_m1.data[0].x, entryPointParams._m0->_m1.data[1].x, entryPointParams._m0->_m1.data[2].x, entryPointParams._m0->_m1.data[3].x), float4(entryPointParams._m0->_m1.data[0].y, entryPointParams._m0->_m1.data[1].y, entryPointParams._m0->_m1.data[2].y, entryPointParams._m0->_m1.data[3].y), float4(entryPointParams._m0->_m1.data[0].z, entryPointParams._m0->_m1.data[1].z, entryPointParams._m0->_m1.data[2].z, entryPointParams._m0->_m1.data[3].z), float4(entryPointParams._m0->_m1.data[0].w, entryPointParams._m0->_m1.data[1].w, entryPointParams._m0->_m1.data[2].w, entryPointParams._m0->_m1.data[3].w))) * float4x4(float4(entryPointParams._m0->_m0.data[0].x, entryPointParams._m0->_m0.data[1].x, entryPointParams._m0->_m0.data[2].x, entryPointParams._m0->_m0.data[3].x), float4(entryPointParams._m0->_m0.data[0].y, entryPointParams._m0->_m0.data[1].y, entryPointParams._m0->_m0.data[2].y, entryPointParams._m0->_m0.data[3].y), float4(entryPointParams._m0->_m0.data[0].z, entryPointParams._m0->_m0.data[1].z, entryPointParams._m0->_m0.data[2].z, entryPointParams._m0->_m0.data[3].z), float4(entryPointParams._m0->_m0.data[0].w, entryPointParams._m0->_m0.data[1].w, entryPointParams._m0->_m0.data[2].w, entryPointParams._m0->_m0.data[3].w));
+                              #                                                                                         ^~~~~
+                              #   Perhaps, later you can try updating the slang compiler or play w settings to try re-obfuscating the source code?
+                              #   Or, just not worry about obfuscating the shader.
+                            #   '-obfuscate',
                               '-fvk-use-entrypoint-name',
                               f'{src_fname}',
                               '>',
