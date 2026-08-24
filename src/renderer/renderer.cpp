@@ -578,7 +578,7 @@ void Renderer::render_one_frame(float_t delta_time)
 
     // Build imgui for this frame.
     std::vector<Render_view_size> render_view_sizes;
-    g.build_imgui_contents(m.camera, render_view_sizes);
+    g.build_imgui_contents(m.camera, delta_time, render_view_sizes);
 
     bool render_view_sizes_changed = g.check_render_view_sizes_changed(render_view_sizes);
 

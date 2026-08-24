@@ -155,9 +155,10 @@ void TXP::Graphics::poll_input_events()
 }
 
 void TXP::Graphics::build_imgui_contents(Camera_internal& camera,
+                                         float_t delta_time,
                                          std::vector<Render_view_size>& out_rend_view_sizes)
 {
-    m_pimpl->build_imgui_contents(camera, out_rend_view_sizes);
+    m_pimpl->build_imgui_contents(camera, delta_time, out_rend_view_sizes);
 }
 
 bool TXP::Graphics::check_render_view_sizes_changed(

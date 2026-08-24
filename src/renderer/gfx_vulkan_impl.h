@@ -540,6 +540,7 @@ struct Graphics::Impl
     std::function<void()> imgui_build_contents_callback;
 
     void build_imgui_contents(Camera_internal& camera,
+                              float_t delta_time,
                               std::vector<Render_view_size>& out_rend_view_sizes);
 
     /// Checks whether render view sizes are different from the ones currently applied.

@@ -74,7 +74,7 @@ TXP::anim_frame_action::Runtime_controllable_data::Controllable_data_type TXP::a
 }
 
 TXP::anim_frame_action::Runtime_controllable_data::Overridable_data<float_t>& TXP::
-    anim_frame_action::Runtime_controllable_data ::get_float_data_handle(
+    anim_frame_action::Runtime_controllable_data::get_float_data_handle(
         Controllable_data_label label)
 {
     assert(get_data_type(label) == CTRL_DATA_TYPE_FLOAT);
@@ -82,14 +82,14 @@ TXP::anim_frame_action::Runtime_controllable_data::Overridable_data<float_t>& TX
 }
 
 TXP::anim_frame_action::Runtime_controllable_data::Overridable_data<bool>& TXP::anim_frame_action::
-    Runtime_controllable_data ::get_bool_data_handle(Controllable_data_label label)
+    Runtime_controllable_data::get_bool_data_handle(Controllable_data_label label)
 {
     assert(get_data_type(label) == CTRL_DATA_TYPE_BOOL);
     return data_bools.at(label);
 }
 
 TXP::anim_frame_action::Runtime_controllable_data::Rising_edge_event& TXP::anim_frame_action::
-    Runtime_controllable_data ::get_reeve_data_handle(Controllable_data_label label)
+    Runtime_controllable_data::get_reeve_data_handle(Controllable_data_label label)
 {
     assert(get_data_type(label) == CTRL_DATA_TYPE_RISING_EDGE_EVENT);
     return data_reeves.at(label);

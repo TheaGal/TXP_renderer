@@ -193,6 +193,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_driven_hitcapsule/hitcapsule.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor_agent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/editor_state.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/editor_state.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.cpp
@@ -216,6 +217,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job_internal.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/anim_frame_action_editor_content.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/anim_frame_action_editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp

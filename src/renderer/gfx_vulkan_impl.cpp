@@ -1449,6 +1449,7 @@ void Graphics::Impl::poll_input_events()
 }
 
 void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
+                                          float_t delta_time,
                                           std::vector<Render_view_size>& out_rend_view_sizes)
 {
     ImGui_ImplVulkan_NewFrame();
@@ -1470,6 +1471,7 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
                                   lock_cursor_fn,
                                   camera,
                                   info_hook_struct,
+                                  delta_time,
                                   out_rend_view_sizes);
 
     // Convert to render instructions.

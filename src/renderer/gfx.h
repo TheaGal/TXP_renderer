@@ -136,6 +136,7 @@ public:
 
     /// Builds one imgui frame using a callback and readies the frame for rendering.
     void build_imgui_contents(Camera_internal& camera,
+                              float_t delta_time,
                               std::vector<Render_view_size>& out_rend_view_sizes);
 
     /// Checks whether the render view sizes has changed from currently applied ones.

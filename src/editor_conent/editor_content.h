@@ -52,6 +52,7 @@ void build_content(TXP::Renderer_settings& settings,
                    std::function<void(bool)> const& lock_cursor_fn,
                    Camera_internal& camera,
                    Information_hook_struct const& info_hook_struct,
+                   float_t delta_time,
                    std::vector<Render_view_size>& out_rend_view_sizes);
 
 }  // namespace editor_content

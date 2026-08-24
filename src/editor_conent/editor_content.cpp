@@ -8,6 +8,7 @@
 #include "btlogger.h"
 #include "btuuid.h"
 #include "camera/camera_internal.h"
+#include "editor_conent/anim_frame_action_editor_content.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ImGuizmo.h"
@@ -128,6 +129,7 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
                                    std::function<void(bool)> const& lock_cursor_fn,
                                    Camera_internal& camera,
                                    Information_hook_struct const& info_hook_struct,
+                                   float_t delta_time,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
     static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
@@ -253,43 +255,45 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     per_viewport_content_sizes.reserve(1 + settings.open_scene_view_ids.size());  // +1 for main viewport.
 
     // Draw main viewport window (only 1).
-    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Main Viewport"))
+    if (s_editor_mode == EDITOR_MODE_LEVEL)
     {
-        auto window_content_pos = ImGui::GetCursorScreenPos();
-
-        per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
-
-    #if TXP_GFX_BACKEND_VULKAN
-        auto& img_descriptor{ render_view_image_content.content_image_descriptors.front() };
-        ImGui::Image((ImTextureRef)img_descriptor,
-                        per_viewport_content_sizes.back());
-    #endif // TXP_GFX_BACKEND_VULKAN
-
-        if (s_play_flag)
+        ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+        if (ImGui::Begin("Main Viewport"))
         {
-            imgui_camera_mode_shift_c_ctrl_prompt_overlay(
-                input_handler,
-                [&camera,
-                 &lock_cursor_fn,
-                 &focus_main_viewport,
-                 imgui_cur_win = ImGui::GetCurrentWindow()]() {
-                    if (camera.get_controlling_camera() == 0)
-                    {   // Turn off controlled camera.
-                        camera.set_controlling_camera(camera.k_controlling_camera_state_none);
-                        lock_cursor_fn(false);
-                    }
-                    else
-                    {   // Lock in controlled orbit camera.
-                        focus_main_viewport = true;
-                    }
-                },
-                "Press Shift+C to toggle \"Orbit Camera Mode\" on/off.",
-                window_content_pos);
+            auto window_content_pos = ImGui::GetCursorScreenPos();
+
+            per_viewport_content_sizes.emplace_back(ImGui::GetContentRegionAvail());
+
+        #if TXP_GFX_BACKEND_VULKAN
+            auto& img_descriptor{ render_view_image_content.content_image_descriptors.front() };
+            ImGui::Image((ImTextureRef)img_descriptor, per_viewport_content_sizes.back());
+        #endif  // TXP_GFX_BACKEND_VULKAN
+
+            if (s_play_flag)
+            {
+                imgui_camera_mode_shift_c_ctrl_prompt_overlay(
+                    input_handler,
+                    [&camera,
+                     &lock_cursor_fn,
+                     &focus_main_viewport,
+                     imgui_cur_win = ImGui::GetCurrentWindow()]() {
+                        if (camera.get_controlling_camera() == 0)
+                        {  // Turn off controlled camera.
+                            camera.set_controlling_camera(camera.k_controlling_camera_state_none);
+                            lock_cursor_fn(false);
+                        }
+                        else
+                        {  // Lock in controlled orbit camera.
+                            focus_main_viewport = true;
+                        }
+                    },
+                    "Press Shift+C to toggle \"Orbit Camera Mode\" on/off.",
+                    window_content_pos);
+            }
         }
     }
-    else
-    {   // Put in dummy 1x1 view if view is obfuscated or closed.
+    if (per_viewport_content_sizes.empty())
+    {   // Put in dummy 1x1 view for main viewport since is obfuscated or closed.
         per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
     }
     if (focus_main_viewport)
@@ -300,6 +304,12 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
         ImGui::FocusWindow(ImGui::GetCurrentWindow());
     }
     ImGui::End();
+
+    // Draw anim frame action editor.
+    if (s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
+    {
+        anim_frame_action_editor_content(false, delta_time);
+    }
 
     // Update mouse input data.
     bool on_rmb_pressed{ false };
