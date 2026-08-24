@@ -81,8 +81,9 @@ int32_t main()
                      "assets/models/",
                      "assets/anim_frame_actions/",
                      "assets/animator_templates/",
-                     [](bool) { },
-                     []() { return false; } };
+                     [](bool) {},
+                     []() { return false; },
+                     [](bool) {} };
 
     r.add_texture("default_tex", ".ktx2");
     r.add_material("default_mat", "basic_diffuse", { { "texture0", "default_tex" } });

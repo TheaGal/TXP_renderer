@@ -4,6 +4,7 @@
 #include "backends/imgui_impl_vulkan.h"
 #endif // TXP_GFX_BACKEND_VULKAN
 
+#include "animation_frame_action/editor_state.h"
 #include "btlogger.h"
 #include "btuuid.h"
 #include "camera/camera_internal.h"
@@ -132,11 +133,20 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
     bool focus_main_viewport{ false };
 
+    enum Editor_mode
+    {
+        EDITOR_MODE_LEVEL,
+        EDITOR_MODE_ANIM_FRAME_ACTION,
+    };
+    static Editor_mode s_editor_mode{ EDITOR_MODE_LEVEL };
+
     // Main menu bar.
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("Simulation"))
         {
+            ImGui::BeginDisabled(s_editor_mode != EDITOR_MODE_LEVEL);
+
             if (ImGui::MenuItem("Simulation playing", nullptr, s_play_flag))
             {
                 s_play_flag = !s_play_flag;
@@ -146,34 +156,72 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
                 if (s_play_flag)
                     focus_main_viewport = true;
             }
+
+            ImGui::EndDisabled();
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Editor Mode"))
+        {
+            auto prev_mode{ s_editor_mode };
+
+            ImGui::BeginDisabled(s_play_flag);
+
+            if (ImGui::MenuItem("Level Editor", "", s_editor_mode == EDITOR_MODE_LEVEL))
+            {
+                s_editor_mode = EDITOR_MODE_LEVEL;
+            }
+            if (ImGui::MenuItem("Anim Frame Action Editor",
+                                "",
+                                s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION))
+            {
+                s_editor_mode = EDITOR_MODE_ANIM_FRAME_ACTION;
+                info_hook_struct.set_dev_anim_editor_view_fn(true);
+            }
+
+            if (s_editor_mode != prev_mode)
+            {
+                if (prev_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
+                {
+                    info_hook_struct.set_dev_anim_editor_view_fn(false);
+                    anim_frame_action::reset_editor_state();
+                }
+            }
+
+            ImGui::EndDisabled();
+
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Window"))
         {
-            if (ImGui::MenuItem("Scene Editor"))
-            {   // Adds an editor window.
-                size_t new_id{ 0 };
+            if (ImGui::BeginMenu("Add Window"))
+            {
+                if (ImGui::MenuItem("Scene Editor"))
+                {  // Adds an editor window.
+                    size_t new_id{ 0 };
 
-                bool is_id_unique{ false };
-                while (!is_id_unique)
-                {
-                    auto new_id_as_str{ std::to_string(new_id) };
-                    bool found{ false };
-                    for (auto const& id : settings.open_scene_view_ids)
-                        if (id == new_id_as_str)
-                        {
-                            found = true;
-                            break;
-                        }
+                    bool is_id_unique{ false };
+                    while (!is_id_unique)
+                    {
+                        auto new_id_as_str{ std::to_string(new_id) };
+                        bool found{ false };
+                        for (auto const& id : settings.open_scene_view_ids)
+                            if (id == new_id_as_str)
+                            {
+                                found = true;
+                                break;
+                            }
 
-                    if (!found)
-                        is_id_unique = true;
-                    else
-                        new_id++;
+                        if (!found)
+                            is_id_unique = true;
+                        else
+                            new_id++;
+                    }
+
+                    settings.open_scene_view_ids.emplace_back(std::to_string(new_id));
                 }
-
-                settings.open_scene_view_ids.emplace_back(std::to_string(new_id));
-            }
+                ImGui::EndMenu();
+        }
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Help"))

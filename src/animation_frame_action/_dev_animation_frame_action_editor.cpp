@@ -1,20 +1,17 @@
 #include "_dev_animation_frame_action_editor.h"
 
-#include "animation_frame_action_tool/editor_state.h"
-#include "animation_frame_action_tool/runtime_data.h"
-#include "game_system_logic/component/anim_frame_action_controller.h"
-#include "game_system_logic/component/animator_driven_hitcapsule_set.h"
-#include "game_system_logic/entity_container.h"
-#include "game_system_logic/component/_dev_animation_frame_action_editor_agent.h"
-#include "service_finder/service_finder.h"
+#include "_dev_animation_frame_action_editor_agent.h"
+#include "btservice_finder.h"
+#include "editor_state.h"
+#include "entt/entity/registry.hpp"
+#include "txp_renderer/animation_frame_action/runtime_data.h"
+#include "txp_renderer/types.h"
 
 #include <cassert>
 
 
-void TXP::system::_dev_animation_frame_action_editor()
+void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
 {
-    auto& entity_container{ service_finder::find_service<Entity_container>() };
-    auto& reg{ entity_container.get_ecs_registry() };
     auto view{ reg.view<component::_Dev_animation_frame_action_editor_agent>() };
 
     // This check is to ensure that editing the editor state will be used/practical.

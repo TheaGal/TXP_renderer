@@ -47,7 +47,8 @@ struct Renderer::Impl
          std::string const& afa_asset_dir,
          std::string const& animator_asset_dir,
          std::function<void(bool)>&& set_play_flag_fn,
-         std::function<bool()>&& get_play_flag_fn)
+         std::function<bool()>&& get_play_flag_fn,
+         std::function<void(bool)>&& set_dev_anim_editor_view_fn)
         : ecs_registry(ecs_registry)
         , anim_template_bank(animator_asset_dir)
         , title(title)
@@ -57,6 +58,7 @@ struct Renderer::Impl
         , afa_asset_dir(afa_asset_dir)
         , set_play_flag_fn(std::move(set_play_flag_fn))
         , get_play_flag_fn(std::move(get_play_flag_fn))
+        , set_dev_anim_editor_view_fn(std::move(set_dev_anim_editor_view_fn))
     {
     }
 
@@ -82,6 +84,7 @@ struct Renderer::Impl
 
     std::function<void(bool)> set_play_flag_fn;
     std::function<bool()> get_play_flag_fn;
+    std::function<void(bool)> set_dev_anim_editor_view_fn;
 
     /// Able to register assets until assets are starting to be loaded into the GPU.
     std::atomic_bool asset_reg_window_open{ true };
@@ -390,7 +393,8 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& afa_asset_dir,
                    std::string const& animator_asset_dir,
                    std::function<void(bool)>&& set_play_flag_fn,
-                   std::function<bool()>&& get_play_flag_fn)
+                   std::function<bool()>&& get_play_flag_fn,
+                   std::function<void(bool)>&& set_dev_anim_editor_view_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
                                      title,
                                      texture_asset_dir,
@@ -399,7 +403,8 @@ Renderer::Renderer(entt::registry& ecs_registry,
                                      afa_asset_dir,
                                      animator_asset_dir,
                                      std::move(set_play_flag_fn),
-                                     std::move(get_play_flag_fn)))
+                                     std::move(get_play_flag_fn),
+                                     std::move(set_dev_anim_editor_view_fn)))
 {   // Ensure only one instance.
     static std::atomic_bool s_init{ false };
     bool expect_init{ false };
@@ -448,6 +453,7 @@ void Renderer::build()
         Information_hook_struct{
             .set_play_flag_fn = m.set_play_flag_fn,
             .get_play_flag_fn = m.get_play_flag_fn,
+            .set_dev_anim_editor_view_fn = m.set_dev_anim_editor_view_fn,
             .perf_time_map = m.perf_time_map,
         });
     auto& g{ *m.graphics };
@@ -565,7 +571,7 @@ void Renderer::render_one_frame(float_t delta_time)
     debug::tick_debug_render_jobs(delta_time);
 
     // Update development AFA editor.
-    system::_dev_animation_frame_action_editor();
+    system::_dev_animation_frame_action_editor(m.ecs_registry);
 
     // Poll for input events.
     m.camera.update(delta_time);

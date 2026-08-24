@@ -49,7 +49,8 @@ public:
              std::string const& afa_asset_dir,
              std::string const& animator_asset_dir,
              std::function<void(bool)>&& set_play_flag_fn,
-             std::function<bool()>&& get_play_flag_fn);
+             std::function<bool()>&& get_play_flag_fn,
+             std::function<void(bool)>&& set_dev_anim_editor_view_fn);  // @TODO: this should have a struct input instead of all these input params.
 
     ~Renderer();
 
