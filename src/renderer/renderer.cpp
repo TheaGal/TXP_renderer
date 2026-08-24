@@ -1,5 +1,6 @@
 #include "txp_renderer/renderer.h"
 
+#include "animation_frame_action/_dev_animation_frame_action_editor.h"
 #include "animation_frame_action/runtime_data_controls.h"
 #include "btdatecheck.h"
 #include "btservice_finder.h"
@@ -557,11 +558,14 @@ void Renderer::render_one_frame(float_t delta_time)
 
     m.process_render_object_changes();
 
-    ////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////////////////////////////////////////////////////////////////////
     // Update renderer-timed things.
 
     // Update debug render jobs.
     debug::tick_debug_render_jobs(delta_time);
+
+    // Update development AFA editor.
+    system::_dev_animation_frame_action_editor();
 
     // Poll for input events.
     m.camera.update(delta_time);

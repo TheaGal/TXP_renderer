@@ -191,6 +191,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer_public.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_driven_hitcapsule/hitcapsule.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data_controls.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
