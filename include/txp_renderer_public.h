@@ -1,6 +1,7 @@
 #pragma once
 
 #include "txp_renderer/animation_driven_hitcapsule/hitcapsule.h"
+#include "txp_renderer/animation_frame_action/_dev_animation_frame_action_editor_agent.h"
 #include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "txp_renderer/animator/skeletal_animator.h"
 #include "txp_renderer/camera/camera.h"

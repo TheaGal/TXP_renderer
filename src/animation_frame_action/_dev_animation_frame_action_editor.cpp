@@ -1,9 +1,9 @@
 #include "_dev_animation_frame_action_editor.h"
 
-#include "_dev_animation_frame_action_editor_agent.h"
 #include "btservice_finder.h"
 #include "editor_state.h"
 #include "entt/entity/registry.hpp"
+#include "txp_renderer/animation_frame_action/_dev_animation_frame_action_editor_agent.h"
 #include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "txp_renderer/types.h"
 
