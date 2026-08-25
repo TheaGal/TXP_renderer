@@ -78,6 +78,17 @@ struct Runtime_data_controls
 class Bank
 {
 public:
+    // @NOTE: These are here so that AFA editor can access directory for AFA file IO.
+    static void set_anim_frame_action_directory(std::string const& dir_path)
+    {
+        s_afa_directory = dir_path;
+    }
+
+    static std::string const& get_anim_frame_action_directory()
+    {
+        return s_afa_directory;
+    }
+
     // @TODO: change this bank system to the interface of `Animator_template_bank` at some point.  -Thea 2026/03/31
     static void emplace(std::string const& name, Runtime_data_controls&& runtime_state);
     static void replace(std::string const& name, Runtime_data_controls&& runtime_state);
@@ -86,6 +97,7 @@ public:
     static std::vector<std::string> get_all_names();
 
 private:
+    inline static std::string s_afa_directory;
     inline static std::unordered_map<std::string, Runtime_data_controls> s_runtime_states;
 };
 

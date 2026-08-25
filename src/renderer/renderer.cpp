@@ -527,6 +527,7 @@ void Renderer::build()
                              m.material_organizer);
 
     // Load models.
+    anim_frame_action::Bank::set_anim_frame_action_directory(m.afa_asset_dir);
     g.load_model_assets(m.afa_asset_dir,
                         std::move(*m.model_assets.scoped_lock()),
                         m.render_model_data_collection,

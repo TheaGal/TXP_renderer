@@ -212,9 +212,9 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                             anim_frame_action::s_editor_state.working_afa_ctrls_copy->data;
 
                         // Save to disk.
-                        json_save_to_disk(working_timeline_copy_as_json,
-                                          BTZC_GAME_ENGINE_ASSET_ANIM_FRAME_ACTIONS_PATH +
-                                              afa_name);
+                        BT::json_save_to_disk(
+                            working_timeline_copy_as_json,
+                            anim_frame_action::Bank::get_anim_frame_action_directory() + afa_name);
                     }
 
                     anim_frame_action::Bank::replace(
@@ -775,6 +775,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     bool prev_lmb_pressed{ false };
                     bool prev_rmb_pressed{ false };
                     bool prev_del_pressed{ false };
+                    Input::Cursor_pos_state prev_cursor_state;
                 };
                 static Region_selecting s_reg_sel;
 
@@ -798,10 +799,24 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 bool on_del_press{ cur_del_pressed && !s_reg_sel.prev_del_pressed };
                 s_reg_sel.prev_del_pressed = cur_del_pressed;
 
+                Input::Cursor_pos_state cursor_delta;
+                {
+                    auto cursor_state{ input_handler.get_cursor_pos_state() };
+                    cursor_delta.xpos = (cursor_state.xpos - s_reg_sel.prev_cursor_state.xpos);
+                    cursor_delta.ypos = (cursor_state.ypos - s_reg_sel.prev_cursor_state.ypos);
+
+                    if (!cursor_state.valid || !s_reg_sel.prev_cursor_state.valid)
+                    {
+                        cursor_delta.xpos = 0;
+                        cursor_delta.ypos = 0;
+                    }
+
+                    s_reg_sel.prev_cursor_state = cursor_state;
+                }
+
                 if (s_reg_sel.sel_reg != nullptr)
                 {   // Drag region (horizontal).
-                    s_reg_sel.drag_x_amount += input_handler.get_cursor_pos_state().xpos; static_assert(false, "here"); m_input_handler->get_input_state()
-                                               .look_delta.x.val;
+                    s_reg_sel.drag_x_amount += cursor_delta.xpos;
                     while (abs(s_reg_sel.drag_x_amount) > s_timeline_cell_size.x * 0.5f)
                     {   // Modulate dragged amount and apply to dragging region.
                         int32_t drag_sign{
@@ -843,8 +858,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
                     if (s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
                     {   // Drag region (vertical).
-                        s_reg_sel.drag_y_amount +=
-                            m_input_handler->get_input_state().look_delta.y.val;
+                        s_reg_sel.drag_y_amount += cursor_delta.ypos;
                         while (abs(s_reg_sel.drag_y_amount) > s_timeline_cell_size.y * 0.5f)
                         {   // Modulate dragged amount and apply to dragging region.
                             int32_t drag_sign{
