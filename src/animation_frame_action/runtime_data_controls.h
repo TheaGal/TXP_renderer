@@ -18,8 +18,6 @@ struct Runtime_data_controls
 {
     Runtime_data_controls(std::string const& fname);
 
-    // Model const* animated_model{ nullptr };  @TODO figure this out
-
     struct Data
     {
         std::string animated_model_name;

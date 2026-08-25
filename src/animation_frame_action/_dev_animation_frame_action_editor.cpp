@@ -145,7 +145,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
 
             auto current_frame_clamped{ eds.anim_current_frame };  // @NOTE: Assumed clamped.
             eds.working_model_animator->set_time(current_frame_clamped /
-                                                 Model_joint_animation::k_frames_per_second);
+                                                 k_skeletal_anim_frames_per_second);
 
             // Process all controllable data.
             // @NOTE: Just for the editor, it's only necessary to flush all the events.

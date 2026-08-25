@@ -1,7 +1,54 @@
 #include "anim_frame_action_editor_content.h"
 
+#include "animation_frame_action/editor_state.h"
+#include "animation_frame_action/runtime_data_controls.h"
+#include "btdatecheck.h"
+#include "btlogger.h"
+#include "btservice_finder.h"
+#include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include "render_object/skeletal_animator.h"
+#include "txp_renderer/input_handler/input_handler.h"
+#include "txp_renderer/input_handler/input_key_codes.h"
+
 #include <cmath>
 #include <cstddef>
+
+
+namespace
+{
+
+bool custom_imgui_listbox(std::string const& id,
+                          float_t w,
+                          float_t h,
+                          std::vector<std::string> const& items,
+                          int32_t& selected_idx)
+{
+    std::string id_str{ "##" + id };
+
+    bool changed{ false };
+    if (ImGui::BeginListBox(id_str.c_str(),
+                            ImVec2(w, h)))
+    {
+        for (size_t i = 0; i < items.size(); i++)
+        {
+            bool const is_selected = (selected_idx == i);
+            if (ImGui::Selectable((items[i] + id_str + std::to_string(i)).c_str(), is_selected))
+            {
+                selected_idx = i;
+                changed = true;
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+
+        ImGui::EndListBox();
+    }
+
+    return changed;
+}
+
+} // namespace
 
 
 void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t delta_time)
@@ -46,7 +93,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         ImGui::SameLine();
         ImGui::Spacing();
         ImGui::SameLine();
-        ImGui::Text("Models:%llu Avg:6.9KB Mdn:6.9KB Max:69.4KB", s_all_afa_names.size());
+        ImGui::Text("Models:%zu Avg:6.9KB Mdn:6.9KB Max:69.4KB", s_all_afa_names.size());
 
         ImGui::SeparatorText("List of Timelines");
 
@@ -110,7 +157,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
                         // Error if cmd names and/or argv's are invalid.
                         static auto const& k_cmd_docs{
-                            Model_animator::get_control_command_codes_documentation()
+                            component_internal::Model_animator::
+                                get_control_command_codes_documentation()
                         };
                         for (auto const& tmln :
                              anim_frame_action::s_editor_state.working_afa_ctrls_copy->data
@@ -122,7 +170,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
                                 // Ensure that command name exists.
                                 using Ctrl_cmd_documentation =
-                                    Model_animator::Ctrl_cmd_documentation;
+                                    component_internal::Model_animator::Ctrl_cmd_documentation;
                                 Ctrl_cmd_documentation const* found_cmd_doc{ nullptr };
 
                                 for (auto const& cmd_doc : k_cmd_docs)
@@ -202,9 +250,9 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     anim_frame_action::Bank::get(s_all_afa_names[s_selected_afa_idx]));
             assert(anim_frame_action::s_editor_state.working_afa_ctrls_copy != nullptr);
 
-            anim_frame_action::s_editor_state.working_model =
-                anim_frame_action::s_editor_state.working_afa_ctrls_copy->animated_model;
-            assert(anim_frame_action::s_editor_state.working_model != nullptr);
+            anim_frame_action::s_editor_state.working_model_name =
+                anim_frame_action::s_editor_state.working_afa_ctrls_copy->data.animated_model_name;
+            assert(!anim_frame_action::s_editor_state.working_model_name.empty());
 
             anim_frame_action::s_editor_state.is_working_afa_dirty = false;  // Load from disk so not dirty.
 
@@ -386,6 +434,9 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
     }
     ImGui::End();
 
+    // Input handler.
+    auto const& input_handler{ BT::service_finder::find_service<Input::Input_handler>() };
+
     // Animation timeline.
     ImGui::Begin("Animation timeline",
                  nullptr,
@@ -477,7 +528,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         {
             // Cmd list.
             static auto const& k_cmd_docs{
-                Model_animator::get_control_command_codes_documentation()
+                component_internal::Model_animator::get_control_command_codes_documentation()
             };
             static auto const k_cmd_list_as_zero_term_str_fn = []() {  // @TODO: this is a useful little func!! @THEA
                 size_t n{ 0 };
@@ -558,7 +609,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             ImGui::Separator();
 
             if (ImGui::Button("Confirm") ||
-                m_input_handler->is_key_pressed(BT_KEY_ENTER))
+                input_handler.get_keyboard_key_state(BT_KEY_ENTER).pressed)
             {   // Submit rename.
                 *s_cmd_edit_popup_data.write_ptr = s_cmd_edit_popup_data.ctrl_cmd_copy;
 
@@ -569,7 +620,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             ImGui::SameLine();
 
             if (ImGui::Button("Cancel") ||
-                m_input_handler->is_key_pressed(BT_KEY_ESCAPE))
+                input_handler.get_keyboard_key_state(BT_KEY_ESCAPE).pressed)
             {   // Cancel!!!
                 ImGui::CloseCurrentPopup();
             }
@@ -604,10 +655,10 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
             ImGui::PushItemWidth(130);
 
-            ImGui::Text("Displaying frame %llu/%d. %.2f FPS",
+            ImGui::Text("Displaying frame %zu/%d. %.2f FPS",
                         anim_frame_action::s_editor_state.anim_current_frame,
                         s_final_frame,
-                        Model_joint_animation::k_frames_per_second);
+                        k_skeletal_anim_frames_per_second);
             ImGui::InputInt("Selected Frame", &s_current_frame);
 
             ImGui::PopItemWidth();
@@ -655,17 +706,21 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     ImGui::IsMouseHoveringRect(cr_timeline_min,
                                                cr_timeline_max))
                 {   // Scrolling behavior.
-                    auto& ins{ m_input_handler->get_input_state() };
-                    if (ins.le_lctrl_mod.val)
+                    if (input_handler.get_keyboard_key_state(BT_KEY_LEFT_CONTROL).pressed)
                     {   // @TODO: Add focusing onto where the mouse cursor is instead of global cell size.
+                        BT::date_deadline(2026, 9, 30);
                         s_timeline_cell_size.x +=
-                            m_input_handler->get_input_state().ui_scroll_delta.val
+                            input_handler.get_scroll_state().yoffset
                             * 1.5f;
                     }
                     else
                     {
-                        (ins.le_lshift_mod.val ? s_sequencer_x_offset : s_sequencer_y_offset) +=
-                            m_input_handler->get_input_state().ui_scroll_delta.val * 40.0f;
+                        (input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed
+                             ? s_sequencer_x_offset
+                             : s_sequencer_y_offset) +=
+                            input_handler.get_scroll_state().yoffset * 40.0f;
+
+                        s_sequencer_x_offset += input_handler.get_scroll_state().xoffset * 40.0f;
                     }
                 }
 
@@ -724,24 +779,28 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 static Region_selecting s_reg_sel;
 
                 // Selecting inputs.
-                bool cur_lmb_pressed{ m_input_handler->get_input_state().le_select.val };
+                bool cur_lmb_pressed{
+                    input_handler.get_mouse_button_state(BT_MOUSE_BUTTON_LEFT).pressed
+                };
                 bool on_lmb_press{ cur_lmb_pressed && !s_reg_sel.prev_lmb_pressed };
                 bool on_lmb_release{ !cur_lmb_pressed && s_reg_sel.prev_lmb_pressed };
                 s_reg_sel.prev_lmb_pressed = cur_lmb_pressed;
 
-                bool cur_rmb_pressed{ m_input_handler->get_input_state().le_rclick_cam.val };
+                bool cur_rmb_pressed{
+                    input_handler.get_mouse_button_state(BT_MOUSE_BUTTON_RIGHT).pressed
+                };
                 bool on_rmb_press{ cur_rmb_pressed && !s_reg_sel.prev_rmb_pressed };
                 bool on_rmb_release{ !cur_rmb_pressed && s_reg_sel.prev_rmb_pressed };
                 s_reg_sel.prev_rmb_pressed = cur_rmb_pressed;
 
-                bool cur_del_pressed{ m_input_handler->is_key_pressed(BT_KEY_DELETE) ||
-                                      m_input_handler->is_key_pressed(BT_KEY_X) };
+                bool cur_del_pressed{ input_handler.get_keyboard_key_state(BT_KEY_DELETE).pressed ||
+                                      input_handler.get_keyboard_key_state(BT_KEY_X).pressed };
                 bool on_del_press{ cur_del_pressed && !s_reg_sel.prev_del_pressed };
                 s_reg_sel.prev_del_pressed = cur_del_pressed;
 
                 if (s_reg_sel.sel_reg != nullptr)
                 {   // Drag region (horizontal).
-                    s_reg_sel.drag_x_amount += m_input_handler->get_input_state()
+                    s_reg_sel.drag_x_amount += input_handler.get_cursor_pos_state().xpos; static_assert(false, "here"); m_input_handler->get_input_state()
                                                .look_delta.x.val;
                     while (abs(s_reg_sel.drag_x_amount) > s_timeline_cell_size.x * 0.5f)
                     {   // Modulate dragged amount and apply to dragging region.
@@ -1009,8 +1068,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         }
                         if (i == 0)
                         {   // Searching failed. Abort/exit.
-                            logger::printe(logger::ERROR,
-                                           "Delete selected region searching failed.");
+                            BT_ERROR("Delete selected region searching failed.");
                             assert(false);
                             break;
                         }
@@ -1051,10 +1109,12 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     ImGui::SetTooltip("Press Shift+A to create new region.");
 
                     static bool s_prev_is_key_a_pressed{ false };
-                    bool cur_is_key_a_pressed{ m_input_handler->is_key_pressed(BT_KEY_A) };
+                    bool cur_is_key_a_pressed{
+                        input_handler.get_keyboard_key_state(BT_KEY_A).pressed
+                    };
                     if (cur_is_key_a_pressed &&
                         !s_prev_is_key_a_pressed &&
-                        m_input_handler->is_key_pressed(BT_KEY_LEFT_SHIFT))
+                        input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed)
                     {   // Create new region since empty space selected.
                         ImVec2 mouse_pos{ ImGui::GetIO().MousePos };
                         float_t zoom_relative_mouse_x{ (mouse_pos.x
