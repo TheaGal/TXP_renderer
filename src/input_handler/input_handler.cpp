@@ -99,6 +99,7 @@ void Input_handler::scroll_event(double_t xoffset, double_t yoffset)
     m_pimpl->scroll_state = {
         .xoffset = xoffset,
         .yoffset = yoffset,
+        .last_event_tick = ++m_pimpl->event_tick,
     };
 }
 

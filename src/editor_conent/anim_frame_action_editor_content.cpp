@@ -703,6 +703,19 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             {   // Draw bg.
                 draw_list->AddRectFilled(cr_timeline_min, cr_timeline_max, 0xFF2D2D2D);
 
+                // Get input for scrolling.
+                static size_t s_last_scroll_event{ 0 };
+                double_t scroll_xoffset{ 0 };
+                double_t scroll_yoffset{ 0 };
+
+                if (auto const& scroll_state = input_handler.get_scroll_state();
+                    s_last_scroll_event != scroll_state.last_event_tick)
+                {
+                    s_last_scroll_event = scroll_state.last_event_tick;
+                    scroll_xoffset = scroll_state.xoffset;
+                    scroll_yoffset = scroll_state.yoffset;
+                }
+
                 if (ImGui::IsWindowHovered() &&
                     ImGui::IsMouseHoveringRect(cr_timeline_min,
                                                cr_timeline_max))
@@ -710,18 +723,15 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     if (input_handler.get_keyboard_key_state(BT_KEY_LEFT_CONTROL).pressed)
                     {   // @TODO: Add focusing onto where the mouse cursor is instead of global cell size.
                         BT::date_deadline(2026, 9, 30);
-                        s_timeline_cell_size.x +=
-                            input_handler.get_scroll_state().yoffset
-                            * 1.5f;
+                        s_timeline_cell_size.x += scroll_yoffset * 1.5f;
                     }
                     else
                     {
                         (input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed
                              ? s_sequencer_x_offset
-                             : s_sequencer_y_offset) +=
-                            input_handler.get_scroll_state().yoffset * 40.0f;
+                             : s_sequencer_y_offset) += scroll_yoffset * 40.0f;
 
-                        s_sequencer_x_offset += input_handler.get_scroll_state().xoffset * 40.0f;
+                        s_sequencer_x_offset += scroll_xoffset * 40.0f;
                     }
                 }
 

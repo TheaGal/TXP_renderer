@@ -54,6 +54,7 @@ struct Scroll_state
 {
     double_t xoffset{ 0.0 };
     double_t yoffset{ 0.0 };
+    size_t last_event_tick{ 0 };
 };
 
 /// State of a window.
