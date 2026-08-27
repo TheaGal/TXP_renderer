@@ -61,6 +61,7 @@ private:
     Skeletal_animator(component_internal::Model_animator* internal_animator);  // @TODO: add reference counting for this!!! (pay attention to move ctors and dtors, or delete move/copy ctors).
 
     friend class Renderer;
+    friend class component_internal::Model_animator;
 };
 
 }  // namespace TXP

@@ -7,6 +7,7 @@
 #include "btuuid.h"
 #include "render_model.h"  // for Deformed_model_data_set (@TODO: remove this after moving)
 #include "txp_renderer/animation_frame_action/runtime_data.h"
+#include "txp_renderer/animator/skeletal_animator.h"
 #include "txp_renderer/types.h"
 
 #include <algorithm>
@@ -280,6 +281,12 @@ TXP::component_internal::Model_animator::Model_animator(
 {
 }
 
+/*static*/ auto TXP::component_internal::Model_animator::extract_internal_animator(
+    TXP::Skeletal_animator& external_animator) -> Model_animator&
+{
+    return *external_animator.m_animator;
+}
+
 TXP::Deformed_model_data_set& TXP::component_internal::Model_animator::get_deformed_model() const
 {
     return const_cast<Deformed_model_data_set&>(m_deformed_model);
@@ -330,10 +337,9 @@ void TXP::component_internal::Model_animator::configure_anim_frame_action_contro
         m_anim_frame_action_controls->data.hitcapsule_group_set_template,
         resp_entity_uuid);
     m_anim_frame_action_data.hitcapsule_group_set.connect_animator(*this);
-    
+
     // Insert jump queues.
-    // @NOTE: if `jump_queues` is empty, read from the AFA ctrl jump queue.
-    assert(m_jump_queue_name_to_jump_queue_map.empty());
+    m_jump_queue_name_to_jump_queue_map.clear();
 
     uint32_t next_def_watch_priority{ 0x80000000 };  // Place default-watching queues at least this low of priority.
     for (auto const& jq : jump_queues)

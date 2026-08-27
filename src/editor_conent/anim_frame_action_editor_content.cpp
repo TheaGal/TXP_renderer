@@ -5,6 +5,7 @@
 #include "btdatecheck.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
+#include "btuuid.h"
 #include "imgui.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "render_object/skeletal_animator.h"
@@ -232,7 +233,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         .hitcapsule_group_set.replace_and_reregister(
                             anim_frame_action::s_editor_state.working_afa_ctrls_copy->data
                                 .hitcapsule_group_set_template,
-                            anim_frame_action::s_editor_state.working_entity_uuid);
+                            BT::UUID_helper::generate_uuid());  // dummy
 
                     // Discard changes by loading the same timeline again.
                     s_load_selected_timeline = true;
@@ -381,7 +382,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 {
                     if (ImGui::TreeNodeEx(reinterpret_cast<void*>(global_capsule_id_idx),
                                           0,
-                                          "group[%llu].capsules[%llu]",
+                                          "group[%zu].capsules[%zu]",
                                           cap_grp_idx,
                                           cap_idx))
                     {   // Editing params for capsules.
@@ -913,7 +914,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                                        p_max,
                                        (is_selected_region ? 0xFF3176F5 : 0x55FFFFFF),
                                        4.0f,
-                                       NULL,
+                                       0,
                                        (is_selected_region ? 4.0f : 2.0f));
 
                     // Draw text inside bar.

@@ -22,6 +22,7 @@ namespace TXP
 {
 
 struct Deformed_model_data_set;  // Forward decl.
+class Skeletal_animator;  // Forward decl.
 
 namespace component_internal
 {
@@ -33,6 +34,8 @@ public:
     Model_animator(Deformed_model_animation_set const& model_anim_set,
                    Deformed_model_data_set const& deformed_model,
                    bool use_root_motion);
+
+    static Model_animator& extract_internal_animator(Skeletal_animator& external_animator);
 
     Deformed_model_data_set& get_deformed_model() const;
     Deformed_model_skin const& get_model_skin() const;

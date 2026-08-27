@@ -291,19 +291,19 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
                     window_content_pos);
             }
         }
+        if (focus_main_viewport)
+        {
+            BT_TRACE("ENTER ORBIT CAM MODE");
+            camera.set_controlling_camera(0);
+            lock_cursor_fn(true);
+            ImGui::FocusWindow(ImGui::GetCurrentWindow());
+        }
+        ImGui::End();
     }
     if (per_viewport_content_sizes.empty())
     {   // Put in dummy 1x1 view for main viewport since is obfuscated or closed.
         per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
     }
-    if (focus_main_viewport)
-    {
-        BT_TRACE("ENTER ORBIT CAM MODE");
-        camera.set_controlling_camera(0);
-        lock_cursor_fn(true);
-        ImGui::FocusWindow(ImGui::GetCurrentWindow());
-    }
-    ImGui::End();
 
     // Draw anim frame action editor.
     if (s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)

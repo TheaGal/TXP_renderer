@@ -1,17 +1,23 @@
 #include "_dev_animation_frame_action_editor.h"
 
 #include "btservice_finder.h"
+#include "btuuid.h"
 #include "editor_state.h"
 #include "entt/entity/registry.hpp"
+#include "render_object/skeletal_animator.h"
 #include "txp_renderer/animation_frame_action/_dev_animation_frame_action_editor_agent.h"
 #include "txp_renderer/animation_frame_action/runtime_data.h"
+#include "txp_renderer/animator/skeletal_animator.h"
+#include "txp_renderer/renderer.h"
 #include "txp_renderer/types.h"
 
 #include <cassert>
+#include <optional>
 
 
 void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
 {
+    auto& renderer{ BT::service_finder::find_service<Renderer>() };
     auto view{ reg.view<component::_Dev_animation_frame_action_editor_agent>() };
 
     // This check is to ensure that editing the editor state will be used/practical.
@@ -30,30 +36,20 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
         auto& eds{ anim_frame_action::s_editor_state };
 
         // Reset editor data when working model is changed.
-        if (afa_agent.prev_working_model != eds.working_model)
+        if (afa_agent.prev_working_model_name != eds.working_model_name)
         {
-            eds.working_entity_uuid = entity_container.find_entity_uuid(entity);
-            eds.working_model_animator = nullptr;
-            afa_agent.prev_working_afa_ctrls_copy = nullptr;  // Forces animator reconfiguration.
+            auto& rend_obj_cfg = reg.emplace_or_replace<component::Render_object_config>(entity);
+            rend_obj_cfg.render_layer = RENDER_LAYER_DEFAULT;
+            rend_obj_cfg.model_name = eds.working_model_name;
+            rend_obj_cfg.is_deformed = true;
 
-            // Create render object settings component (to trigger creating a render object).
-            reg.emplace_or_replace<component::Render_object_settings>(
-                entity,
-                Render_layer::RENDER_LAYER_DEFAULT,
-                eds.working_model->get_model_name(),
-                !eds.working_model->get_joint_animations().empty(),
-                eds.working_model->get_model_name() + ".btanitor");
-
-            // Removes prev created rend obj if exists, so that changed settings get regenerated.
-            reg.remove<component::Created_render_object_reference>(entity);
-
-            afa_agent.prev_working_model = eds.working_model;
+            afa_agent.prev_working_model_name = eds.working_model_name;
         }
-
         // Configuration once render object is created.
-        if (reg.any_of<component::Created_render_object_reference>(entity))
+        else if (auto try_animator = renderer.try_get_skeletal_animator(entity);
+                 try_animator.has_value())
         {   // Sanity checks.
-            assert(eds.working_model != nullptr);
+            assert(!eds.working_model_name.empty());
             assert(eds.working_afa_ctrls_copy != nullptr);
 
             if (eds.working_model_animator == nullptr ||
@@ -62,20 +58,10 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                 afa_agent.working_anim_state_idx = -1;
 
                 // Get animator.
-                auto rend_obj_uuid{
-                    reg.get<component::Created_render_object_reference>(entity).render_obj_uuid_ref
-                };
-                auto& rend_obj_pool{
-                    service_finder::find_service<Renderer>().get_render_object_pool()
-                };
-                auto render_obj{
-                    rend_obj_pool.checkout_render_obj_by_key({ rend_obj_uuid }).front()
-                };
-
-                eds.working_model_animator = render_obj->get_model_animator();
+                eds.working_model_animator =
+                    &component_internal::Model_animator::extract_internal_animator(
+                        try_animator.value());
                 assert(eds.working_model_animator != nullptr);
-
-                rend_obj_pool.return_render_objs({ render_obj });
 
                 // Pause animator.
                 eds.working_model_animator->set_paused(true);
@@ -89,10 +75,15 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     eds.anim_state_name_to_idx_map.emplace(anim_states[i].state_name, i);
                 }
 
-                // Due to manual control in configuring the model animator, ensure that there is no
-                // auto configuration component attached (this exclusion is just a special case for
-                // this editor agent entity).  -Thea 2025/11/16
-                assert(!reg.any_of<component::Anim_frame_action_controller>(entity));
+                // @THEA: this component check reaches into BTZC engine so it's not available from
+                //        here, but maybe there could be a way to ensure that it's working????? ig
+                //        just making sure this component isn't attached to the entity in the
+                //        .btscene, since it's not an automatically added component after all.
+                //          -Thea 2026/08/26
+                // // Due to manual control in configuring the model animator, ensure that there is no
+                // // auto configuration component attached (this exclusion is just a special case for
+                // // this editor agent entity).  -Thea 2025/11/16
+                // assert(!reg.any_of<component::Anim_frame_action_controller>(entity));
 
                 // Configure anim frame action data.
                 // @NOTE: Using the `anim_frame_action_controller` component will configure the
@@ -101,7 +92,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                 //        attached.
                 eds.working_model_animator->configure_anim_frame_action_controls(
                     eds.working_afa_ctrls_copy,
-                    eds.working_entity_uuid,
+                    BT::UUID_helper::generate_uuid(),  // dummy
                     // { { .queue_name = "_dev_afa_editor_master", .default_is_watching = true } });  @THEA: Idk if it should be like this or not.
                     {});
 

@@ -181,6 +181,7 @@ endif()
 # Main source files.
 set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_driven_hitcapsule/hitcapsule.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_frame_action/_dev_animation_frame_action_editor_agent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animator/skeletal_animator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/camera/camera.h
@@ -193,7 +194,6 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_driven_hitcapsule/hitcapsule.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor_agent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/editor_state.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/editor_state.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data.cpp
