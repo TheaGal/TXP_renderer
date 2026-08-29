@@ -99,6 +99,8 @@ public:
 
     /// Updates the animator, supplying a deltatime.
     /// There are two animator timers, so you need to give which timer to update.
+    /// @NOTE: while paused, `update()` may be used to update the AFA data. Also, `delta_time` will
+    ///        do nothing while paused.
     void update(Animator_timer_profile profile, float_t delta_time);
 
     /// Calculates the set of joint matrices, interpolated.

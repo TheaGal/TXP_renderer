@@ -309,7 +309,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     // >0.0: Trigger has been set off, and returns to 0.0.
                     float_t trigger_lerp_val{ reeve_handle.update_cooldown_and_fetch_val(delta_time) };
 
-                    static auto s_trigger_str_fn = [](float_t t) {
+                    static auto const k_trigger_str_fn = [](float_t t) {
                         assert(t >= 0.0f && t <= 1.0f);
                         int32_t t_over_trigger_length = std::roundf(t * (sizeof("trigger") - 1));
                         switch (t_over_trigger_length)
@@ -330,7 +330,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                                               glm_lerp(1.0f, 0.180f, trigger_lerp_val),
                                               glm_lerp(0.3f, 1.0f,   trigger_lerp_val)),
                                        "%s",
-                                       s_trigger_str_fn(trigger_lerp_val));
+                                       k_trigger_str_fn(trigger_lerp_val));
                     break;
                 }
 
@@ -531,7 +531,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             static auto const& k_cmd_docs{
                 component_internal::Model_animator::get_control_command_codes_documentation()
             };
-            static auto const k_cmd_list_as_zero_term_str_fn = []() {  // @TODO: this is a useful little func!! @THEA
+            // @TODO: use helper array version instead of combining bytes
+            static auto const k_cmd_list_as_zero_term_str_fn = []() {
                 size_t n{ 0 };
                 for (auto const& cmd_doc : k_cmd_docs)
                     n += cmd_doc.cmd.name.size() + 1;  // +1 for \0

@@ -515,6 +515,10 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     //           synced up enough? Only the simulation loop is going to be changing states inside
     //           the animator.
 
+    bool is_paused{ m_is_paused.load() };
+    if (is_paused)
+        delta_time = 0;
+
     animator_time_t& time_handle{ get_profile_time_handle(profile) };
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
@@ -554,11 +558,13 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
 
         // Test to make sure that frames only advance one at a time.
         // Test case: ensure that
-        //     (1) the prev frame is unset and the current frame is 0, or
-        //     (2) the prev frame is the last frame of a looping anim and the current frame is 0, or
-        //     (3) the prev frame and current frame are both at the last frame of non-looped anim, or
-        //     (4) the prev frame is exactly 1 behind the current frame.
-        if (!((prev_frame_idx == (uint32_t)-1 && frame_idx == 0) ||
+        //     (1) the animator is paused, or
+        //     (2) the prev frame is unset and the current frame is 0, or
+        //     (3) the prev frame is the last frame of a looping anim and the current frame is 0, or
+        //     (4) the prev frame and current frame are both at the last frame of non-looped anim, or
+        //     (5) the prev frame is exactly 1 behind the current frame.
+        if (!(is_paused ||
+              (prev_frame_idx == (uint32_t)-1 && frame_idx == 0) ||
               (anim_loop && prev_frame_idx + 1 == num_frames && frame_idx == 0) ||
               (!anim_loop && prev_frame_idx + 1 == num_frames && frame_idx + 1 == num_frames) ||
               (prev_frame_idx + 1 == frame_idx)))
@@ -593,7 +599,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     // Process animator state transitions.
     bool performed_state_transition{ false };
 
-    if (profile == SIMULATION_TIMER_PROFILE)
+    if (!is_paused && profile == SIMULATION_TIMER_PROFILE)
     {
         bool state_set_changed{ false };
 
@@ -648,7 +654,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     // Tick forward.
     // @NOTE: if just performed a state transition earlier,
     //        do *not* change time so that frame 0 isn't skipped.  -Thea 2026/01/24
-    if (!m_is_paused.load() && !performed_state_transition)
+    if (!is_paused && !performed_state_transition)
     {
         time_handle += delta_time;
 
