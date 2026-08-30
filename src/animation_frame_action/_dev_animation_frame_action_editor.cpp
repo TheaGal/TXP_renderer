@@ -19,31 +19,30 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
 {
     auto& renderer{ BT::service_finder::find_service<Renderer>() };
     auto view{ reg.view<component::_Dev_animation_frame_action_editor_agent>() };
+    auto& eds{ anim_frame_action::s_editor_state };
 
     // This check is to ensure that editing the editor state will be used/practical.
     assert(view->size() <= 1);
 
+    // Reset all agents.
+    bool reset_agent_model_flag{ false };
+    if (eds.request_reset_agent_model)
+    {
+        eds.request_reset_agent_model = false;
+        reset_agent_model_flag = true;
+    }
+
     for (auto&& [entity, afa_agent] : view->each())
-    {   // Completely reset editor data.
-        // @NOTE: This is the case where the scene for the editor is loaded in, which default
-        //        behavior is to load in with flag to reset the editor state.
-        if (afa_agent.request_reset_editor_state)
-        {
-            anim_frame_action::reset_editor_state();
-            afa_agent.request_reset_editor_state = false;
-        }
-
-        auto& eds{ anim_frame_action::s_editor_state };
-
-        // Reset editor data when working model is changed.
-        if (afa_agent.prev_working_model_name != eds.working_model_name)
+    {
+        // Setup or reset agent model.
+        if (reset_agent_model_flag || !reg.any_of<component::Render_object_config>(entity))
         {
             auto& rend_obj_cfg = reg.emplace_or_replace<component::Render_object_config>(entity);
             rend_obj_cfg.render_layer = RENDER_LAYER_DEFAULT;
             rend_obj_cfg.model_name = eds.working_model_name;
             rend_obj_cfg.is_deformed = true;
 
-            afa_agent.prev_working_model_name = eds.working_model_name;
+            eds.working_model_animator = nullptr;
         }
         // Configuration once render object is created.
         else if (auto try_animator = renderer.try_get_skeletal_animator(entity);
@@ -52,15 +51,15 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
             assert(!eds.working_model_name.empty());
             assert(eds.working_afa_ctrls_copy != nullptr);
 
-            if (eds.working_model_animator == nullptr ||
-                afa_agent.prev_working_afa_ctrls_copy != eds.working_afa_ctrls_copy)
+            auto& internal_animator{ component_internal::Model_animator::extract_internal_animator(
+                try_animator.value()) };
+
+            if (eds.working_model_animator != &internal_animator)
             {   // Reset vars.
                 afa_agent.working_anim_state_idx = -1;
 
                 // Get animator.
-                eds.working_model_animator =
-                    &component_internal::Model_animator::extract_internal_animator(
-                        try_animator.value());
+                eds.working_model_animator = &internal_animator;
                 assert(eds.working_model_animator != nullptr);
 
                 // Pause animator.
@@ -99,10 +98,6 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                 // Create and attach hitcapsule set driver.
                 // @NOTE: This is also manually added.
                 reg.emplace_or_replace<component::Animator_driven_hitcapsule_set>(entity);
-
-                // Keep track so that if the working timeline gets saved/discarded, a new one is
-                // immediately fetched.
-                afa_agent.prev_working_afa_ctrls_copy = eds.working_afa_ctrls_copy;
             }
 
             // Update animator state.

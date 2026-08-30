@@ -215,7 +215,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         // Save to disk.
                         BT::json_save_to_disk(
                             working_timeline_copy_as_json,
-                            anim_frame_action::Bank::get_anim_frame_action_directory() + afa_name);
+                            anim_frame_action::Bank::get_anim_frame_action_directory() + afa_name +
+                                ".btafa");
                     }
 
                     anim_frame_action::Bank::replace(
@@ -255,12 +256,15 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 anim_frame_action::s_editor_state.working_afa_ctrls_copy->data.animated_model_name;
             assert(!anim_frame_action::s_editor_state.working_model_name.empty());
 
-            anim_frame_action::s_editor_state.is_working_afa_dirty = false;  // Load from disk so not dirty.
-
-            // Reset selected indices.
+            // Partial reset.
+            anim_frame_action::s_editor_state.request_reset_agent_model = true;
+            anim_frame_action::s_editor_state.anim_state_name_to_idx_map.clear();  // Cleared to prevent `s_current_animation_clip` from getting set to the wrong anim state idx immediately.
             anim_frame_action::s_editor_state.selected_anim_state_idx = 0;
             anim_frame_action::s_editor_state.selected_action_timeline_idx = 0;
-            anim_frame_action::s_editor_state.anim_state_name_to_idx_map.clear();  // Cleared to prevent `s_current_animation_clip` from getting set to the wrong anim state idx immediately.
+            anim_frame_action::s_editor_state.selected_anim_num_frames = 0;
+            anim_frame_action::s_editor_state.anim_current_frame = 0;
+            anim_frame_action::s_editor_state.is_working_afa_dirty = false;
+
             s_current_animation_clip = -1;
 
             s_load_selected_timeline = false;

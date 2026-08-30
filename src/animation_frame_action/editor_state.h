@@ -28,6 +28,8 @@ struct Editor_state
     Runtime_data_controls* working_afa_ctrls_copy{ nullptr };  // Idc if this is a memory leak (raw pointer).  -Thea 2025/08/30
     std::string working_model_name{ "" };
     component_internal::Model_animator* working_model_animator{ nullptr };
+
+    bool request_reset_agent_model{ true };
     std::map<std::string, size_t> anim_state_name_to_idx_map;
     size_t selected_anim_state_idx{ 0 };
     size_t selected_action_timeline_idx{ 0 };
