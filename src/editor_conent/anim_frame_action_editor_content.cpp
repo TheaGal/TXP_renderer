@@ -831,45 +831,49 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 }
 
                 if (s_reg_sel.sel_reg != nullptr)
-                {   // Drag region (horizontal).
-                    s_reg_sel.drag_x_amount += cursor_delta.xpos;
-                    while (abs(s_reg_sel.drag_x_amount) > s_timeline_cell_size.x * 0.5f)
-                    {   // Modulate dragged amount and apply to dragging region.
-                        int32_t drag_sign{
-                            static_cast<int32_t>(glm_signf(s_reg_sel.drag_x_amount)) };
-                        s_reg_sel.drag_x_amount -= (s_timeline_cell_size.x
-                                                    * drag_sign);
+                {
+                    if (s_reg_sel.sel_state == Region_selecting::LEFT_DRAG ||
+                        s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG ||
+                        s_reg_sel.sel_state == Region_selecting::RIGHT_DRAG)
+                    {   // Drag region (horizontal).
+                        s_reg_sel.drag_x_amount += cursor_delta.xpos;
+                        while (abs(s_reg_sel.drag_x_amount) > s_timeline_cell_size.x * 0.5f)
+                        {   // Modulate dragged amount and apply to dragging region.
+                            int32_t drag_sign{ static_cast<int32_t>(
+                                glm_signf(s_reg_sel.drag_x_amount)) };
+                            s_reg_sel.drag_x_amount -= (s_timeline_cell_size.x * drag_sign);
 
-                        bool left_side_drag{ false };
-                        if (s_reg_sel.sel_state == Region_selecting::LEFT_DRAG ||
-                            s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
-                        {   // Left side drag.
-                            s_reg_sel.sel_reg->start_frame += drag_sign;
-                            left_side_drag = true;
-                        }
-                        if (s_reg_sel.sel_state == Region_selecting::RIGHT_DRAG ||
-                            s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
-                        {   // Right side drag.
-                            s_reg_sel.sel_reg->end_frame += drag_sign;
-                            left_side_drag = false;
-                        }
+                            bool left_side_drag{ false };
+                            if (s_reg_sel.sel_state == Region_selecting::LEFT_DRAG ||
+                                s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
+                            {   // Left side drag.
+                                s_reg_sel.sel_reg->start_frame += drag_sign;
+                                left_side_drag = true;
+                            }
+                            if (s_reg_sel.sel_state == Region_selecting::RIGHT_DRAG ||
+                                s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
+                            {   // Right side drag.
+                                s_reg_sel.sel_reg->end_frame += drag_sign;
+                                left_side_drag = false;
+                            }
 
-                        // Check for overlap issue/error after all drag operations.
-                        if (left_side_drag)
-                        {
-                            s_reg_sel.sel_reg->start_frame =
-                                glm_min(s_reg_sel.sel_reg->start_frame,
-                                        s_reg_sel.sel_reg->end_frame - 1);
-                        }
-                        else
-                        {
-                            s_reg_sel.sel_reg->end_frame =
-                                glm_max(s_reg_sel.sel_reg->start_frame + 1,
-                                        s_reg_sel.sel_reg->end_frame);
-                        }
+                            // Check for overlap issue/error after all drag operations.
+                            if (left_side_drag)
+                            {
+                                s_reg_sel.sel_reg->start_frame =
+                                    glm_min(s_reg_sel.sel_reg->start_frame,
+                                            s_reg_sel.sel_reg->end_frame - 1);
+                            }
+                            else
+                            {
+                                s_reg_sel.sel_reg->end_frame =
+                                    glm_max(s_reg_sel.sel_reg->start_frame + 1,
+                                            s_reg_sel.sel_reg->end_frame);
+                            }
 
-                        // Mark working timeline as dirty.
-                        anim_frame_action::s_editor_state.is_working_afa_dirty = true;
+                            // Mark working timeline as dirty.
+                            anim_frame_action::s_editor_state.is_working_afa_dirty = true;
+                        }
                     }
 
                     if (s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
