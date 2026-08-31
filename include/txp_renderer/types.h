@@ -178,6 +178,7 @@ struct Animator_root_motion
     vec3 delta_pos = GLM_VEC3_ZERO_INIT;
     float_t turn_speed{ 0 };
     bool can_do_turnaround_anim{ false };
+    bool inherit_prev_velocity{ false };
 
     struct Mvt_input
     {

@@ -538,7 +538,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
         m_anim_frame_action_data.clear_all_data_overrides();
 
         // Copy current and previous times.
-        float_t curr_time{ time_handle };
+        float_t curr_time{ time_handle.load() };
 
         // Get anim frame idx.
         auto const& anim_state{ m_animator_states[anim_state_idx] };
@@ -598,12 +598,13 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process animator state transitions.
     bool performed_state_transition{ false };
+    bool state_set_changed{ false };
 
     if (!is_paused && profile == SIMULATION_TIMER_PROFILE)
     {
-        bool state_set_changed{ false };
-
         // Get state-set transition from watching jump queues.
+        // @NOTE: this must happen after all regions have processed `execute_command_code()` so that
+        //        jump queues are being watched/ignored correctly.  -Thea 2026/08/31
         auto trans_state_set{ pop_one_state_set() };
 
         // Perform actual state-set change!
@@ -670,6 +671,17 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
             abort();
             return;
         }
+    }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+    // Redo eaten `update()` that was for state-set change.
+    if (!is_paused && performed_state_transition && state_set_changed)
+    {
+        // @NOTE: since the state-set change is "immediate" (happened due to a jump queue pop (which
+        //        requires the AFA to update which jump queues to watch/ignore)), then this
+        //        `update()` call was for processing the jump queues and another `update()` is
+        //        needed for the newly changed state-set's first frame.
+        update(profile, delta_time);
     }
 }
 
