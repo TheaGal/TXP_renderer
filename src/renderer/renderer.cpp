@@ -6,7 +6,7 @@
 #include "btservice_finder.h"
 #include "camera/camera_internal.h"
 #include "debug/debug_render_job_internal.h"
-#include "editor_conent/editor_content.h"
+#include "editor_content/editor_content.h"
 #include "entt/entity/registry.hpp"
 #include "gfx.h"
 #include "material_organizer/material_organizer.h"

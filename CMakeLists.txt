@@ -217,10 +217,10 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job_internal.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/anim_frame_action_editor_content.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/anim_frame_action_editor_content.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_conent/editor_content.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/anim_frame_action_editor_content.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/anim_frame_action_editor_content.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/editor_content.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/material_organizer/material_organizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/material_organizer/material_organizer.h

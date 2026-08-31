@@ -8,7 +8,7 @@
 #include "btlogger.h"
 #include "btuuid.h"
 #include "camera/camera_internal.h"
-#include "editor_conent/anim_frame_action_editor_content.h"
+#include "editor_content/anim_frame_action_editor_content.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "ImGuizmo.h"

@@ -30,7 +30,7 @@
 #include "btglm.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
-#include "editor_conent/editor_content.h"
+#include "editor_content/editor_content.h"
 #include "gfx_vulkan/vk_image.h"
 #include "gfx_vulkan/vk_structs.h"
 #include "material_organizer/material_organizer.h"
