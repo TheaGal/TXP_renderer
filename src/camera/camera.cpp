@@ -45,6 +45,11 @@ bool Camera::is_follow_orbit() const
     return m_pimpl->camera.is_main_cam_follow_orbit();
 }
 
+void Camera::set_follow_orbit_follow_pos(vec3 position)
+{
+    m_pimpl->camera.set_main_cam_follow_orbit_follow_pos(position);
+}
+
 void Camera::get_follow_orbit_follow_pos(vec3 out_position) const
 {
     m_pimpl->camera.get_main_cam_follow_orbit_follow_pos(out_position);

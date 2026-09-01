@@ -213,6 +213,11 @@ bool Camera_internal::is_main_cam_follow_orbit() const
     return (get_controlling_camera() == 0);
 }
 
+void Camera_internal::set_main_cam_follow_orbit_follow_pos(vec3 follow_position)
+{
+    glm_vec3_copy(follow_position, m_orbit_follow_position);
+}
+
 void Camera_internal::get_main_cam_follow_orbit_follow_pos(vec3 out_position) const
 {
     glm_vec3_copy(const_cast<float_t*>(m_orbit_follow_position), out_position);

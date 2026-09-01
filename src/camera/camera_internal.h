@@ -32,6 +32,7 @@ public:
     void get_main_cam_position(vec3 out_cam_position) const;
     void get_main_cam_view_direction(vec3 out_cam_view_direction) const;
     bool is_main_cam_follow_orbit() const;
+    void set_main_cam_follow_orbit_follow_pos(vec3 follow_position);
     void get_main_cam_follow_orbit_follow_pos(vec3 out_follow_position) const;
     void set_main_cam_follow_orbit_orbits(vec2 orbit_angles);
 
