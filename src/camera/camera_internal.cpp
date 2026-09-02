@@ -347,9 +347,7 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
     glm_mat4_mulv3(look_rotation, offset_from_follow_obj, 0.0f, offset_from_follow_obj);
 
     // Position camera transform.
-    glm_vec3_add(m_orbit_follow_position,
-                 vec3{ 0.0f, m_orbit_follow_offset_y, 0.0f },
-                 camera.position.raw);
+    glm_vec3_copy(m_orbit_follow_position, camera.position.raw);
     glm_vec3_add(camera.position.raw, offset_from_follow_obj, camera.position.raw);
 
     glm_vec3_negate_to(offset_from_follow_obj, camera.view_direction.raw);

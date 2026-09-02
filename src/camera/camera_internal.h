@@ -51,7 +51,6 @@ private:
     float_t m_orbit_sensitivity_x{ 0.01875f * 0.25f * 0.25f };
     float_t m_orbit_sensitivity_y{ 0.0125f * 0.25f * 0.25f };
     float_t m_max_orbit_y{ glm_rad(89.0f) };
-    float_t m_orbit_follow_offset_y{ 1.75f };
 
     vec2 m_orbits{ 0, 0 };
     vec3 m_orbit_cam_offset_position{ 0, 0, -2 };
