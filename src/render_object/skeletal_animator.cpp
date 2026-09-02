@@ -857,19 +857,23 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
     Animator_timer_profile profile,
     vec3& out_root_motion_delta_pos) const
 {
-    float_t time;
-    uint32_t sim_control_frame_idx{ (uint32_t)-1 };
-    switch (profile)
-    {
-    case SIMULATION_TIMER_PROFILE:
-        sim_control_frame_idx = get_profile_frame_handle(profile).load();
-        time = ((sim_control_frame_idx + 0.5f) * k_simulation_delta_time);
-        break;
+    static auto const k_calc_profile_frame_idx_fn = [](Model_animator const& me,
+                                                       Model_joint_animation const& anim,
+                                                       Animator_timer_profile profile,
+                                                       bool anim_loop) -> uint32_t {
+        switch (profile)
+        {
+        case SIMULATION_TIMER_PROFILE:
+            return anim.normalize_frame_idx(me.get_profile_frame_handle(profile).load(), anim_loop);
+            break;
 
-    case RENDERER_TIMER_PROFILE:
-        time = get_profile_time_handle(profile).load();
-        break;
-    }
+        case RENDERER_TIMER_PROFILE:
+            return anim.calc_frame_idx(me.get_profile_time_handle(profile).load(),
+                                       anim_loop,
+                                       Model_joint_animation::FLOOR);
+            break;
+        }
+    };
 
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
@@ -878,19 +882,15 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
     {
     case anim_tmpl_types::Animator_state::SINGLE_ANIM:
     {   // Get single anim root motion.
-        uint32_t frame_idx{ m_model_anim_set.animations[anim_state.animation_idx].calc_frame_idx(
-            time,
-            anim_loop,
-            Model_joint_animation::FLOOR) };
+        uint32_t frame_idx{ k_calc_profile_frame_idx_fn(
+            *this,
+            m_model_anim_set.animations[anim_state.animation_idx],
+            profile,
+            anim_loop) };
+
         m_model_anim_set.animations[anim_state.animation_idx].get_root_motion_delta_pos_at_frame(
             frame_idx,
             out_root_motion_delta_pos);
-
-        // @NOTE: if this assert fails, then it means that the frame idx has fallen out of place due
-        //        to floating point inaccuracy and this func must be redone so that
-        //        SIMULATION_TIMER_PROFILE uses the actual frame handle's frame idx instead of
-        //        trying to convert from floating point.  -Thea 2026/09/02
-        assert(sim_control_frame_idx == -1 || sim_control_frame_idx == frame_idx);
         break;
     }
 
@@ -906,19 +906,14 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
             auto anim_idx{ i == 0 ? anim_idx_a : anim_idx_b };
             auto& root_motion_ref{ root_motions[i] };
 
-            uint32_t frame_idx{ m_model_anim_set.animations[anim_idx].calc_frame_idx(
-                time,
-                anim_loop,
-                Model_joint_animation::FLOOR) };
+            uint32_t frame_idx{ k_calc_profile_frame_idx_fn(*this,
+                                                            m_model_anim_set.animations[anim_idx],
+                                                            profile,
+                                                            anim_loop) };
+
             m_model_anim_set.animations[anim_idx].get_root_motion_delta_pos_at_frame(
                 frame_idx,
                 root_motion_ref);
-
-            // @NOTE: if this assert fails, then it means that the frame idx has fallen out of place
-            //        due to floating point inaccuracy and this func must be redone so that
-            //        SIMULATION_TIMER_PROFILE uses the actual frame handle's frame idx instead of
-            //        trying to convert from floating point.  -Thea 2026/09/02
-            assert(sim_control_frame_idx == -1 || sim_control_frame_idx == frame_idx);
         }
 
         // Blend root motions (preserving magnitude).
