@@ -55,6 +55,7 @@ public:
 
     enum Rounding_func{ FLOOR, CEIL };
     uint32_t calc_frame_idx(float_t time, bool loop, Rounding_func rounding) const;
+    uint32_t normalize_frame_idx(uint32_t frame_idx, bool loop) const;
 
     using Joint_local_transform_set_t =
         std::vector<Model_joint_animation_frame::Joint_local_transform>;

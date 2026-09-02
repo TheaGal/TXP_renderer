@@ -100,6 +100,11 @@ uint32_t TXP::Model_joint_animation::calc_frame_idx(float_t time,
             break;
     }
 
+    return normalize_frame_idx(frame_idx, loop);
+}
+
+uint32_t TXP::Model_joint_animation::normalize_frame_idx(uint32_t frame_idx, bool loop) const
+{
     if (loop)
     {
         // Loop keyframes.
@@ -519,7 +524,19 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     if (is_paused)
         delta_time = 0;
 
-    animator_time_t& time_handle{ get_profile_time_handle(profile) };
+    animator_frame_t* frame_handle{ nullptr };
+    animator_time_t* time_handle{ nullptr };
+    switch (profile)
+    {
+    case SIMULATION_TIMER_PROFILE:
+        frame_handle = &get_profile_frame_handle(profile);
+        break;
+
+    case RENDERER_TIMER_PROFILE:
+        time_handle = &get_profile_time_handle(profile);
+        break;
+    }
+
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
 
@@ -537,9 +554,6 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
 
         m_anim_frame_action_data.clear_all_data_overrides();
 
-        // Copy current and previous times.
-        float_t curr_time{ time_handle.load() };
-
         // Get anim frame idx.
         auto const& anim_state{ m_animator_states[anim_state_idx] };
         auto const& current_anim_for_state{
@@ -547,9 +561,8 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
                                             ? anim_state.animation_idx
                                             : anim_state.blend_anims.front().animation_idx]
         };
-        auto frame_idx{ current_anim_for_state.calc_frame_idx(curr_time,
-                                                              anim_loop,
-                                                              Model_joint_animation::FLOOR) };
+        auto frame_idx{ current_anim_for_state.normalize_frame_idx(frame_handle->load(),
+                                                                   anim_loop) };
         auto num_frames{ current_anim_for_state.get_num_frames() };
 
         // Get prev anim frame idx.
@@ -625,9 +638,8 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
                                                 : anim_state.blend_anims.front().animation_idx]
             };
 
-            bool is_at_last_frame{ model_anim.calc_frame_idx(time_handle.load(),
-                                                             false,
-                                                             Model_joint_animation::FLOOR) ==
+            bool is_at_last_frame{ model_anim.normalize_frame_idx(frame_handle->load(),
+                                                                  anim_loop) ==
                                    model_anim.get_num_frames() - 1 };
             if (is_at_last_frame)
             {
@@ -657,7 +669,16 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     //        do *not* change time so that frame 0 isn't skipped.  -Thea 2026/01/24
     if (!is_paused && !performed_state_transition)
     {
-        time_handle += delta_time;
+        switch (profile)
+        {
+        case SIMULATION_TIMER_PROFILE:
+            (*frame_handle)++;  // @NOTE: after 828.5 days (if 60 ticks/sec), this value will wrap around.
+            break;
+
+        case RENDERER_TIMER_PROFILE:
+            *time_handle += delta_time;
+            break;
+        }
 
         // @NOTE: time dilation in the simulation profile is not allowed.
         if (profile == SIMULATION_TIMER_PROFILE && delta_time != k_simulation_delta_time)
@@ -690,7 +711,18 @@ void TXP::component_internal::Model_animator::calc_anim_pose(
     bool root_motion_zeroing,
     std::vector<mat4s>& out_joint_matrices) const
 {
-    auto time{ get_profile_time_handle(profile).load() };
+    float_t time;
+    switch (profile)
+    {
+    case SIMULATION_TIMER_PROFILE:
+        time = ((get_profile_frame_handle(profile).load() + 0.5f) * k_simulation_delta_time);
+        break;
+
+    case RENDERER_TIMER_PROFILE:
+        time = get_profile_time_handle(profile).load();
+        break;
+    }
+
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
 
@@ -755,7 +787,18 @@ void TXP::component_internal::Model_animator::get_anim_floored_frame_pose(
     bool root_motion_zeroing,
     std::vector<mat4s>& out_joint_matrices) const
 {
-    auto time{ get_profile_time_handle(profile).load() };
+    float_t time;
+    switch (profile)
+    {
+    case SIMULATION_TIMER_PROFILE:
+        time = ((get_profile_frame_handle(profile).load() + 0.5f) * k_simulation_delta_time);
+        break;
+
+    case RENDERER_TIMER_PROFILE:
+        time = get_profile_time_handle(profile).load();
+        break;
+    }
+
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
 
@@ -814,7 +857,20 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
     Animator_timer_profile profile,
     vec3& out_root_motion_delta_pos) const
 {
-    auto time{ get_profile_time_handle(profile).load() };
+    float_t time;
+    uint32_t sim_control_frame_idx{ (uint32_t)-1 };
+    switch (profile)
+    {
+    case SIMULATION_TIMER_PROFILE:
+        sim_control_frame_idx = get_profile_frame_handle(profile).load();
+        time = ((sim_control_frame_idx + 0.5f) * k_simulation_delta_time);
+        break;
+
+    case RENDERER_TIMER_PROFILE:
+        time = get_profile_time_handle(profile).load();
+        break;
+    }
+
     auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
 
@@ -829,6 +885,12 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
         m_model_anim_set.animations[anim_state.animation_idx].get_root_motion_delta_pos_at_frame(
             frame_idx,
             out_root_motion_delta_pos);
+
+        // @NOTE: if this assert fails, then it means that the frame idx has fallen out of place due
+        //        to floating point inaccuracy and this func must be redone so that
+        //        SIMULATION_TIMER_PROFILE uses the actual frame handle's frame idx instead of
+        //        trying to convert from floating point.  -Thea 2026/09/02
+        assert(sim_control_frame_idx == -1 || sim_control_frame_idx == frame_idx);
         break;
     }
 
@@ -851,6 +913,12 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
             m_model_anim_set.animations[anim_idx].get_root_motion_delta_pos_at_frame(
                 frame_idx,
                 root_motion_ref);
+
+            // @NOTE: if this assert fails, then it means that the frame idx has fallen out of place
+            //        due to floating point inaccuracy and this func must be redone so that
+            //        SIMULATION_TIMER_PROFILE uses the actual frame handle's frame idx instead of
+            //        trying to convert from floating point.  -Thea 2026/09/02
+            assert(sim_control_frame_idx == -1 || sim_control_frame_idx == frame_idx);
         }
 
         // Blend root motions (preserving magnitude).
@@ -1196,12 +1264,25 @@ auto TXP::component_internal::Model_animator::get_profile_time_handle(
 {
     switch (profile)
     {
-    case SIMULATION_TIMER_PROFILE: return const_cast<animator_time_t&>(m_sim_time);
     case RENDERER_TIMER_PROFILE:   return const_cast<animator_time_t&>(m_rend_time);
 
     default:
         assert(false);
         return *reinterpret_cast<animator_time_t*>(0xDEADBEEF);
+        break;
+    }
+}
+
+auto TXP::component_internal::Model_animator::get_profile_frame_handle(
+    Animator_timer_profile profile) const -> animator_frame_t&
+{
+    switch (profile)
+    {
+    case SIMULATION_TIMER_PROFILE: return const_cast<animator_frame_t&>(m_sim_time);
+
+    default:
+        assert(false);
+        return *reinterpret_cast<animator_frame_t*>(0xDEADBEEF);
         break;
     }
 }
