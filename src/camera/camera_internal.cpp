@@ -213,9 +213,9 @@ bool Camera_internal::is_main_cam_follow_orbit() const
     return (get_controlling_camera() == 0);
 }
 
-void Camera_internal::set_main_cam_follow_orbit_cam_offset_pos(vec3 offset_position)
+void Camera_internal::set_main_cam_follow_orbit_cam_offset_pos(vec3 const offset_position)
 {
-    glm_vec3_copy(offset_position, m_orbit_cam_offset_position);
+    glm_vec3_copy(const_cast<float_t*>(offset_position), m_orbit_cam_offset_position);
 }
 
 void Camera_internal::get_main_cam_follow_orbit_cam_offset_pos(vec3 out_offset_position) const
@@ -223,9 +223,9 @@ void Camera_internal::get_main_cam_follow_orbit_cam_offset_pos(vec3 out_offset_p
     glm_vec3_copy(const_cast<float_t*>(m_orbit_cam_offset_position), out_offset_position);
 }
 
-void Camera_internal::set_main_cam_follow_orbit_follow_pos(vec3 follow_position)
+void Camera_internal::set_main_cam_follow_orbit_follow_pos(vec3 const follow_position)
 {
-    glm_vec3_copy(follow_position, m_orbit_follow_position);
+    glm_vec3_copy(const_cast<float_t*>(follow_position), m_orbit_follow_position);
 }
 
 void Camera_internal::get_main_cam_follow_orbit_follow_pos(vec3 out_position) const
@@ -233,9 +233,9 @@ void Camera_internal::get_main_cam_follow_orbit_follow_pos(vec3 out_position) co
     glm_vec3_copy(const_cast<float_t*>(m_orbit_follow_position), out_position);
 }
 
-void Camera_internal::set_main_cam_follow_orbit_orbits(vec2 orbit_angles)
+void Camera_internal::set_main_cam_follow_orbit_orbits(vec2 const orbit_angles)
 {
-    glm_vec2_copy(orbit_angles, m_orbits);
+    glm_vec2_copy(const_cast<float_t*>(orbit_angles), m_orbits);
 }
 
 void Camera_internal::update_fly_cam(vec2 look_delta_raw, float_t delta_time)
