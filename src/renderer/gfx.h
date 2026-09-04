@@ -198,6 +198,9 @@ public:
     /// .
     void render_transparent_geometry();
 
+    /// Renders UI elements to UI texture.
+    void render_ui();
+
     /// Target for where to render to for LDR rendering.
     enum Ldr_target
     {
@@ -206,7 +209,9 @@ public:
     };
 
     /// .
-    void render_hdr_to_ldr_postprocessing(size_t rend_view_idx, Ldr_target render_target);
+    void render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
+                                          bool include_ui_texture,
+                                          Ldr_target render_target);
 
     /// Renders collected immediate-mode GUI commands to LDR present surface.
     void render_imgui();

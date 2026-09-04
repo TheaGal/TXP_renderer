@@ -192,12 +192,15 @@ void* TXP::Graphics::get_render_view(size_t rend_view_idx)
 
 void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)
 {
-    m_pimpl->begin_rendering_render_view(rend_view_idx);
+    auto& color_image{ m_pimpl->render_views[rend_view_idx].color_image };
+    auto& depth_image{ m_pimpl->render_views[rend_view_idx].depth_image };
+
+    m_pimpl->begin_rendering(color_image, &depth_image);
 }
 
 void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
 {
-    m_pimpl->end_rendering_render_view();
+    m_pimpl->end_rendering();
 }
 
 void TXP::Graphics::set_render_object_per_instance_data(
@@ -257,7 +260,14 @@ void TXP::Graphics::render_transparent_geometry()
     assert(false);
 }
 
-void TXP::Graphics::render_hdr_to_ldr_postprocessing(size_t rend_view_idx, Ldr_target render_target)
+void TXP::Graphics::render_ui()
+{
+    m_pimpl->render_ui();
+}
+
+void TXP::Graphics::render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
+                                                     bool include_ui_texture,
+                                                     Ldr_target render_target)
 {
     // @TEMPORARY: this is only a blit or an image transition, but in the future have real
     //             tonemapping.

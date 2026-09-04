@@ -283,6 +283,9 @@ struct Graphics::Impl
     std::vector<Render_view_data> render_views;
     VkSampler render_view_imgui_image_sampler{ VK_NULL_HANDLE };
 
+    /// UI image data.
+    Vk_Image::Allocated_image ui_image;
+
     /// Helper for loading shader module.
     VkShaderModule load_shader_module(std::string const& fname)
     {   // Open file.
@@ -566,15 +569,22 @@ struct Graphics::Impl
         std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
         size_t mod_mesh_ref_list_length);
 
-
+    /// Retrieves next frame for rendering.
     bool start_next_frame();
+
+    /// Gets a render view.
     void* get_render_view(size_t rend_view_idx);
 
     /// Begins dynamic rendering while clearing the render view images.
-    void begin_rendering_render_view(size_t rend_view_idx);
+    /// @NOTE: depth image is optional.
+    void begin_rendering(Vk_Image::Allocated_image& color_image,
+                         Vk_Image::Allocated_image* optional_depth_image);
 
-    /// Ends dynamic rendering for a render view.
-    void end_rendering_render_view();
+    /// Ends dynamic rendering.
+    void end_rendering();
+
+    /// Renders UI elements to UI texture.
+    void render_ui();
 
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,

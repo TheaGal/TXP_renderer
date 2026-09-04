@@ -873,6 +873,8 @@ void Graphics::Impl::destroy_vulkan()
     }
     vkDestroySampler(gfx.device, render_view_imgui_image_sampler, nullptr);
 
+    ui_image.teardown();
+
     for (auto desc_layout : built_descriptor_layouts)
     {
         vkDestroyDescriptorSetLayout(gfx.device, desc_layout, nullptr);
@@ -1582,6 +1584,12 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
             render_view.color_image.teardown();
             render_view.depth_image.teardown();
             ImGui_ImplVulkan_RemoveTexture(render_view.imgui_color_image_descriptor);
+
+            if (i == 0)
+            {
+                // Destroy UI image since this has changed.
+                ui_image.teardown();
+            }
         }
 
         // HDR draw image.
@@ -1607,6 +1615,15 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
             ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,
                                         render_view.color_image.get_image_view(),
                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
+        if (i == 0)
+        {
+            // Create UI image.
+            ui_image =
+                Vk_Image::Allocated_image::create_image_2d(VK_FORMAT_R8G8B8A8_UNORM,
+                                                           extent,
+                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+        }
     }
     if (render_views.empty())
         throw std::runtime_error("Render-view list must not be empty.");
@@ -1781,17 +1798,22 @@ void* Graphics::Impl::get_render_view(size_t rend_view_idx)
     return &render_views[rend_view_idx];
 }
 
-void Graphics::Impl::begin_rendering_render_view(size_t rend_view_idx)
-{   
+void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
+                                     Vk_Image::Allocated_image* optional_depth_image)
+{
     VkCommandBuffer cmd{ get_current_frame().graphics_queue_command_buffer.get() };
-    auto& color_image{ render_views[rend_view_idx].color_image };
-    auto& depth_image{ render_views[rend_view_idx].depth_image };
 
     // Ready images.
-    Vk_Image::Image::transition_to(
-        cmd,
-        { { &color_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
-          { &depth_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL } });
+    std::vector<std::pair<Vk_Image::Image*, VkImageLayout>> transitions{
+        { &color_image.get_image(), VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL },
+    };
+    if (optional_depth_image)
+    {
+        transitions.emplace_back(&optional_depth_image->get_image(),
+                                 VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    }
+
+    Vk_Image::Image::transition_to(cmd, std::move(transitions));
 
     // Begin rendering.
     VkClearValue color_clear_value{
@@ -1801,24 +1823,40 @@ void Graphics::Impl::begin_rendering_render_view(size_t rend_view_idx)
         Vk_Structs::txp_vk_attachment_info(color_image.get_image_view(),
                                            &color_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
-    VkClearValue depth_clear_value{
-        .depthStencil{ .depth = 0.0f, .stencil = 0 },  // Reverse depth.
-    };
-    VkRenderingAttachmentInfo depth_attachment =
-        Vk_Structs::txp_vk_attachment_info(depth_image.get_image_view(),
-                                           &depth_clear_value,
-                                           VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
-    VkRenderingInfo render_info = Vk_Structs::txp_vk_render_info(
-        VkExtent2D{ .width = color_image.get_extent().width,
-                    .height = color_image.get_extent().height },
-        &color_attachment,
-        &depth_attachment);
+
+    VkRenderingAttachmentInfo depth_attachment;
+    if (optional_depth_image)
+    {
+        VkClearValue depth_clear_value{
+            .depthStencil{ .depth = 0.0f, .stencil = 0 },  // Reverse depth.
+        };
+        depth_attachment =
+            Vk_Structs::txp_vk_attachment_info(optional_depth_image->get_image_view(),
+                                               &depth_clear_value,
+                                               VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
+    }
+
+    VkRenderingInfo render_info =
+        Vk_Structs::txp_vk_render_info(VkExtent2D{ .width = color_image.get_extent().width,
+                                                   .height = color_image.get_extent().height },
+                                       &color_attachment,
+                                       optional_depth_image ? &depth_attachment : nullptr);
     vkCmdBeginRendering(cmd, &render_info);
 }
 
-void Graphics::Impl::end_rendering_render_view()
-{   // End rendering.
+void Graphics::Impl::end_rendering()
+{
     vkCmdEndRendering(get_current_frame().graphics_queue_command_buffer.get());
+}
+
+void Graphics::Impl::render_ui()
+{
+    begin_rendering(ui_image, nullptr);  // @TODO: move away from impl.
+
+    // @TODO: do stuff here.
+    assert(false);
+
+    end_rendering();  // @TODO: move away from impl.
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,

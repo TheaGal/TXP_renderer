@@ -646,9 +646,9 @@ void Renderer::render_one_frame(float_t delta_time)
     size_t render_view_idx{ 0 };
     for (auto const& cam_matrix : m.camera.get_calcd_cam_matrices())
     {
-        bool main_cam_matrix{ render_view_idx == 0 };
+        bool is_main_cam_matrix{ render_view_idx == 0 };
 
-        auto render_view{ g.get_render_view(render_view_idx) };
+        auto* render_view{ g.get_render_view(render_view_idx) };
 
         g.set_render_view_camera(render_view_idx,
                                  const_cast<vec4*>(cam_matrix.projection),
@@ -658,7 +658,7 @@ void Renderer::render_one_frame(float_t delta_time)
                                 vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
                                 10.0f);
 
-        if (main_cam_matrix)
+        if (is_main_cam_matrix)
         {
             // g.compute_light_culling();
             // g.compute_shadow_culling();
@@ -667,7 +667,7 @@ void Renderer::render_one_frame(float_t delta_time)
         }
 
         // g.render_shadows(render_view);
-        // if (main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
+        // if (is_main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
         //     m.shad_gradient->compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
 
         // Render all graphics shaders.
@@ -681,7 +681,7 @@ void Renderer::render_one_frame(float_t delta_time)
                                            render_view);
         g.end_rendering_render_view(render_view_idx);
 
-        if (main_cam_matrix)
+        if (is_main_cam_matrix)
         {
             // g.render_clouds();
             // g.render_volumetric_light();
@@ -690,7 +690,14 @@ void Renderer::render_one_frame(float_t delta_time)
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        g.render_hdr_to_ldr_postprocessing(render_view_idx, g.LDR_TARGET_IMGUI);
+        if (is_main_cam_matrix)
+        {
+            g.begin_rendering_ui();
+            g.render_ui();
+            g.end_rendering_ui();
+        }
+
+        g.render_hdr_to_ldr_postprocessing(render_view_idx, is_main_cam_matrix, g.LDR_TARGET_IMGUI);
 
         render_view_idx++;
     }
