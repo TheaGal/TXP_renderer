@@ -126,8 +126,8 @@ void Camera_internal::calc_cam_matrices()
                       cam.ortho_size * cam.aspect,
                       -cam.ortho_size,
                       cam.ortho_size,
+                      cam.z_far,  // Reverse depth.
                       cam.z_near,
-                      cam.z_far,
                       new_cam_matrix.projection);
             new_cam_matrix.projection[1][1] *= -1.0f;  // Fix neg-Y issue.
         }
@@ -135,8 +135,8 @@ void Camera_internal::calc_cam_matrices()
         {   // Calculate projection matrix.
             glm_perspective(cam.fov,
                             cam.aspect,
+                            cam.z_far,  // Reverse depth.
                             cam.z_near,
-                            cam.z_far,
                             new_cam_matrix.projection);
             new_cam_matrix.projection[1][1] *= -1.0f;  // Fix neg-Y issue.
         }

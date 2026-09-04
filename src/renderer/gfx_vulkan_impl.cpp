@@ -1802,7 +1802,7 @@ void Graphics::Impl::begin_rendering_render_view(size_t rend_view_idx)
                                            &color_clear_value,
                                            VK_IMAGE_LAYOUT_ATTACHMENT_OPTIMAL);
     VkClearValue depth_clear_value{
-        .depthStencil{ .depth = 1.0f, .stencil = 0 },
+        .depthStencil{ .depth = 0.0f, .stencil = 0 },  // Reverse depth.
     };
     VkRenderingAttachmentInfo depth_attachment =
         Vk_Structs::txp_vk_attachment_info(depth_image.get_image_view(),
