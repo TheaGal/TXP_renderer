@@ -164,6 +164,12 @@ public:
     /// Ends rendering a render view.
     void end_rendering_render_view(size_t rend_view_idx);
 
+    /// Begins rendering UI while clearing the UI.
+    void begin_rendering_ui();
+
+    /// Ends rendering UI.
+    void end_rendering_ui();
+
     /// Sets GPU per-instance data from list of render objects.
     void set_render_object_per_instance_data(
         Material_organizer const& material_organizer,

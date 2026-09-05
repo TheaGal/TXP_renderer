@@ -1851,12 +1851,8 @@ void Graphics::Impl::end_rendering()
 
 void Graphics::Impl::render_ui()
 {
-    begin_rendering(ui_image, nullptr);  // @TODO: move away from impl.
-
     // @TODO: do stuff here.
     assert(false);
-
-    end_rendering();  // @TODO: move away from impl.
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,

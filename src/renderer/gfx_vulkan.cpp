@@ -203,6 +203,16 @@ void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
     m_pimpl->end_rendering();
 }
 
+void TXP::Graphics::begin_rendering_ui()
+{
+    m_pimpl->begin_rendering(m_pimpl->ui_image, nullptr);
+}
+
+void TXP::Graphics::end_rendering_ui()
+{
+    m_pimpl->end_rendering();
+}
+
 void TXP::Graphics::set_render_object_per_instance_data(
     Material_organizer const& material_organizer,
     std::vector<Render_object> const& rend_obj_list,
