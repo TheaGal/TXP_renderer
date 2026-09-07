@@ -2,6 +2,10 @@
 #include "txp_renderer/ui/ui_state.h"
 // clang-format on
 
+#if TXP_GFX_BACKEND_VULKAN
+#include "renderer/gfx_vulkan_impl.h"
+#endif // TXP_GFX_BACKEND_VULKAN
+
 #include "ui/ui_types.h"
 
 #include <cassert>
@@ -10,10 +14,34 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 
 namespace TXP
 {
+namespace
+{
+
+static std::string s_ui_directory;
+
+#if TXP_GFX_BACKEND_VULKAN
+static TXP::Graphics::Impl* s_gfx;
+#endif // TXP_GFX_BACKEND_VULKAN
+
+} // namespace
+
+
+void set_ui_directory(std::string const& dir_name)
+{
+    s_ui_directory = dir_name;
+}
+
+void set_ui_gfx_reference(void* graphics)
+{
+#if TXP_GFX_BACKEND_VULKAN
+    s_gfx = static_cast<TXP::Graphics::Impl*>(graphics);
+#endif // TXP_GFX_BACKEND_VULKAN
+}
 
 // class UI_element_state
 void UI_element_state::add_event(UI_event event_type, std::function<void(void)>&& callback_fn)
@@ -28,16 +56,30 @@ void UI_element_state::add_event(UI_event event_type, std::function<void(void)>&
 
 
 // class UI_canvas_state
+UI_canvas_state::~UI_canvas_state()
+{
+    delete m_elems;
+}
+
 UI_element_state& UI_canvas_state::elem(std::string const& elem_name)
 {
-    return m_elem_states_map[elem_name];
+    if (m_elem_states_map.find(elem_name) == m_elem_states_map.end())
+        m_elem_states_map.emplace(elem_name, UI_element_state{});
+    return m_elem_states_map.at(elem_name);
+}
+
+UI_canvas_state::UI_canvas_state()
+    : m_elems(new std::vector<UI::UI_element>())
+{
 }
 
 
 // class UI_state
 UI_canvas_state& UI_state::canvas(std::string const& canvas_name)
 {
-    return m_canvas_states[canvas_name];
+    if (m_canvas_states.find(canvas_name) == m_canvas_states.end())
+        m_canvas_states.emplace(canvas_name, UI_canvas_state{});
+    return m_canvas_states.at(canvas_name);
 }
 
 namespace
@@ -98,41 +140,44 @@ void UI_state::load_persistent_canvas(std::string const& canvas_name)
     std::unordered_map<std::string, uint32_t> temp_elem_name_to_idx;
     temp_elem_name_to_idx.reserve(ui_file_data.elements.size());
 
-    my_canvas.m_elems.clear();
-    my_canvas.m_elems.reserve(ui_file_data.elements.size());
+    auto& my_elems{ *my_canvas.m_elems };
+
+    my_elems.clear();
+    my_elems.reserve(ui_file_data.elements.size());
 
     for (auto& file_elem : ui_file_data.elements)
     {
-        temp_elem_name_to_idx[file_elem.name] = my_canvas.m_elems.size();
+        temp_elem_name_to_idx[file_elem.name] = my_elems.size();
 
-        my_canvas.m_elems.emplace_back(UI::UI_element{
+        my_elems.emplace_back(UI::UI_element{
             .name = file_elem.name,
             .parent = nullptr,  // Will fill in later.
             .transform = file_elem.transform,
             .opacity = file_elem.opacity,
-            .texture_idx = m_pimpl->g.texture_entries.at(file_elem.image).gpu_idx,
+            .texture_idx =
+                static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
         });
 
-        if (temp_elem_name_to_idx.size() != my_canvas.m_elems.size())
+        if (temp_elem_name_to_idx.size() != my_elems.size())
             throw std::runtime_error("These sizes should be the same.");
     }
 
-    if (my_canvas.m_elems.size() != ui_file_data.elements.size())
+    if (my_elems.size() != ui_file_data.elements.size())
         throw std::runtime_error("uh oh.");
 
     // Build in parenting with elements.
-    for (size_t i = 0; i < my_canvas.m_elems.size(); i++)
+    for (size_t i = 0; i < my_elems.size(); i++)
     {
-        auto& my_elem{ my_canvas.m_elems[i] };
+        auto& my_elem{ my_elems[i] };
         auto& file_elem{ ui_file_data.elements[i] };
 
         uint32_t parent_elem_idx{ temp_elem_name_to_idx.at(file_elem.parent) };
         
-        my_elem.parent = &my_canvas.m_elems[parent_elem_idx];
+        my_elem.parent = &my_elems[parent_elem_idx];
     }
 
     // Fill in loaded element reference.
-    for (auto& my_elem : my_canvas.m_elems)
+    for (auto& my_elem : my_elems)
     {
         if (my_canvas.m_elem_states_map.find(my_elem.name) != my_canvas.m_elem_states_map.end())
         {
@@ -165,7 +210,7 @@ void UI_state::unload_persistent_canvas(std::string const& canvas_name)
     my_canvas.m_load_idx = -1;
 
     // Remove loaded data.
-    my_canvas.m_elems.clear();
+    my_canvas.m_elems->clear();
 
     for (auto&& [_, elem_state] : my_canvas.m_elem_states_map)
     {

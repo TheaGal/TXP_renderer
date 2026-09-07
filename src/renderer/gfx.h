@@ -14,8 +14,9 @@ namespace TXP
 {
 
 struct Renderer_settings;  // Forward decl.
-class Camera_internal;  // Forward decl.
 struct Material_organizer;  // Forward decl.
+class Camera_internal;  // Forward decl.
+class UI_state;  // Forward decl.
 
 namespace gpu_type
 {
@@ -205,7 +206,7 @@ public:
     void render_transparent_geometry();
 
     /// Renders UI elements to UI texture.
-    void render_ui();
+    void render_ui(UI_state const& ui_state);
 
     /// Target for where to render to for LDR rendering.
     enum Ldr_target

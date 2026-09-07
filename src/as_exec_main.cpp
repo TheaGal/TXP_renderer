@@ -79,6 +79,7 @@ int32_t main()
                      "assets/textures/",
                      "assets/shaders/",
                      "assets/models/",
+                     "assets/ui/",
                      "assets/anim_frame_actions/",
                      "assets/animator_templates/",
                      [](bool) {},
@@ -106,7 +107,7 @@ int32_t main()
     while (!r.is_requesting_shutdown())
     {
         r.poll_input_events();
-        r.render_one_frame(1.0f / 60.0f);  // @HARDCODE
+        r.render_one_frame(1.0f / 60.0f, nullptr);  // @HARDCODE
 
         r.report_performance_time(TXP::PERF_TIME_TYPE_SIMULATION_LOOP, 0.123);
         r.report_performance_time(TXP::PERF_TIME_TYPE_RENDERER_LOOP, 0.456);

@@ -38,6 +38,7 @@ namespace TXP
 struct Renderer_settings;  // Forward decl.
 class Camera_internal;  // Forward decl.
 struct Material_organizer;  // Forward decl.
+class UI_state;  // Forward decl.
 
 struct Graphics::Impl
 {
@@ -584,7 +585,7 @@ struct Graphics::Impl
     void end_rendering();
 
     /// Renders UI elements to UI texture.
-    void render_ui();
+    void render_ui(UI_state const& ui_state);
 
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,

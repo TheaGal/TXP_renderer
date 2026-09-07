@@ -17,6 +17,7 @@
 namespace TXP
 {
 
+class UI_state;  // Forward decl.
 class Skeletal_animator;  // Forward decl.
 
 /// Settings for renderer.
@@ -46,6 +47,7 @@ public:
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
              std::string const& model_asset_dir,
+             std::string const& ui_asset_dir,
              std::string const& afa_asset_dir,
              std::string const& animator_asset_dir,
              std::function<void(bool)>&& set_play_flag_fn,
@@ -80,7 +82,7 @@ public:
     void poll_input_events();
 
     /// Renders one singular frame then returns.
-    void render_one_frame(float_t delta_time);
+    void render_one_frame(float_t delta_time, UI_state* ui_state);
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Asset loading.

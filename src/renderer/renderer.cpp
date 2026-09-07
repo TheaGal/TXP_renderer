@@ -24,6 +24,7 @@
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/animator/skeletal_animator.h"
 #include "txp_renderer/types.h"
+#include "txp_renderer/ui/ui_state.h"
 
 #include <atomic>
 #include <cassert>
@@ -44,6 +45,7 @@ struct Renderer::Impl
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
          std::string const& model_asset_dir,
+         std::string const& ui_asset_dir,
          std::string const& afa_asset_dir,
          std::string const& animator_asset_dir,
          std::function<void(bool)>&& set_play_flag_fn,
@@ -55,6 +57,7 @@ struct Renderer::Impl
         , texture_asset_dir(texture_asset_dir)
         , shader_asset_dir(shader_asset_dir)
         , model_asset_dir(model_asset_dir)
+        , ui_asset_dir(ui_asset_dir)
         , afa_asset_dir(afa_asset_dir)
         , set_play_flag_fn(std::move(set_play_flag_fn))
         , get_play_flag_fn(std::move(get_play_flag_fn))
@@ -80,6 +83,7 @@ struct Renderer::Impl
     std::string texture_asset_dir;
     std::string shader_asset_dir;
     std::string model_asset_dir;
+    std::string ui_asset_dir;
     std::string afa_asset_dir;
 
     std::function<void(bool)> set_play_flag_fn;
@@ -392,6 +396,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
                    std::string const& model_asset_dir,
+                   std::string const& ui_asset_dir,
                    std::string const& afa_asset_dir,
                    std::string const& animator_asset_dir,
                    std::function<void(bool)>&& set_play_flag_fn,
@@ -402,6 +407,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                                      texture_asset_dir,
                                      shader_asset_dir,
                                      model_asset_dir,
+                                     ui_asset_dir,
                                      afa_asset_dir,
                                      animator_asset_dir,
                                      std::move(set_play_flag_fn),
@@ -418,6 +424,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
     // Small setup of auxiliary systems.
     Shader_Creation::set_shader_directory(m_pimpl->shader_asset_dir);
     set_model_directory(m_pimpl->model_asset_dir);
+    set_ui_directory(m_pimpl->ui_asset_dir);
 
     // Add self as service.
     BT_SERVICE_FINDER_ADD_SERVICE(Renderer, this);
@@ -482,6 +489,9 @@ void Renderer::build()
 
     // Load textures.
     g.load_texture_assets(m.texture_asset_dir, std::move(*m.texture_assets.scoped_lock()));
+
+    // Setup UI state links.
+    set_ui_gfx_reference(g.get_impl());
 
     // Create shaders.
     // @TODO: @THINK: perhaps these shaders could be under an abstract class if there's a similar
@@ -558,7 +568,7 @@ void Renderer::poll_input_events()
     g.poll_input_events();
 }
 
-void Renderer::render_one_frame(float_t delta_time)
+void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 {
     auto& m{ *m_pimpl };
     auto& g{ *m.graphics };
@@ -690,14 +700,15 @@ void Renderer::render_one_frame(float_t delta_time)
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        if (is_main_cam_matrix)
+        bool render_ui{ ui_state != nullptr && is_main_cam_matrix };
+        if (render_ui)
         {
             g.begin_rendering_ui();
-            g.render_ui();
+            g.render_ui(*ui_state);
             g.end_rendering_ui();
         }
 
-        g.render_hdr_to_ldr_postprocessing(render_view_idx, is_main_cam_matrix, g.LDR_TARGET_IMGUI);
+        g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
 
         render_view_idx++;
     }

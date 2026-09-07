@@ -1849,7 +1849,7 @@ void Graphics::Impl::end_rendering()
     vkCmdEndRendering(get_current_frame().graphics_queue_command_buffer.get());
 }
 
-void Graphics::Impl::render_ui()
+void Graphics::Impl::render_ui(UI_state const& ui_state)
 {
     // @TODO: do stuff here.
     assert(false);
