@@ -190,6 +190,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/ui/ui_state.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer_public.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_driven_hitcapsule/hitcapsule.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/_dev_animation_frame_action_editor.cpp
@@ -269,6 +270,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/ui_state.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/ui_types.h
 )
 
 # Support source files.
