@@ -139,6 +139,10 @@ private:
     std::vector<std::string> m_loaded_canvases;
     std::vector<std::string> m_loaded_persistent_canvases;
 
+    static void load_canvas(UI_canvas_state& canvas_state,
+                            std::string const& canvas_name,
+                            bool const is_persistent);
+
     static void unload_canvas(UI_canvas_state& canvas_state,
                               std::string const& canvas_name,
                               std::vector<std::string>& loaded_canvases_list);
