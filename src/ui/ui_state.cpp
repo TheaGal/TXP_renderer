@@ -40,7 +40,9 @@ void set_ui_gfx_reference(void* graphics)
 {
 #if TXP_GFX_BACKEND_VULKAN
     s_gfx = static_cast<TXP::Graphics::Impl*>(graphics);
-#endif // TXP_GFX_BACKEND_VULKAN
+#else // ^^ TXP_GFX_BACKEND_VULKAN / UNKNOWN_TYPE vv
+    #error Unknown GFX type.
+#endif // UNKNOWN_TYPE
 }
 
 // class UI_element_state
@@ -134,14 +136,18 @@ void UI_state::tick()
 {
     for (auto&& [action_type, canvas_name] : m_staged_actions)
     {
-        assert_that_canvas_exists(m_canvas_states, canvas_name);
-        auto& my_canvas{ m_canvas_states.at(canvas_name) };
+        UI_canvas_state* canvas_state_ptr{ nullptr };
+        if (!canvas_name.empty())
+        {
+            assert_that_canvas_exists(m_canvas_states, canvas_name);
+            canvas_state_ptr = &m_canvas_states.at(canvas_name);
+        }
 
         switch (action_type)
         {
         case Stage_action::LOAD_CANVAS_TO_FRONT:
         {
-            load_canvas(my_canvas, canvas_name, false);
+            load_canvas(*canvas_state_ptr, canvas_name, false, m_loaded_canvases);
             break;
         }
 
@@ -161,18 +167,18 @@ void UI_state::tick()
 
         case Stage_action::LOAD_PERSISTENT_CANVAS:
         {
-            load_canvas(my_canvas, canvas_name, true);
+            load_canvas(*canvas_state_ptr, canvas_name, true, m_loaded_persistent_canvases);
             break;
         }
 
         case Stage_action::UNLOAD_PERSISTENT_CANVAS:
         {
-            if (!my_canvas.is_persistent())
+            if (!canvas_state_ptr->is_persistent())
             {
                 throw std::runtime_error("Wrong unload function.");
             }
 
-            unload_canvas(my_canvas, canvas_name, m_loaded_persistent_canvases);
+            unload_canvas(*canvas_state_ptr, canvas_name, m_loaded_persistent_canvases);
             break;
         }
 
@@ -199,7 +205,8 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
 
 /*static*/ void UI_state::load_canvas(UI_canvas_state& canvas_state,
                                       std::string const& canvas_name,
-                                      bool const is_persistent)
+                                      bool const is_persistent,
+                                      std::vector<std::string>& loaded_canvases_list)
 {
     if (canvas_state.is_loaded())
     {
@@ -271,7 +278,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     }
 
     // Add to list.
-    (is_persistent ? m_loaded_persistent_canvases : m_loaded_canvases).emplace_back(canvas_name);
+    loaded_canvases_list.emplace_back(canvas_name);
 }
 
 /*static*/ void UI_state::unload_canvas(UI_canvas_state& canvas_state,

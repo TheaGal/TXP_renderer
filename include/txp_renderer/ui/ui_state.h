@@ -141,7 +141,8 @@ private:
 
     static void load_canvas(UI_canvas_state& canvas_state,
                             std::string const& canvas_name,
-                            bool const is_persistent);
+                            bool const is_persistent,
+                            std::vector<std::string>& loaded_canvases_list);
 
     static void unload_canvas(UI_canvas_state& canvas_state,
                               std::string const& canvas_name,
