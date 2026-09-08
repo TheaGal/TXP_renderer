@@ -82,6 +82,27 @@ UI_canvas_state& UI_state::canvas(std::string const& canvas_name)
     return m_canvas_states.at(canvas_name);
 }
 
+void UI_state::load_canvas_to_front(std::string const& canvas_name)
+{
+    m_staged_actions.emplace_back(Stage_action::LOAD_CANVAS_TO_FRONT, canvas_name);
+}
+
+void UI_state::unload_front_canvas()
+{
+    m_staged_actions.emplace_back(Stage_action::UNLOAD_FRONT_CANVAS, "");
+}
+
+void UI_state::load_persistent_canvas(std::string const& canvas_name)
+{
+    m_staged_actions.emplace_back(Stage_action::LOAD_PERSISTENT_CANVAS, canvas_name);
+}
+
+void UI_state::unload_persistent_canvas(std::string const& canvas_name)
+{
+    m_staged_actions.emplace_back(Stage_action::UNLOAD_PERSISTENT_CANVAS, canvas_name);
+}
+
+
 namespace
 {
 
@@ -108,25 +129,6 @@ UI::UI_file_data load_file_data(std::string const& file_name)
 
 } // namespace
 
-void UI_state::load_canvas_to_front(std::string const& canvas_name)
-{
-    m_staged_actions.emplace_back(Stage_action::LOAD_CANVAS_TO_FRONT, canvas_name);
-}
-
-void UI_state::unload_front_canvas()
-{
-    m_staged_actions.emplace_back(Stage_action::UNLOAD_FRONT_CANVAS, "");
-}
-
-void UI_state::load_persistent_canvas(std::string const& canvas_name)
-{
-    m_staged_actions.emplace_back(Stage_action::LOAD_PERSISTENT_CANVAS, canvas_name);
-}
-
-void UI_state::unload_persistent_canvas(std::string const& canvas_name)
-{
-    m_staged_actions.emplace_back(Stage_action::UNLOAD_PERSISTENT_CANVAS, canvas_name);
-}
 
 void UI_state::tick()
 {
