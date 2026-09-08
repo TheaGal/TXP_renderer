@@ -219,6 +219,9 @@ void UI_state::tick()
                     elem_state.m_loaded_elem = &my_elem;
                 }
             }
+
+            // Add to list.
+            m_loaded_persistent_canvases.emplace_back(canvas_name);
             break;
         }
 
@@ -247,6 +250,12 @@ void UI_state::tick()
 
                 elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
             }
+
+            // Remove from list.
+            m_loaded_persistent_canvases.erase(std::remove(m_loaded_persistent_canvases.begin(),
+                                                           m_loaded_persistent_canvases.end(),
+                                                           canvas_name),
+                                               m_loaded_persistent_canvases.end());
             break;
         }
 
