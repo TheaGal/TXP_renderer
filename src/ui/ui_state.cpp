@@ -135,7 +135,7 @@ void UI_state::tick()
     for (auto&& [action_type, canvas_name] : m_staged_actions)
     {
         assert_that_canvas_exists(m_canvas_states, canvas_name);
-        auto& my_canvas{ canvas(canvas_name) };
+        auto& my_canvas{ m_canvas_states.at(canvas_name) };
 
         switch (action_type)
         {
@@ -147,7 +147,15 @@ void UI_state::tick()
 
         case Stage_action::UNLOAD_FRONT_CANVAS:
         {
-            assert(false);
+            std::string const& frontmost_canvas_name{ m_loaded_canvases.back() };
+            auto& frontmost_canvas{ m_canvas_states.at(frontmost_canvas_name) };
+
+            if (frontmost_canvas.is_persistent())
+            {
+                throw std::runtime_error("Wrong unload function.");
+            }
+
+            unload_canvas(frontmost_canvas, frontmost_canvas_name, m_loaded_canvases);
             break;
         }
 
@@ -229,35 +237,12 @@ void UI_state::tick()
 
         case Stage_action::UNLOAD_PERSISTENT_CANVAS:
         {
-            if (!my_canvas.is_loaded() || !my_canvas.is_persistent())
+            if (!my_canvas.is_persistent())
             {
                 throw std::runtime_error("Wrong unload function.");
             }
 
-            // Set flags.
-            my_canvas.m_is_loaded = false;
-            my_canvas.m_is_persistent = false;
-            my_canvas.m_load_idx = -1;
-
-            // Remove loaded data.
-            my_canvas.m_elems->clear();
-
-            for (auto&& [_, elem_state] : my_canvas.m_elem_states_map)
-            {
-                if (elem_state.m_loaded_elem == nullptr)
-                {
-                    throw std::runtime_error(
-                        "Trying to unload something that was never loaded or collision?!?");
-                }
-
-                elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
-            }
-
-            // Remove from list.
-            m_loaded_persistent_canvases.erase(std::remove(m_loaded_persistent_canvases.begin(),
-                                                           m_loaded_persistent_canvases.end(),
-                                                           canvas_name),
-                                               m_loaded_persistent_canvases.end());
+            unload_canvas(my_canvas, canvas_name, m_loaded_persistent_canvases);
             break;
         }
 
@@ -280,6 +265,40 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     }
 
     return render_ui_elems;
+}
+
+/*static*/ void UI_state::unload_canvas(UI_canvas_state& canvas_state,
+                                        std::string const& canvas_name,
+                                        std::vector<std::string>& loaded_canvases_list)
+{
+    if (!canvas_state.is_loaded())
+    {
+        throw std::runtime_error("Trying to unload already unloaded canvas.");
+    }
+
+    // Set flags.
+    canvas_state.m_is_loaded = false;
+    canvas_state.m_is_persistent = false;
+    canvas_state.m_load_idx = -1;
+
+    // Remove loaded data.
+    canvas_state.m_elems->clear();
+
+    for (auto&& [_, elem_state] : canvas_state.m_elem_states_map)
+    {
+        if (elem_state.m_loaded_elem == nullptr)
+        {
+            throw std::runtime_error(
+                "Trying to unload something that was never loaded or collision?!?");
+        }
+
+        elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
+    }
+
+    // Remove from list.
+    loaded_canvases_list.erase(
+        std::remove(loaded_canvases_list.begin(), loaded_canvases_list.end(), canvas_name),
+        loaded_canvases_list.end());
 }
 
 } // namespace TXP
