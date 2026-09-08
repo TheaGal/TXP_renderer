@@ -41,6 +41,8 @@
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
+#include "txp_renderer/ui/ui_state.h"
+#include "ui/ui_types.h"
 
 #include <array>
 #include <cassert>
@@ -1851,8 +1853,11 @@ void Graphics::Impl::end_rendering()
 
 void Graphics::Impl::render_ui(UI_state const& ui_state)
 {
-    // @TODO: do stuff here.
-    assert(false);
+    for (UI::UI_element* elem : ui_state.gather_rendering_ui_elements_in_render_order())
+    {
+        // @TODO: do stuff here.
+        assert(false);
+    }
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,

@@ -116,6 +116,9 @@ public:
     /// right before `render_one_frame()`).
     void tick();
 
+    /// For rendering. Gathers all visible and drawing UI elements.
+    std::vector<UI::UI_element*> gather_rendering_ui_elements_in_render_order() const;
+
 private:
     std::unordered_map<std::string, UI_canvas_state> m_canvas_states;
 };

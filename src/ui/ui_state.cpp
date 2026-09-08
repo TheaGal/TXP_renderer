@@ -229,4 +229,10 @@ void UI_state::tick()
     assert(false);
 }
 
+std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_order() const
+{
+    std::vector<UI::UI_element*> render_ui_elems;
+    return render_ui_elems;
+}
+
 } // namespace TXP
