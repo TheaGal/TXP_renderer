@@ -110,128 +110,164 @@ UI::UI_file_data load_file_data(std::string const& file_name)
 
 void UI_state::load_canvas_to_front(std::string const& canvas_name)
 {
-    assert_that_canvas_exists(m_canvas_states, canvas_name);
+    m_staged_actions.emplace_back(Stage_action::LOAD_CANVAS_TO_FRONT, canvas_name);
 }
 
 void UI_state::unload_front_canvas()
 {
-    assert(false);
+    m_staged_actions.emplace_back(Stage_action::UNLOAD_FRONT_CANVAS, "");
 }
 
 void UI_state::load_persistent_canvas(std::string const& canvas_name)
 {
-    assert_that_canvas_exists(m_canvas_states, canvas_name);
-
-    auto& my_canvas{ canvas(canvas_name) };
-
-    if (my_canvas.is_loaded())
-    {
-        throw std::runtime_error("Canvas is already loaded.");
-    }
-
-    // Set flags.
-    my_canvas.m_is_loaded = true;
-    my_canvas.m_is_persistent = true;
-    my_canvas.m_load_idx = 0;
-
-    // Load in canvas.
-    UI::UI_file_data ui_file_data{ load_file_data(canvas_name) };
-
-    std::unordered_map<std::string, uint32_t> temp_elem_name_to_idx;
-    temp_elem_name_to_idx.reserve(ui_file_data.elements.size());
-
-    auto& my_elems{ *my_canvas.m_elems };
-
-    my_elems.clear();
-    my_elems.reserve(ui_file_data.elements.size());
-
-    for (auto& file_elem : ui_file_data.elements)
-    {
-        temp_elem_name_to_idx[file_elem.name] = my_elems.size();
-
-        my_elems.emplace_back(UI::UI_element{
-            .name = file_elem.name,
-            .parent = nullptr,  // Will fill in later.
-            .transform = file_elem.transform,
-            .opacity = file_elem.opacity,
-            .texture_idx =
-                static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
-        });
-
-        if (temp_elem_name_to_idx.size() != my_elems.size())
-            throw std::runtime_error("These sizes should be the same.");
-    }
-
-    if (my_elems.size() != ui_file_data.elements.size())
-        throw std::runtime_error("uh oh.");
-
-    // Build in parenting with elements.
-    for (size_t i = 0; i < my_elems.size(); i++)
-    {
-        auto& my_elem{ my_elems[i] };
-        auto& file_elem{ ui_file_data.elements[i] };
-
-        uint32_t parent_elem_idx{ temp_elem_name_to_idx.at(file_elem.parent) };
-        
-        my_elem.parent = &my_elems[parent_elem_idx];
-    }
-
-    // Fill in loaded element reference.
-    for (auto& my_elem : my_elems)
-    {
-        if (my_canvas.m_elem_states_map.find(my_elem.name) != my_canvas.m_elem_states_map.end())
-        {
-            auto& elem_state{ my_canvas.m_elem_states_map.at(my_elem.name) };
-
-            if (elem_state.m_loaded_elem != nullptr)
-            {
-                std::runtime_error("Reference unloading didn't happen or collision?!?!");
-            }
-
-            elem_state.m_loaded_elem = &my_elem;
-        }
-    }
+    m_staged_actions.emplace_back(Stage_action::LOAD_PERSISTENT_CANVAS, canvas_name);
 }
 
 void UI_state::unload_persistent_canvas(std::string const& canvas_name)
 {
-    assert_that_canvas_exists(m_canvas_states, canvas_name);
-
-    auto& my_canvas{ canvas(canvas_name) };
-
-    if (!my_canvas.is_loaded() || !my_canvas.is_persistent())
-    {
-        throw std::runtime_error("Wrong unload function.");
-    }
-
-    // Set flags.
-    my_canvas.m_is_loaded = false;
-    my_canvas.m_is_persistent = false;
-    my_canvas.m_load_idx = -1;
-
-    // Remove loaded data.
-    my_canvas.m_elems->clear();
-
-    for (auto&& [_, elem_state] : my_canvas.m_elem_states_map)
-    {
-        if (elem_state.m_loaded_elem == nullptr)
-        {
-            throw std::runtime_error(
-                "Trying to unload something that was never loaded or collision?!?");
-        }
-
-        elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
-    }
+    m_staged_actions.emplace_back(Stage_action::UNLOAD_PERSISTENT_CANVAS, canvas_name);
 }
 
 void UI_state::tick()
 {
-    assert(false);
+    for (auto&& [action_type, canvas_name] : m_staged_actions)
+    {
+        assert_that_canvas_exists(m_canvas_states, canvas_name);
+        auto& my_canvas{ canvas(canvas_name) };
+
+        switch (action_type)
+        {
+        case Stage_action::LOAD_CANVAS_TO_FRONT:
+        {
+            assert(false);
+            break;
+        }
+
+        case Stage_action::UNLOAD_FRONT_CANVAS:
+        {
+            assert(false);
+            break;
+        }
+
+        case Stage_action::LOAD_PERSISTENT_CANVAS:
+        {
+            if (my_canvas.is_loaded())
+            {
+                throw std::runtime_error("Canvas is already loaded.");
+            }
+
+            // Set flags.
+            my_canvas.m_is_loaded = true;
+            my_canvas.m_is_persistent = true;
+            my_canvas.m_load_idx = 0;
+
+            // Load in canvas.
+            UI::UI_file_data ui_file_data{ load_file_data(canvas_name) };
+
+            std::unordered_map<std::string, uint32_t> temp_elem_name_to_idx;
+            temp_elem_name_to_idx.reserve(ui_file_data.elements.size());
+
+            auto& my_elems{ *my_canvas.m_elems };
+
+            my_elems.clear();
+            my_elems.reserve(ui_file_data.elements.size());
+
+            for (auto& file_elem : ui_file_data.elements)
+            {
+                temp_elem_name_to_idx[file_elem.name] = my_elems.size();
+
+                my_elems.emplace_back(UI::UI_element{
+                    .name = file_elem.name,
+                    .parent = nullptr,  // Will fill in later.
+                    .transform = file_elem.transform,
+                    .opacity = file_elem.opacity,
+                    .texture_idx =
+                        static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
+                });
+
+                if (temp_elem_name_to_idx.size() != my_elems.size())
+                    throw std::runtime_error("These sizes should be the same.");
+            }
+
+            if (my_elems.size() != ui_file_data.elements.size())
+                throw std::runtime_error("uh oh.");
+
+            // Build in parenting with elements.
+            for (size_t i = 0; i < my_elems.size(); i++)
+            {
+                auto& my_elem{ my_elems[i] };
+                auto& file_elem{ ui_file_data.elements[i] };
+
+                uint32_t parent_elem_idx{ temp_elem_name_to_idx.at(file_elem.parent) };
+
+                my_elem.parent = &my_elems[parent_elem_idx];
+            }
+
+            // Fill in loaded element reference.
+            for (auto& my_elem : my_elems)
+            {
+                if (my_canvas.m_elem_states_map.find(my_elem.name) !=
+                    my_canvas.m_elem_states_map.end())
+                {
+                    auto& elem_state{ my_canvas.m_elem_states_map.at(my_elem.name) };
+
+                    if (elem_state.m_loaded_elem != nullptr)
+                    {
+                        std::runtime_error("Reference unloading didn't happen or collision?!?!");
+                    }
+
+                    elem_state.m_loaded_elem = &my_elem;
+                }
+            }
+            break;
+        }
+
+        case Stage_action::UNLOAD_PERSISTENT_CANVAS:
+        {
+            if (!my_canvas.is_loaded() || !my_canvas.is_persistent())
+            {
+                throw std::runtime_error("Wrong unload function.");
+            }
+
+            // Set flags.
+            my_canvas.m_is_loaded = false;
+            my_canvas.m_is_persistent = false;
+            my_canvas.m_load_idx = -1;
+
+            // Remove loaded data.
+            my_canvas.m_elems->clear();
+
+            for (auto&& [_, elem_state] : my_canvas.m_elem_states_map)
+            {
+                if (elem_state.m_loaded_elem == nullptr)
+                {
+                    throw std::runtime_error(
+                        "Trying to unload something that was never loaded or collision?!?");
+                }
+
+                elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
+            }
+            break;
+        }
+
+        default: assert(false); break;
+        }
+    }
+    m_staged_actions.clear();
 }
 
 std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_order() const
 {
     std::vector<UI::UI_element*> render_ui_elems;
+
+    // Add UI elements back to front.
+    for (auto const& loaded_canvases_list : { m_loaded_canvases, m_loaded_persistent_canvases })
+    {
+        for (auto const& canvas_name : loaded_canvases_list)
+            for (auto& elem : *m_canvas_states.at(canvas_name).m_elems)
+                render_ui_elems.emplace_back(&elem);
+    }
+
     return render_ui_elems;
 }
 

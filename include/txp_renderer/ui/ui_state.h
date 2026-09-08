@@ -121,6 +121,23 @@ public:
 
 private:
     std::unordered_map<std::string, UI_canvas_state> m_canvas_states;
+
+    struct Stage_action
+    {
+        enum Stage_action_type
+        {
+            LOAD_CANVAS_TO_FRONT,
+            UNLOAD_FRONT_CANVAS,
+            LOAD_PERSISTENT_CANVAS,
+            UNLOAD_PERSISTENT_CANVAS,
+        } type;
+
+        std::string canvas_name;
+    };
+    std::vector<Stage_action> m_staged_actions;
+
+    std::vector<std::string> m_loaded_canvases;
+    std::vector<std::string> m_loaded_persistent_canvases;
 };
 
 } // namespace TXP
