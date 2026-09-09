@@ -54,8 +54,6 @@ private:
 class UI_canvas_state
 {
 public:
-    ~UI_canvas_state();
-
     /// Gets or emplaces an element state.
     UI_element_state& elem(std::string const& elem_name);
 
@@ -73,7 +71,7 @@ public:
     }
 
 private:
-    UI_canvas_state();
+    UI_canvas_state() = default;
 
     std::string m_name;  // needed?
 
@@ -82,8 +80,15 @@ private:
     int32_t m_load_idx{ -1 };
 
     std::unordered_map<std::string, UI_element_state> m_elem_states_map;
-    std::vector<UI::UI_element>* m_elems;  // manual ctor/dtor action.
 
+    struct UI_element_pun
+    {
+        uint64_t pad[7];
+    };
+    std::vector<UI_element_pun> m_elems;  // punned into UI::UI_element type (static assert fails if
+                                          // types are not identical).
+
+    friend class std::unordered_map<std::string, UI_canvas_state>;
     friend class UI_state;
 };
 

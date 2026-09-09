@@ -13,6 +13,7 @@
 #include <fstream>
 #include <stdexcept>
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -58,21 +59,17 @@ void UI_element_state::add_event(UI_event event_type, std::function<void(void)>&
 
 
 // class UI_canvas_state
-UI_canvas_state::~UI_canvas_state()
-{
-    delete m_elems;
-}
-
 UI_element_state& UI_canvas_state::elem(std::string const& elem_name)
 {
+    static_assert(sizeof(UI_element_pun) == sizeof(UI::UI_element),
+                  "Pun type and actual type must be the same size");
+    static_assert(std::alignment_of<UI_element_pun>::value ==
+                      std::alignment_of<UI::UI_element>::value,
+                  "Pun type and actual type must be the same alignment");
+
     if (m_elem_states_map.find(elem_name) == m_elem_states_map.end())
         m_elem_states_map.emplace(elem_name, UI_element_state{});
     return m_elem_states_map.at(elem_name);
-}
-
-UI_canvas_state::UI_canvas_state()
-    : m_elems(new std::vector<UI::UI_element>())
-{
 }
 
 
@@ -120,7 +117,7 @@ void assert_that_canvas_exists(
 
 UI::UI_file_data load_file_data(std::string const& file_name)
 {
-    std::ifstream f{ file_name };
+    std::ifstream f{ s_ui_directory + file_name };
     if (!f.is_open())
     {
         throw std::runtime_error("Opening file failed.");
@@ -196,8 +193,9 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     for (auto const& loaded_canvases_list : { m_loaded_canvases, m_loaded_persistent_canvases })
     {
         for (auto const& canvas_name : loaded_canvases_list)
-            for (auto& elem : *m_canvas_states.at(canvas_name).m_elems)
-                render_ui_elems.emplace_back(&elem);
+            for (auto& elem : m_canvas_states.at(canvas_name).m_elems)
+                render_ui_elems.emplace_back(reinterpret_cast<UI::UI_element*>(
+                    const_cast<UI_canvas_state::UI_element_pun*>(&elem)));
     }
 
     return render_ui_elems;
@@ -224,7 +222,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     std::unordered_map<std::string, uint32_t> temp_elem_name_to_idx;
     temp_elem_name_to_idx.reserve(ui_file_data.elements.size());
 
-    auto& my_elems{ *canvas_state.m_elems };
+    auto& my_elems{ reinterpret_cast<std::vector<UI::UI_element>&>(canvas_state.m_elems) };
 
     my_elems.clear();
     my_elems.reserve(ui_file_data.elements.size());
@@ -255,9 +253,15 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
         auto& my_elem{ my_elems[i] };
         auto& file_elem{ ui_file_data.elements[i] };
 
-        uint32_t parent_elem_idx{ temp_elem_name_to_idx.at(file_elem.parent) };
-
-        my_elem.parent = &my_elems[parent_elem_idx];
+        if (temp_elem_name_to_idx.find(file_elem.parent) != temp_elem_name_to_idx.end())
+        {
+            uint32_t parent_elem_idx{ temp_elem_name_to_idx.at(file_elem.parent) };
+            my_elem.parent = &my_elems[parent_elem_idx];
+        }
+        else
+        {
+            my_elem.parent = nullptr;
+        }
     }
 
     // Fill in loaded element reference.
@@ -296,7 +300,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     canvas_state.m_load_idx = -1;
 
     // Remove loaded data.
-    canvas_state.m_elems->clear();
+    canvas_state.m_elems.clear();
 
     for (auto&& [_, elem_state] : canvas_state.m_elem_states_map)
     {
