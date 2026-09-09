@@ -1853,8 +1853,10 @@ void Graphics::Impl::end_rendering()
 
 void Graphics::Impl::render_ui(UI_state const& ui_state)
 {
-    for (UI::UI_element* elem : ui_state.gather_rendering_ui_elements_in_render_order())
+    auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
+    for (UI::UI_element* elem : render_order_elem_list)
     {
+
         // @TODO: do stuff here.
         assert(false);
     }

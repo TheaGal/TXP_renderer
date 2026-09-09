@@ -45,7 +45,7 @@ struct UI_element
 {
     std::string name;
     UI_element* parent{ nullptr };
-    Rect_transform transform;
+    Rect_transform transform;  // global transform.
     float_t opacity;
     uint32_t texture_idx;
 };

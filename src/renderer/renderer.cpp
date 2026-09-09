@@ -703,6 +703,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         bool render_ui{ ui_state != nullptr && is_main_cam_matrix };
         if (render_ui)
         {
+            // @TODO: only re-render if the cache of the canvas got invalidated.
+            BT::date_deadline(2026, 9, 13);
+
             g.begin_rendering_ui();
             g.render_ui(*ui_state);
             g.end_rendering_ui();
