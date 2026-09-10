@@ -260,6 +260,8 @@ struct Graphics::Impl
 
         Vk_Buffer::Allocated_buffer per_instance_data_collection_buffer;
         Vk_Buffer::Allocated_buffer model_transform_set_buffer;
+
+        Vk_Buffer::Allocated_buffer ui_data_set_buffer;
     };
     std::array<Frame_data, k_frame_overlap> frames;
 
@@ -585,7 +587,7 @@ struct Graphics::Impl
     void end_rendering();
 
     /// Renders UI elements to UI texture.
-    void render_ui(UI_state const& ui_state);
+    void render_ui(UI_state const& ui_state, Render_model_data_collection const& data_collection);
 
     void blit_image(Vk_Image::Image& from_image,
                     VkExtent3D from_extent,
