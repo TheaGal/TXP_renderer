@@ -6,7 +6,6 @@
 
 #include "btglm.h"
 #include "btlogger.h"
-#include "material_organizer/material_organizer.h"
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
@@ -15,6 +14,7 @@
 #include "shader/shader_support.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/ui/ui_state.h"
+#include "ui/ui_types.h"
 #include "vulkan/vulkan_core.h"
 
 #include <array>
@@ -54,17 +54,12 @@ struct Shader_sprite_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
 // struct Shader_sprite::Impl
 struct Shader_sprite::Impl
 {
-    Impl(TXP::Material_organizer& mat_coll,
-         TXP::Render_model_data_collection& rend_mod_data_coll,
-         TXP::Graphics::Impl& graphics)
-        : material_organizer(mat_coll)
-        , render_model_data_collection(rend_mod_data_coll)
+    Impl(TXP::Render_model_data_collection& rend_mod_data_coll, TXP::Graphics::Impl& graphics)
+        : render_model_data_collection(rend_mod_data_coll)
         , g(graphics)
         , device(g.gfx.device)
         , allocator(g.gfx.allocator)
     {
-        material_organizer.emplace_shader(k_name);
-
         Shader_Support::fetch_graphics_shader_info(k_name,
                                                    vertex_entry_point_name,
                                                    fragment_entry_point_name);
@@ -227,11 +222,9 @@ struct Shader_sprite::Impl
     {
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
-        material_param_set_collection_buffer.destroy();
     }
 
 
-    TXP::Material_organizer& material_organizer;
     TXP::Render_model_data_collection& render_model_data_collection;
 
     TXP::Graphics::Impl& g;
@@ -251,140 +244,42 @@ struct Shader_sprite::Impl
 
 
 // class Shader_sprite
-Shader_sprite::Shader_sprite(
-    Material_organizer& material_organizer,
-    Render_model_data_collection& render_model_data_collection,
-    void* graphics)
-    : m_pimpl(std::make_unique<Impl>(material_organizer,
-                                     render_model_data_collection,
+Shader_sprite::Shader_sprite(Render_model_data_collection& render_model_data_collection,
+                             void* graphics)
+    : m_pimpl(std::make_unique<Impl>(render_model_data_collection,
                                      *static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
 Shader_sprite::~Shader_sprite() = default;
 
-void Shader_sprite::make_material(
-    std::string const& material_name,
-    std::unordered_map<std::string, std::string> const& shader_params)
+void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 {
-    gpu_type::Material_param_set new_param_set;
 
-    for (auto& [param_key, param_val] : shader_params)
-    {
-        if (param_key == "texture0")
-        {
-            new_param_set.texture0_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
-        }
-        else
-            BT_WARNF("Unknown shader param: %s", param_key.c_str());
-    }
-    if (shader_params.size() != 1)
-        throw std::runtime_error("Wrong number of shader params.");
-
-    m_pimpl->material_name_to_idx_map.emplace(material_name, m_pimpl->material_param_sets.size());
-    m_pimpl->material_param_sets.emplace_back(std::move(new_param_set));
-
-    m_pimpl->material_organizer.emplace_material(material_name, k_name);
-}
-
-void Shader_sprite::organize_materials()
-{
-    if (m_pimpl->material_param_sets.empty())
-    {
-        BT_WARN("There are no materials registered with this shader.");
-        return;
-    }
-
-    // Create buffer.
-    m_pimpl->material_param_set_collection_buffer.create(
-        m_pimpl->device,
-        m_pimpl->allocator,
-        sizeof(gpu_type::Material_param_set) * m_pimpl->material_param_sets.size(),
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-        VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-            VMA_ALLOCATION_CREATE_MAPPED_BIT);
-
-    // Upload data.
-    char* buffer_addr{ static_cast<char*>(
-        m_pimpl->material_param_set_collection_buffer.get_p_mapped_data()) };
-
-    for (auto const& mat_params : m_pimpl->material_param_sets)
-    {
-        std::memcpy(buffer_addr, &mat_params, sizeof(mat_params));
-        buffer_addr += sizeof(mat_params);
-    }
-}
-
-void Shader_sprite::allocate_per_instance_data_slots(
-    std::vector<Render_object> const& render_object_list,
-    std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
-    size_t& in_out_cur_modmesh_ref_idx)
-{
-    m_pimpl->draw_inst_list_start_end.front() = in_out_cur_modmesh_ref_idx;
-
-    uint16_t render_obj_idx{ 0 };
-    for (auto const& rend_obj : render_object_list)
-    {
-        auto rend_model_idx{
-            m_pimpl->render_model_data_collection.translate_to_static_model_data_set_idx(
-                rend_obj.render_model_idx)
-        };
-
-        // Find number of instances needed for the model.
-        auto const& model{ m_pimpl->render_model_data_collection.get_static_model_data_set(
-            rend_model_idx) };
-        size_t num_meshes_in_model{ model.meshes.size() };
-
-        // Collect meshes for this shader.
-        bool use_all_meshes{ rend_obj.sub_mesh_idx == (uint16_t)-1 };
-
-        auto this_shader_id{ m_pimpl->material_organizer.get_shader_id(k_name) };
-        auto const& material_palette{ m_pimpl->material_organizer.get_material_palette(
-            rend_obj.material_palette_idx) };
-
-        for (size_t mesh_idx = (use_all_meshes ? 0 : rend_obj.sub_mesh_idx);
-             mesh_idx < num_meshes_in_model;
-             mesh_idx++)
-        {
-            auto const& material{ material_palette.at(mesh_idx) };
-            if (material.shader_id == this_shader_id)
-            {   // Uses this shader!
-                auto& modmesh_ref_entry{ out_model_mesh_ref_list[in_out_cur_modmesh_ref_idx++] };
-                modmesh_ref_entry.render_obj_idx = render_obj_idx;
-                modmesh_ref_entry.model_mesh_idx = mesh_idx;
-            }
-
-            if (!use_all_meshes)
-                break;
-        }
-
-        render_obj_idx++;
-    }
-
-    m_pimpl->draw_inst_list_start_end.back() = in_out_cur_modmesh_ref_idx;
 }
 
 void Shader_sprite::draw(UI_state const& ui_state)
 {
-    auto& p{ *m_pimpl };
-    if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
-        return;  // Nothing to draw. Exit early.
+    auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
+    if (render_order_elem_list.empty())
+        return;
 
-    auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
+    auto& p{ *m_pimpl };
 
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    // Render.
-    VkViewport viewport{ .width = static_cast<float>(render_view.color_image.get_extent().width),
-                         .height = static_cast<float>(render_view.color_image.get_extent().height),
+    // Setup render.
+    uint32_t image_width{ p.g.ui_image.get_extent().width };
+    uint32_t image_height{ p.g.ui_image.get_extent().height };
+
+    VkViewport viewport{ .width = static_cast<float_t>(image_width),
+                         .height = static_cast<float_t>(image_height),
                          .minDepth = 0.0f,
                          .maxDepth = 1.0f };
     vkCmdSetViewport(cmd, 0, 1, &viewport);
 
-    VkRect2D scissor{ .extent{ .width = render_view.color_image.get_extent().width,
-                               .height = render_view.color_image.get_extent().height } };
+    VkRect2D scissor{ .extent{ .width = image_width, .height = image_height } };
     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
@@ -397,15 +292,7 @@ void Shader_sprite::draw(UI_state const& ui_state)
 
 
     Shader_sprite_push_constants push_consts{
-        .environment_data_dev_addr =
-            current_frame.environment_data_buffers[render_view.render_view_idx]
-                .get_device_address(),
-        .per_instance_data_collection_dev_addr =
-            current_frame.per_instance_data_collection_buffer.get_device_address(),
-        .model_transform_set_dev_addr =
-            current_frame.model_transform_set_buffer.get_device_address(),
-        .material_param_set_collection_dev_addr =
-            p.material_param_set_collection_buffer.get_device_address(),
+        .ui_data_set_dev_addr = current_frame.ui_data_set_buffer.get_device_address(),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
@@ -414,51 +301,30 @@ void Shader_sprite::draw(UI_state const& ui_state)
                        sizeof(Shader_sprite_push_constants),
                        &push_consts);
 
-    // Combined model binding state.
-    int32_t bound_combined_model{ -1 };  // -1:unbound  0:static-model  1:deformed-model
-    int32_t num_combined_model_binding_changes{ 0 };
+    p.g.combined_static_model.bind(cmd);
 
     // Render instances.
-    for (auto using_static_model : { true, false })
+    uint32_t draw_instance{ 0 };
+
+    uint16_t nine_slice_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
+        "nine_slice_model") };
+    uint16_t unit_square_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
+        "unit_square_model") };
+
+    for (UI::UI_element* elem : render_order_elem_list)
     {
-        auto& using_model{ using_static_model ? p.g.combined_static_model
-                                              : p.g.combined_deformed_model };
-        bool bound_using_model{ false };
+        // Draw model for sprite.
+        auto const& model{ p.render_model_data_collection.get_static_model_data_set(
+            is_nine_slice_texture(elem->texture_idx) ? nine_slice_model_idx
+                                                     : unit_square_model_idx) };
+        vkCmdDrawIndexed(cmd,
+                         model.meshes[0].indices.size(),
+                         1,
+                         model.first_index_offsets[0],
+                         model.vertex_index_offset,
+                         draw_instance);
 
-        for (auto draw_instance = p.draw_inst_list_start_end.front();
-             draw_instance < p.draw_inst_list_start_end.back();
-             draw_instance++)
-        {
-            auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
-            auto const& rend_obj{ render_object_list[modmesh_ref.render_obj_idx] };
-
-            bool is_static_model{ p.render_model_data_collection.is_static_model_idx(
-                rend_obj.render_model_idx) };
-            
-            if (is_static_model != using_static_model)
-                continue;  // Skip this draw instance since wrong model bound rn.
-
-            // Bind combined model if not done so already.
-            if (!bound_using_model)
-            {
-                using_model.bind(cmd);
-                bound_using_model = true;
-            }
-
-            // Draw single model.
-            auto const& model{ is_static_model
-                                   ? p.render_model_data_collection.get_static_model_data_set(
-                                         rend_obj.render_model_idx)
-                                   : p.render_model_data_collection
-                                         .get_deformed_model_data_set(rend_obj.render_model_idx)
-                                         .deformed_model };
-            vkCmdDrawIndexed(cmd,
-                             model.meshes[modmesh_ref.model_mesh_idx].indices.size(),
-                             1,
-                             model.first_index_offsets[modmesh_ref.model_mesh_idx],
-                             model.vertex_index_offset,
-                             draw_instance);
-        }
+        draw_instance++;
     }
 }
 

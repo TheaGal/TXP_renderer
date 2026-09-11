@@ -1854,73 +1854,73 @@ void Graphics::Impl::end_rendering()
 void Graphics::Impl::render_ui(UI_state const& ui_state,
                                Render_model_data_collection const& data_collection)
 {
-    auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
+    // auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
 
-    auto& current_frame{ get_current_frame() };
-    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+    // auto& current_frame{ get_current_frame() };
+    // auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
-    if (!render_order_elem_list.empty())
-    {
-        // Setup render.
-        uint32_t image_width{ ui_image.get_extent().width };
-        uint32_t image_height{ ui_image.get_extent().height };
+    // if (!render_order_elem_list.empty())
+    // {
+    //     // Setup render.
+    //     uint32_t image_width{ ui_image.get_extent().width };
+    //     uint32_t image_height{ ui_image.get_extent().height };
 
-        VkViewport viewport{ .width = static_cast<float_t>(image_width),
-                             .height = static_cast<float_t>(image_height),
-                             .minDepth = 0.0f,
-                             .maxDepth = 1.0f };
-        vkCmdSetViewport(cmd, 0, 1, &viewport);
+    //     VkViewport viewport{ .width = static_cast<float_t>(image_width),
+    //                          .height = static_cast<float_t>(image_height),
+    //                          .minDepth = 0.0f,
+    //                          .maxDepth = 1.0f };
+    //     vkCmdSetViewport(cmd, 0, 1, &viewport);
 
-        VkRect2D scissor{ .extent{ .width = image_width, .height = image_height } };
-        vkCmdSetScissor(cmd, 0, 1, &scissor);
+    //     VkRect2D scissor{ .extent{ .width = image_width, .height = image_height } };
+    //     vkCmdSetScissor(cmd, 0, 1, &scissor);
 
-        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
-        vkCmdBindDescriptorSets(cmd,
-                                VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                p.shader_pipeline.pipeline_layout,
-                                0,
-                                1,
-                                &p.g.all_textures_descriptor_set,
-                                0,
-                                nullptr);
+    //     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
+    //     vkCmdBindDescriptorSets(cmd,
+    //                             VK_PIPELINE_BIND_POINT_GRAPHICS,
+    //                             p.shader_pipeline.pipeline_layout,
+    //                             0,
+    //                             1,
+    //                             &p.g.all_textures_descriptor_set,
+    //                             0,
+    //                             nullptr);
 
 
-        struct Shader_ui_push_constants
-        {
-            VkDeviceAddress ui_data_set_dev_addr;
-        };
+    //     struct Shader_ui_push_constants
+    //     {
+    //         VkDeviceAddress ui_data_set_dev_addr;
+    //     };
 
-        Shader_ui_push_constants push_consts{
-            .ui_data_set_dev_addr = current_frame.ui_data_set_buffer.get_device_address(),
-        };
-        vkCmdPushConstants(cmd,
-                           p.shader_pipeline.pipeline_layout,
-                           VK_SHADER_STAGE_VERTEX_BIT,
-                           0,
-                           sizeof(Shader_ui_push_constants),
-                           &push_consts);
+    //     Shader_ui_push_constants push_consts{
+    //         .ui_data_set_dev_addr = current_frame.ui_data_set_buffer.get_device_address(),
+    //     };
+    //     vkCmdPushConstants(cmd,
+    //                        p.shader_pipeline.pipeline_layout,
+    //                        VK_SHADER_STAGE_VERTEX_BIT,
+    //                        0,
+    //                        sizeof(Shader_ui_push_constants),
+    //                        &push_consts);
 
-        combined_static_model.bind(cmd);
-    }
+    //     combined_static_model.bind(cmd);
+    // }
 
-    uint16_t nine_slice_model_idx{ data_collection.get_static_model_data_set_idx(
-        "nine_slice_model") };
-    uint16_t unit_square_model_idx{ data_collection.get_static_model_data_set_idx(
-        "unit_square_model") };
+    // uint16_t nine_slice_model_idx{ data_collection.get_static_model_data_set_idx(
+    //     "nine_slice_model") };
+    // uint16_t unit_square_model_idx{ data_collection.get_static_model_data_set_idx(
+    //     "unit_square_model") };
 
-    for (UI::UI_element* elem : render_order_elem_list)
-    {
-        // Draw model for UI.
-        auto const& model{ data_collection.get_static_model_data_set(
-            is_nine_slice_texture(elem->texture_idx) ? nine_slice_model_idx
-                                                     : unit_square_model_idx) };
-        vkCmdDrawIndexed(cmd,
-                         model.meshes[0].indices.size(),
-                         1,
-                         model.first_index_offsets[0],
-                         model.vertex_index_offset,
-                         0);
-    }
+    // for (UI::UI_element* elem : render_order_elem_list)
+    // {
+    //     // Draw model for UI.
+    //     auto const& model{ data_collection.get_static_model_data_set(
+    //         is_nine_slice_texture(elem->texture_idx) ? nine_slice_model_idx
+    //                                                  : unit_square_model_idx) };
+    //     vkCmdDrawIndexed(cmd,
+    //                      model.meshes[0].indices.size(),
+    //                      1,
+    //                      model.first_index_offsets[0],
+    //                      model.vertex_index_offset,
+    //                      0);
+    // }
 }
 
 void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
