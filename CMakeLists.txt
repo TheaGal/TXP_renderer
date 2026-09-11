@@ -265,6 +265,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_skinned_model.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_skinned_model_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_sprite.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_sprite_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_support.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_support.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
