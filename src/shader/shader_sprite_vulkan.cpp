@@ -9,7 +9,6 @@
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
-#include "renderer/gfx_vulkan/vk_structs.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader/shader_support.h"
 #include "shader_creation/shader_creation.h"
@@ -17,14 +16,12 @@
 #include "ui/ui_types.h"
 #include "vulkan/vulkan_core.h"
 
-#include <array>
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <memory>
 #include <stdexcept>
-#include <unordered_map>
 
 
 namespace TXP
@@ -36,10 +33,10 @@ namespace gpu_type
 namespace
 {
 
-/// Material parameters for this shader.
-struct Material_param_set
+/// Sprite params per instance.
+struct Sprite_data_set_element
 {
-    uint32_t texture0_idx;
+    uint32_t texture_idx;
 };
 
 }  // namespace
@@ -255,7 +252,22 @@ Shader_sprite::~Shader_sprite() = default;
 
 void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 {
+    auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
+    if (render_order_elem_list.empty())
+        return;
 
+    auto& p{ *m_pimpl };
+
+    // Upload sprite information to GPU.
+    auto* ui_data_set_data = static_cast<gpu_type::Sprite_data_set_element*>(
+        p.g.get_current_frame().ui_data_set_buffer.get_p_mapped_data());
+
+    for (UI::UI_element* elem : render_order_elem_list)
+    {
+        ui_data_set_data->texture_idx = elem->texture_idx;
+
+        ui_data_set_data++;
+    }
 }
 
 void Shader_sprite::draw(UI_state const& ui_state)
@@ -304,19 +316,29 @@ void Shader_sprite::draw(UI_state const& ui_state)
     p.g.combined_static_model.bind(cmd);
 
     // Render instances.
-    uint32_t draw_instance{ 0 };
-
     uint16_t nine_slice_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
         "nine_slice_model") };
     uint16_t unit_square_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
         "unit_square_model") };
 
+    uint32_t draw_instance{ 0 };
+
     for (UI::UI_element* elem : render_order_elem_list)
     {
+        static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
+
         // Draw model for sprite.
         auto const& model{ p.render_model_data_collection.get_static_model_data_set(
-            is_nine_slice_texture(elem->texture_idx) ? nine_slice_model_idx
-                                                     : unit_square_model_idx) };
+            s_is_nine_slice_texture_fn(elem->texture_idx) ? nine_slice_model_idx
+                                                          : unit_square_model_idx) };
+
+        if (model.meshes.size() != 1)
+        {
+            throw std::runtime_error("The model used must have only one mesh");
+        }
+
+        static_assert(false, "@THINKL perhaps, instead of using models for these there could just be a special case of a vertex mesh being constructed inside the vertex shader. It's only a square or a nine-slice thing, so it might just be super easy. Trying to transform for especially the nine-slice using traditional models would be super hard anyway.");
+
         vkCmdDrawIndexed(cmd,
                          model.meshes[0].indices.size(),
                          1,
