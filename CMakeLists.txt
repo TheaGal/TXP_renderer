@@ -162,6 +162,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/skinned_model.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/skinned_model.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/sprite.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/sprite.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/default_tex.ktx2
 )
 

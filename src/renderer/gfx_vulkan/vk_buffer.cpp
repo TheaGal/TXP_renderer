@@ -87,16 +87,19 @@ void Allocated_buffer::set_created_check(bool do_check)
 
 VkBuffer const& Allocated_buffer::get_buffer() const
 {
+    assert(m_created);
     return m_buffer;
 }
 
 void* Allocated_buffer::get_p_mapped_data()
 {
+    assert(m_created);
     return m_buffer_allocation_info.pMappedData;
 }
 
 VkDeviceAddress Allocated_buffer::get_device_address() const
 {
+    assert(m_created);
     return m_device_address;
 }
 

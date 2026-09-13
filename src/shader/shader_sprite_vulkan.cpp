@@ -1,5 +1,3 @@
-#include "btservice_finder.h"
-#include "camera/camera_internal.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 // clang-format off
@@ -38,9 +36,11 @@ namespace
 /// Sprite params per instance.
 struct Sprite_data_set_element
 {
+    mat4 model_mat;
     uint32_t texture_idx;
     uint32_t is_nine_slice;
-    mat4 model_mat;
+    uint32_t pad0;
+    uint32_t pad1;
 };
 
 }  // namespace
@@ -92,29 +92,37 @@ struct Shader_sprite::Impl
             throw std::runtime_error("Failed to create pipeline layout.");
 
         // Create pipeline.
-        VkVertexInputBindingDescription vertex_binding{ .binding = 0,
-                                                        .stride = sizeof(Vertex),
-                                                        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
-        std::vector<VkVertexInputAttributeDescription> vertex_attributes{
-            { .location = 0,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(Vertex, position_x) },
-            { .location = 1,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(Vertex, normal_x) },
-            { .location = 2,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32_SFLOAT,
-              .offset = offsetof(Vertex, uv_x) },
-        };
+        // @THEA: remove this!!!
+        // VkVertexInputBindingDescription vertex_binding{ .binding = 0,
+        //                                                 .stride = sizeof(Vertex),
+        //                                                 .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
+        // std::vector<VkVertexInputAttributeDescription> vertex_attributes{
+        //     { .location = 0,
+        //       .binding = 0,
+        //       .format = VK_FORMAT_R32G32B32_SFLOAT,
+        //       .offset = offsetof(Vertex, position_x) },
+        //     { .location = 1,
+        //       .binding = 0,
+        //       .format = VK_FORMAT_R32G32B32_SFLOAT,
+        //       .offset = offsetof(Vertex, normal_x) },
+        //     { .location = 2,
+        //       .binding = 0,
+        //       .format = VK_FORMAT_R32G32_SFLOAT,
+        //       .offset = offsetof(Vertex, uv_x) },
+        // };
+        // VkPipelineVertexInputStateCreateInfo vertex_input_state{
+        //     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+        //     .vertexBindingDescriptionCount = 1,
+        //     .pVertexBindingDescriptions = &vertex_binding,
+        //     .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertex_attributes.size()),
+        //     .pVertexAttributeDescriptions = vertex_attributes.data(),
+        // };
         VkPipelineVertexInputStateCreateInfo vertex_input_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &vertex_binding,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertex_attributes.size()),
-            .pVertexAttributeDescriptions = vertex_attributes.data(),
+            .vertexBindingDescriptionCount = 0,
+            .pVertexBindingDescriptions = nullptr,
+            .vertexAttributeDescriptionCount = 0,
+            .pVertexAttributeDescriptions = nullptr,
         };
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
@@ -158,6 +166,8 @@ struct Shader_sprite::Impl
             .pDynamicStates = dynamic_states.data(),
         };
 
+        // @THEA: satisfy this!!!
+        // static_assert(false, "remove depth calcs here. and the depth buffer heck.");
         VkPipelineDepthStencilStateCreateInfo depth_stencil_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
             .depthTestEnable = VK_TRUE,
@@ -175,6 +185,8 @@ struct Shader_sprite::Impl
             .depthAttachmentFormat = g.render_views[0].depth_image.get_format(),
         };
 
+        // @THEA: satisfy this!!!
+        // static_assert(false, "figure out the color blend.");
         VkPipelineColorBlendAttachmentState blend_attachment{ .colorWriteMask = 0xf, };
         VkPipelineColorBlendStateCreateInfo color_blend_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -276,9 +288,9 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
     {
         static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
 
+        glm_mat4_identity(ui_data_set_data->model_mat);
         ui_data_set_data->texture_idx = elem->texture_idx;
         ui_data_set_data->is_nine_slice = s_is_nine_slice_texture_fn(elem->texture_idx);
-        glm_mat4_identity(ui_data_set_data->model_mat);
 
         ui_data_set_data++;
     }
@@ -352,14 +364,20 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
             throw std::runtime_error("The model used must have only one mesh");
         }
 
-        static_assert(false, "@THINKL perhaps, instead of using models for these there could just be a special case of a vertex mesh being constructed inside the vertex shader. It's only a square or a nine-slice thing, so it might just be super easy. Trying to transform for especially the nine-slice using traditional models would be super hard anyway.");
+        // static_assert(false, "@THINKL perhaps, instead of using models for these there could just be a special case of a vertex mesh being constructed inside the vertex shader. It's only a square or a nine-slice thing, so it might just be super easy. Trying to transform for especially the nine-slice using traditional models would be super hard anyway.");
 
-        vkCmdDrawIndexed(cmd,
-                         model.meshes[0].indices.size(),
-                         1,
-                         model.first_index_offsets[0],
-                         model.vertex_index_offset,
-                         draw_instance);
+        // @THEA: remove this!!
+        // vkCmdDrawIndexed(cmd,
+        //                  model.meshes[0].indices.size(),
+        //                  1,
+        //                  model.first_index_offsets[0],
+        //                  model.vertex_index_offset,
+        //                  draw_instance);
+        vkCmdDraw(cmd,
+                  s_is_nine_slice_texture_fn(elem->texture_idx) ? 6 * 9 : 6,
+                  1,
+                  0,
+                  draw_instance);
 
         draw_instance++;
     }

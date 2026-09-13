@@ -1,11 +1,11 @@
-// @THEA: Delete this struct??
-struct VS_input
-{
-    float3 pos;
-    float3 normal;
-    float2 uv;
-};
-/////////////////////////
+// // @THEA: Delete this struct??
+// struct VS_input
+// {
+//     float3 pos;
+//     float3 normal;
+//     float2 uv;
+// };
+// /////////////////////////
 
 
 
@@ -13,9 +13,11 @@ struct VS_input
 
 struct Sprite_data_set_element
 {
+    float4x4 model_mat;
     uint32_t texture_idx;
     uint32_t is_nine_slice;
-    float4x4 model_mat;
+    uint32_t pad0;
+    uint32_t pad1;
 };
 
 struct Sprite_data_set
@@ -33,20 +35,8 @@ struct VS_output
 };
 
 
-// Use these for UVs as well.
-constexpr float2 k_unit_square_vertices[] = {
-    float2(0, 0),
-    float2(0, 1),
-    float2(1, 1),
-
-    float2(0, 0),
-    float2(1, 1),
-    float2(1, 0),
-};
-
-
 [shader("vertex")]
-VS_output vertex_main(VS_input input,
+VS_output vertex_main(//VS_input input,
                       uniform Sprite_data_set* sprite_data_set,
                       uniform float camera_view_aspect_ratio,
                       uint vertex_index : SV_VertexID,
@@ -54,6 +44,17 @@ VS_output vertex_main(VS_input input,
 {
     Sprite_data_set_element sprite_data_elem =
         sprite_data_set->per_instance_sprites[instance_index];
+
+    // @NOTE: use these for UVs as well.
+    constexpr float2 k_unit_square_vertices[] = {
+        float2(0, 0),
+        float2(0, 1),
+        float2(1, 1),
+
+        float2(0, 0),
+        float2(1, 1),
+        float2(1, 0),
+    };
 
     VS_output output;
     if (sprite_data_elem.is_nine_slice == 1)

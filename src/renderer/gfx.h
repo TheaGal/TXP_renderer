@@ -205,9 +205,6 @@ public:
     /// .
     void render_transparent_geometry();
 
-    // /// Renders UI elements to UI texture.
-    // void render_ui(UI_state const& ui_state);
-
     /// Target for where to render to for LDR rendering.
     enum Ldr_target
     {
