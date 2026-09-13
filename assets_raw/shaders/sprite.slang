@@ -67,7 +67,7 @@ VS_output vertex_main(//VS_input input,
                          float4(k_unit_square_vertices[vertex_index], 0.0, 1.0));
         output.uv = k_unit_square_vertices[vertex_index];
     }
-    output.pos.x *= camera_view_aspect_ratio;
+    output.pos.x *= (1.0f / camera_view_aspect_ratio);
 
     output.sprite_texture_idx = sprite_data_elem.texture_idx;
 

@@ -149,23 +149,13 @@ struct Shader_sprite::Impl
             .pDynamicStates = dynamic_states.data(),
         };
 
-        // @THEA: satisfy this!!!
-        // static_assert(false, "remove depth calcs here. and the depth buffer heck.");
-        VkPipelineDepthStencilStateCreateInfo depth_stencil_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-            .depthTestEnable = VK_TRUE,
-            .depthWriteEnable = VK_TRUE,
-            .depthCompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL,  // Reverse depth.
-        };
-
         std::vector<VkFormat> color_attachment_formats{
-            g.render_views[0].color_image.get_format(),
+            g.ui_image.get_format(),
         };
         VkPipelineRenderingCreateInfo dynamic_rendering_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
             .colorAttachmentCount = static_cast<uint32_t>(color_attachment_formats.size()),
             .pColorAttachmentFormats = color_attachment_formats.data(),
-            .depthAttachmentFormat = g.render_views[0].depth_image.get_format(),
         };
 
         // @THEA: satisfy this!!!
@@ -196,7 +186,7 @@ struct Shader_sprite::Impl
             .pViewportState = &viewport_state,
             .pRasterizationState = &rasterization_state,
             .pMultisampleState = &multisample_state,
-            .pDepthStencilState = &depth_stencil_state,
+            .pDepthStencilState = nullptr,
             .pColorBlendState = &color_blend_state,
             .pDynamicState = &dynamic_state,
             .layout = shader_pipeline.pipeline_layout,
