@@ -29,6 +29,8 @@ public:
     void calc_cam_matrices();
     std::vector<Cam_matrix> const& get_calcd_cam_matrices() const;
 
+    float_t get_main_cam_aspect() const;
+
     void get_main_cam_position(vec3 out_cam_position) const;
     void get_main_cam_view_direction(vec3 out_cam_view_direction) const;
     bool is_main_cam_follow_orbit() const;

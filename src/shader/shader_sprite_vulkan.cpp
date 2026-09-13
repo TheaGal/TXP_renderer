@@ -1,3 +1,5 @@
+#include "btservice_finder.h"
+#include "camera/camera_internal.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 // clang-format off
@@ -37,15 +39,18 @@ namespace
 struct Sprite_data_set_element
 {
     uint32_t texture_idx;
+    uint32_t is_nine_slice;
+    mat4 model_mat;
 };
 
 }  // namespace
 }  // namespace gpu_type
 
 /// Struct for push constants.
-struct Shader_sprite_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
+struct Shader_sprite_push_constants  // @TODO: move this to gfx_vulkan_impl!!!  @AMEND: what is this message????????
 {
-    VkDeviceAddress ui_data_set_dev_addr;
+    VkDeviceAddress sprite_data_set_dev_addr;
+    float_t camera_view_aspect_ratio;
 };
 
 // struct Shader_sprite::Impl
@@ -256,6 +261,11 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
     if (render_order_elem_list.empty())
         return;
 
+    if (render_order_elem_list.size() > 65535)
+    {
+        throw std::runtime_error("Too many sprite elems to render.");
+    }
+
     auto& p{ *m_pimpl };
 
     // Upload sprite information to GPU.
@@ -264,13 +274,17 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 
     for (UI::UI_element* elem : render_order_elem_list)
     {
+        static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
+
         ui_data_set_data->texture_idx = elem->texture_idx;
+        ui_data_set_data->is_nine_slice = s_is_nine_slice_texture_fn(elem->texture_idx);
+        glm_mat4_identity(ui_data_set_data->model_mat);
 
         ui_data_set_data++;
     }
 }
 
-void Shader_sprite::draw(UI_state const& ui_state)
+void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ratio)
 {
     auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
     if (render_order_elem_list.empty())
@@ -304,7 +318,8 @@ void Shader_sprite::draw(UI_state const& ui_state)
 
 
     Shader_sprite_push_constants push_consts{
-        .ui_data_set_dev_addr = current_frame.ui_data_set_buffer.get_device_address(),
+        .sprite_data_set_dev_addr = current_frame.ui_data_set_buffer.get_device_address(),
+        .camera_view_aspect_ratio = camera_view_aspect_ratio,
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,

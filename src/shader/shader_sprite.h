@@ -25,7 +25,7 @@ public:
 
     void upload_ui_state_data(UI_state const& ui_state);
 
-    void draw(UI_state const& ui_state);
+    void draw(UI_state const& ui_state, float_t camera_view_aspect_ratio);
 
 private:
     struct Impl;

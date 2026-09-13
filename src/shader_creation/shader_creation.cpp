@@ -30,6 +30,11 @@ Reflection::Shader_reflection TXP::Shader_Creation::read_slang_reflection(
 {
     // Load the shader reflection.
     std::ifstream f{ s_shader_dir + shader_name + ".shadrefl" };
+    if (!f.is_open())
+    {
+        throw std::runtime_error(
+            "File could not be opened for some reason. Doesn't exist mayhaps?");
+    }
     return json::parse(f);
 }
 

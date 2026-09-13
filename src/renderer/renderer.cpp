@@ -21,6 +21,7 @@
 #include "shader/shader_debug_color_wireframe.h"
 #include "shader/shader_gradient.h"
 #include "shader/shader_skinned_model.h"
+#include "shader/shader_sprite.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/animator/skeletal_animator.h"
 #include "txp_renderer/types.h"
@@ -113,6 +114,7 @@ struct Renderer::Impl
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
     std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
+    std::unique_ptr<Shader::Shader_sprite> shad_sprite;
 
     /// List of render objects.
     std::vector<Render_object> render_object_list;
@@ -513,6 +515,8 @@ void Renderer::build()
         std::make_unique<Shader::Shader_debug_color_grad_line>(m.material_organizer,
                                                                m.render_model_data_collection,
                                                                g.get_impl());
+    m.shad_sprite =
+        std::make_unique<Shader::Shader_sprite>(m.render_model_data_collection, g.get_impl());
 
     // Insert material params.
     auto material_assets{ m.material_assets.scoped_lock() };
@@ -523,6 +527,7 @@ void Renderer::build()
         else if (mat_asset.shader_name == m.shad_basic_diffuse->k_name)          m.shad_basic_diffuse->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_grad_line->k_name)  m.shad_debug_color_grad_line->make_material(mat_asset.material_name, mat_asset.shader_params);
+        // @NOTE: excluding "shad_sprite" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         else throw std::runtime_error("Unknown shader name");
         // clang-format on
     }
@@ -650,6 +655,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                           m.model_mesh_ref_list,
                                           cur_modmesh_ref_idx);
 
+    // Upload UI state.
+    m.shad_sprite->upload_ui_state_data(*ui_state);
+
     // Render for each render view.
     m.camera.calc_cam_matrices();
 
@@ -707,7 +715,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             BT::date_deadline(2026, 9, 13);
 
             g.begin_rendering_ui();
-            g.render_ui(*ui_state);
+            m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
             g.end_rendering_ui();
         }
 

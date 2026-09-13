@@ -270,10 +270,10 @@ void TXP::Graphics::render_transparent_geometry()
     assert(false);
 }
 
-void TXP::Graphics::render_ui(UI_state const& ui_state)
-{
-    m_pimpl->render_ui(ui_state);
-}
+// void TXP::Graphics::render_ui(UI_state const& ui_state)
+// {
+//     m_pimpl->render_ui(ui_state);
+// }
 
 void TXP::Graphics::render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
                                                      bool include_ui_texture,

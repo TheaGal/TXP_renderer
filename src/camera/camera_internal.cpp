@@ -176,13 +176,24 @@ std::vector<Cam_matrix> const& Camera_internal::get_calcd_cam_matrices() const
     return m_camera_matrices;
 }
 
+float_t Camera_internal::get_main_cam_aspect() const
+{
+    if (m_camera_states.empty())
+    {
+        BT_WARN("No camera states, just going to use 1 as default. Fix this if you feel like it.");
+        return 1;
+    }
+
+    return m_camera_states.front().aspect;
+}
+
 void Camera_internal::get_main_cam_position(vec3 out_position) const
 {
     if (m_camera_states.empty())
     {
         BT_WARN(
-            "No camera states, just going to use zero vector as default. Fix this if you feel "
-            "like it.");
+            "No camera states, just going to use zero vector as default. Fix this if you feel like "
+            "it.");
         glm_vec3_zero(out_position);
         return;
     }
