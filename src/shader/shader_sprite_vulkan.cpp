@@ -34,6 +34,7 @@ struct Shader_sprite_push_constants  // @TODO: move this to gfx_vulkan_impl!!!  
 {
     VkDeviceAddress sprite_data_set_dev_addr;
     float_t camera_view_aspect_ratio;
+    float_t render_canvas_height;
 };
 
 // struct Shader_sprite::Impl
@@ -305,6 +306,7 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
     Shader_sprite_push_constants push_consts{
         .sprite_data_set_dev_addr = current_frame.sprite_data_set_buffer.get_device_address(),
         .camera_view_aspect_ratio = camera_view_aspect_ratio,
+        .render_canvas_height = 1,
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
