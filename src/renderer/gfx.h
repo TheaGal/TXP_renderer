@@ -55,6 +55,23 @@ struct Model_transform_set
     mat4 transforms[65535];
 };
 
+/// Sprite params per instance.
+struct Sprite_data_set_element
+{
+    mat4 model_mat;
+    uint32_t texture_idx;
+    uint32_t is_nine_slice;
+    uint32_t pad0;
+    uint32_t pad1;
+};
+
+constexpr size_t k_num_sprites{ 8192 };
+
+struct Sprite_data_set
+{
+    Sprite_data_set_element per_instance_sprites[k_num_sprites];
+};
+
 }  // namespace gpu_type
 
 

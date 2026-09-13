@@ -22,7 +22,7 @@ struct Sprite_data_set_element
 
 struct Sprite_data_set
 {
-    Sprite_data_set_element per_instance_sprites[65535];
+    Sprite_data_set_element per_instance_sprites[8192];
 };
 
 Sampler2D textures[];

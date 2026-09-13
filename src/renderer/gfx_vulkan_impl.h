@@ -261,7 +261,7 @@ struct Graphics::Impl
         Vk_Buffer::Allocated_buffer per_instance_data_collection_buffer;
         Vk_Buffer::Allocated_buffer model_transform_set_buffer;
 
-        Vk_Buffer::Allocated_buffer ui_data_set_buffer;
+        Vk_Buffer::Allocated_buffer sprite_data_set_buffer;
     };
     std::array<Frame_data, k_frame_overlap> frames;
 

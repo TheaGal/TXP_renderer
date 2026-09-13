@@ -28,23 +28,6 @@ namespace TXP
 {
 namespace Shader
 {
-namespace gpu_type
-{
-namespace
-{
-
-/// Sprite params per instance.
-struct Sprite_data_set_element
-{
-    mat4 model_mat;
-    uint32_t texture_idx;
-    uint32_t is_nine_slice;
-    uint32_t pad0;
-    uint32_t pad1;
-};
-
-}  // namespace
-}  // namespace gpu_type
 
 /// Struct for push constants.
 struct Shader_sprite_push_constants  // @TODO: move this to gfx_vulkan_impl!!!  @AMEND: what is this message????????
@@ -273,7 +256,7 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
     if (render_order_elem_list.empty())
         return;
 
-    if (render_order_elem_list.size() > 65535)
+    if (render_order_elem_list.size() > gpu_type::k_num_sprites)
     {
         throw std::runtime_error("Too many sprite elems to render.");
     }
@@ -282,7 +265,7 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 
     // Upload sprite information to GPU.
     auto* ui_data_set_data = static_cast<gpu_type::Sprite_data_set_element*>(
-        p.g.get_current_frame().ui_data_set_buffer.get_p_mapped_data());
+        p.g.get_current_frame().sprite_data_set_buffer.get_p_mapped_data());
 
     for (UI::UI_element* elem : render_order_elem_list)
     {
@@ -330,7 +313,7 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
 
 
     Shader_sprite_push_constants push_consts{
-        .sprite_data_set_dev_addr = current_frame.ui_data_set_buffer.get_device_address(),
+        .sprite_data_set_dev_addr = current_frame.sprite_data_set_buffer.get_device_address(),
         .camera_view_aspect_ratio = camera_view_aspect_ratio,
     };
     vkCmdPushConstants(cmd,
@@ -343,10 +326,11 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
     p.g.combined_static_model.bind(cmd);
 
     // Render instances.
-    uint16_t nine_slice_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
-        "nine_slice_model") };
-    uint16_t unit_square_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
-        "unit_square_model") };
+    // @THEA: remove this!!
+    // uint16_t nine_slice_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
+    //     "nine_slice_model") };
+    // uint16_t unit_square_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
+    //     "unit_square_model") };
 
     uint32_t draw_instance{ 0 };
 
@@ -355,14 +339,15 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
         static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
 
         // Draw model for sprite.
-        auto const& model{ p.render_model_data_collection.get_static_model_data_set(
-            s_is_nine_slice_texture_fn(elem->texture_idx) ? nine_slice_model_idx
-                                                          : unit_square_model_idx) };
+        // @THEA: remove this!!
+        // auto const& model{ p.render_model_data_collection.get_static_model_data_set(
+        //     s_is_nine_slice_texture_fn(elem->texture_idx) ? nine_slice_model_idx
+        //                                                   : unit_square_model_idx) };
 
-        if (model.meshes.size() != 1)
-        {
-            throw std::runtime_error("The model used must have only one mesh");
-        }
+        // if (model.meshes.size() != 1)
+        // {
+        //     throw std::runtime_error("The model used must have only one mesh");
+        // }
 
         // static_assert(false, "@THINKL perhaps, instead of using models for these there could just be a special case of a vertex mesh being constructed inside the vertex shader. It's only a square or a nine-slice thing, so it might just be super easy. Trying to transform for especially the nine-slice using traditional models would be super hard anyway.");
 

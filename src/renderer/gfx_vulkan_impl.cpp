@@ -807,6 +807,14 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                 VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
                 VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        frame.sprite_data_set_buffer.create(
+            gfx.device,
+            gfx.allocator,
+            sizeof(gpu_type::Sprite_data_set),
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
     }
 }
 
@@ -854,6 +862,7 @@ void Graphics::Impl::destroy_vulkan()
         }
         frame.per_instance_data_collection_buffer.destroy();
         frame.model_transform_set_buffer.destroy();
+        frame.sprite_data_set_buffer.destroy();
     }
 
     combined_static_model.vertex_index_buffer.destroy();
