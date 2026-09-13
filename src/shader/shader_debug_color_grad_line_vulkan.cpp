@@ -276,7 +276,7 @@ void Shader_debug_color_grad_line::organize_materials()
         m_pimpl->device,
         m_pimpl->allocator,
         m_pimpl->vertex_buffer_current_size,
-        VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
             VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
             VMA_ALLOCATION_CREATE_MAPPED_BIT);
@@ -312,7 +312,7 @@ void Shader_debug_color_grad_line::allocate_per_instance_data_slots(
             m_pimpl->device,
             m_pimpl->allocator,
             m_pimpl->vertex_buffer_current_size,
-            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
             VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
                 VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
                 VMA_ALLOCATION_CREATE_MAPPED_BIT);
