@@ -28,12 +28,11 @@ public:
     Shader_postprocess(void* graphics);
     ~Shader_postprocess();
 
-    void allocate_per_instance_data_slots(
-        std::vector<Render_object> const& render_object_list,
-        std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
-        size_t& in_out_cur_modmesh_ref_idx);
+    void signal_render_view_sizes_changed();
 
-    void compute(void* render_frame, Graphics::Ldr_target render_target);
+    void compute(Graphics::Ldr_target render_target, void* render_view_param);
+
+    void wait_until_completion();
 
 private:
     struct Impl;

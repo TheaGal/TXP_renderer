@@ -13,12 +13,21 @@
 
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
 
 
 namespace TXP
 {
 namespace Shader
 {
+
+/// Struct for push constants.
+struct Shader_postprocess_push_constants
+{
+    uint32_t use_ui_image;
+    float_t exposure;
+    float_t gamma;
+};
 
 // struct Shader_postprocess::Impl
 struct Shader_postprocess::Impl
@@ -44,31 +53,37 @@ struct Shader_postprocess::Impl
         shader_pipeline.descriptor_layout = g.build_descriptor_layout(
             {
                 { 0, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+                { 1, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+                { 2, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
             },
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);
 
-        // Descriptors.
-        shader_pipeline.descriptor_set =
-            g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
+        // @TODO: @THEA: vv delete this vv
+        // // Descriptors.
+        // shader_pipeline.descriptor_set =
+        //     g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
 
-        VkDescriptorImageInfo img_info{
-            .imageView = g.render_views[0].color_image.get_image_view(),
-            .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-        };
+        // VkDescriptorImageInfo img_info{
+        //     .imageView = g.render_views[0].color_image.get_image_view(),
+        //     .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+        // };
 
-        VkWriteDescriptorSet img_write{
-            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-            .pNext = nullptr,
+        // VkWriteDescriptorSet img_write{
+        //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+        //     .pNext = nullptr,
 
-            .dstSet = shader_pipeline.descriptor_set,
-            .dstBinding = 0,
-            .descriptorCount = 1,
-            .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-            .pImageInfo = &img_info,
-        };
+        //     .dstSet = shader_pipeline.descriptor_set,
+        //     .dstBinding = 0,
+        //     .descriptorCount = 1,
+        //     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+        //     .pImageInfo = &img_info,
+        // };
 
-        vkUpdateDescriptorSets(device, 1, &img_write, 0, nullptr);
+        // vkUpdateDescriptorSets(device, 1, &img_write, 0, nullptr);
+
+        // Defer building descriptors.
+        shader_pipeline.is_descriptor_set_valid = false;
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Pipeline.
@@ -76,13 +91,16 @@ struct Shader_postprocess::Impl
         VkResult err;
 
         // Create pipeline layout.
+        VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+                                                 .size =
+                                                     sizeof(Shader_postprocess_push_constants) };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .setLayoutCount = 1,
             .pSetLayouts = &shader_pipeline.descriptor_layout,
-            .pushConstantRangeCount = 0,
-            .pPushConstantRanges = nullptr,
+            .pushConstantRangeCount = 1,
+            .pPushConstantRanges = &push_constant_range,
         };
 
         err = vkCreatePipelineLayout(device,
@@ -129,7 +147,109 @@ struct Shader_postprocess::Impl
     {
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
-        
+    }
+
+    void build_descriptors()
+    {
+        auto& sp{ shader_pipeline };
+
+        // Reallocate.
+        size_t num_render_views{ g.render_views.size() };
+
+        sp.per_render_view_data_map.clear();
+        sp.per_render_view_data_map.reserve(num_render_views);
+
+        sp.destination_images.clear();
+        sp.destination_images.reserve(num_render_views);
+
+        // Build descriptors.
+        size_t render_view_idx{ 0 };
+        for (auto& render_view : g.render_views)
+        {
+            // Create map entry.
+            std::vector<Vk_Image::Image*> descriptor_set_images;
+            descriptor_set_images.reserve(render_view_idx == 0 ? 3 : 2);
+            descriptor_set_images.emplace_back(&render_view.color_image.get_image());
+            descriptor_set_images.emplace_back(&render_view.destination_image.get_image());
+            if (render_view_idx == 0)
+                descriptor_set_images.emplace_back(&g.ui_image.get_image());
+
+            sp.per_render_view_data_map[&render_view] = {
+                .descriptor_set_idx = static_cast<uint32_t>(render_view_idx),
+                .descriptor_set_images = descriptor_set_images,
+            };
+
+            // Allocate needed descriptors.
+            while (sp.allocated_descriptor_sets.size() < sp.per_render_view_data_map.size())
+            {
+                sp.allocated_descriptor_sets.emplace_back(
+                    g.global_descriptor_allocator.allocate(sp.descriptor_layout));
+            }
+
+            // Write descriptors.
+            VkDescriptorSet dest_descriptor_set{ sp.allocated_descriptor_sets[render_view_idx] };
+
+            VkDescriptorImageInfo img_info_0{
+                .imageView = render_view.color_image.get_image_view(),
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+            };
+            VkWriteDescriptorSet img_write_0{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .pNext = nullptr,
+
+                .dstSet = dest_descriptor_set,
+                .dstBinding = 0,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .pImageInfo = &img_info_0,
+            };
+
+            VkDescriptorImageInfo img_info_1{
+                .imageView = g.ui_image.get_image_view(),
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+            };
+            VkWriteDescriptorSet img_write_1{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .pNext = nullptr,
+
+                .dstSet = dest_descriptor_set,
+                .dstBinding = 1,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .pImageInfo = &img_info_1,
+            };
+
+            VkDescriptorImageInfo img_info_2{
+                .imageView = render_view.destination_image.get_image_view(),
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+            };
+            VkWriteDescriptorSet img_write_2{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .pNext = nullptr,
+
+                .dstSet = dest_descriptor_set,
+                .dstBinding = 2,
+                .descriptorCount = 1,
+                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .pImageInfo = &img_info_2,
+            };
+
+            VkWriteDescriptorSet img_writes[]{ img_write_0, img_write_1, img_write_2 };
+
+            vkUpdateDescriptorSets(device,
+                                   sizeof(img_writes) / sizeof(VkWriteDescriptorSet),
+                                   img_writes,
+                                   0,
+                                   nullptr);
+
+            // Destination image entry.
+            sp.destination_images.emplace_back(&render_view.destination_image.get_image());
+
+            render_view_idx++;
+        }
+
+        // Finished.
+        sp.is_descriptor_set_valid = true;
     }
 
 
@@ -144,8 +264,19 @@ struct Shader_postprocess::Impl
     {
         VkPipeline pipeline;
         VkPipelineLayout pipeline_layout;
-        VkDescriptorSet descriptor_set;
         VkDescriptorSetLayout descriptor_layout;
+
+        std::vector<VkDescriptorSet> allocated_descriptor_sets;
+
+        struct Per_render_view_data
+        {
+            uint32_t descriptor_set_idx;
+            std::vector<Vk_Image::Image*> descriptor_set_images;
+        };
+        std::unordered_map<Graphics::Impl::Render_view_data*, Per_render_view_data>
+            per_render_view_data_map;
+        std::vector<Vk_Image::Image*> destination_images;
+        bool is_descriptor_set_valid;
     } shader_pipeline;
 };
 
@@ -158,33 +289,60 @@ Shader_postprocess::Shader_postprocess(void* graphics)
 
 Shader_postprocess::~Shader_postprocess() = default;
 
-void Shader_postprocess::allocate_per_instance_data_slots(
-    std::vector<Render_object> const& render_object_list,
-    std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
-    size_t& in_out_cur_modmesh_ref_idx)
+void Shader_postprocess::signal_render_view_sizes_changed()
 {
-    // Do nothing.
-    // BT_TRACE("Shader_postprocess has no per-instance data.");
+    m_pimpl->shader_pipeline.is_descriptor_set_valid = false;
 }
 
-void Shader_postprocess::compute(void* render_frame, Graphics::Ldr_target render_target)
+// @TODO: @THEA: remove the `render_target` param since now there's just going to be rendering to a destination image.
+void Shader_postprocess::compute(Graphics::Ldr_target render_target, void* render_view_param)
 {
     auto& p{ *m_pimpl };
 
+    if (!p.shader_pipeline.is_descriptor_set_valid)
+    {
+        p.build_descriptors();
+    }
+
     auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
 
-    Vk_Image::Image::transition_to(
-        cmd,
-        { { &p.g.render_views[0].color_image.get_image(), VK_IMAGE_LAYOUT_GENERAL } });
+    auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
 
+    // Ready needed images for compute shader.
+    auto const& prv_data{ p.shader_pipeline.per_render_view_data_map.at(&render_view) };
+
+    std::vector<std::pair<Vk_Image::Image*, VkImageLayout>> image_transitions;
+    image_transitions.reserve(prv_data.descriptor_set_images.size());
+    for (auto* desc_set_image : prv_data.descriptor_set_images)
+    {
+        image_transitions.emplace_back(desc_set_image, VK_IMAGE_LAYOUT_GENERAL);
+    }
+
+    Vk_Image::Image::transition_to(cmd, std::move(image_transitions));
+
+    // Bind.
     vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.shader_pipeline.pipeline);
-    vkCmdBindDescriptorSets(cmd,
-                            VK_PIPELINE_BIND_POINT_COMPUTE,
-                            p.shader_pipeline.pipeline_layout,
-                            0,
-                            1, &p.shader_pipeline.descriptor_set,
-                            0, nullptr);
+    vkCmdBindDescriptorSets(
+        cmd,
+        VK_PIPELINE_BIND_POINT_COMPUTE,
+        p.shader_pipeline.pipeline_layout,
+        0,
+        1, &p.shader_pipeline.allocated_descriptor_sets[prv_data.descriptor_set_idx],
+        0, nullptr);
 
+    Shader_postprocess_push_constants push_consts{
+        .use_ui_image = use_ui_image,
+        .exposure = 1,
+        .gamma = 1,
+    };
+    vkCmdPushConstants(cmd,
+                       p.shader_pipeline.pipeline_layout,
+                       VK_SHADER_STAGE_COMPUTE_BIT,
+                       0,
+                       sizeof(Shader_postprocess_push_constants),
+                       &push_consts);
+
+    // Run.
     // @TODO: move this into a real function.
     static auto const k_cmd_dispatch_fn =
         [](VkCommandBuffer cmd, VkExtent3D dispatch_thread_sizes, VkExtent3D thread_group_sizes) {
@@ -197,7 +355,25 @@ void Shader_postprocess::compute(void* render_frame, Graphics::Ldr_target render
                               thread_group_sizes.depth);
         };
 
-    k_cmd_dispatch_fn(cmd, p.g.render_views[0].color_image.get_extent(), p.thread_grp_sizes);
+    k_cmd_dispatch_fn(cmd, render_view.color_image.get_extent(), p.thread_grp_sizes);
+}
+
+void Shader_postprocess::wait_until_completion()
+{
+    auto& p{ *m_pimpl };
+
+    assert(p.shader_pipeline.is_descriptor_set_valid);
+
+    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
+
+    std::vector<std::pair<Vk_Image::Image*, VkImageLayout>> image_transitions;
+    image_transitions.reserve(p.shader_pipeline.destination_images.size());
+    for (auto* dest_image : p.shader_pipeline.destination_images)
+    {
+        image_transitions.emplace_back(dest_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    }
+
+    Vk_Image::Image::transition_to(cmd, std::move(image_transitions));
 }
 
 }  // namespace Shader

@@ -50,7 +50,8 @@ half4 srgb_to_linear(half4 srgb_in)
 
 [shader("compute")]
 [numthreads(16, 16, 1)]
-void compute_main(uniform float exposure,
+void compute_main(uniform uint32_t use_ui_image,
+                  uniform float exposure,
                   uniform float gamma,
                   uint3 thread_idx : SV_DispatchThreadID,
                   uint3 local_thread_idx : SV_GroupThreadID)
@@ -63,7 +64,9 @@ void compute_main(uniform float exposure,
         half4 raw_color = color_image.Load(thread_idx);
         half3 color = srgb_to_linear(tonemap(raw_color, exposure, gamma)).rgb;
 
-        uint8_t4 ui_color = ui_image.Load(thread_idx);
+        uint8_t4 ui_color = uint8_t4(0);
+        if (bool(use_ui_image))
+            ui_color = ui_image.Load(thread_idx);
 
         dest_image.Store(uint2(thread_idx.x, thread_idx.y),
                          half4(lerp(color, half3(ui_color.rgb), half(ui_color.a)), half(1.0)));

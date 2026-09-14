@@ -604,6 +604,10 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     bool render_view_sizes_changed = g.check_render_view_sizes_changed(render_view_sizes);
 
+    // Invalidate cache when sizes change.
+    if (render_view_sizes_changed)
+        m.shad_postprocess->signal_render_view_sizes_changed();
+
     // Wait until can start rendering.
     bool frame_acquired{ false };
     if (!render_view_sizes_changed)
@@ -723,8 +727,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             g.end_rendering_ui();
         }
 
-        m.shad_postprocess->compute(render_view, g.LDR_TARGET_IMGUI);
-        g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
+        m.shad_postprocess->compute(g.LDR_TARGET_IMGUI, render_view);
 
         render_view_idx++;
     }
@@ -733,7 +736,24 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         throw std::runtime_error("Main render view must exist.");
     }
 
-    g.render_imgui();
+    m.shad_postprocess->wait_until_completion();
+
+    auto ldr_target{ g.LDR_TARGET_IMGUI };
+    switch (ldr_target)
+    {
+    case Graphics::LDR_TARGET_SWAPCHAIN:
+        // @TODO: rename to "blit_image_to_image()".
+        BT::date_deadline(2026, 9, 15);
+        g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
+        break;
+
+    case Graphics::LDR_TARGET_IMGUI:
+        g.render_imgui();
+        break;
+
+    default:
+        throw std::runtime_error("No valid LDR target.");
+    }
 
     g.present_frame_to_screen();
 }
