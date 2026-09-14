@@ -235,13 +235,30 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
     auto* ui_data_set_data = static_cast<gpu_type::Sprite_data_set_element*>(
         p.g.get_current_frame().sprite_data_set_buffer.get_p_mapped_data());
 
-    for (UI::UI_element* elem : render_order_elem_list)
+    for (UI::UI_element const* elem : render_order_elem_list)
     {
-        static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
-
         glm_mat4_identity(ui_data_set_data->model_mat);
+
+        UI::UI_element const* elem_node{ elem };
+        while (elem_node != nullptr)
+        {
+            auto const& etrans{ elem_node->transform};
+            mat4 node_model_mat;
+            glm_translate_make(node_model_mat, vec3{ etrans.x, etrans.y, 0 });
+            glm_rotate_z(node_model_mat, etrans.rot, node_model_mat);
+            glm_scale(node_model_mat, vec3{ etrans.w, etrans.h });
+
+            glm_mat4_mul(node_model_mat, ui_data_set_data->model_mat, ui_data_set_data->model_mat);
+
+            elem_node = elem_node->parent;
+        }
+
+        glm_vec2_copy(vec2{ elem->transform.anchor.x, elem->transform.anchor.y },
+                      ui_data_set_data->anchor);
+
+        ui_data_set_data->opacity = elem->opacity;  // @THOUGHT: inherit opacity from parents??
         ui_data_set_data->texture_idx = elem->texture_idx;
-        ui_data_set_data->is_nine_slice = s_is_nine_slice_texture_fn(elem->texture_idx);
+        ui_data_set_data->is_nine_slice = elem->is_nine_slice;
 
         ui_data_set_data++;
     }
@@ -299,11 +316,9 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
 
     for (UI::UI_element* elem : render_order_elem_list)
     {
-        static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
-
         // Depend on in-shader vertex data to construct a mesh on the fly.
         vkCmdDraw(cmd,
-                  s_is_nine_slice_texture_fn(elem->texture_idx) ? 6 * 9 : 6,
+                  elem->is_nine_slice ? 6 * 9 : 6,
                   1,
                   0,
                   draw_instance);

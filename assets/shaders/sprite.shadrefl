@@ -70,7 +70,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 2},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 3},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -101,13 +101,22 @@
                             "binding": {"kind": "varyingOutput", "index": 0}
                         },
                         {
+                            "name": "sprite_opacity",
+                            "type": {
+                                "kind": "scalar",
+                                "scalarType": "float32"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 1}
+                        },
+                        {
                             "name": "sprite_texture_idx",
                             "type": {
                                 "kind": "scalar",
                                 "scalarType": "uint32"
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 1}
+                            "binding": {"kind": "varyingOutput", "index": 2}
                         }
                     ]
                 }
@@ -126,7 +135,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 2},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -157,13 +166,22 @@
                                 "binding": {"kind": "varyingInput", "index": 0}
                             },
                             {
+                                "name": "sprite_opacity",
+                                "type": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 1}
+                            },
+                            {
                                 "name": "sprite_texture_idx",
                                 "type": {
                                     "kind": "scalar",
                                     "scalarType": "uint32"
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 1}
+                                "binding": {"kind": "varyingInput", "index": 2}
                             }
                         ]
                     }

@@ -59,10 +59,13 @@ struct Model_transform_set
 struct Sprite_data_set_element
 {
     mat4 model_mat;
+    vec2 anchor;
+    float_t opacity;
     uint32_t texture_idx;
     uint32_t is_nine_slice;
     uint32_t pad0;
     uint32_t pad1;
+    uint32_t pad2;
 };
 
 constexpr size_t k_num_sprites{ 8192 };
@@ -222,17 +225,11 @@ public:
     /// .
     void render_transparent_geometry();
 
-    /// Target for where to render to for LDR rendering.
-    enum Ldr_target
-    {
-        LDR_TARGET_SWAPCHAIN = 0,
-        LDR_TARGET_IMGUI,
-    };
-
-    /// .
-    void render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
-                                          bool include_ui_texture,
-                                          Ldr_target render_target);
+    // @THEA: @TODO: @NOCHECKIN: do what you need to for this!!!!
+    // /// .
+    // void render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
+    //                                       bool include_ui_texture,
+    //                                       Ldr_target render_target);
 
     /// Renders collected immediate-mode GUI commands to LDR present surface.
     void render_imgui();

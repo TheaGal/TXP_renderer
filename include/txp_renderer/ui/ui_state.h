@@ -83,7 +83,7 @@ private:
 
     struct UI_element_pun
     {
-        uint64_t pad[7];
+        uint64_t pad[9];
     };
     std::vector<UI_element_pun> m_elems;  // punned into UI::UI_element type (static assert fails if
                                           // types are not identical).

@@ -740,16 +740,23 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     m.shad_postprocess->wait_until_completion();
 
-    auto ldr_target{ g.LDR_TARGET_IMGUI };
+    /// Target for where to render to for LDR rendering.
+    enum Ldr_target
+    {
+        LDR_TARGET_SWAPCHAIN = 0,
+        LDR_TARGET_IMGUI,
+    };
+
+    auto ldr_target{ LDR_TARGET_IMGUI };
     switch (ldr_target)
     {
-    case Graphics::LDR_TARGET_SWAPCHAIN:
+    case LDR_TARGET_SWAPCHAIN:
         // @TODO: rename to "blit_image_to_image()".
         BT::date_deadline(2026, 9, 15);
         // g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
         break;
 
-    case Graphics::LDR_TARGET_IMGUI:
+    case LDR_TARGET_IMGUI:
         g.render_imgui();
         break;
 

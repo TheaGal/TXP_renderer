@@ -20,7 +20,17 @@ struct Rect_transform
     float_t w;
     float_t h;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Rect_transform, x, y, w, h);
+    float_t rot;
+
+    struct Anchor
+    {
+        float_t x;
+        float_t y;
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(Anchor, x, y);
+    } anchor;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Rect_transform, x, y, w, h, rot, anchor);
 };
 
 struct UI_file_element_data
@@ -30,8 +40,15 @@ struct UI_file_element_data
     Rect_transform transform;
     float_t opacity;
     std::string image;
+    bool is_nine_slice;
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE(UI_file_element_data, name, parent, transform, opacity, image);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(UI_file_element_data,
+                                   name,
+                                   parent,
+                                   transform,
+                                   opacity,
+                                   image,
+                                   is_nine_slice);
 };
 
 struct UI_file_data
@@ -45,9 +62,10 @@ struct UI_element
 {
     std::string name;
     UI_element* parent{ nullptr };
-    Rect_transform transform;  // global transform.
+    Rect_transform transform;  // local transform.
     float_t opacity;
     uint32_t texture_idx;
+    bool is_nine_slice;
 };
 
 } // namespace UI

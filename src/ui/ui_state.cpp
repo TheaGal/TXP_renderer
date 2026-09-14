@@ -239,6 +239,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
             .opacity = file_elem.opacity,
             .texture_idx =
                 static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
+            .is_nine_slice = file_elem.is_nine_slice,
         });
 
         if (temp_elem_name_to_idx.size() != my_elems.size())
