@@ -270,19 +270,26 @@ void TXP::Graphics::render_transparent_geometry()
     assert(false);
 }
 
+// @THEA: delete me????
+#if 0
 void TXP::Graphics::render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
                                                      bool include_ui_texture,
                                                      Ldr_target render_target)
 {
     // @TEMPORARY: this is only a blit or an image transition, but in the future have real
     //             tonemapping.
+
+    auto& image{ include_ui_texture ? m_pimpl->ui_image
+                                    : m_pimpl->render_views[rend_view_idx].color_image };
+    // auto& image{ m_pimpl->render_views[rend_view_idx].color_image };
+
     switch (render_target)
     {
     case LDR_TARGET_SWAPCHAIN:
     {
         auto const& swapchain_extent{ m_pimpl->gfx.swapchain_extent };
-        m_pimpl->blit_image(m_pimpl->render_views[rend_view_idx].color_image.get_image(),
-                            m_pimpl->render_views[rend_view_idx].color_image.get_extent(),
+        m_pimpl->blit_image(image.get_image(),
+                            image.get_extent(),
                             m_pimpl->gfx.swapchain_images[m_pimpl->current_swapchain_image_idx],
                             VkExtent3D{ .width = swapchain_extent.width,
                                         .height = swapchain_extent.height,
@@ -294,12 +301,12 @@ void TXP::Graphics::render_hdr_to_ldr_postprocessing(size_t rend_view_idx,
     {
         Vk_Image::Image::transition_to(
             m_pimpl->get_current_frame().graphics_queue_command_buffer.get(),
-            { { &m_pimpl->render_views[rend_view_idx].color_image.get_image(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } });
+            { { &image.get_image(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } });
         break;
     }
     }
 }
+#endif // 0
 
 void TXP::Graphics::render_imgui()
 {

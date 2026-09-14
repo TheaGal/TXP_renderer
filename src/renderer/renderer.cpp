@@ -20,6 +20,7 @@
 #include "shader/shader_debug_color_grad_line.h"
 #include "shader/shader_debug_color_wireframe.h"
 #include "shader/shader_gradient.h"
+#include "shader/shader_postprocess.h"
 #include "shader/shader_skinned_model.h"
 #include "shader/shader_sprite.h"
 #include "shader_creation/shader_creation.h"
@@ -115,6 +116,7 @@ struct Renderer::Impl
     std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
     std::unique_ptr<Shader::Shader_sprite> shad_sprite;
+    std::unique_ptr<Shader::Shader_postprocess> shad_postprocess;
 
     /// List of render objects.
     std::vector<Render_object> render_object_list;
@@ -517,17 +519,19 @@ void Renderer::build()
                                                                g.get_impl());
     m.shad_sprite =
         std::make_unique<Shader::Shader_sprite>(m.render_model_data_collection, g.get_impl());
+    m.shad_postprocess = std::make_unique<Shader::Shader_postprocess>(g.get_impl());
 
     // Insert material params.
     auto material_assets{ m.material_assets.scoped_lock() };
     for (auto const& mat_asset : *material_assets)
     {   // Find shader.
         // clang-format off
-        if      (mat_asset.shader_name == m.shad_gradient->k_name)               m.shad_gradient->make_material(mat_asset.material_name, mat_asset.shader_params);
+        if      (mat_asset.shader_name == m.shad_gradient->k_name)               m.shad_gradient->make_material(mat_asset.material_name, mat_asset.shader_params);  // @THEA: remove this as a material
         else if (mat_asset.shader_name == m.shad_basic_diffuse->k_name)          m.shad_basic_diffuse->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_grad_line->k_name)  m.shad_debug_color_grad_line->make_material(mat_asset.material_name, mat_asset.shader_params);
         // @NOTE: excluding "shad_sprite" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
+        // @NOTE: excluding "shad_postprocess" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         else throw std::runtime_error("Unknown shader name");
         // clang-format on
     }
@@ -708,7 +712,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        bool render_ui{ ui_state != nullptr && is_main_cam_matrix };
+        bool render_ui{ ui_state != nullptr && is_main_cam_matrix };  // @TODO: move this block to outside this loop.
         if (render_ui)
         {
             // @TODO: only re-render if the cache of the canvas got invalidated.
@@ -719,6 +723,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             g.end_rendering_ui();
         }
 
+        m.shad_postprocess->compute(render_view, g.LDR_TARGET_IMGUI);
         g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
 
         render_view_idx++;

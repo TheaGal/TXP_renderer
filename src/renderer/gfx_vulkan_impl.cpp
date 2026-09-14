@@ -1622,19 +1622,20 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
         render_view.depth_image = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
 
-        render_view.imgui_color_image_descriptor =
-            ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,
-                                        render_view.color_image.get_image_view(),
-                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
         if (i == 0)
         {
             // Create UI image.
             ui_image =
                 Vk_Image::Allocated_image::create_image_2d(VK_FORMAT_R8G8B8A8_UNORM,
                                                            extent,
-                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);  // @THEA: @NOCHECKIN
         }
+        render_view.imgui_color_image_descriptor =
+            ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,
+                                        i == 0 ? ui_image.get_image_view() : render_view.color_image.get_image_view(),  // @THEA: @NOCHECKIN
+                                        // render_view.color_image.get_image_view(),  // @THEA: original
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
     }
     if (render_views.empty())
         throw std::runtime_error("Render-view list must not be empty.");

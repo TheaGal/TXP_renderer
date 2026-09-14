@@ -1,0 +1,44 @@
+#pragma once
+
+#include "renderer/gfx.h"
+
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
+
+namespace TXP
+{
+
+struct Material_organizer;  // Forward decl.
+struct Render_object;  // Forward decl.
+struct Render_object_model_mesh_reference;  // Forward decl.
+
+namespace Shader
+{
+
+/// Postprocess compute shader.
+class Shader_postprocess
+{
+public:
+    static constexpr char const* k_name{ "postprocess" };
+
+    Shader_postprocess(void* graphics);
+    ~Shader_postprocess();
+
+    void allocate_per_instance_data_slots(
+        std::vector<Render_object> const& render_object_list,
+        std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
+        size_t& in_out_cur_modmesh_ref_idx);
+
+    void compute(void* render_frame, Graphics::Ldr_target render_target);
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> m_pimpl;
+};
+
+}  // namespace Shader
+}  // namespace TXP
