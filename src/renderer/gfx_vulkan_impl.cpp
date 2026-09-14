@@ -824,6 +824,7 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 
     std::vector<Descriptor_allocator::Pool_size_ratio> sizes{
         { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 4 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 10 },
         { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1 },
     };
@@ -1628,11 +1629,10 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         render_view.destination_image = Vk_Image::Allocated_image::create_image_2d(
             gfx.swapchain_image_format,
             extent,
-            // VK_IMAGE_USAGE_TRANSFER_SRC_BIT |  @TODO: @CHECK
-            //     VK_IMAGE_USAGE_TRANSFER_DST_BIT |
-            //     VK_IMAGE_USAGE_STORAGE_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                VK_IMAGE_USAGE_STORAGE_BIT |
                 VK_IMAGE_USAGE_SAMPLED_BIT  // For ImGui render view sampling.
-                );
+        );
 
         render_view.imgui_destination_image_descriptor =
             ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,

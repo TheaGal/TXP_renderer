@@ -52,8 +52,8 @@ struct Shader_postprocess::Impl
         // Descriptor layouts.
         shader_pipeline.descriptor_layout = g.build_descriptor_layout(
             {
-                { 0, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
-                { 1, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+                { 0, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
+                { 1, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
                 { 2, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
             },
             VK_SHADER_STAGE_COMPUTE_BIT,
@@ -200,7 +200,7 @@ struct Shader_postprocess::Impl
                 .dstSet = dest_descriptor_set,
                 .dstBinding = 0,
                 .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                 .pImageInfo = &img_info_0,
             };
 
@@ -215,7 +215,7 @@ struct Shader_postprocess::Impl
                 .dstSet = dest_descriptor_set,
                 .dstBinding = 1,
                 .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
+                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
                 .pImageInfo = &img_info_1,
             };
 
@@ -332,8 +332,8 @@ void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
 
     Shader_postprocess_push_constants push_consts{
         .use_ui_image = use_ui_image,
-        .exposure = 1,
-        .gamma = 1,
+        .exposure = 2.5f,
+        .gamma = 2.2f,
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,

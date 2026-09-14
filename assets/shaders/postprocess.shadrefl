@@ -35,12 +35,11 @@
                                     "elementCount": 4,
                                     "elementType": {
                                         "kind": "scalar",
-                                        "scalarType": "uint8"
+                                        "scalarType": "float32"
                                     }
                                 }
                             },
-                            "binding": {"kind": "descriptorTableSlot", "index": 1},
-                            "format": "rgba8ui"
+                            "binding": {"kind": "descriptorTableSlot", "index": 1}
                         },
                         {
                             "name": "dest_image",
@@ -53,12 +52,11 @@
                                     "elementCount": 4,
                                     "elementType": {
                                         "kind": "scalar",
-                                        "scalarType": "float16"
+                                        "scalarType": "float32"
                                     }
                                 }
                             },
-                            "binding": {"kind": "descriptorTableSlot", "index": 2},
-                            "format": "rgba16f"
+                            "binding": {"kind": "descriptorTableSlot", "index": 2}
                         }
                     ]
                 },
@@ -96,12 +94,11 @@
                                         "elementCount": 4,
                                         "elementType": {
                                             "kind": "scalar",
-                                            "scalarType": "uint8"
+                                            "scalarType": "float32"
                                         }
                                     }
                                 },
-                                "binding": {"kind": "descriptorTableSlot", "index": 1},
-                                "format": "rgba8ui"
+                                "binding": {"kind": "descriptorTableSlot", "index": 1}
                             },
                             {
                                 "name": "dest_image",
@@ -114,12 +111,11 @@
                                         "elementCount": 4,
                                         "elementType": {
                                             "kind": "scalar",
-                                            "scalarType": "float16"
+                                            "scalarType": "float32"
                                         }
                                     }
                                 },
-                                "binding": {"kind": "descriptorTableSlot", "index": 2},
-                                "format": "rgba16f"
+                                "binding": {"kind": "descriptorTableSlot", "index": 2}
                             }
                         ]
                     },

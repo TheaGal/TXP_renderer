@@ -3,8 +3,8 @@
 cbuffer Uniforms
 {
     Texture2D<half4> color_image;
-    Texture2D<uint8_t4> ui_image;
-    WTexture2D<half4> dest_image;
+    Texture2D<float4> ui_image;
+    WTexture2D<float4> dest_image;
 }
 
 
@@ -64,11 +64,11 @@ void compute_main(uniform uint32_t use_ui_image,
         half4 raw_color = color_image.Load(thread_idx);
         half3 color = srgb_to_linear(tonemap(raw_color, exposure, gamma)).rgb;
 
-        uint8_t4 ui_color = uint8_t4(0);
+        float4 ui_color = float4(0);
         if (bool(use_ui_image))
             ui_color = ui_image.Load(thread_idx);
 
         dest_image.Store(uint2(thread_idx.x, thread_idx.y),
-                         half4(lerp(color, half3(ui_color.rgb), half(ui_color.a)), half(1.0)));
+                         float4(lerp(color, ui_color.rgb, ui_color.a), 1.0));
     }
 }
