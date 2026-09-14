@@ -1822,6 +1822,7 @@ void* Graphics::Impl::get_render_view(size_t rend_view_idx)
 }
 
 void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
+                                     vec4 clear_color,
                                      Vk_Image::Allocated_image* optional_depth_image)
 {
     VkCommandBuffer cmd{ get_current_frame().graphics_queue_command_buffer.get() };
@@ -1840,7 +1841,7 @@ void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
 
     // Begin rendering.
     VkClearValue color_clear_value{
-        .color{ .float32{ 0, 0, 0, 1 } },
+        .color{ .float32{ clear_color[0], clear_color[1], clear_color[2], clear_color[3] } },
     };
     VkRenderingAttachmentInfo color_attachment =
         Vk_Structs::txp_vk_attachment_info(color_image.get_image_view(),

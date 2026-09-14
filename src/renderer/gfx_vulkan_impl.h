@@ -582,6 +582,7 @@ struct Graphics::Impl
     /// Begins dynamic rendering while clearing the render view images.
     /// @NOTE: depth image is optional.
     void begin_rendering(Vk_Image::Allocated_image& color_image,
+                         vec4 clear_color,
                          Vk_Image::Allocated_image* optional_depth_image);
 
     /// Ends dynamic rendering.

@@ -195,7 +195,7 @@ void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)
     auto& color_image{ m_pimpl->render_views[rend_view_idx].color_image };
     auto& depth_image{ m_pimpl->render_views[rend_view_idx].depth_image };
 
-    m_pimpl->begin_rendering(color_image, &depth_image);
+    m_pimpl->begin_rendering(color_image, vec4{ 0, 0, 0, 1 }, &depth_image);
 }
 
 void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
@@ -205,7 +205,7 @@ void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
 
 void TXP::Graphics::begin_rendering_ui()
 {
-    m_pimpl->begin_rendering(m_pimpl->ui_image, nullptr);
+    m_pimpl->begin_rendering(m_pimpl->ui_image, vec4{ 0, 0, 0, 0 }, nullptr);
 }
 
 void TXP::Graphics::end_rendering_ui()
