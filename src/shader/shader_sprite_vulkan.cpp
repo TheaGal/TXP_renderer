@@ -135,10 +135,17 @@ struct Shader_sprite::Impl
             .pColorAttachmentFormats = color_attachment_formats.data(),
         };
 
-        // @THEA: satisfy this!!!
-        //        figure out the color blend.
-        BT::date_deadline(2026, 9, 15);
-        VkPipelineColorBlendAttachmentState blend_attachment{ .colorWriteMask = 0xf, };
+        VkPipelineColorBlendAttachmentState blend_attachment{
+            // @THEA: all this is different below vv !!! (for color alpha blending)
+            .blendEnable = VK_TRUE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+            .colorWriteMask = 0xf,
+        };
         VkPipelineColorBlendStateCreateInfo color_blend_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             .attachmentCount = 1,
