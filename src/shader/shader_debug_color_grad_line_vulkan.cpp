@@ -307,6 +307,8 @@ void Shader_debug_color_grad_line::allocate_per_instance_data_slots(
 
     if (vertex_buffer_resize_needed)
     {
+        m_pimpl->g.wait_until_gpu_idle();
+
         m_pimpl->debug_lines_vertex_buffer.destroy();
         m_pimpl->debug_lines_vertex_buffer.create(
             m_pimpl->device,
