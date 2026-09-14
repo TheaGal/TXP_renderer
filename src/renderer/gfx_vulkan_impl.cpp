@@ -1642,10 +1642,10 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         if (i == 0)
         {
             // Create UI image.
-            ui_image =
-                Vk_Image::Allocated_image::create_image_2d(VK_FORMAT_R8G8B8A8_UNORM,
-                                                           extent,
-                                                           VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);  // @THEA: @NOCHECKIN
+            ui_image = Vk_Image::Allocated_image::create_image_2d(
+                VK_FORMAT_R8G8B8A8_UNORM,
+                extent,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
         }
     }
     if (render_views.empty())

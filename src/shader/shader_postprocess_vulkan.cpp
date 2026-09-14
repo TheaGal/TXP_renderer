@@ -59,29 +59,6 @@ struct Shader_postprocess::Impl
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);
 
-        // @TODO: @THEA: vv delete this vv
-        // // Descriptors.
-        // shader_pipeline.descriptor_set =
-        //     g.global_descriptor_allocator.allocate(shader_pipeline.descriptor_layout);
-
-        // VkDescriptorImageInfo img_info{
-        //     .imageView = g.render_views[0].color_image.get_image_view(),
-        //     .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-        // };
-
-        // VkWriteDescriptorSet img_write{
-        //     .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-        //     .pNext = nullptr,
-
-        //     .dstSet = shader_pipeline.descriptor_set,
-        //     .dstBinding = 0,
-        //     .descriptorCount = 1,
-        //     .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-        //     .pImageInfo = &img_info,
-        // };
-
-        // vkUpdateDescriptorSets(device, 1, &img_write, 0, nullptr);
-
         // Defer building descriptors.
         shader_pipeline.is_descriptor_set_valid = false;
 
@@ -294,7 +271,6 @@ void Shader_postprocess::signal_render_view_sizes_changed()
     m_pimpl->shader_pipeline.is_descriptor_set_valid = false;
 }
 
-// @TODO: @THEA: remove the `render_target` param since now there's just going to be rendering to a destination image.
 void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
 {
     auto& p{ *m_pimpl };

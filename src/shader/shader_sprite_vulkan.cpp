@@ -4,6 +4,7 @@
 #include "shader_sprite.h"
 // clang-format on
 
+#include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "renderer/gfx.h"
@@ -76,31 +77,6 @@ struct Shader_sprite::Impl
             throw std::runtime_error("Failed to create pipeline layout.");
 
         // Create pipeline.
-        // @THEA: remove this!!!
-        // VkVertexInputBindingDescription vertex_binding{ .binding = 0,
-        //                                                 .stride = sizeof(Vertex),
-        //                                                 .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
-        // std::vector<VkVertexInputAttributeDescription> vertex_attributes{
-        //     { .location = 0,
-        //       .binding = 0,
-        //       .format = VK_FORMAT_R32G32B32_SFLOAT,
-        //       .offset = offsetof(Vertex, position_x) },
-        //     { .location = 1,
-        //       .binding = 0,
-        //       .format = VK_FORMAT_R32G32B32_SFLOAT,
-        //       .offset = offsetof(Vertex, normal_x) },
-        //     { .location = 2,
-        //       .binding = 0,
-        //       .format = VK_FORMAT_R32G32_SFLOAT,
-        //       .offset = offsetof(Vertex, uv_x) },
-        // };
-        // VkPipelineVertexInputStateCreateInfo vertex_input_state{
-        //     .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        //     .vertexBindingDescriptionCount = 1,
-        //     .pVertexBindingDescriptions = &vertex_binding,
-        //     .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertex_attributes.size()),
-        //     .pVertexAttributeDescriptions = vertex_attributes.data(),
-        // };
         VkPipelineVertexInputStateCreateInfo vertex_input_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
             .vertexBindingDescriptionCount = 0,
@@ -160,7 +136,8 @@ struct Shader_sprite::Impl
         };
 
         // @THEA: satisfy this!!!
-        // static_assert(false, "figure out the color blend.");
+        //        figure out the color blend.
+        BT::date_deadline(2026, 9, 15);
         VkPipelineColorBlendAttachmentState blend_attachment{ .colorWriteMask = 0xf, };
         VkPipelineColorBlendStateCreateInfo color_blend_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
@@ -318,38 +295,13 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
     p.g.combined_static_model.bind(cmd);
 
     // Render instances.
-    // @THEA: remove this!!
-    // uint16_t nine_slice_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
-    //     "nine_slice_model") };
-    // uint16_t unit_square_model_idx{ p.render_model_data_collection.get_static_model_data_set_idx(
-    //     "unit_square_model") };
-
     uint32_t draw_instance{ 0 };
 
     for (UI::UI_element* elem : render_order_elem_list)
     {
         static auto const s_is_nine_slice_texture_fn = [](uint32_t texture_idx) { return false; };
 
-        // Draw model for sprite.
-        // @THEA: remove this!!
-        // auto const& model{ p.render_model_data_collection.get_static_model_data_set(
-        //     s_is_nine_slice_texture_fn(elem->texture_idx) ? nine_slice_model_idx
-        //                                                   : unit_square_model_idx) };
-
-        // if (model.meshes.size() != 1)
-        // {
-        //     throw std::runtime_error("The model used must have only one mesh");
-        // }
-
-        // static_assert(false, "@THINKL perhaps, instead of using models for these there could just be a special case of a vertex mesh being constructed inside the vertex shader. It's only a square or a nine-slice thing, so it might just be super easy. Trying to transform for especially the nine-slice using traditional models would be super hard anyway.");
-
-        // @THEA: remove this!!
-        // vkCmdDrawIndexed(cmd,
-        //                  model.meshes[0].indices.size(),
-        //                  1,
-        //                  model.first_index_offsets[0],
-        //                  model.vertex_index_offset,
-        //                  draw_instance);
+        // Depend on in-shader vertex data to construct a mesh on the fly.
         vkCmdDraw(cmd,
                   s_is_nine_slice_texture_fn(elem->texture_idx) ? 6 * 9 : 6,
                   1,
