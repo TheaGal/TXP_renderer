@@ -1,12 +1,7 @@
 #pragma once
 
-#include "renderer/gfx.h"
-
 #include <cstddef>
 #include <memory>
-#include <string>
-#include <unordered_map>
-#include <vector>
 
 
 namespace TXP
