@@ -295,7 +295,7 @@ void Shader_postprocess::signal_render_view_sizes_changed()
 }
 
 // @TODO: @THEA: remove the `render_target` param since now there's just going to be rendering to a destination image.
-void Shader_postprocess::compute(Graphics::Ldr_target render_target, void* render_view_param)
+void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
 {
     auto& p{ *m_pimpl };
 

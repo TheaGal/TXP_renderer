@@ -716,7 +716,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        bool render_ui{ ui_state != nullptr && is_main_cam_matrix };  // @TODO: move this block to outside this loop.
+        bool display_ui_image{ is_main_cam_matrix };
+
+        bool render_ui{ ui_state != nullptr && display_ui_image };  // @TODO: move this block to outside this loop.
         if (render_ui)
         {
             // @TODO: only re-render if the cache of the canvas got invalidated.
@@ -727,7 +729,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             g.end_rendering_ui();
         }
 
-        m.shad_postprocess->compute(g.LDR_TARGET_IMGUI, render_view);
+        m.shad_postprocess->compute(display_ui_image, render_view);
 
         render_view_idx++;
     }

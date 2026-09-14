@@ -30,7 +30,7 @@ public:
 
     void signal_render_view_sizes_changed();
 
-    void compute(Graphics::Ldr_target render_target, void* render_view_param);
+    void compute(bool use_ui_image, void* render_view_param);
 
     void wait_until_completion();
 

@@ -881,6 +881,7 @@ void Graphics::Impl::destroy_vulkan()
     {
         render_view.color_image.teardown();
         render_view.depth_image.teardown();
+        render_view.destination_image.teardown();
     }
     vkDestroySampler(gfx.device, render_view_imgui_image_sampler, nullptr);
 
@@ -1475,7 +1476,7 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
     for (auto const& rv : render_views)
     {
         render_view_image_content.content_image_descriptors.emplace_back(
-            rv.imgui_color_image_descriptor);
+            rv.imgui_destination_image_descriptor);
     }
 
     editor_content::build_content(settings,
@@ -1552,7 +1553,8 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
         auto& render_view{ render_views[i] };
         render_view.color_image.teardown();
         render_view.depth_image.teardown();
-        ImGui_ImplVulkan_RemoveTexture(render_view.imgui_color_image_descriptor);
+        render_view.destination_image.teardown();
+        ImGui_ImplVulkan_RemoveTexture(render_view.imgui_destination_image_descriptor);
     }
 
     // Disable buffer deletion check (since moving from the container resizing).
@@ -1594,7 +1596,8 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
             ensure_gpu_idle_fn();
             render_view.color_image.teardown();
             render_view.depth_image.teardown();
-            ImGui_ImplVulkan_RemoveTexture(render_view.imgui_color_image_descriptor);
+            render_view.destination_image.teardown();
+            ImGui_ImplVulkan_RemoveTexture(render_view.imgui_destination_image_descriptor);
 
             if (i == 0)
             {
@@ -1622,6 +1625,20 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
         render_view.depth_image = Vk_Image::Allocated_image::create_image_depth_buffer(extent);
 
+        render_view.destination_image = Vk_Image::Allocated_image::create_image_2d(
+            gfx.swapchain_image_format,
+            extent,
+            // VK_IMAGE_USAGE_TRANSFER_SRC_BIT |  @TODO: @CHECK
+            //     VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+            //     VK_IMAGE_USAGE_STORAGE_BIT |
+                VK_IMAGE_USAGE_SAMPLED_BIT  // For ImGui render view sampling.
+                );
+
+        render_view.imgui_destination_image_descriptor =
+            ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,
+                                        render_view.destination_image.get_image_view(),
+                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
         if (i == 0)
         {
             // Create UI image.
@@ -1630,12 +1647,6 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
                                                            extent,
                                                            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);  // @THEA: @NOCHECKIN
         }
-        render_view.imgui_color_image_descriptor =
-            ImGui_ImplVulkan_AddTexture(render_view_imgui_image_sampler,
-                                        i == 0 ? ui_image.get_image_view() : render_view.color_image.get_image_view(),  // @THEA: @NOCHECKIN
-                                        // render_view.color_image.get_image_view(),  // @THEA: original
-                                        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
     }
     if (render_views.empty())
         throw std::runtime_error("Render-view list must not be empty.");
