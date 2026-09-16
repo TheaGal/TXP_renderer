@@ -7,6 +7,7 @@
 #endif // TXP_GFX_BACKEND_VULKAN
 
 #include "btdatecheck.h"
+#include "btservice_finder.h"
 #include "ui/ui_types.h"
 
 #include <cassert>
@@ -58,6 +59,31 @@ void UI_element_state::add_event(UI_event event_type, std::function<void(void)>&
     m_event_map[event_type] = std::move(callback_fn);
 }
 
+void UI_element_state::set_position(float_t x, float_t y)
+{
+    if (m_loaded_elem == nullptr)
+    {
+        throw std::runtime_error("elem isnt loaded yet.");
+    }
+
+    m_loaded_elem->transform.x = x;
+    m_loaded_elem->transform.y = y;
+
+    m_ui_state.invalidate_draw_cache();
+}
+
+void UI_element_state::set_opacity(float_t alpha)
+{
+    if (m_loaded_elem == nullptr)
+    {
+        throw std::runtime_error("elem isnt loaded yet.");
+    }
+
+    m_loaded_elem->opacity = alpha;
+
+    m_ui_state.invalidate_draw_cache();
+}
+
 
 // class UI_canvas_state
 UI_element_state& UI_canvas_state::elem(std::string const& elem_name)
@@ -69,16 +95,21 @@ UI_element_state& UI_canvas_state::elem(std::string const& elem_name)
                   "Pun type and actual type must be the same alignment");
 
     if (m_elem_states_map.find(elem_name) == m_elem_states_map.end())
-        m_elem_states_map.emplace(elem_name, UI_element_state{});
+        m_elem_states_map.emplace(elem_name, UI_element_state{ m_ui_state });
     return m_elem_states_map.at(elem_name);
 }
 
 
 // class UI_state
+UI_state::UI_state()
+{
+    BT_SERVICE_FINDER_ADD_SERVICE(UI_state, this);
+}
+
 UI_canvas_state& UI_state::canvas(std::string const& canvas_name)
 {
     if (m_canvas_states.find(canvas_name) == m_canvas_states.end())
-        m_canvas_states.emplace(canvas_name, UI_canvas_state{});
+        m_canvas_states.emplace(canvas_name, UI_canvas_state{ *this });
     return m_canvas_states.at(canvas_name);
 }
 
@@ -182,6 +213,8 @@ void UI_state::tick()
 
         default: assert(false); break;
         }
+
+        invalidate_draw_cache();
     }
     m_staged_actions.clear();
 }
@@ -269,18 +302,14 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     // Fill in loaded element reference.
     for (auto& my_elem : my_elems)
     {
-        if (canvas_state.m_elem_states_map.find(my_elem.name) !=
-            canvas_state.m_elem_states_map.end())
+        auto& elem_state{ canvas_state.elem(my_elem.name) };  // creates element state if didn't exist.
+
+        if (elem_state.m_loaded_elem != nullptr)
         {
-            auto& elem_state{ canvas_state.m_elem_states_map.at(my_elem.name) };
-
-            if (elem_state.m_loaded_elem != nullptr)
-            {
-                std::runtime_error("Reference unloading didn't happen or collision?!?!");
-            }
-
-            elem_state.m_loaded_elem = &my_elem;
+            std::runtime_error("Reference unloading didn't happen or collision?!?!");
         }
+
+        elem_state.m_loaded_elem = &my_elem;
     }
 
     // Add to list.

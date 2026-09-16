@@ -663,8 +663,17 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                           m.model_mesh_ref_list,
                                           cur_modmesh_ref_idx);
 
-    // Upload UI state.
-    m.shad_sprite->upload_ui_state_data(*ui_state);
+    // Upload UI state and draw.
+    if (ui_state != nullptr && ui_state->is_requesting_draw())
+    {
+        m.shad_sprite->upload_ui_state_data(*ui_state);
+
+        g.begin_rendering_ui();
+        m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
+        g.end_rendering_ui();
+
+        ui_state->validate_draw_cache();
+    }
 
     // Render for each render view.
     m.camera.calc_cam_matrices();
@@ -716,19 +725,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        bool display_ui_image{ is_main_cam_matrix };
-
-        bool render_ui{ ui_state != nullptr && display_ui_image };  // @TODO: move this block to outside this loop.
-        if (render_ui)
-        {
-            // @TODO: only re-render if the cache of the canvas got invalidated.
-            BT::date_deadline(2026, 9, 17);
-
-            g.begin_rendering_ui();
-            m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
-            g.end_rendering_ui();
-        }
-
+        bool const display_ui_image{ is_main_cam_matrix };
         m.shad_postprocess->compute(display_ui_image, render_view);
 
         render_view_idx++;

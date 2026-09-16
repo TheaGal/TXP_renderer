@@ -34,14 +34,24 @@ enum UI_event : uint32_t
     NUM_UI_EV
 };
 
+class UI_state;  // Forward decl.
+
 /// .
 class UI_element_state
 {
 public:
     void add_event(UI_event event_type, std::function<void(void)>&& callback_fn);
 
+    void set_position(float_t x, float_t y);
+    void set_opacity(float_t alpha);
+
 private:
-    UI_element_state() = default;
+    UI_element_state(UI_state& ui_state)
+        : m_ui_state(ui_state)
+    {
+    }
+
+    UI_state& m_ui_state;
 
     UI::UI_element* m_loaded_elem{ nullptr };  // Use nullptr to check if elem is loaded.
     std::unordered_map<UI_event, std::function<void(void)>> m_event_map;
@@ -71,7 +81,12 @@ public:
     }
 
 private:
-    UI_canvas_state() = default;
+    UI_canvas_state(UI_state& ui_state)
+        : m_ui_state(ui_state)
+    {
+    }
+
+    UI_state& m_ui_state;
 
     std::string m_name;  // needed?
 
@@ -96,6 +111,8 @@ private:
 class UI_state
 {
 public:
+    UI_state();
+
     /// Gets or emplaces a canvas state.
     UI_canvas_state& canvas(std::string const& canvas_name);
 
@@ -123,6 +140,24 @@ public:
 
     /// For rendering. Gathers all visible and drawing UI elements.
     std::vector<UI::UI_element*> gather_rendering_ui_elements_in_render_order() const;
+
+    /// Checks whether draw cache is invalidated.
+    inline bool is_requesting_draw()
+    {
+        return !m_is_draw_cached;
+    }
+
+    /// Invalidate draw cache.
+    inline void invalidate_draw_cache()
+    {
+        m_is_draw_cached = false;
+    }
+
+    /// Validate draw cache.
+    inline void validate_draw_cache()
+    {
+        m_is_draw_cached = true;
+    }
 
 private:
     std::unordered_map<std::string, UI_canvas_state> m_canvas_states;
@@ -152,6 +187,8 @@ private:
     static void unload_canvas(UI_canvas_state& canvas_state,
                               std::string const& canvas_name,
                               std::vector<std::string>& loaded_canvases_list);
+
+    bool m_is_draw_cached{ false };
 };
 
 } // namespace TXP
