@@ -224,14 +224,14 @@ bool Camera_internal::is_main_cam_follow_orbit() const
     return (get_controlling_camera() == 0);
 }
 
-void Camera_internal::set_main_cam_follow_orbit_cam_offset_pos(vec3 const offset_position)
+void Camera_internal::set_main_cam_follow_orbit_cam_offset_distance(float_t const offset_distance)
 {
-    glm_vec3_copy(const_cast<float_t*>(offset_position), m_orbit_cam_offset_position);
+    m_orbit_cam_offset_distance = offset_distance;
 }
 
-void Camera_internal::get_main_cam_follow_orbit_cam_offset_pos(vec3 out_offset_position) const
+float_t Camera_internal::get_main_cam_follow_orbit_cam_offset_distance() const
 {
-    glm_vec3_copy(const_cast<float_t*>(m_orbit_cam_offset_position), out_offset_position);
+    return m_orbit_cam_offset_distance;
 }
 
 void Camera_internal::set_main_cam_follow_orbit_follow_pos(vec3 const follow_position)
@@ -362,8 +362,10 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
                             m_max_orbit_y - m_orbit_cam_angle_offset_y);
 
     // Calculate look offset.
+    vec3 const cam_offset_pos{ 0, 0, -m_orbit_cam_offset_distance };
+
     vec3 offset_from_follow_obj;
-    glm_vec3_copy(m_orbit_cam_offset_position, offset_from_follow_obj);
+    glm_vec3_copy(const_cast<float_t*>(cam_offset_pos), offset_from_follow_obj);
 
     mat4 look_rotation;
     glm_euler_zyx(vec3{ m_orbits[1], m_orbits[0], 0.0f }, look_rotation);
@@ -373,7 +375,7 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
     glm_vec3_copy(m_orbit_follow_position, camera.position.raw);
     glm_vec3_add(camera.position.raw, offset_from_follow_obj, camera.position.raw);
 
-    glm_vec3_negate_to(m_orbit_cam_offset_position, camera.view_direction.raw);
+    glm_vec3_negate_to(const_cast<float_t*>(cam_offset_pos), camera.view_direction.raw);
     glm_mat4_mulv3(m_orbit_cam_angle_offset_rotation,
                    camera.view_direction.raw,
                    0.0f,

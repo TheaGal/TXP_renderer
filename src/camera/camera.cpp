@@ -45,14 +45,14 @@ bool Camera::is_follow_orbit() const
     return m_pimpl->camera.is_main_cam_follow_orbit();
 }
 
-void Camera::set_follow_orbit_cam_offset_pos(vec3 const offset_position)
+void Camera::set_follow_orbit_cam_offset_distance(float_t const offset_distance)
 {
-    m_pimpl->camera.set_main_cam_follow_orbit_cam_offset_pos(offset_position);
+    m_pimpl->camera.set_main_cam_follow_orbit_cam_offset_distance(offset_distance);
 }
 
-void Camera::get_follow_orbit_cam_offset_pos(vec3 out_offset_position) const
+float_t Camera::get_follow_orbit_cam_offset_distance() const
 {
-    m_pimpl->camera.get_main_cam_follow_orbit_cam_offset_pos(out_offset_position);
+    return m_pimpl->camera.get_main_cam_follow_orbit_cam_offset_distance();
 }
 
 void Camera::set_follow_orbit_follow_pos(vec3 const position)

@@ -28,12 +28,12 @@ public:
     std::vector<Cam_matrix> const& get_calculated_camera_matrices() const;
 
     bool is_follow_orbit() const;
-    void set_follow_orbit_cam_offset_pos(vec3 const offset_position);  // @THHEA: this needs to be made back into a float.
-    void get_follow_orbit_cam_offset_pos(vec3 out_offset_position) const;
+    void set_follow_orbit_cam_offset_distance(float_t const offset_distance);
+    float_t get_follow_orbit_cam_offset_distance() const;
     void set_follow_orbit_follow_pos(vec3 const position);
     void get_follow_orbit_follow_pos(vec3 out_position) const;
     void set_follow_orbit_orbits(vec2 const orbit_angles);
-    void set_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);
+    void set_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);  // @CHECK: is this needed??? i think it's unused now.
 
     bool is_cursor_free() const;
 

@@ -35,8 +35,8 @@ public:
     void get_main_cam_view_direction(vec3 out_cam_view_direction) const;
     bool is_main_cam_follow_orbit() const;
 
-    void set_main_cam_follow_orbit_cam_offset_pos(vec3 const offset_position);
-    void get_main_cam_follow_orbit_cam_offset_pos(vec3 out_offset_position) const;
+    void set_main_cam_follow_orbit_cam_offset_distance(float_t const offset_distance);
+    float_t get_main_cam_follow_orbit_cam_offset_distance() const;
     void set_main_cam_follow_orbit_follow_pos(vec3 const follow_position);
     void get_main_cam_follow_orbit_follow_pos(vec3 out_follow_position) const;
     void set_main_cam_follow_orbit_orbits(vec2 const orbit_angles);
@@ -58,7 +58,7 @@ private:
     vec2 m_orbits{ 0, 0 };
     mat4 m_orbit_cam_angle_offset_rotation = GLM_MAT4_IDENTITY_INIT; 
     float_t m_orbit_cam_angle_offset_y{ 0 };
-    vec3 m_orbit_cam_offset_position{ 0, 0, -2 };
+    float_t m_orbit_cam_offset_distance{ 2 };
     vec3 m_orbit_follow_position = GLM_VEC3_ZERO_INIT;
 
     void update_orbit_cam(vec2 look_delta_raw);
