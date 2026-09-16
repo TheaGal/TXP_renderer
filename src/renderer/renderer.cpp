@@ -707,13 +707,20 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
         // Render all graphics shaders.
         g.begin_rendering_render_view(render_view_idx);
+
         m.shad_basic_diffuse->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
-        m.shad_debug_color_wireframe->draw(m.render_object_list,
-                                           m.model_mesh_ref_list,
-                                           render_view);
-        m.shad_debug_color_grad_line->draw(m.render_object_list,
-                                           m.model_mesh_ref_list,
-                                           render_view);
+
+        bool const display_debug_draws{ !is_main_cam_matrix };
+        if (display_debug_draws)
+        {
+            m.shad_debug_color_wireframe->draw(m.render_object_list,
+                                               m.model_mesh_ref_list,
+                                               render_view);
+            m.shad_debug_color_grad_line->draw(m.render_object_list,
+                                               m.model_mesh_ref_list,
+                                               render_view);
+        }
+
         g.end_rendering_render_view(render_view_idx);
 
         if (is_main_cam_matrix)
