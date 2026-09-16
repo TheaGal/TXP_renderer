@@ -247,6 +247,16 @@ void Camera_internal::get_main_cam_follow_orbit_follow_pos(vec3 out_position) co
 void Camera_internal::set_main_cam_follow_orbit_orbits(vec2 const orbit_angles)
 {
     glm_vec2_copy(const_cast<float_t*>(orbit_angles), m_orbits);
+
+    m_orbits[1] = glm_clamp(m_orbits[1],
+                            -m_max_orbit_y - m_orbit_cam_angle_offset_y,
+                            m_max_orbit_y - m_orbit_cam_angle_offset_y);
+}
+
+void Camera_internal::set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles)
+{
+    m_orbit_cam_angle_offset_y = offset_angles[0];
+    glm_euler_zyx(const_cast<float_t*>(offset_angles), m_orbit_cam_angle_offset_rotation);
 }
 
 void Camera_internal::update_fly_cam(vec2 look_delta_raw, float_t delta_time)
@@ -347,7 +357,9 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
         m_orbits[0] += glm_rad(360.0f);
 
     m_orbits[1] += look_delta_y;
-    m_orbits[1] = glm_clamp(m_orbits[1], -m_max_orbit_y, m_max_orbit_y);
+    m_orbits[1] = glm_clamp(m_orbits[1],
+                            -m_max_orbit_y - m_orbit_cam_angle_offset_y,
+                            m_max_orbit_y - m_orbit_cam_angle_offset_y);
 
     // Calculate look offset.
     vec3 offset_from_follow_obj;
@@ -361,7 +373,12 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
     glm_vec3_copy(m_orbit_follow_position, camera.position.raw);
     glm_vec3_add(camera.position.raw, offset_from_follow_obj, camera.position.raw);
 
-    glm_vec3_negate_to(offset_from_follow_obj, camera.view_direction.raw);
+    glm_vec3_negate_to(m_orbit_cam_offset_position, camera.view_direction.raw);
+    glm_mat4_mulv3(m_orbit_cam_angle_offset_rotation,
+                   camera.view_direction.raw,
+                   0.0f,
+                   camera.view_direction.raw);
+    glm_mat4_mulv3(look_rotation, camera.view_direction.raw, 0.0f, camera.view_direction.raw);
     glm_vec3_normalize(camera.view_direction.raw);
 }
 

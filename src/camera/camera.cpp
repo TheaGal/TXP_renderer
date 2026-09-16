@@ -70,6 +70,11 @@ void Camera::set_follow_orbit_orbits(vec2 const orbit_angles)
     m_pimpl->camera.set_main_cam_follow_orbit_orbits(orbit_angles);
 }
 
+void Camera::set_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles)
+{
+    m_pimpl->camera.set_main_cam_follow_orbit_cam_angle_offset_euler(offset_angles);
+}
+
 bool Camera::is_cursor_free() const
 {
     return (m_pimpl->camera.get_controlling_camera() ==

@@ -312,7 +312,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
                 "Trying to unload something that was never loaded or collision?!?");
         }
 
-        BT::date_deadline(2026, 9, 15);
+        BT::date_deadline(2026, 9, 17);
         elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
     }
 

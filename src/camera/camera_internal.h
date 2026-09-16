@@ -40,6 +40,7 @@ public:
     void set_main_cam_follow_orbit_follow_pos(vec3 const follow_position);
     void get_main_cam_follow_orbit_follow_pos(vec3 out_follow_position) const;
     void set_main_cam_follow_orbit_orbits(vec2 const orbit_angles);
+    void set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);
 
 private:
     Input::Input_handler& m_input_handler;
@@ -55,6 +56,8 @@ private:
     float_t m_max_orbit_y{ glm_rad(89.0f) };
 
     vec2 m_orbits{ 0, 0 };
+    mat4 m_orbit_cam_angle_offset_rotation = GLM_MAT4_IDENTITY_INIT; 
+    float_t m_orbit_cam_angle_offset_y{ 0 };
     vec3 m_orbit_cam_offset_position{ 0, 0, -2 };
     vec3 m_orbit_follow_position = GLM_VEC3_ZERO_INIT;
 

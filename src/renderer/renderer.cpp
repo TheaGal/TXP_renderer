@@ -722,7 +722,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         if (render_ui)
         {
             // @TODO: only re-render if the cache of the canvas got invalidated.
-            BT::date_deadline(2026, 9, 15);
+            BT::date_deadline(2026, 9, 17);
 
             g.begin_rendering_ui();
             m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
@@ -752,7 +752,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     {
     case LDR_TARGET_SWAPCHAIN:
         // @TODO: rename to "blit_image_to_image()".
-        BT::date_deadline(2026, 9, 15);
+        BT::date_deadline(2026, 9, 17);
         // g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
         break;
 
