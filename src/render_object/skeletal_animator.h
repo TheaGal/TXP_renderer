@@ -158,7 +158,7 @@ public:
                                       float_t queue_expire_time);
 
     /// Resets jump queue watchlist to default values.
-    void reset_jump_queue_watchlist();
+    void reset_jump_queue_watchlist();  // @THEA: @TODO: make this private??
 
     /// Sets whether watching a jump queue.
     /// Returns true if flag was changed, false if the flag was already set to that.

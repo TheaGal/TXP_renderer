@@ -553,6 +553,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
                                 .anim_frame_action_timelines[current_action_timeline_idx] };
 
         m_anim_frame_action_data.clear_all_data_overrides();
+        reset_jump_queue_watchlist();
 
         // Get anim frame idx.
         auto const& anim_state{ m_animator_states[anim_state_idx] };
@@ -1114,10 +1115,13 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
-                // Add `anim_state_queue` for watching this frame.
-                bool changed = animator.set_watch_jump_queue(argv[0], true, row_idx);
-                if (!changed)
-                    throw std::runtime_error("Jump queue is already set to the wanted way.");
+                if (!animator.m_is_paused)
+                {
+                    // Add `anim_state_queue` for watching this frame.
+                    bool changed = animator.set_watch_jump_queue(argv[0], true, row_idx);
+                    if (!changed)
+                        throw std::runtime_error("Jump queue is already set to the wanted way.");
+                }
             }
         },
         {
@@ -1138,10 +1142,13 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
-                // Remove `anim_state_queue` from watching for this frame.
-                bool changed = animator.set_watch_jump_queue(argv[0], false, -1);
-                if (!changed)
-                    throw std::runtime_error("Jump queue is already set to the wanted way.");
+                if (!animator.m_is_paused)
+                {
+                    // Remove `anim_state_queue` from watching for this frame.
+                    bool changed = animator.set_watch_jump_queue(argv[0], false, -1);
+                    if (!changed)
+                        throw std::runtime_error("Jump queue is already set to the wanted way.");
+                }
             }
         },
     };
