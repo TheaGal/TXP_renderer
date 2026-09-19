@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -793,7 +794,12 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     bool prev_lmb_pressed{ false };
                     bool prev_rmb_pressed{ false };
                     bool prev_del_pressed{ false };
+                    bool prev_a_pressed{ false };
+                    bool prev_c_pressed{ false };
+                    bool prev_v_pressed{ false };
                     Input::Cursor_pos_state prev_cursor_state;
+
+                    std::vector<Region> copied_regions;
                 };
                 static Region_selecting s_reg_sel;
 
@@ -817,9 +823,33 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 bool on_del_press{ cur_del_pressed && !s_reg_sel.prev_del_pressed };
                 s_reg_sel.prev_del_pressed = cur_del_pressed;
 
+                bool cur_a_pressed{ input_handler.get_keyboard_key_state(BT_KEY_A).pressed };
+                bool on_a_press{ cur_a_pressed && !s_reg_sel.prev_a_pressed };
+                s_reg_sel.prev_a_pressed = cur_a_pressed;
+
+                bool cur_c_pressed{ input_handler.get_keyboard_key_state(BT_KEY_C).pressed };
+                bool on_c_press{ cur_c_pressed && !s_reg_sel.prev_c_pressed };
+                s_reg_sel.prev_c_pressed = cur_c_pressed;
+
+                bool cur_v_pressed{ input_handler.get_keyboard_key_state(BT_KEY_V).pressed };
+                bool on_v_press{ cur_v_pressed && !s_reg_sel.prev_v_pressed };
+                s_reg_sel.prev_v_pressed = cur_v_pressed;
+
                 bool cur_shift_pressed{
                     input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed ||
                     input_handler.get_keyboard_key_state(BT_KEY_RIGHT_SHIFT).pressed
+                };
+
+                bool cur_ctrl_pressed{
+                #if defined(__APPLE__)
+                    // Apple being like "oh we're so special and amazing!" but the only thing I eat
+                    // is my wife's peach.  -Thea 2026/09/19
+                    input_handler.get_keyboard_key_state(BT_KEY_LEFT_SUPER).pressed ||
+                    input_handler.get_keyboard_key_state(BT_KEY_RIGHT_SUPER).pressed
+                #else
+                    input_handler.get_keyboard_key_state(BT_KEY_LEFT_CONTROL).pressed ||
+                    input_handler.get_keyboard_key_state(BT_KEY_RIGHT_CONTROL).pressed
+                #endif // defined(__APPLE__)
                 };
 
                 Input::Cursor_pos_state cursor_delta;
@@ -1199,16 +1229,25 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                          !is_hovering_over_timeline_region &&
                          s_reg_sel.sel_state <= Region_selecting::SELECTED)  // Not doing a drag operation.
                 {   // Prompt creating new region w/ tooltip.
-                    ImGui::SetTooltip("Press Shift+A to create new region.");
+                    ImGui::SetTooltip("Press Shift+A to create new region.%s%s",
+                                      s_reg_sel.sel_state == Region_selecting::SELECTED
+                                      #if defined(__APPLE__)
+                                          ? "\n\nPress Cmd+C to copy selected region(s)."
+                                      #else
+                                          ? "\n\nPress Ctrl+C to copy selected region(s)."
+                                      #endif // defined(__APPLE__)
+                                          : "",
+                                      !s_reg_sel.copied_regions.empty()
+                                      #if defined(__APPLE__)
+                                          ? "\n\nPress Cmd+V to paste copied region(s)"
+                                      #else
+                                          ? "\n\nPress Ctrl+V to paste copied region(s)"
+                                      #endif // defined(__APPLE__)
+                                          : "");
 
-                    static bool s_prev_is_key_a_pressed{ false };
-                    bool cur_is_key_a_pressed{
-                        input_handler.get_keyboard_key_state(BT_KEY_A).pressed
-                    };
-                    if (cur_is_key_a_pressed &&
-                        !s_prev_is_key_a_pressed &&
-                        input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed)
-                    {   // Create new region since empty space selected.
+                    // Helper func.
+                    auto const calc_mouse_pos_hovering_cell_fn =
+                        [cr_timeline_min]() -> std::pair<uint32_t, int32_t> {
                         ImVec2 mouse_pos{ ImGui::GetIO().MousePos };
                         float_t zoom_relative_mouse_x{ (mouse_pos.x
                                                         - (cr_timeline_min.x + s_sequencer_x_offset))
@@ -1222,9 +1261,16 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         int32_t start_frame{
                             static_cast<int32_t>(std::floorf(zoom_relative_mouse_x)) };
 
+                        return { hover_row_idx, start_frame };
+                    };
+
+                    if (on_a_press && cur_shift_pressed)
+                    {   // Create new region since empty space selected.
+                        auto [hover_row_idx, hover_start_frame] = calc_mouse_pos_hovering_cell_fn();
+
                         afa_timeline_regions.emplace_back(hover_row_idx,
-                                                          start_frame,
-                                                          start_frame + 4);
+                                                          hover_start_frame,
+                                                          hover_start_frame + 4);
                         afa_timeline_regions.back().ctrl_cmd.cmd_name = "nop";  // Default, no-op command.
                         afa_timeline_regions.back().ctrl_cmd.argv.clear();
 
@@ -1238,8 +1284,60 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         // Mark working timeline as dirty.
                         anim_frame_action::s_editor_state.is_working_afa_dirty = true;
                     }
+                    else if (on_c_press && cur_ctrl_pressed)
+                    {   // Copy selected regions.
+                        s_reg_sel.copied_regions.clear();
+                        s_reg_sel.copied_regions.reserve(s_reg_sel.sel_regs.size());
 
-                    s_prev_is_key_a_pressed = cur_is_key_a_pressed;
+                        for (auto const* region : s_reg_sel.sel_regs)
+                        {
+                            s_reg_sel.copied_regions.emplace_back(*region);
+                        }
+
+                        // Clean up region positions by cropping it to size.
+                        uint32_t lowest_row_idx{ std::numeric_limits<uint32_t>::max() };
+                        int32_t lowest_start_frame{ std::numeric_limits<int32_t>::max() };
+                        for (auto const& region : s_reg_sel.copied_regions)
+                        {
+                            lowest_row_idx = std::min(lowest_row_idx, region.row_idx);
+                            lowest_start_frame = std::min(lowest_start_frame, region.start_frame);
+                        }
+                        for (auto& region : s_reg_sel.copied_regions)
+                        {
+                            region.row_idx -= lowest_row_idx;
+                            region.start_frame -= lowest_start_frame;
+                            region.end_frame -= lowest_start_frame;
+                        }
+                    }
+                    else if (on_v_press && cur_ctrl_pressed)
+                    {   // Paste selected regions.
+                        auto [hover_row_idx, hover_start_frame] = calc_mouse_pos_hovering_cell_fn();
+
+                        std::vector<uint32_t> created_region_indexes;
+                        created_region_indexes.reserve(s_reg_sel.copied_regions.size());
+
+                        for (auto const& region : s_reg_sel.copied_regions)
+                        {
+                            created_region_indexes.emplace_back(afa_timeline_regions.size());
+
+                            afa_timeline_regions.emplace_back(region);
+
+                            afa_timeline_regions.back().row_idx += hover_row_idx;
+                            afa_timeline_regions.back().start_frame += hover_start_frame;
+                            afa_timeline_regions.back().end_frame += hover_start_frame;
+                        }
+
+                        // @NOTE: immediately assign pasted regions as selected (once they are done
+                        //        being created).
+                        s_reg_sel.sel_state = Region_selecting::SELECTED;
+                        s_reg_sel.sel_regs.clear();
+                        s_reg_sel.sel_regs.reserve(created_region_indexes.size());
+
+                        for (uint32_t idx : created_region_indexes)
+                        {
+                            s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions[idx]);
+                        }
+                    }
                 }
             }
             ImGui::PopClipRect();
