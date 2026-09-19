@@ -24,13 +24,9 @@ public:
     void set_float_variable(std::string const& var_name, float_t value);
 
 
-    /// Adds a state set to a jump queue.
-    void emplace_jump_queue_state_set(std::string const& jump_queue_name,
-                                      Animator_state_set const& state_set,
-                                      float_t queue_expire_time);
+    /// Adds an event to an event queue.
+    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time);
 
-
-    uint32_t get_animator_state_idx(std::string const& state_name) const;
 
     /// Updates the animator, supplying a deltatime.
     /// There are two animator timers, so you need to give which timer to update.

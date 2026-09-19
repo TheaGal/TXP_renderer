@@ -14,6 +14,7 @@
 
 #include <cmath>
 #include <cstddef>
+#include <stdexcept>
 
 
 namespace
@@ -608,6 +609,16 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     float_t arg_val{ std::stof(editing_cmd_arg) };
                     if (ImGui::InputFloat(lbl_txt.c_str(), &arg_val))
                         editing_cmd_arg = std::to_string(arg_val);
+                }
+                else if (cmd_arg.type == "bool")
+                {
+                    bool arg_val{ editing_cmd_arg == "1" };
+                    ImGui::Checkbox(lbl_txt.c_str(), &arg_val);
+                    editing_cmd_arg = (arg_val ? "1" : "0");
+                }
+                else
+                {
+                    throw std::runtime_error("Unknown type.");
                 }
             }
 

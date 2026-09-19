@@ -44,21 +44,20 @@ public:
         std::vector<anim_tmpl_types::Animator_state> animator_states,
         std::vector<anim_tmpl_types::Animator_variable> animator_variables);
 
-    /// Information to create a jump queue.
-    struct Jump_queue_create
+    /// Information to create an event queue.
+    struct Event_queue_create
     {
         std::string queue_name;
-        bool default_is_watching;
     };
 
-    static std::vector<Jump_queue_create>
-    make_jump_queue_create_list_from_anim_frame_action_controls(
+    static std::vector<Event_queue_create>
+    make_event_queue_create_list_from_anim_frame_action_controls(
         anim_frame_action::Runtime_data_controls const& anim_frame_action_controls);
 
     void configure_anim_frame_action_controls(
         anim_frame_action::Runtime_data_controls const* anim_frame_action_controls,
         BT::UUID resp_entity_uuid,
-        std::vector<Jump_queue_create> const& jump_queues);
+        std::vector<Event_queue_create> const& event_queues);
 
     std::vector<anim_tmpl_types::Animator_state> const& get_animator_states() const;
     uint32_t get_animator_state_idx(std::string const& state_name) const;
@@ -67,7 +66,7 @@ public:
 
     /// Changes state-set.
     /// @note Public for being able to manually change state-sets instead of thru watching
-    ///       jump-queues.
+    ///       event queues.
     void change_state_set(Animator_state_set const& to_state_set);
 
     size_t get_model_animation_idx(std::string anim_name) const;
@@ -152,20 +151,24 @@ public:
     /// Accumulates delta time to update a timer for queue item expiring (runs in simulation loop).
     static void advance_sim_timer(float_t delta_time);
 
-    /// Adds a state set to a jump queue.
-    void emplace_jump_queue_state_set(std::string const& jump_queue_name,
-                                      Animator_state_set const& state_set,
-                                      float_t queue_expire_time);
+    /// Adds an event to an event queue.
+    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time);
 
-    /// Resets jump queue watchlist to default values.
-    void reset_jump_queue_watchlist();  // @THEA: @TODO: make this private??
+    /// Resets event queue watchlist to default values.
+    void reset_event_queue_watchlist();  // @THEA: @TODO: make this private??
 
-    /// Sets whether watching a jump queue.
+    /// Sets that for this update, this animator is watching an event queue.
     /// Returns true if flag was changed, false if the flag was already set to that.
-    bool set_watch_jump_queue(std::string const& jump_queue_name, bool watch, uint32_t priority);
+    bool set_watch_event_queue(std::string const& event_queue_name,
+                               uint32_t priority,
+                               std::string const& event_transition_state_set_as_str,
+                               bool loop_final_ev_trans_state_set_state);
 
-    /// Fetches/pops first top priority state-set from set of watching jump queues.
+    /// Fetches/pops first top priority state-set from set of watching event queues.
     std::optional<Animator_state_set> pop_one_state_set();
+
+    /// Clears all expired events from all event queues.
+    void clear_expired_event_queue_items();
 
 private:
     Deformed_model_animation_set const& m_model_anim_set;
@@ -205,6 +208,7 @@ private:
     std::vector<anim_tmpl_types::Animator_state> m_animator_states;
     std::vector<anim_tmpl_types::Animator_variable> m_animator_variables;
 
+#if 0  // @NOCHECKIN: DELETE THIS!!!!
     struct Jump_queue_data
     {
         bool is_watching;
@@ -220,6 +224,22 @@ private:
         std::vector<State_set_queue_item> state_set_queue;
     };
     std::unordered_map<std::string, Jump_queue_data> m_jump_queue_name_to_jump_queue_map;
+#endif // 0
+
+    struct Event_queue_data
+    {
+        bool is_watching;
+        uint32_t priority;
+        std::string event_transition_state_set_as_str;
+        bool loop_final_ev_trans_state_set_state;
+
+        struct Queue_item
+        {
+            double_t queue_expire_time_absolute;
+        };
+        std::vector<Queue_item> queue_items;
+    };
+    std::unordered_map<std::string, Event_queue_data> m_event_queue_name_to_event_queue_map;
 
     struct State_set_runtime_data
     {

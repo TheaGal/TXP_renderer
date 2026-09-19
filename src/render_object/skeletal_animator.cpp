@@ -14,10 +14,13 @@
 #include <cassert>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <limits>
 #include <map>
 #include <mutex>
+#include <stdexcept>
+#include <vector>
 
 
 TXP::Model_joint_animation_frame::Joint_local_transform
@@ -312,26 +315,26 @@ void TXP::component_internal::Model_animator::configure_animator_states(
     m_animator_variables = animator_variables;
 }
 
-std::vector<TXP::component_internal::Model_animator::Jump_queue_create>
-TXP::component_internal::
-    Model_animator::make_jump_queue_create_list_from_anim_frame_action_controls(
+auto TXP::component_internal::Model_animator::
+    make_event_queue_create_list_from_anim_frame_action_controls(
         anim_frame_action::Runtime_data_controls const& anim_frame_action_controls)
+        -> std::vector<Event_queue_create>
 {
-    std::vector<Jump_queue_create> jqc;
-    jqc.reserve(anim_frame_action_controls.data.anim_state_set_jump_queues.size());
+    std::vector<Event_queue_create> evqc;
+    evqc.reserve(anim_frame_action_controls.data.anim_state_set_event_queues.size());
 
-    for (auto const& jq : anim_frame_action_controls.data.anim_state_set_jump_queues)
+    for (auto const& evq : anim_frame_action_controls.data.anim_state_set_event_queues)
     {
-        jqc.emplace_back(jq.name, jq.default_is_watching);
+        evqc.emplace_back(evq.name);
     }
 
-    return jqc;
+    return evqc;
 }
 
 void TXP::component_internal::Model_animator::configure_anim_frame_action_controls(
     anim_frame_action::Runtime_data_controls const* anim_frame_action_controls,
     BT::UUID resp_entity_uuid,
-    std::vector<Jump_queue_create> const& jump_queues)
+    std::vector<Event_queue_create> const& event_queues)
 {
     // Idk why I put this into a separate method instead of in the constructor but hey, here we are.
     m_anim_frame_action_controls = anim_frame_action_controls;
@@ -343,22 +346,16 @@ void TXP::component_internal::Model_animator::configure_anim_frame_action_contro
         resp_entity_uuid);
     m_anim_frame_action_data.hitcapsule_group_set.connect_animator(*this);
 
-    // Insert jump queues.
-    m_jump_queue_name_to_jump_queue_map.clear();
+    // Insert event queues.
+    m_event_queue_name_to_event_queue_map.clear();
 
-    uint32_t next_def_watch_priority{ 0x80000000 };  // Place default-watching queues at least this low of priority.
-    for (auto const& jq : jump_queues)
+    for (auto const& evq : event_queues)
     {
-        uint32_t default_priority{ jq.default_is_watching ? next_def_watch_priority++
-                                                          : (uint32_t)-1 };
-
-        m_jump_queue_name_to_jump_queue_map.emplace(
-            jq.queue_name,
-            Jump_queue_data{
-                .is_watching = jq.default_is_watching,
-                .default_is_watching = jq.default_is_watching,
-                .priority = default_priority,
-                .default_priority = default_priority,
+        m_event_queue_name_to_event_queue_map.emplace(
+            evq.queue_name,
+            Event_queue_data{
+                .is_watching = false,
+                .priority = 0,
             });
     }
 }
@@ -553,7 +550,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
                                 .anim_frame_action_timelines[current_action_timeline_idx] };
 
         m_anim_frame_action_data.clear_all_data_overrides();
-        reset_jump_queue_watchlist();
+        reset_event_queue_watchlist();
 
         // Get anim frame idx.
         auto const& anim_state{ m_animator_states[anim_state_idx] };
@@ -616,9 +613,9 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
 
     if (!is_paused && profile == SIMULATION_TIMER_PROFILE)
     {
-        // Get state-set transition from watching jump queues.
+        // Get state-set transition from watching event queues.
         // @NOTE: this must happen after all regions have processed `execute_command_code()` so that
-        //        jump queues are being watched/ignored correctly.  -Thea 2026/08/31
+        //        event queues are being watched/ignored correctly.  -Thea 2026/08/31
         auto trans_state_set{ pop_one_state_set() };
 
         // Perform actual state-set change!
@@ -627,6 +624,11 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
             change_state_set(trans_state_set.value());
             state_set_changed = true;
             performed_state_transition = true;
+        }
+        // Run a clear step on all event queues to prune expired items.
+        else
+        {
+            clear_expired_event_queue_items();
         }
 
         // Check for end of anim case to move to next state idx.
@@ -951,6 +953,14 @@ TXP::component_internal::Model_animator::get_anim_frame_action_data_handle()
 std::vector<TXP::component_internal::Model_animator::Ctrl_cmd_documentation> const&
 TXP::component_internal::Model_animator::get_control_command_codes_documentation()
 {
+    static auto k_require_argv_count = [](std::vector<std::string> const& argv,
+                                          uint32_t required_count) {
+        if (argv.size() != required_count)
+        {
+            throw std::runtime_error("does not match required count");
+        }
+    };
+
     static std::vector<Ctrl_cmd_documentation> const k_all_cmd_docs{
         {
             .cmd{
@@ -963,6 +973,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 0);
                 BT_WARN("nop() executed.");
             }
         },
@@ -989,6 +1000,8 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 2);
+
                 auto& afa_data{ animator.m_anim_frame_action_data };
                 auto label{ afa_data.str_label_to_enum(argv[0]) };
                 switch (afa_data.get_data_type(label))
@@ -1029,6 +1042,8 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 2);
+
                 auto& afa_data{ animator.m_anim_frame_action_data };
                 auto label{ afa_data.str_label_to_enum(argv[0]) };
                 switch (afa_data.get_data_type(label))
@@ -1064,6 +1079,8 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 1);
+
                 if (!is_first_frame)
                     return;  // Exit early if not rising edge.
 
@@ -1093,21 +1110,33 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 22222);
+
                 BT_ERROR("NOT IMPLEMENTED YET: blend().");
                 assert(false);
             }
         },
         {
             .cmd{
-                .name = "watch_jump_queue",
-                .desc = "Checks the specified animation state queue to see if an available state "
-                        "exists, and if so, jumps to that animation state."
+                .name = "watch_event_queue",
+                .desc = "Checks the specified (`anim_state_queue`) event queue to see if an event "
+                        "occurred, and if so, changes the state set to the one specified."
             },
             .argv{
                 {
                     .name = "anim_state_queue",
                     .desc = "Queue to check for anim state queues this frame",
                     .type = "str"
+                },
+                {
+                    .name = "trans_state_set",
+                    .desc = "If an event is found, transition to this state set (comma delimited)",
+                    .type = "str"
+                },
+                {
+                    .name = "loop_final_state_set_state",
+                    .desc = "Whether to loop final state set's state.",
+                    .type = "bool"
                 }
             },
             .exec_fn = [](Model_animator& animator,
@@ -1115,10 +1144,17 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 3);
+
                 if (!animator.m_is_paused)
                 {
                     // Add `anim_state_queue` for watching this frame.
-                    bool changed = animator.set_watch_jump_queue(argv[0], true, row_idx);
+                    bool loop_final_state_set_state{ argv[2] == "1" };
+
+                    bool changed = animator.set_watch_event_queue(argv[0],
+                                                                  row_idx,
+                                                                  argv[1],
+                                                                  loop_final_state_set_state);
                     if (!changed)
                         throw std::runtime_error("Jump queue is already set to the wanted way.");
                 }
@@ -1142,13 +1178,16 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
-                if (!animator.m_is_paused)
-                {
-                    // Remove `anim_state_queue` from watching for this frame.
-                    bool changed = animator.set_watch_jump_queue(argv[0], false, -1);
-                    if (!changed)
-                        throw std::runtime_error("Jump queue is already set to the wanted way.");
-                }
+                k_require_argv_count(argv, 2222222);
+
+                assert(false);  // @TODO: DELETE THIS COMMAND!!!
+                // if (!animator.m_is_paused)
+                // {
+                //     // Remove `anim_state_queue` from watching for this frame.
+                //     bool changed = animator.set_watch_jump_queue(argv[0], false, -1);
+                //     if (!changed)
+                //         throw std::runtime_error("Jump queue is already set to the wanted way.");
+                // }
             }
         },
     };
@@ -1168,34 +1207,38 @@ void TXP::component_internal::Model_animator::advance_sim_timer(float_t delta_ti
     s_sim_timer += delta_time;
 }
 
-void TXP::component_internal::Model_animator::emplace_jump_queue_state_set(
-    std::string const& jump_queue_name,
-    Animator_state_set const& state_set,
+void TXP::component_internal::Model_animator::emplace_event(
+    std::string const& event_queue_name,
     float_t queue_expire_time)
 {
-    m_jump_queue_name_to_jump_queue_map.at(jump_queue_name)
-        .state_set_queue.emplace_back(state_set, s_sim_timer + queue_expire_time);
+    m_event_queue_name_to_event_queue_map.at(event_queue_name)
+        .queue_items.emplace_back(s_sim_timer.load() + queue_expire_time);
 }
 
-void TXP::component_internal::Model_animator::reset_jump_queue_watchlist()
+void TXP::component_internal::Model_animator::reset_event_queue_watchlist()
 {   // Reset back to defaults.
-    for (auto& [_, jq] : m_jump_queue_name_to_jump_queue_map)
+    for (auto& [_, evq] : m_event_queue_name_to_event_queue_map)
     {
-        jq.is_watching = jq.default_is_watching;
-        jq.priority = jq.default_priority;
+        evq.is_watching = false;
+        evq.priority = 0;
+        evq.event_transition_state_set_as_str = "";
+        evq.loop_final_ev_trans_state_set_state = false;
     }
 }
 
-bool TXP::component_internal::Model_animator::set_watch_jump_queue(
-    std::string const& jump_queue_name,
-    bool watch,
-    uint32_t priority)
+bool TXP::component_internal::Model_animator::set_watch_event_queue(
+    std::string const& event_queue_name,
+    uint32_t priority,
+    std::string const& event_transition_state_set_as_str,
+    bool loop_final_ev_trans_state_set_state)
 {
-    auto& jq{ m_jump_queue_name_to_jump_queue_map.at(jump_queue_name) };
-    if (jq.is_watching != watch)
+    auto& evq{ m_event_queue_name_to_event_queue_map.at(event_queue_name) };
+    if (!evq.is_watching)
     {
-        jq.is_watching = watch;
-        jq.priority = priority;
+        evq.is_watching = true;
+        evq.priority = priority;
+        evq.event_transition_state_set_as_str = event_transition_state_set_as_str;
+        evq.loop_final_ev_trans_state_set_state = loop_final_ev_trans_state_set_state;
         return true;
     }
     else
@@ -1208,47 +1251,70 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
 {
     std::optional<Animator_state_set> state_set{ std::nullopt };
 
-    // Collect watching jump queues sorted by priority.
-    std::map<uint32_t, std::vector<Jump_queue_data::State_set_queue_item>*>
-        sorted_priority_to_state_set_queue;
-    for (auto& [_, jq] : m_jump_queue_name_to_jump_queue_map)
+    // Collect watching event queues sorted by priority.
+    std::map<uint32_t, Event_queue_data*> sorted_priority_to_state_set_queue;
+    for (auto& [_, evq] : m_event_queue_name_to_event_queue_map)
     {
-        if (jq.is_watching)
+        if (evq.is_watching)
         {
             bool success =
-                sorted_priority_to_state_set_queue.emplace(jq.priority, &jq.state_set_queue).second;
+                sorted_priority_to_state_set_queue.emplace(evq.priority, &evq).second;
             if (!success)
             {
-                BT_ERRORF("Doubled-up priority level: %u", jq.priority);
+                BT_ERRORF("Doubled-up priority level: %u", evq.priority);
                 assert(false);
             }
         }
     }
 
-    // Fetch first non-expired state-set (first one is highest priority).
-    for (auto& [_, jq] : sorted_priority_to_state_set_queue)
+    // Fetch first non-expired state-set (lowest is highest priority).
+    auto sim_timer_time{ s_sim_timer.load() };
+
+    for (auto const& [_, evq] : sorted_priority_to_state_set_queue)
     {
-        size_t i{ 0 };
-        for (; i < jq->size(); i++)
+        for (size_t i = 0; i < evq->queue_items.size(); i++)
         {
-            if (s_sim_timer.load() < (*jq)[i].queue_expire_time_absolute)
+            if (sim_timer_time <= evq->queue_items[i].queue_expire_time_absolute)
             {
-                state_set = (*jq)[i].state_set;
-                i++;  // To ensure that this state-set gets deleted as well.
+                // Convert state strings to state indices.
+                std::vector<uint32_t> anim_state_indices;
+
+                int32_t str_head{ 0 };
+                for (int32_t str_i = 0; str_i <= evq->event_transition_state_set_as_str.size();
+                     str_i++)
+                {
+                    switch (evq->event_transition_state_set_as_str[str_i])
+                    {
+                    case ',':
+                    case '\0':
+                    {
+                        // Try emplacing new entry!
+                        int32_t str_length{ str_i - str_head };
+                        if (str_length >= 1)
+                        {
+                            uint32_t new_state_idx{ get_animator_state_idx(
+                                evq->event_transition_state_set_as_str.substr(str_head,
+                                                                              str_length)) };
+                            anim_state_indices.emplace_back(new_state_idx);
+                        }
+
+                        // Start a new string head now.
+                        str_head = str_i + 1;
+                        break;
+                    }
+                    }
+                }
+                anim_state_indices.shrink_to_fit();
+
+                // Construct state set!!
+                state_set = {
+                    .anim_state_indices = std::move(anim_state_indices),
+                    .loop_final_state = evq->loop_final_ev_trans_state_set_state,
+                };
+
+                i++;  // To ensure that this event queue's queue item gets deleted as well.
                 break;
             }
-        }
-
-        size_t pre_delete_size{ jq->size() };
-
-        // Remove expired queue items.
-        for (size_t j = 0; j < i; j++)
-            jq->erase(jq->begin());
-
-        size_t post_delete_size{ jq->size() };
-        if (pre_delete_size != post_delete_size)
-        {
-            BT_WARNF("Jump-queue %u : size %llu -> %llu", _, pre_delete_size, post_delete_size);
         }
 
         // Exit early if state set is found.
@@ -1257,6 +1323,33 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
     }
 
     return state_set;
+}
+
+
+void TXP::component_internal::Model_animator::clear_expired_event_queue_items()
+{
+    auto sim_timer_time{ s_sim_timer.load() };
+
+    for (auto& [_, evq] : m_event_queue_name_to_event_queue_map)
+    {
+        size_t pre_delete_size{ evq.queue_items.size() };
+
+        // Remove expired queue items.
+        for (int32_t i = evq.queue_items.size() - 1; i >= 0; i--)
+        {
+            if (sim_timer_time > evq.queue_items[i].queue_expire_time_absolute)
+                evq.queue_items.erase(evq.queue_items.begin() + i);
+        }
+
+        size_t post_delete_size{ evq.queue_items.size() };
+        if (pre_delete_size != post_delete_size)
+        {
+            BT_WARNF("Event queue %s : size %zu -> %zu",
+                     _.c_str(),
+                     pre_delete_size,
+                     post_delete_size);
+        }
+    }
 }
 
 // Please ignore the const_cast's below!! (^_^;)

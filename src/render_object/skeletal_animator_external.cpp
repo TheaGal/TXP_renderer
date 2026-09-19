@@ -15,18 +15,12 @@ void Skeletal_animator::set_float_variable(std::string const& var_name, float_t 
 }
 
 
-void Skeletal_animator::emplace_jump_queue_state_set(std::string const& jump_queue_name,
-                                                     Animator_state_set const& state_set,
-                                                     float_t queue_expire_time)
+void Skeletal_animator::emplace_event(std::string const& event_queue_name,
+                                      float_t queue_expire_time)
 {
-    m_animator->emplace_jump_queue_state_set(jump_queue_name, state_set, queue_expire_time);
+    m_animator->emplace_event(event_queue_name, queue_expire_time);
 }
 
-
-uint32_t Skeletal_animator::get_animator_state_idx(std::string const& state_name) const
-{
-    return m_animator->get_animator_state_idx(state_name);
-}
 
 void Skeletal_animator::update(Animator_timer_profile profile, float_t delta_time)
 {

@@ -22,17 +22,14 @@ struct Runtime_data_controls
     {
         std::string animated_model_name;
 
-        /// List of jump queues available for this AFA.
-        struct Animation_state_set_jump_queues
+        /// List of event queues available for this AFA.
+        struct Animation_state_set_event_queues
         {
             std::string name;
-            bool default_is_watching;
 
-            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Animation_state_set_jump_queues,
-                                           name,
-                                           default_is_watching);
+            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Animation_state_set_event_queues, name);
         };
-        std::vector<Animation_state_set_jump_queues> anim_state_set_jump_queues;
+        std::vector<Animation_state_set_event_queues> anim_state_set_event_queues;
 
         /// A timeline is paired with an animation state from the .btanitor file.
         struct Animation_frame_action_timeline
@@ -68,7 +65,7 @@ struct Runtime_data_controls
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(Data,
                                        animated_model_name,
-                                       anim_state_set_jump_queues,
+                                       anim_state_set_event_queues,
                                        anim_frame_action_timelines,
                                        hitcapsule_group_set_template);
     } data;

@@ -258,7 +258,7 @@ struct Renderer::Impl
                                 &afa_ctrller_ref,
                                 m.ecs_registry.get<component::Entity_metadata>(ecs_entity).uuid,
                                 component_internal::Model_animator::
-                                    make_jump_queue_create_list_from_anim_frame_action_controls(
+                                    make_event_queue_create_list_from_anim_frame_action_controls(
                                         afa_ctrller_ref));
 
                             // Add hitcapsule set driver.
