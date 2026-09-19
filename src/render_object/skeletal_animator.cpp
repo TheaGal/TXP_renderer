@@ -492,14 +492,9 @@ void TXP::component_internal::Model_animator::reset_time()
 
 void TXP::component_internal::Model_animator::set_time(float_t time)
 {
-    // @NOTE: since SIMULATION_PROFILE floors for calc frame idx, set to start at 1/2 one frame to
-    //        prevent floating-pt error accumulation.  -Thea 2026/01/17
-    constexpr float_t k_half_frame_offset{ 0.5f / k_skeletal_anim_frames_per_second };
+    auto time_converted_to_frame{ std::floor(time * k_skeletal_anim_frames_per_second) };
 
-    auto time_floored_to_frame{ std::floor(time * k_skeletal_anim_frames_per_second) /
-                                k_skeletal_anim_frames_per_second };
-
-    m_sim_time  = time_floored_to_frame + k_half_frame_offset;
+    m_sim_frame = time_converted_to_frame;
     m_rend_time = time;
 }
 
@@ -1390,7 +1385,7 @@ auto TXP::component_internal::Model_animator::get_profile_frame_handle(
 {
     switch (profile)
     {
-    case SIMULATION_TIMER_PROFILE: return const_cast<animator_frame_t&>(m_sim_time);
+    case SIMULATION_TIMER_PROFILE: return const_cast<animator_frame_t&>(m_sim_frame);
 
     default:
         assert(false);

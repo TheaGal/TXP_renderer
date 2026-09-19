@@ -185,7 +185,7 @@ private:
     animator_time_t& get_profile_time_handle(Animator_timer_profile profile) const;
     animator_frame_t& get_profile_frame_handle(Animator_timer_profile profile) const;
 
-    animator_frame_t m_sim_time{ (uint32_t)-1 };  // -1 for showing timer is unset on first update().
+    animator_frame_t m_sim_frame{ (uint32_t)-1 };  // -1 for showing timer is unset on first update().
     animator_time_t m_rend_time{ -1.0f };
 
     animator_frame_t& get_profile_prev_frame_handle(Animator_timer_profile profile) const;

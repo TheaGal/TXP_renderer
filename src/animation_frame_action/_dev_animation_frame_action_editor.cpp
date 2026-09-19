@@ -130,8 +130,9 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
             assert(eds.working_model_animator != nullptr);
 
             auto current_frame_clamped{ eds.anim_current_frame };  // @NOTE: Assumed clamped.
-            eds.working_model_animator->set_time(current_frame_clamped /
-                                                 k_skeletal_anim_frames_per_second);
+            eds.working_model_animator->set_time(
+                (current_frame_clamped + 0.01f) /
+                k_skeletal_anim_frames_per_second);  // Offset for ensuring no floating point error.
             eds.working_model_animator->update(SIMULATION_TIMER_PROFILE, 0);  // Forces data update.
 
             // Process all controllable data.
