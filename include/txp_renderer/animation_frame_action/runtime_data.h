@@ -39,8 +39,6 @@ enum Controllable_data_label : std::uint32_t
         X__bool(can_move,                   true)       \
         X__bool(can_do_turnaround_anim,     false)      \
         X__bool(mvt_input_enabled,          false)      \
-        X__bool(can_guard_exit,             true)       \
-        X__bool(can_attack_exit,            true)       \
         X__bool(can_cancel_attack_w_parry,  false)      \
         X__bool(blade_has_mizunokata,       false)      \
         X__bool(blade_has_honoonokata,      false)      \
