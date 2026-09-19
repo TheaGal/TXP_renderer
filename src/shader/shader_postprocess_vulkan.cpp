@@ -275,14 +275,15 @@ void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
 {
     auto& p{ *m_pimpl };
 
+    auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
+
     if (!p.shader_pipeline.is_descriptor_set_valid)
     {
+        assert(render_view.render_view_idx == 0);
         p.build_descriptors();
     }
 
     auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
-
-    auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
 
     // Ready needed images for compute shader.
     auto const& prv_data{ p.shader_pipeline.per_render_view_data_map.at(&render_view) };

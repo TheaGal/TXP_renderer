@@ -606,7 +606,10 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     // Invalidate cache when sizes change.
     if (render_view_sizes_changed)
+    {
+        ui_state->invalidate_draw_cache();
         m.shad_postprocess->signal_render_view_sizes_changed();
+    }
 
     // Wait until can start rendering.
     bool frame_acquired{ false };
