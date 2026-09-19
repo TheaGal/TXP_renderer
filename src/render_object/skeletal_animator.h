@@ -151,6 +151,9 @@ public:
     /// Accumulates delta time to update a timer for queue item expiring (runs in simulation loop).
     static void advance_sim_timer(float_t delta_time);
 
+    /// Gets names of all event queues.
+    std::vector<std::string> get_event_queue_names() const;  // @UNUSED: i think ??
+
     /// Adds an event to an event queue.
     void emplace_event(std::string const& event_queue_name, float_t queue_expire_time);
 

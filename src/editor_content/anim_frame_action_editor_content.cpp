@@ -269,6 +269,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
     ImGui::Begin("Timeline controllable data");
     if (anim_frame_action::s_editor_state.working_model_animator != nullptr)
     {
+        ImGui::SeparatorText("Runtime controllable data");
         auto const& all_controllable_data_strs{ anim_frame_action::Runtime_controllable_data::get_all_str_labels() };
         for (auto& data_str : all_controllable_data_strs)
         {
@@ -335,6 +336,13 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     assert(false);
                     break;
             }
+        }
+
+        ImGui::SeparatorText("Event queues");
+        for (auto const& evq : anim_frame_action::s_editor_state.working_afa_ctrls_copy->data
+                                   .anim_state_set_event_queues)
+        {
+            ImGui::Text("%s", evq.name.c_str());
         }
     }
     else

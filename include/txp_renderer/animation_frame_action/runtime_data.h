@@ -34,12 +34,12 @@ enum Controllable_data_label : std::uint32_t
         X_float(attack_send_root_motion_multi, 1.0f)    \
         X_float(gravity_magnitude,             1.0f)    \
         /* Bools */                                     \
-        X__bool(is_parry_active,            false)      \
-        X__bool(is_guard_active,            false)      \
-        X__bool(can_move,                   true)       \
-        X__bool(can_do_turnaround_anim,     false)      \
-        X__bool(mvt_input_enabled,          false)      \
-        X__bool(can_cancel_attack_w_parry,  false)      \
+        X__bool(is_parry_active,            false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(is_guard_active,            false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(can_move,                   true)   /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(can_do_turnaround_anim,     false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(mvt_input_enabled,          false)  /* @TODO: rename this to "use_input_based_mvt" since it disables the root animation based movement in favor for input based movement */    \
+        X__bool(can_cancel_attack_w_parry,  false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(blade_has_mizunokata,       false)      \
         X__bool(blade_has_honoonokata,      false)      \
         X__bool(hitcapsule_group_0_enabled, false)      \

@@ -1207,6 +1207,22 @@ void TXP::component_internal::Model_animator::advance_sim_timer(float_t delta_ti
     s_sim_timer += delta_time;
 }
 
+std::vector<std::string> TXP::component_internal::Model_animator::get_event_queue_names() const
+{
+    assert(false);  // hello??? are you used???
+
+    std::vector<std::string> evq_names;
+    evq_names.reserve(m_event_queue_name_to_event_queue_map.size());
+
+    for (auto const& [evq_name, _] : m_event_queue_name_to_event_queue_map)
+    {
+        evq_names.emplace_back(evq_name);
+    }
+
+    std::sort(evq_names.begin(), evq_names.end());
+    return evq_names;
+}
+
 void TXP::component_internal::Model_animator::emplace_event(
     std::string const& event_queue_name,
     float_t queue_expire_time)
