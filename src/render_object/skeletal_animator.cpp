@@ -604,7 +604,6 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process animator state transitions.
     bool performed_state_transition{ false };
-    bool state_set_changed{ false };
 
     if (!is_paused && profile == SIMULATION_TIMER_PROFILE)
     {
@@ -617,7 +616,6 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
         if (trans_state_set.has_value())
         {
             change_state_set(trans_state_set.value());
-            state_set_changed = true;
             performed_state_transition = true;
         }
         // Run a clear step on all event queues to prune expired items.
@@ -628,7 +626,7 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
 
         // Check for end of anim case to move to next state idx.
         // @NOTE: lesser priority than state-set change.
-        if (!state_set_changed)
+        if (!performed_state_transition)
         {
             auto const& model_anim{
                 m_model_anim_set.animations[anim_state.state_type == anim_state.SINGLE_ANIM
@@ -693,13 +691,13 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Redo eaten `update()` that was for state-set change.
-    if (!is_paused && performed_state_transition && state_set_changed)
+    // Redo eaten `update()` that was for state transition.
+    if (!is_paused && performed_state_transition)
     {
-        // @NOTE: since the state-set change is "immediate" (happened due to a jump queue pop (which
-        //        requires the AFA to update which jump queues to watch/ignore)), then this
-        //        `update()` call was for processing the jump queues and another `update()` is
-        //        needed for the newly changed state-set's first frame.
+        // @NOTE: since the state transition change is "immediate" (and requires the AFA to update
+        //        which event queues to watch/ignore before the transition can be processed), then
+        //        this `update()` call was for processing the event queues and another `update()` is
+        //        needed for the transitioned new state's first frame.
         update(profile, delta_time);
     }
 }
@@ -1151,7 +1149,8 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                                                                   argv[1],
                                                                   loop_final_state_set_state);
                     if (!changed)
-                        throw std::runtime_error("Jump queue is already set to the wanted way.");
+                        throw std::runtime_error(
+                            "Event queue is already set to the wanted watch way.");
                 }
             }
         },
