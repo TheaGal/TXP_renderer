@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstddef>
 #include <stdexcept>
+#include <vector>
 
 
 namespace
@@ -55,16 +56,6 @@ bool custom_imgui_listbox(std::string const& id,
 
 void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t delta_time)
 {
-    // @THEA: this should already be taken care of.
-    // if (enter)
-    // {   // Load up editor-specific scene.
-    //     auto& scene_loader{ service_finder::find_service<world::Scene_loader>() };
-    //     scene_loader.unload_all_scenes();
-    //     scene_loader.load_scene("_dev_animation_editor_view.btscene");
-
-    //     anim_frame_action::s_editor_state = {};  // Reset editor state.
-    // }
-
     static size_t s_selected_afa_idx{ 0 };
     static int32_t s_current_animation_clip{ -1 };  // -1 means unset.
     static auto s_all_afa_names{ anim_frame_action::Bank::get_all_names() };
@@ -796,7 +787,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     Select_state sel_state{ Select_state::UNSELECTED };
                     using Region = anim_frame_action::Runtime_data_controls::Data::
                         Animation_frame_action_timeline::Region;
-                    Region* sel_reg{ nullptr };
+                    std::vector<Region*> sel_regs;
                     float_t drag_x_amount{ 0.0f };
                     float_t drag_y_amount{ 0.0f };
                     bool prev_lmb_pressed{ false };
@@ -841,7 +832,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     s_reg_sel.prev_cursor_state = cursor_state;
                 }
 
-                if (s_reg_sel.sel_reg != nullptr)
+                if (!s_reg_sel.sel_regs.empty())
                 {
                     if (s_reg_sel.sel_state == Region_selecting::LEFT_DRAG ||
                         s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG ||
@@ -858,28 +849,34 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                             if (s_reg_sel.sel_state == Region_selecting::LEFT_DRAG ||
                                 s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
                             {   // Left side drag.
-                                s_reg_sel.sel_reg->start_frame += drag_sign;
+                                for (auto* sel_reg : s_reg_sel.sel_regs)
+                                    sel_reg->start_frame += drag_sign;
                                 left_side_drag = true;
                             }
                             if (s_reg_sel.sel_state == Region_selecting::RIGHT_DRAG ||
                                 s_reg_sel.sel_state == Region_selecting::WHOLE_DRAG)
                             {   // Right side drag.
-                                s_reg_sel.sel_reg->end_frame += drag_sign;
+                                for (auto* sel_reg : s_reg_sel.sel_regs)
+                                    sel_reg->end_frame += drag_sign;
                                 left_side_drag = false;
                             }
 
                             // Check for overlap issue/error after all drag operations.
                             if (left_side_drag)
                             {
-                                s_reg_sel.sel_reg->start_frame =
-                                    glm_min(s_reg_sel.sel_reg->start_frame,
-                                            s_reg_sel.sel_reg->end_frame - 1);
+                                for (auto* sel_reg : s_reg_sel.sel_regs)
+                                {
+                                    sel_reg->start_frame =
+                                        glm_min(sel_reg->start_frame, sel_reg->end_frame - 1);
+                                }
                             }
                             else
                             {
-                                s_reg_sel.sel_reg->end_frame =
-                                    glm_max(s_reg_sel.sel_reg->start_frame + 1,
-                                            s_reg_sel.sel_reg->end_frame);
+                                for (auto* sel_reg : s_reg_sel.sel_regs)
+                                {
+                                    sel_reg->end_frame =
+                                        glm_max(sel_reg->start_frame + 1, sel_reg->end_frame);
+                                }
                             }
 
                             // Mark working timeline as dirty.
@@ -897,7 +894,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                             s_reg_sel.drag_y_amount -= (s_timeline_cell_size.y * drag_sign);
 
                             // Move row depending on drag direction.
-                            s_reg_sel.sel_reg->row_idx += drag_sign;
+                            for (auto* sel_reg : s_reg_sel.sel_regs)
+                                sel_reg->row_idx += drag_sign;
 
                             // Mark working timeline as dirty.
                             anim_frame_action::s_editor_state.is_working_afa_dirty = true;
@@ -907,12 +905,6 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     if (on_lmb_release)
                     {   // Release drag.
                         s_reg_sel.sel_state = Region_selecting::SELECTED;
-                    }
-
-                    if (on_lmb_press)
-                    {   // Deselect selected region.
-                        s_reg_sel.sel_state = Region_selecting::UNSELECTED;
-                        s_reg_sel.sel_reg = nullptr;
                     }
                 }
 
@@ -939,7 +931,18 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                                              (is_active_this_frame ? 0x5500FF00 : 0x556DFC6D),
                                              4.0f);
 
-                    bool is_selected_region{ &region == s_reg_sel.sel_reg };
+                    auto const check_is_selected_region_fn =
+                        [](anim_frame_action::Runtime_data_controls::Data::
+                               Animation_frame_action_timeline::Region const& region) {
+                            for (auto* sel_reg : s_reg_sel.sel_regs)
+                                if (&region == sel_reg)
+                                {
+                                    return true;
+                                }
+                            return false;
+                        };
+
+                    bool is_selected_region{ check_is_selected_region_fn(region) };
                     draw_list->AddRect(p_min,
                                        p_max,
                                        (is_selected_region ? 0xFF3176F5 : 0x55FFFFFF),
@@ -980,7 +983,11 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (on_lmb_press)
                         {
                             s_reg_sel.sel_state = Region_selecting::LEFT_DRAG;
-                            s_reg_sel.sel_reg = &region;
+                            if (!check_is_selected_region_fn(region))
+                            {
+                                s_reg_sel.sel_regs.clear();
+                                s_reg_sel.sel_regs.emplace_back(&region);
+                            }
                             s_reg_sel.drag_x_amount = 0.0f;
                         }
                         else if (on_rmb_press)
@@ -998,7 +1005,11 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (on_lmb_press)
                         {
                             s_reg_sel.sel_state = Region_selecting::WHOLE_DRAG;
-                            s_reg_sel.sel_reg = &region;
+                            if (!check_is_selected_region_fn(region))
+                            {
+                                s_reg_sel.sel_regs.clear();
+                                s_reg_sel.sel_regs.emplace_back(&region);
+                            }
                             s_reg_sel.drag_x_amount = 0.0f;
                             s_reg_sel.drag_y_amount = 0.0f;
                         }
@@ -1017,7 +1028,11 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (on_lmb_press)
                         {
                             s_reg_sel.sel_state = Region_selecting::RIGHT_DRAG;
-                            s_reg_sel.sel_reg = &region;
+                            if (!check_is_selected_region_fn(region))
+                            {
+                                s_reg_sel.sel_regs.clear();
+                                s_reg_sel.sel_regs.emplace_back(&region);
+                            }
                             s_reg_sel.drag_x_amount = 0.0f;
                         }
                         else if (on_rmb_press)
@@ -1034,6 +1049,11 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         s_cmd_edit_popup_data.ctrl_cmd_copy = region.ctrl_cmd;
                         s_cmd_edit_popup_data.write_ptr = &region.ctrl_cmd;
                     }
+                }
+                if (!is_hovering_over_timeline_region && on_lmb_press)
+                {   // Deselect selected region(s).
+                    s_reg_sel.sel_state = Region_selecting::UNSELECTED;
+                    s_reg_sel.sel_regs.clear();
                 }
 
                 // Draw measuring region bg.
@@ -1103,26 +1123,39 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     on_del_press &&
                     s_reg_sel.sel_state == Region_selecting::SELECTED)
                 {   // Delete selected region.
-                    assert(s_reg_sel.sel_reg != nullptr);
-                    for (size_t i = afa_timeline_regions.size() - 1;; i--)
+                    assert(!s_reg_sel.sel_regs.empty());
+
+                    std::vector<uint32_t> deleting_indexes;
+                    deleting_indexes.reserve(s_reg_sel.sel_regs.size());
+
+                    for (auto* sel_reg : s_reg_sel.sel_regs)
+                        for (size_t i = afa_timeline_regions.size() - 1;; i--)
+                        {
+                            if (&afa_timeline_regions[i] == sel_reg)
+                            {   // Found the one to delete.
+                                // @NOTE: deleting is deferred to not disturb pointers.
+                                deleting_indexes.emplace_back(i);
+                                break;
+                            }
+                            if (i == 0)
+                            {   // Searching failed. Abort/exit.
+                                BT_ERROR("Delete selected region searching failed.");
+                                assert(false);
+                                break;
+                            }
+                        }
+
+                    std::sort(deleting_indexes.begin(), deleting_indexes.end());
+                    for (auto it = deleting_indexes.rbegin(); it != deleting_indexes.rend(); it++)
                     {
-                        if (&afa_timeline_regions[i] == s_reg_sel.sel_reg)
-                        {   // Found the one to delete.
-                            afa_timeline_regions.erase(afa_timeline_regions.begin() + i);
-                            break;
-                        }
-                        if (i == 0)
-                        {   // Searching failed. Abort/exit.
-                            BT_ERROR("Delete selected region searching failed.");
-                            assert(false);
-                            break;
-                        }
+                        auto deleting_idx{ *it };
+                        afa_timeline_regions.erase(afa_timeline_regions.begin() + deleting_idx);
                     }
 
                     // Clear selection state.
                     // (Do this right after to prevent stale pointer issues)
                     s_reg_sel.sel_state = Region_selecting::UNSELECTED;
-                    s_reg_sel.sel_reg = nullptr;
+                    s_reg_sel.sel_regs.clear();
 
                     // Mark working timeline as dirty.
                     anim_frame_action::s_editor_state.is_working_afa_dirty = true;
@@ -1184,7 +1217,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         // (Just in case there may be some kind of vector resizing
                         //  which makes the pointers stale. I hate this issue too)
                         s_reg_sel.sel_state = Region_selecting::SELECTED;
-                        s_reg_sel.sel_reg = &afa_timeline_regions.back();
+                        s_reg_sel.sel_regs.clear();
+                        s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions.back());
 
                         // Mark working timeline as dirty.
                         anim_frame_action::s_editor_state.is_working_afa_dirty = true;
