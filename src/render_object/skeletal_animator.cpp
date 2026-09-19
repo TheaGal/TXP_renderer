@@ -1312,7 +1312,8 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                     .loop_final_state = evq->loop_final_ev_trans_state_set_state,
                 };
 
-                i++;  // To ensure that this event queue's queue item gets deleted as well.
+                // Delete this event queue's queue item.
+                evq->queue_items.erase(evq->queue_items.begin() + i);
                 break;
             }
         }
