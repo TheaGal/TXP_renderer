@@ -128,6 +128,8 @@ struct Shader_postprocess::Impl
 
     void build_descriptors()
     {
+        g.wait_until_gpu_idle();
+
         auto& sp{ shader_pipeline };
 
         // Reallocate.
