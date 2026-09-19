@@ -817,6 +817,11 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 bool on_del_press{ cur_del_pressed && !s_reg_sel.prev_del_pressed };
                 s_reg_sel.prev_del_pressed = cur_del_pressed;
 
+                bool cur_shift_pressed{
+                    input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed ||
+                    input_handler.get_keyboard_key_state(BT_KEY_RIGHT_SHIFT).pressed
+                };
+
                 Input::Cursor_pos_state cursor_delta;
                 {
                     auto cursor_state{ input_handler.get_cursor_pos_state() };
@@ -931,18 +936,40 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                                              (is_active_this_frame ? 0x5500FF00 : 0x556DFC6D),
                                              4.0f);
 
-                    auto const check_is_selected_region_fn =
-                        [](anim_frame_action::Runtime_data_controls::Data::
-                               Animation_frame_action_timeline::Region const& region) {
-                            for (auto* sel_reg : s_reg_sel.sel_regs)
-                                if (&region == sel_reg)
-                                {
-                                    return true;
-                                }
-                            return false;
+                    // Helper funcs for regions.
+                    using Region = anim_frame_action::Runtime_data_controls::Data::
+                        Animation_frame_action_timeline::Region;
+
+                    auto const check_is_selected_region_fn = [](Region const& region) {
+                        for (auto* sel_reg : s_reg_sel.sel_regs)
+                            if (&region == sel_reg)
+                            {
+                                return true;
+                            }
+                        return false;
+                    };
+
+                    auto const single_select_region_fn =
+                        [&check_is_selected_region_fn](Region& region, bool shift_pressed) {
+                            bool const is_selected_region{ check_is_selected_region_fn(region) };
+                            if (is_selected_region)
+                            {
+                                if (shift_pressed)
+                                    s_reg_sel.sel_regs.erase(std::remove(s_reg_sel.sel_regs.begin(),
+                                                                         s_reg_sel.sel_regs.end(),
+                                                                         &region),
+                                                             s_reg_sel.sel_regs.end());
+                            }
+                            else
+                            {
+                                if (!shift_pressed)
+                                    s_reg_sel.sel_regs.clear();
+                                s_reg_sel.sel_regs.emplace_back(&region);
+                            }
                         };
 
-                    bool is_selected_region{ check_is_selected_region_fn(region) };
+                    // Region seletected outline.
+                    bool const is_selected_region{ check_is_selected_region_fn(region) };
                     draw_list->AddRect(p_min,
                                        p_max,
                                        (is_selected_region ? 0xFF3176F5 : 0x55FFFFFF),
@@ -983,11 +1010,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (on_lmb_press)
                         {
                             s_reg_sel.sel_state = Region_selecting::LEFT_DRAG;
-                            if (!check_is_selected_region_fn(region))
-                            {
-                                s_reg_sel.sel_regs.clear();
-                                s_reg_sel.sel_regs.emplace_back(&region);
-                            }
+                            single_select_region_fn(region, cur_shift_pressed);
                             s_reg_sel.drag_x_amount = 0.0f;
                         }
                         else if (on_rmb_press)
@@ -1005,11 +1028,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (on_lmb_press)
                         {
                             s_reg_sel.sel_state = Region_selecting::WHOLE_DRAG;
-                            if (!check_is_selected_region_fn(region))
-                            {
-                                s_reg_sel.sel_regs.clear();
-                                s_reg_sel.sel_regs.emplace_back(&region);
-                            }
+                            single_select_region_fn(region, cur_shift_pressed);
                             s_reg_sel.drag_x_amount = 0.0f;
                             s_reg_sel.drag_y_amount = 0.0f;
                         }
@@ -1028,11 +1047,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (on_lmb_press)
                         {
                             s_reg_sel.sel_state = Region_selecting::RIGHT_DRAG;
-                            if (!check_is_selected_region_fn(region))
-                            {
-                                s_reg_sel.sel_regs.clear();
-                                s_reg_sel.sel_regs.emplace_back(&region);
-                            }
+                            single_select_region_fn(region, cur_shift_pressed);
                             s_reg_sel.drag_x_amount = 0.0f;
                         }
                         else if (on_rmb_press)
