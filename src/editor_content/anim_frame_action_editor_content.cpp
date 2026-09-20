@@ -808,6 +808,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     Input::Cursor_pos_state prev_cursor_state;
 
                     std::vector<Region> copied_regions;
+                    BT::UUID copied_regions_id;  // just a way to see that the copy has happened.
                 };
                 static Region_selecting s_reg_sel;
 
@@ -1226,32 +1227,47 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                                                    / s_timeline_cell_size.x };
                     s_current_frame = std::roundf(zoom_relative_mouse_x);
                 }
-                else if (is_hovering_over_timeline && is_hovering_over_timeline_region)
+                else if (is_hovering_over_timeline)
                 {
-                    ImGui::SetTooltip("Left click to select/move.\n"
-                                      "Right click to edit region\'s cmd.");
+                    bool const can_do_copy_action{ s_reg_sel.sel_state <=
+                                                       Region_selecting::SELECTED &&
+                                                   !s_reg_sel.copied_regions.empty() };
+                    bool const can_do_paste_action{ s_reg_sel.sel_state <=
+                                                        Region_selecting::SELECTED &&
+                                                    !s_reg_sel.copied_regions_id.is_nil() };
 
-                    // @NOTE: LMB and RMB inputs are handled when inside the region's drawing code.
-                }
-                else if (is_hovering_over_timeline &&
-                         !is_hovering_over_timeline_region &&
-                         s_reg_sel.sel_state <= Region_selecting::SELECTED)  // Not doing a drag operation.
-                {   // Prompt creating new region w/ tooltip.
-                    ImGui::SetTooltip("Press Shift+A to create new region.%s%s",
-                                      s_reg_sel.sel_state == Region_selecting::SELECTED
-                                      #if defined(__APPLE__)
-                                          ? "\n\nPress Cmd+C to copy selected region(s)."
-                                      #else
-                                          ? "\n\nPress Ctrl+C to copy selected region(s)."
-                                      #endif // defined(__APPLE__)
-                                          : "",
-                                      !s_reg_sel.copied_regions.empty()
-                                      #if defined(__APPLE__)
-                                          ? "\n\nPress Cmd+V to paste copied region(s)"
-                                      #else
-                                          ? "\n\nPress Ctrl+V to paste copied region(s)"
-                                      #endif // defined(__APPLE__)
-                                          : "");
+                    char const* const main_prompt{
+                        is_hovering_over_timeline_region ||
+                                s_reg_sel.sel_state > Region_selecting::SELECTED
+                            ? "Left click to select/move.\n"
+                              "Right click to edit region\'s cmd.%s%s%s"
+                            : "Press Shift+A to create new region.%s%s%s"
+                    };
+                    char const* const sub_prompt0{
+                        s_reg_sel.sel_state == Region_selecting::SELECTED
+                        #if defined(__APPLE__)
+                            ? "\n\nPress Cmd+C to copy selected region(s)."
+                        #else
+                            ? "\n\nPress Ctrl+C to copy selected region(s)."
+                        #endif // defined(__APPLE__)
+                            : ""
+                    };
+                    char const* const sub_prompt1{
+                        can_do_copy_action
+                        #if defined(__APPLE__)
+                            ? "\n\nPress Cmd+V to paste copied region(s).\n\tcopy_id="
+                        #else
+                            ? "\n\nPress Ctrl+V to paste copied region(s).\n\tcopy_id="
+                        #endif // defined(__APPLE__)
+                            : ""
+                    };
+                    std::string const sub_prompt2{
+                        can_do_paste_action
+                            ? BT::UUID_helper::to_pretty_repr(s_reg_sel.copied_regions_id)
+                            : ""
+                    };
+
+                    ImGui::SetTooltip(main_prompt, sub_prompt0, sub_prompt1, sub_prompt2.c_str());
 
                     // Helper func.
                     auto const calc_mouse_pos_hovering_cell_fn =
@@ -1272,7 +1288,12 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         return { hover_row_idx, start_frame };
                     };
 
-                    if (on_a_press && cur_shift_pressed)
+                    // @NOTE: LMB and RMB inputs with dragging operations are handled when inside
+                    //        the region's drawing code.
+
+                    if (s_reg_sel.sel_state <= Region_selecting::SELECTED)  // Not doing a drag operation.
+                    {
+                    if (!is_hovering_over_timeline_region && on_a_press && cur_shift_pressed)
                     {   // Create new region since empty space selected.
                         auto [hover_row_idx, hover_start_frame] = calc_mouse_pos_hovering_cell_fn();
 
@@ -1301,6 +1322,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         {
                             s_reg_sel.copied_regions.emplace_back(*region);
                         }
+
+                        s_reg_sel.copied_regions_id = BT::UUID_helper::generate_uuid();
 
                         // Clean up region positions by cropping it to size.
                         uint32_t lowest_row_idx{ std::numeric_limits<uint32_t>::max() };
@@ -1345,6 +1368,10 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         {
                             s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions[idx]);
                         }
+
+                        // Mark working timeline as dirty.
+                        anim_frame_action::s_editor_state.is_working_afa_dirty = true;
+                    }
                     }
                 }
             }
