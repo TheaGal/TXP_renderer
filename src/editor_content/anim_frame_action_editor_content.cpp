@@ -1293,85 +1293,88 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
                     if (s_reg_sel.sel_state <= Region_selecting::SELECTED)  // Not doing a drag operation.
                     {
-                    if (!is_hovering_over_timeline_region && on_a_press && cur_shift_pressed)
-                    {   // Create new region since empty space selected.
-                        auto [hover_row_idx, hover_start_frame] = calc_mouse_pos_hovering_cell_fn();
+                        if (!is_hovering_over_timeline_region && on_a_press && cur_shift_pressed)
+                        {   // Create new region since empty space selected.
+                            auto [hover_row_idx, hover_start_frame] =
+                                calc_mouse_pos_hovering_cell_fn();
 
-                        afa_timeline_regions.emplace_back(hover_row_idx,
-                                                          hover_start_frame,
-                                                          hover_start_frame + 4);
-                        afa_timeline_regions.back().ctrl_cmd.cmd_name = "nop";  // Default, no-op command.
-                        afa_timeline_regions.back().ctrl_cmd.argv.clear();
+                            afa_timeline_regions.emplace_back(hover_row_idx,
+                                                              hover_start_frame,
+                                                              hover_start_frame + 4);
+                            afa_timeline_regions.back().ctrl_cmd.cmd_name = "nop";  // Default, no-op command.
+                            afa_timeline_regions.back().ctrl_cmd.argv.clear();
 
-                        // Immediately assign created region as selected.
-                        // (Just in case there may be some kind of vector resizing
-                        //  which makes the pointers stale. I hate this issue too)
-                        s_reg_sel.sel_state = Region_selecting::SELECTED;
-                        s_reg_sel.sel_regs.clear();
-                        s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions.back());
+                            // Immediately assign created region as selected.
+                            // (Just in case there may be some kind of vector resizing
+                            //  which makes the pointers stale. I hate this issue too)
+                            s_reg_sel.sel_state = Region_selecting::SELECTED;
+                            s_reg_sel.sel_regs.clear();
+                            s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions.back());
 
-                        // Mark working timeline as dirty.
-                        anim_frame_action::s_editor_state.is_working_afa_dirty = true;
-                    }
-                    else if (on_c_press && cur_ctrl_pressed)
-                    {   // Copy selected regions.
-                        s_reg_sel.copied_regions.clear();
-                        s_reg_sel.copied_regions.reserve(s_reg_sel.sel_regs.size());
-
-                        for (auto const* region : s_reg_sel.sel_regs)
-                        {
-                            s_reg_sel.copied_regions.emplace_back(*region);
+                            // Mark working timeline as dirty.
+                            anim_frame_action::s_editor_state.is_working_afa_dirty = true;
                         }
+                        else if (on_c_press && cur_ctrl_pressed)
+                        {   // Copy selected regions.
+                            s_reg_sel.copied_regions.clear();
+                            s_reg_sel.copied_regions.reserve(s_reg_sel.sel_regs.size());
 
-                        s_reg_sel.copied_regions_id = BT::UUID_helper::generate_uuid();
+                            for (auto const* region : s_reg_sel.sel_regs)
+                            {
+                                s_reg_sel.copied_regions.emplace_back(*region);
+                            }
 
-                        // Clean up region positions by cropping it to size.
-                        uint32_t lowest_row_idx{ std::numeric_limits<uint32_t>::max() };
-                        int32_t lowest_start_frame{ std::numeric_limits<int32_t>::max() };
-                        for (auto const& region : s_reg_sel.copied_regions)
-                        {
-                            lowest_row_idx = std::min(lowest_row_idx, region.row_idx);
-                            lowest_start_frame = std::min(lowest_start_frame, region.start_frame);
+                            s_reg_sel.copied_regions_id = BT::UUID_helper::generate_uuid();
+
+                            // Clean up region positions by cropping it to size.
+                            uint32_t lowest_row_idx{ std::numeric_limits<uint32_t>::max() };
+                            int32_t lowest_start_frame{ std::numeric_limits<int32_t>::max() };
+                            for (auto const& region : s_reg_sel.copied_regions)
+                            {
+                                lowest_row_idx = std::min(lowest_row_idx, region.row_idx);
+                                lowest_start_frame =
+                                    std::min(lowest_start_frame, region.start_frame);
+                            }
+                            for (auto& region : s_reg_sel.copied_regions)
+                            {
+                                region.row_idx -= lowest_row_idx;
+                                region.start_frame -= lowest_start_frame;
+                                region.end_frame -= lowest_start_frame;
+                            }
                         }
-                        for (auto& region : s_reg_sel.copied_regions)
-                        {
-                            region.row_idx -= lowest_row_idx;
-                            region.start_frame -= lowest_start_frame;
-                            region.end_frame -= lowest_start_frame;
+                        else if (on_v_press && cur_ctrl_pressed)
+                        {   // Paste selected regions.
+                            auto [hover_row_idx, hover_start_frame] =
+                                calc_mouse_pos_hovering_cell_fn();
+
+                            std::vector<uint32_t> created_region_indexes;
+                            created_region_indexes.reserve(s_reg_sel.copied_regions.size());
+
+                            for (auto const& region : s_reg_sel.copied_regions)
+                            {
+                                created_region_indexes.emplace_back(afa_timeline_regions.size());
+
+                                afa_timeline_regions.emplace_back(region);
+
+                                afa_timeline_regions.back().row_idx += hover_row_idx;
+                                afa_timeline_regions.back().start_frame += hover_start_frame;
+                                afa_timeline_regions.back().end_frame += hover_start_frame;
+                            }
+
+                            // @NOTE: immediately assign pasted regions as selected (once they are
+                            //        done being created).
+                            s_reg_sel.sel_state = Region_selecting::SELECTED;
+                            s_reg_sel.sel_regs.clear();
+                            s_reg_sel.sel_regs.reserve(created_region_indexes.size());
+
+                            for (uint32_t idx : created_region_indexes)
+                            {
+                                s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions[idx]);
+                            }
+
+                            // Mark working timeline as dirty.
+                            anim_frame_action::s_editor_state.is_working_afa_dirty = true;
                         }
-                    }
-                    else if (on_v_press && cur_ctrl_pressed)
-                    {   // Paste selected regions.
-                        auto [hover_row_idx, hover_start_frame] = calc_mouse_pos_hovering_cell_fn();
-
-                        std::vector<uint32_t> created_region_indexes;
-                        created_region_indexes.reserve(s_reg_sel.copied_regions.size());
-
-                        for (auto const& region : s_reg_sel.copied_regions)
-                        {
-                            created_region_indexes.emplace_back(afa_timeline_regions.size());
-
-                            afa_timeline_regions.emplace_back(region);
-
-                            afa_timeline_regions.back().row_idx += hover_row_idx;
-                            afa_timeline_regions.back().start_frame += hover_start_frame;
-                            afa_timeline_regions.back().end_frame += hover_start_frame;
-                        }
-
-                        // @NOTE: immediately assign pasted regions as selected (once they are done
-                        //        being created).
-                        s_reg_sel.sel_state = Region_selecting::SELECTED;
-                        s_reg_sel.sel_regs.clear();
-                        s_reg_sel.sel_regs.reserve(created_region_indexes.size());
-
-                        for (uint32_t idx : created_region_indexes)
-                        {
-                            s_reg_sel.sel_regs.emplace_back(&afa_timeline_regions[idx]);
-                        }
-
-                        // Mark working timeline as dirty.
-                        anim_frame_action::s_editor_state.is_working_afa_dirty = true;
-                    }
                     }
                 }
             }
