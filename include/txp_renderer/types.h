@@ -181,6 +181,10 @@ struct Animator_root_motion
     bool jump_up{ false };
     bool inherit_prev_velocity{ false };
 
+    bool calc_pos_of_interest_root_motion_multi{ false };
+    bool use_pos_of_interest_root_motion_multi{ false };
+    float_t pos_of_interest_root_motion_multi{ 0 };
+
     struct Mvt_input
     {
         bool enabled{ false };

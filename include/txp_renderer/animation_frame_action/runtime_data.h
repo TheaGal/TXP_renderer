@@ -23,46 +23,48 @@ namespace anim_frame_action
 // Controllable data.
 enum Controllable_data_label : std::uint32_t
 {
-    #define TXP_MODEL_ANIMATOR_CONTROLLABLE_DATA_LIST   \
-        /* Floats */                                    \
-        X_float(model_opacity,                 1.0f)    \
-        X_float(turn_speed,                    0.0f)    \
-        X_float(mvt_input_max_speed,           0.0f)    \
-        X_float(mvt_input_accel,               0.0f)    \
-        X_float(mvt_input_decel,               0.0f)    \
-        X_float(root_motion_multi,             1.0f)    \
-        X_float(attack_send_root_motion_multi, 1.0f)    \
-        X_float(gravity_magnitude,             1.0f)    \
-        /* Bools */                                     \
-        X__bool(is_parry_active,            false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
-        X__bool(is_guard_active,            false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
-        X__bool(can_move,                   true)   /* @THEA: @UNUSED: is this ever gonna be used??? */    \
-        X__bool(can_do_turnaround_anim,     false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
-        X__bool(mvt_input_enabled,          false)  /* @TODO: rename this to "use_input_based_mvt" since it disables the root animation based movement in favor for input based movement */    \
-        X__bool(can_cancel_attack_w_parry,  false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
-        X__bool(blade_has_mizunokata,       false)      \
-        X__bool(blade_has_honoonokata,      false)      \
-        X__bool(hitcapsule_group_0_enabled, false)      \
-        X__bool(hitcapsule_group_1_enabled, false)      \
-        X__bool(hitcapsule_group_2_enabled, false)      \
-        X__bool(hitcapsule_group_3_enabled, false)      \
-        X__bool(hitcapsule_group_4_enabled, false)      \
-        X__bool(hitcapsule_group_5_enabled, false)      \
-        X__bool(hitcapsule_group_6_enabled, false)      \
-        X__bool(hitcapsule_group_7_enabled, false)      \
-        X__bool(hitcapsule_group_8_enabled, false)      \
-        X__bool(hitcapsule_group_9_enabled, false)      \
-        /* Rising edge events */                        \
-        X_reeve(jump_up)                                \
-        X_reeve(inherit_prev_velocity)                  \
-        X_reeve(cpu_aware_chg_suspicious_to_unaware)    \
-        X_reeve(broadcast_attack_to_enemies)            \
-        X_reeve(broadcast_healing_to_enemies)           \
-        X_reeve(play_sfx_footstep)                      \
-        X_reeve(play_sfx_ready_guard)                   \
-        X_reeve(play_sfx_blade_swing)                   \
-        X_reeve(play_sfx_hurt_vocalize_human_male_mc)   \
-        X_reeve(play_sfx_guard_receive_hit)             \
+    #define TXP_MODEL_ANIMATOR_CONTROLLABLE_DATA_LIST         \
+        /* Floats */                                          \
+        X_float(model_opacity,                 1.0f)          \
+        X_float(turn_speed,                    0.0f)          \
+        X_float(mvt_input_max_speed,           0.0f)          \
+        X_float(mvt_input_accel,               0.0f)          \
+        X_float(mvt_input_decel,               0.0f)          \
+        X_float(root_motion_multi,             1.0f)          \
+        X_float(attack_send_root_motion_multi, 1.0f)          \
+        X_float(gravity_magnitude,             1.0f)          \
+        /* Bools */                                           \
+        X__bool(is_parry_active,                       false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(is_guard_active,                       false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(can_move,                              true)   /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(can_do_turnaround_anim,                false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(use_pos_of_interest_root_motion_multi, false) \
+        X__bool(mvt_input_enabled,                     false)  /* @TODO: rename this to "use_input_based_mvt" since it disables the root animation based movement in favor for input based movement */    \
+        X__bool(can_cancel_attack_w_parry,             false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
+        X__bool(blade_has_mizunokata,                  false) \
+        X__bool(blade_has_honoonokata,                 false) \
+        X__bool(hitcapsule_group_0_enabled,            true)   /* this is typically the hitbox group */    \
+        X__bool(hitcapsule_group_1_enabled,            false) \
+        X__bool(hitcapsule_group_2_enabled,            false) \
+        X__bool(hitcapsule_group_3_enabled,            false) \
+        X__bool(hitcapsule_group_4_enabled,            false) \
+        X__bool(hitcapsule_group_5_enabled,            false) \
+        X__bool(hitcapsule_group_6_enabled,            false) \
+        X__bool(hitcapsule_group_7_enabled,            false) \
+        X__bool(hitcapsule_group_8_enabled,            false) \
+        X__bool(hitcapsule_group_9_enabled,            false) \
+        /* Rising edge events */                              \
+        X_reeve(jump_up)                                      \
+        X_reeve(inherit_prev_velocity)                        \
+        X_reeve(cpu_aware_chg_suspicious_to_unaware)          \
+        X_reeve(calc_pos_of_interest_root_motion_multi)       \
+        X_reeve(broadcast_attack_to_enemies)                  \
+        X_reeve(broadcast_healing_to_enemies)                 \
+        X_reeve(play_sfx_footstep)                            \
+        X_reeve(play_sfx_ready_guard)                         \
+        X_reeve(play_sfx_blade_swing)                         \
+        X_reeve(play_sfx_hurt_vocalize_human_male_mc)         \
+        X_reeve(play_sfx_guard_receive_hit)                   \
         X_reeve(play_sfx_deflect_receive_hit)
 
     INTERNAL__CTRL_DATA_LABEL_MARKER_BEGIN_FLOAT = 0,
