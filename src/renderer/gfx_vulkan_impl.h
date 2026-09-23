@@ -82,10 +82,9 @@ struct Graphics::Impl
 
     #if defined(__APPLE__)
         // Apple lagging behind the standard and being a piece of shit wtf guys.  -Thea 2026/02/04
-        static constexpr bool k_feature_draw_indirect_count{ false };
+        // Ok now we're using KosmicKrisp which gives draw indirect count yay!!  -Thea 2026/09/21
         static constexpr bool k_feature_minmax_sampler_filter{ false };
     #else
-        static constexpr bool k_feature_draw_indirect_count{ true };
         static constexpr bool k_feature_minmax_sampler_filter{ true };
     #endif // defined(__APPLE__)
 
@@ -268,6 +267,8 @@ struct Graphics::Impl
     /// Index of current frame.
     size_t current_frame_idx{ 0 };
     uint32_t current_swapchain_image_idx;
+
+    bool rebuild_swapchain_flag{ false };
 
     Frame_data& get_current_frame();
     uint32_t get_current_frame_idx();

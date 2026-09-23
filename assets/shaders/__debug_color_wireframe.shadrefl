@@ -100,7 +100,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 3},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -116,6 +116,32 @@
                                 }
                             },
                             "semanticName": "SV_POSITION"
+                        },
+                        {
+                            "name": "normal",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 0}
+                        },
+                        {
+                            "name": "light_vec",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 1}
                         },
                         {
                             "name": "mat_param_set",
@@ -139,7 +165,7 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 0}
+                            "binding": {"kind": "varyingOutput", "index": 2}
                         }
                     ]
                 }
@@ -155,7 +181,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -171,6 +197,32 @@
                                     }
                                 },
                                 "semanticName": "SV_POSITION"
+                            },
+                            {
+                                "name": "normal",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 0}
+                            },
+                            {
+                                "name": "light_vec",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 1}
                             },
                             {
                                 "name": "mat_param_set",
@@ -194,7 +246,7 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 0}
+                                "binding": {"kind": "varyingInput", "index": 2}
                             }
                         ]
                     }
@@ -216,5 +268,6 @@
 
             ]
         }
-    ]
+    ],
+    "bindlessSpaceIndex": 0
 }

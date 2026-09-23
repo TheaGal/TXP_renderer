@@ -390,6 +390,8 @@ void Graphics::Impl::init_vulkan_build_device()
     VkPhysicalDeviceVulkan12Features vulkan12_features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES,
         .pNext = nullptr,
+        // For `vkCmdDrawIndexedIndirectCount`.
+        .drawIndirectCount = VK_TRUE,
         // For `rgba16f` format.
         .shaderFloat16 = VK_TRUE,
         // For non-uniform, dynamic arrays of textures in shaders.
@@ -401,8 +403,6 @@ void Graphics::Impl::init_vulkan_build_device()
         .bufferDeviceAddress = VK_TRUE,
     };
 
-    if constexpr (Vk_gfx_instance::k_feature_draw_indirect_count)
-        vulkan12_features.drawIndirectCount = VK_TRUE;  // For `vkCmdDrawIndexedIndirectCount`.
     if constexpr (Vk_gfx_instance::k_feature_minmax_sampler_filter)
         vulkan12_features.samplerFilterMinmax = VK_TRUE;  // For MIN/MAX sampler when creating mip chains for occlusion culling.
 
@@ -418,9 +418,9 @@ void Graphics::Impl::init_vulkan_build_device()
                 .set_surface(gfx.surface)
                 .set_required_features({
                     // @NOTE: @FEATURES: Enable required features right here
-                    // .multiDrawIndirect = VK_TRUE,         // So that vkCmdDrawIndexedIndirect() can be called with a >1 drawCount. (@NOTE: not happening with current setup)
+                    .multiDrawIndirect = VK_TRUE,         // So that vkCmdDrawIndexedIndirect() can be called with a >1 drawCount. (@NOTE: not happening with current setup)
                     .depthClamp = VK_TRUE,                // For shadow maps, this is really nice.
-                    .fillModeNonSolid = VK_TRUE,          // To render wireframes.
+                    // .fillModeNonSolid = VK_TRUE,          // To render wireframes.
                     .samplerAnisotropy = VK_TRUE,
                     .fragmentStoresAndAtomics = VK_TRUE,  // For the picking buffer! @TODO: If a release build then disable.
                 })
@@ -836,6 +836,7 @@ void Graphics::Impl::rebuild_vulkan_swapchain()
 {
     wait_until_gpu_idle();
     init_vulkan_build_swapchain();
+    rebuild_swapchain_flag = false;
 }
 
 void Graphics::Impl::destroy_vulkan()
@@ -1789,6 +1790,11 @@ bool Graphics::Impl::start_next_frame()
     // Acquire next image and check for swapchain recreation requirements.
     do
     {
+        if (rebuild_swapchain_flag)
+        {
+            rebuild_vulkan_swapchain();
+        }
+
         current_swapchain_image_idx = (uint32_t)-1;  // @DEBUG
         err = vkAcquireNextImageKHR(gfx.device,
                                     gfx.swapchain,
@@ -2028,7 +2034,11 @@ void Graphics::Impl::present_frame_to_screen()
     };
 
     err = vkQueuePresentKHR(gfx.graphics_queue, &present_info);
-    if (err)
+    if (err == VK_SUBOPTIMAL_KHR)
+    {
+        rebuild_swapchain_flag = true;
+    }
+    else if (err)
     {
         throw std::runtime_error("Queue present KHR failed.");
     }

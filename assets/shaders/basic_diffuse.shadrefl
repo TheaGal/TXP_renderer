@@ -356,5 +356,6 @@
                 }
             ]
         }
-    ]
+    ],
+    "bindlessSpaceIndex": 1
 }

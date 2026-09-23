@@ -194,7 +194,7 @@ struct Shader_debug_color_wireframe::Impl
         };
         VkPipelineRasterizationStateCreateInfo rasterization_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-            .polygonMode = VK_POLYGON_MODE_LINE,  // For wireframe
+            .polygonMode = VK_POLYGON_MODE_FILL,
             .cullMode = VK_CULL_MODE_BACK_BIT,
             .lineWidth = 1.0f,
         };

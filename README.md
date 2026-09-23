@@ -60,8 +60,10 @@ Controls for the editor in the renderer:
 - Vulkan SDK
     > Include shader symbols.
     - win64: 1.4.341.0
-    - macOS: 1.4.335.1 (note: contains MoltenVK 1.4.2)
+    - macOS: 1.4.357.1
+        - Include KosmicKrisp
         - System Global Installation
+        > see [getting started w KosmicKrisp](https://vulkan.lunarg.com/doc/view/1.4.335.1/mac/getting_started.html) for how to force using KosmicKrisp over MoltenVK.
 
 - vk-bootstrap v1.4.342
 
@@ -81,7 +83,7 @@ For Windows, download the .exe and place it somewhere where it's available from 
 
 ## Details
 
-For Win64, macOS, and Linux, this renderer uses Vulkan 1.3 (MacOS being thru MoltenVK).
+For Win64, macOS, and Linux, this renderer uses Vulkan 1.3 (MacOS being thru KosmicKrisp).
 
 For other platforms, it is not planned yet.
 

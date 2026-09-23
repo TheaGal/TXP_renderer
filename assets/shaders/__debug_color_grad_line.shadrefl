@@ -149,5 +149,6 @@
 
             ]
         }
-    ]
+    ],
+    "bindlessSpaceIndex": 0
 }
