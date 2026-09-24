@@ -155,7 +155,7 @@ public:
     std::vector<std::string> get_event_queue_names() const;  // @UNUSED: i think ??
 
     /// Adds an event to an event queue.
-    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time);
+    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time, int32_t arg);
 
     /// Resets event queue watchlist to default values.
     void reset_event_queue_watchlist();  // @THEA: @TODO: make this private??
@@ -239,6 +239,7 @@ private:
         struct Queue_item
         {
             double_t queue_expire_time_absolute;
+            int32_t arg;
         };
         std::vector<Queue_item> queue_items;
     };

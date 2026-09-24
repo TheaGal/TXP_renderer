@@ -16,9 +16,10 @@ void Skeletal_animator::set_float_variable(std::string const& var_name, float_t 
 
 
 void Skeletal_animator::emplace_event(std::string const& event_queue_name,
-                                      float_t queue_expire_time)
+                                      float_t queue_expire_time,
+                                      int32_t arg)
 {
-    m_animator->emplace_event(event_queue_name, queue_expire_time);
+    m_animator->emplace_event(event_queue_name, queue_expire_time, arg);
 }
 
 

@@ -1217,12 +1217,12 @@ std::vector<std::string> TXP::component_internal::Model_animator::get_event_queu
     return evq_names;
 }
 
-void TXP::component_internal::Model_animator::emplace_event(
-    std::string const& event_queue_name,
-    float_t queue_expire_time)
+void TXP::component_internal::Model_animator::emplace_event(std::string const& event_queue_name,
+                                                            float_t queue_expire_time,
+                                                            int32_t arg)
 {
     m_event_queue_name_to_event_queue_map.at(event_queue_name)
-        .queue_items.emplace_back(s_sim_timer.load() + queue_expire_time);
+        .queue_items.emplace_back(s_sim_timer.load() + queue_expire_time, arg);
 }
 
 void TXP::component_internal::Model_animator::reset_event_queue_watchlist()

@@ -25,7 +25,7 @@ public:
 
 
     /// Adds an event to an event queue.
-    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time);
+    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time, int32_t arg);
 
 
     /// Updates the animator, supplying a deltatime.
