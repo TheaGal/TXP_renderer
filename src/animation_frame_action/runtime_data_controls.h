@@ -61,12 +61,23 @@ struct Runtime_data_controls
         };
         std::vector<Animation_frame_action_timeline> anim_frame_action_timelines;  // Same order as `model_animations`. (@CHECK: I think this is not true anymore)
 
+        /// Action map with pre-coded state sets to trigger when using an action map.
+        struct Action_map
+        {
+            std::string name;
+            std::vector<std::string> state_sets;
+
+            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Action_map, name, state_sets);
+        };
+        std::vector<Action_map> action_maps;
+
         Hitcapsule_group_set hitcapsule_group_set_template;
 
         NLOHMANN_DEFINE_TYPE_INTRUSIVE(Data,
                                        animated_model_name,
                                        anim_state_set_event_queues,
                                        anim_frame_action_timelines,
+                                       action_maps,
                                        hitcapsule_group_set_template);
     } data;
 };

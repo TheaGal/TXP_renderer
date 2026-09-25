@@ -1287,13 +1287,36 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
             if (sim_timer_time <= evq->queue_items[i].queue_expire_time_absolute)
             {
                 // Convert state strings to state indices.
+                std::string const* state_set_str{ nullptr };
+
+                if (evq->event_transition_state_set_as_str.rfind("ACTION_MAP_") == 0)
+                {
+                    bool found{ false };
+                    for (auto const& action_map : m_anim_frame_action_controls->data.action_maps)
+                    {
+                        if (evq->event_transition_state_set_as_str == action_map.name)
+                        {
+                            state_set_str = &action_map.state_sets[evq->queue_items[i].arg];
+                            found = true;
+                        }
+                    }
+
+                    if (!found)
+                    {
+                        throw std::runtime_error("Not a valid ACTION MAP");
+                    }
+                }
+                else
+                {
+                    state_set_str = &evq->event_transition_state_set_as_str;
+                }
+
                 std::vector<uint32_t> anim_state_indices;
 
                 int32_t str_head{ 0 };
-                for (int32_t str_i = 0; str_i <= evq->event_transition_state_set_as_str.size();
-                     str_i++)
+                for (int32_t str_i = 0; str_i <= state_set_str->size(); str_i++)
                 {
-                    switch (evq->event_transition_state_set_as_str[str_i])
+                    switch ((*state_set_str)[str_i])
                     {
                     case ',':
                     case '\0':
@@ -1303,8 +1326,7 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                         if (str_length >= 1)
                         {
                             uint32_t new_state_idx{ get_animator_state_idx(
-                                evq->event_transition_state_set_as_str.substr(str_head,
-                                                                              str_length)) };
+                                state_set_str->substr(str_head, str_length)) };
                             anim_state_indices.emplace_back(new_state_idx);
                         }
 
