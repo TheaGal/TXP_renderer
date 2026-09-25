@@ -22,6 +22,7 @@ public:
     Camera();
     ~Camera();
 
+    float_t get_aspect_ratio() const;
     void get_position(vec3 out_position) const;
     void get_view_direction(vec3 out_direction) const;
 

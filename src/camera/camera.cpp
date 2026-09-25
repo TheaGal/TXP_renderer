@@ -24,6 +24,11 @@ Camera::Camera()
 
 Camera::~Camera() = default;
 
+float_t Camera::get_aspect_ratio() const
+{
+    return m_pimpl->camera.get_main_cam_aspect();
+}
+
 void Camera::get_position(vec3 out_position) const
 {
     m_pimpl->camera.get_main_cam_position(out_position);
