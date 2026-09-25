@@ -34,8 +34,6 @@ enum Controllable_data_label : std::uint32_t
         X_float(attack_send_root_motion_multi, 1.0f)          \
         X_float(gravity_magnitude,             1.0f)          \
         /* Bools */                                           \
-        X__bool(is_parry_active,                       false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
-        X__bool(is_guard_active,                       false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(can_move,                              true)   /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(can_do_turnaround_anim,                false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(use_pos_of_interest_root_motion_multi, false) \
