@@ -5,9 +5,18 @@
 #include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "skeletal_animator.h"
 
+#include <utility>
+
 
 namespace TXP
 {
+
+/*static*/ void Skeletal_animator::set_play_audio_at_pos_oneshot_fn_callback(
+    Play_audio_at_pos_fn_t&& callback_fn)
+{
+    s_play_audio_at_pos_oneshot_fn = std::move(callback_fn);
+}
+
 
 void Skeletal_animator::set_float_variable(std::string const& var_name, float_t value)
 {

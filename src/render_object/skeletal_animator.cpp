@@ -19,6 +19,7 @@
 #include <limits>
 #include <map>
 #include <mutex>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -1156,32 +1157,58 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
         },
         {
             .cmd{
-                .name = "ignore_jump_queue",
-                .desc = "Ignores the specified animation state queue to prevent it from jumping "
-                        "anim states."
+                .name = "play_sfx_oneshot",
+                .desc = "Plays an SFX at a position one time."
             },
             .argv{
                 {
-                    .name = "anim_state_queue",
-                    .desc = "Queue to ignore this frame",
+                    .name = "sfx_fname",
+                    .desc = "Filename for SFX",
                     .type = "str"
-                }
+                },
+                {
+                    .name = "position",
+                    .desc = "Position to play SFX (world space if bone_name is blank)",
+                    .type = "vec3"
+                },
+                {
+                    .name = "bone_name",
+                    .desc = "Name of which bone the bone space is based",
+                    .type = "str"
+                },
+                {
+                    .name = "volume",
+                    .desc = "Volume of sound to play (probably 0.0 - 1.0)",
+                    .type = "float"
+                },
             },
             .exec_fn = [](Model_animator& animator,
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
                           std::vector<std::string> const& argv) {
-                k_require_argv_count(argv, 2222222);
+                k_require_argv_count(argv, 4);
 
-                assert(false);  // @TODO: DELETE THIS COMMAND!!!
-                // if (!animator.m_is_paused)
-                // {
-                //     // Remove `anim_state_queue` from watching for this frame.
-                //     bool changed = animator.set_watch_jump_queue(argv[0], false, -1);
-                //     if (!changed)
-                //         throw std::runtime_error("Jump queue is already set to the wanted way.");
-                // }
+                if (!is_first_frame)
+                    return;
+
+                std::istringstream iss(argv[1]);
+                vec3 position;
+                iss >> position[0];
+                iss >> position[1];
+                iss >> position[2];
+
+                if (!argv[2].empty())
+                {
+                    // Transform into bone space.
+
+                    // @TODO: get some kind of way to get cached matrix of one specific bone.
+                    assert(false);
+                }
+
+                Skeletal_animator::s_play_audio_at_pos_oneshot_fn(argv[0],
+                                                                  position,
+                                                                  std::stof(argv[3]));
             }
         },
     };

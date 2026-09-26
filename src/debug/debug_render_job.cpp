@@ -128,19 +128,19 @@ void debug::emplace_debug_line(Debug_line&& line, float_t timeout)
     emplace_debug_line_internal(*g_dbg_line_info_coll.scoped_lock(), std::move(line), timeout);
 }
 
-void debug::emplace_debug_line_based_capsule(vec3 origin_a,
-                                             vec3 origin_b,
+void debug::emplace_debug_line_based_capsule(vec3 const origin_a,
+                                             vec3 const origin_b,
                                              float_t radius,
-                                             vec4 color,
+                                             vec4 const color,
                                              float_t timeout)
 {   // Calculate basis vectors.
     vec3s basis_x{ 1.0f, 0.0f, 0.0f };
     vec3s basis_y{ 0.0f, 1.0f, 0.0f };
     vec3s basis_z{ 0.0f, 0.0f, 1.0f };
 
-    if (glm_vec3_distance2(origin_a, origin_b) > 1e-6f)
+    if (glm_vec3_distance2(const_cast<float_t*>(origin_a), const_cast<float_t*>(origin_b)) > 1e-6f)
     {   // Calc basis-y.
-        glm_vec3_sub(origin_b, origin_a, basis_y.raw);
+        glm_vec3_sub(const_cast<float_t*>(origin_b), const_cast<float_t*>(origin_a), basis_y.raw);
         glm_vec3_normalize(basis_y.raw);
 
         // Calc next basis axis.
@@ -250,7 +250,8 @@ void debug::emplace_debug_line_based_capsule(vec3 origin_a,
             glm_vec3_muladds(basis_z.raw, pt.z * radius, trans_pt.raw);
 
             glm_vec3_add(trans_pt.raw,
-                         ecp_set.use_origin_a ? origin_a : origin_b,
+                         ecp_set.use_origin_a ? const_cast<float_t*>(origin_a)
+                                              : const_cast<float_t*>(origin_b),
                          trans_pt.raw);
 
             ecp_set.trans_end_cap.emplace_back(trans_pt);
@@ -266,8 +267,8 @@ void debug::emplace_debug_line_based_capsule(vec3 origin_a,
             Debug_line new_line;
             glm_vec3_copy(ecp_set.trans_end_cap[idx - 1].raw, new_line.pos1);
             glm_vec3_copy(ecp_set.trans_end_cap[idx + 0].raw, new_line.pos2);
-            glm_vec4_copy(color, new_line.color1);
-            glm_vec4_copy(color, new_line.color2);
+            glm_vec4_copy(const_cast<float_t*>(color), new_line.color1);
+            glm_vec4_copy(const_cast<float_t*>(color), new_line.color2);
 
             emplace_debug_line_internal(*dbg_line_info_coll, std::move(new_line), timeout);
         }
@@ -279,8 +280,8 @@ void debug::emplace_debug_line_based_capsule(vec3 origin_a,
         Debug_line new_line;
         glm_vec3_copy(end_cap_a_y.trans_end_cap[idx].raw, new_line.pos1);
         glm_vec3_copy(end_cap_b_y.trans_end_cap[idx].raw, new_line.pos2);
-        glm_vec4_copy(color, new_line.color1);
-        glm_vec4_copy(color, new_line.color2);
+        glm_vec4_copy(const_cast<float_t*>(color), new_line.color1);
+        glm_vec4_copy(const_cast<float_t*>(color), new_line.color2);
 
         emplace_debug_line_internal(*dbg_line_info_coll, std::move(new_line), timeout);
     }

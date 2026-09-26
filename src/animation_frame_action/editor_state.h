@@ -35,6 +35,7 @@ struct Editor_state
     size_t selected_action_timeline_idx{ 0 };
     size_t selected_anim_num_frames{ 0 };
     size_t anim_current_frame{ 0 };
+    size_t prev_anim_current_frame{ (size_t)-1 };
     bool is_working_afa_dirty{ false };
 };
 

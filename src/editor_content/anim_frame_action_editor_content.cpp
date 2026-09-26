@@ -15,6 +15,7 @@
 #include <cmath>
 #include <cstddef>
 #include <limits>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -600,14 +601,14 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 }
                 else if (cmd_arg.type == "int")
                 {
-                    int32_t arg_val{ std::stoi(editing_cmd_arg) };
-                    if (ImGui::InputInt(lbl_txt.c_str(), &arg_val))
+                    int32_t arg_val{ editing_cmd_arg.empty() ? 0 : std::stoi(editing_cmd_arg) };
+                    if (ImGui::InputInt(lbl_txt.c_str(), &arg_val) || editing_cmd_arg.empty())
                         editing_cmd_arg = std::to_string(arg_val);
                 }
                 else if (cmd_arg.type == "float")
                 {
-                    float_t arg_val{ std::stof(editing_cmd_arg) };
-                    if (ImGui::InputFloat(lbl_txt.c_str(), &arg_val))
+                    float_t arg_val{ editing_cmd_arg.empty() ? 0 : std::stof(editing_cmd_arg) };
+                    if (ImGui::InputFloat(lbl_txt.c_str(), &arg_val) || editing_cmd_arg.empty())
                         editing_cmd_arg = std::to_string(arg_val);
                 }
                 else if (cmd_arg.type == "bool")
@@ -615,6 +616,24 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     bool arg_val{ editing_cmd_arg == "1" };
                     ImGui::Checkbox(lbl_txt.c_str(), &arg_val);
                     editing_cmd_arg = (arg_val ? "1" : "0");
+                }
+                else if (cmd_arg.type == "vec3")
+                {
+                    vec3 arg_val = GLM_VEC3_ZERO_INIT;
+                    if (!editing_cmd_arg.empty())
+                    {
+                        std::istringstream iss(editing_cmd_arg);
+                        iss >> arg_val[0];
+                        iss >> arg_val[1];
+                        iss >> arg_val[2];
+                    }
+
+                    if (ImGui::InputFloat3(lbl_txt.c_str(), arg_val) || editing_cmd_arg.empty())
+                    {
+                        editing_cmd_arg = std::to_string(arg_val[0]) + " " +
+                                          std::to_string(arg_val[1]) + " " +
+                                          std::to_string(arg_val[2]);
+                    }
                 }
                 else
                 {

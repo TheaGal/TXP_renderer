@@ -5,6 +5,7 @@
 #include "txp_renderer/types.h"
 
 #include <cmath>
+#include <functional>
 #include <string>
 
 
@@ -20,6 +21,13 @@ class Model_animator;  // Forward decl (not available externally).
 class Skeletal_animator
 {
 public:
+    using Play_audio_at_pos_fn_t =
+        std::function<void(std::string const& snd_name, vec3 const pos, float_t volume)>;
+
+    /// Sets callback func.
+    static void set_play_audio_at_pos_oneshot_fn_callback(Play_audio_at_pos_fn_t&& callback_fn);
+
+
     /// Sets a variable inside the state machine.
     void set_float_variable(std::string const& var_name, float_t value);
 
@@ -51,6 +59,8 @@ public:
     uint32_t get_joint_idx(std::string const& joint_name) const;
 
 private:
+    inline static Play_audio_at_pos_fn_t s_play_audio_at_pos_oneshot_fn{ nullptr };
+
     component_internal::Model_animator* m_animator;
 
     /// Private ctor.

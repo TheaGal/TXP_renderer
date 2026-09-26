@@ -54,6 +54,12 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
             auto& internal_animator{ component_internal::Model_animator::extract_internal_animator(
                 try_animator.value()) };
 
+            bool const should_update_animator{
+                eds.working_model_animator != &internal_animator ||
+                afa_agent.working_anim_state_idx != eds.selected_anim_state_idx ||
+                eds.anim_current_frame != eds.prev_anim_current_frame
+            };
+
             if (eds.working_model_animator != &internal_animator)
             {   // Reset vars.
                 afa_agent.working_anim_state_idx = -1;
@@ -129,38 +135,45 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
             // Update animator frame.
             assert(eds.working_model_animator != nullptr);
 
-            auto current_frame_clamped{ eds.anim_current_frame };  // @NOTE: Assumed clamped.
-            eds.working_model_animator->set_time(
-                (current_frame_clamped + 0.01f) /
-                k_skeletal_anim_frames_per_second);  // Offset for ensuring no floating point error.
-            eds.working_model_animator->update(SIMULATION_TIMER_PROFILE, 0);  // Forces data update.
+            if (should_update_animator)
+            {
+                auto current_frame_clamped{ eds.anim_current_frame };  // @NOTE: Assumed clamped.
+                eds.working_model_animator->set_time(
+                    (current_frame_clamped + 0.01f) /
+                    k_skeletal_anim_frames_per_second);  // Offset for ensuring no floating point error.
+                eds.working_model_animator->update(SIMULATION_TIMER_PROFILE, 0);  // Forces data update.
 
-            // Process all controllable data.
-            // @NOTE: Just for the editor, it's only necessary to flush all the events.
-            static std::vector<anim_frame_action::Controllable_data_label> s_all_data_labels;
-            if (s_all_data_labels.empty())
-            {   // Add in data labels.
-                auto const& all_controllable_data_strs{
-                    anim_frame_action::Runtime_controllable_data::get_all_str_labels()
-                };
-                for (auto& data_str : all_controllable_data_strs)
-                {
-                    auto data_label{
-                        anim_frame_action::Runtime_controllable_data::str_label_to_enum(data_str)
+                eds.prev_anim_current_frame = eds.anim_current_frame;
+
+                // Process all controllable data.
+                // @NOTE: Just for the editor, it's only necessary to flush all the events.
+                static std::vector<anim_frame_action::Controllable_data_label> s_all_data_labels;
+                if (s_all_data_labels.empty())
+                {  // Add in data labels.
+                    auto const& all_controllable_data_strs{
+                        anim_frame_action::Runtime_controllable_data::get_all_str_labels()
                     };
-                    s_all_data_labels.emplace_back(data_label);
+                    for (auto& data_str : all_controllable_data_strs)
+                    {
+                        auto data_label{
+                            anim_frame_action::Runtime_controllable_data::str_label_to_enum(
+                                data_str)
+                        };
+                        s_all_data_labels.emplace_back(data_label);
+                    }
                 }
-            }
 
-            for (auto label : s_all_data_labels)
-                if (anim_frame_action::Runtime_controllable_data::get_data_type(label) ==
-                    anim_frame_action::Runtime_controllable_data::CTRL_DATA_TYPE_RISING_EDGE_EVENT)
-                {
-                    (void)anim_frame_action::s_editor_state.working_model_animator
-                        ->get_anim_frame_action_data_handle()
-                        .get_reeve_data_handle(label)
-                        .check_if_rising_edge_occurred();
-                }
+                for (auto label : s_all_data_labels)
+                    if (anim_frame_action::Runtime_controllable_data::get_data_type(label) ==
+                        anim_frame_action::Runtime_controllable_data::
+                            CTRL_DATA_TYPE_RISING_EDGE_EVENT)
+                    {
+                        (void)anim_frame_action::s_editor_state.working_model_animator
+                            ->get_anim_frame_action_data_handle()
+                            .get_reeve_data_handle(label)
+                            .check_if_rising_edge_occurred();
+                    }
+            }
         }
     }
 }
