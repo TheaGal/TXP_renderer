@@ -1316,7 +1316,7 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                 // Convert state strings to state indices.
                 std::string const* state_set_str{ nullptr };
 
-                if (evq->event_transition_state_set_as_str.rfind("ACTION_MAP_") == 0)
+                if (evq->event_transition_state_set_as_str.starts_with("ACTION_MAP_"))
                 {
                     bool found{ false };
                     for (auto const& action_map : m_anim_frame_action_controls->data.action_maps)
