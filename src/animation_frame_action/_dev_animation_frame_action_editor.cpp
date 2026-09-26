@@ -1,5 +1,6 @@
 #include "_dev_animation_frame_action_editor.h"
 
+#include "btdatecheck.h"
 #include "btservice_finder.h"
 #include "btuuid.h"
 #include "editor_state.h"
@@ -141,6 +142,32 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                 eds.working_model_animator->set_time(
                     (current_frame_clamped + 0.01f) /
                     k_skeletal_anim_frames_per_second);  // Offset for ensuring no floating point error.
+
+                {
+                    // @CHECK: Create mocked simulation transform from root bone position.
+                    BT::date_deadline(2026, 9, 30);
+
+                    assert(!eds.working_model_animator->get_is_using_root_motion());  // assumes no root motion zeroing inside editor.
+
+                    std::vector<mat4s> joint_matrices;
+                    eds.working_model_animator->get_anim_floored_frame_pose(
+                        SIMULATION_TIMER_PROFILE,
+                        false,
+                        joint_matrices);
+
+                    auto const& root_bone_matrix{ joint_matrices[0] };
+
+                    vec3 root_bone_position;
+                    glm_vec4_copy(const_cast<float_t*>(root_bone_matrix.raw[3]),
+                                  root_bone_position);
+                    root_bone_position[1] = 0;  // yeah??
+
+                    mat4 mocked_sim_transform;
+                    glm_translate_make(mocked_sim_transform, root_bone_position);
+
+                    eds.working_model_animator->cache_simulation_transform(mocked_sim_transform);
+                }
+
                 eds.working_model_animator->update(SIMULATION_TIMER_PROFILE, 0);  // Forces data update.
 
                 eds.prev_anim_current_frame = eds.anim_current_frame;

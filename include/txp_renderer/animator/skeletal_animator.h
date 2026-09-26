@@ -36,6 +36,9 @@ public:
     void emplace_event(std::string const& event_queue_name, float_t queue_expire_time, int32_t arg);
 
 
+    /// Caches sim transform for calculations done inside the simulation update.
+    void cache_simulation_transform(mat4 const simulation_transform);
+
     /// Updates the animator, supplying a deltatime.
     /// There are two animator timers, so you need to give which timer to update.
     void update(Animator_timer_profile profile, float_t delta_time);
@@ -52,8 +55,7 @@ public:
     anim_frame_action::Runtime_controllable_data& get_anim_frame_action_data_handle();
 
     /// Calculates set of joint matrices for simulation profile.
-    void get_simulation_profile_frame_pose(bool root_motion_zeroing,
-                                           std::vector<mat4s>& out_joint_matrices) const;
+    void get_simulation_profile_frame_pose(std::vector<mat4s>& out_joint_matrices) const;
 
     /// Gets joint index in animator skin from name.
     uint32_t get_joint_idx(std::string const& joint_name) const;

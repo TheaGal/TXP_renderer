@@ -31,6 +31,10 @@ void Skeletal_animator::emplace_event(std::string const& event_queue_name,
     m_animator->emplace_event(event_queue_name, queue_expire_time, arg);
 }
 
+void Skeletal_animator::cache_simulation_transform(mat4 const simulation_transform)
+{
+    m_animator->cache_simulation_transform(simulation_transform);
+}
 
 void Skeletal_animator::update(Animator_timer_profile profile, float_t delta_time)
 {
@@ -55,11 +59,10 @@ anim_frame_action::Runtime_controllable_data& Skeletal_animator::get_anim_frame_
 }
 
 void Skeletal_animator::get_simulation_profile_frame_pose(
-    bool root_motion_zeroing,
     std::vector<mat4s>& out_joint_matrices) const
 {
     m_animator->get_anim_floored_frame_pose(SIMULATION_TIMER_PROFILE,
-                                            root_motion_zeroing,
+                                            m_animator->get_is_using_root_motion(),
                                             out_joint_matrices);
 }
 

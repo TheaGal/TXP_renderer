@@ -504,6 +504,12 @@ void TXP::component_internal::Model_animator::set_paused(bool paused)
     m_is_paused.store(paused);
 }
 
+void TXP::component_internal::Model_animator::cache_simulation_transform(
+    mat4 const simulation_transform)
+{
+    glm_mat4_copy(const_cast<vec4*>(simulation_transform), m_cached_simulation_transform);
+}
+
 void TXP::component_internal::Model_animator::update(Animator_timer_profile profile,
                                                      float_t delta_time)
 {   // @TODO: There needs to be some kind of time syncing between timers. Since the creation of
@@ -966,6 +972,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 0);
                 BT_WARN("nop() executed.");
@@ -993,6 +1000,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 2);
 
@@ -1035,6 +1043,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 2);
 
@@ -1072,6 +1081,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 1);
 
@@ -1103,6 +1113,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 22222);
 
@@ -1137,6 +1148,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 3);
 
@@ -1186,6 +1198,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           uint32_t row_idx,
                           bool is_first_frame,
                           bool is_last_frame,
+                          mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
                 k_require_argv_count(argv, 4);
 
@@ -1201,10 +1214,21 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 if (!argv[2].empty())
                 {
                     // Transform into bone space.
+                    // @TODO: cache this!!!
+                    std::vector<mat4s> joint_matrices;
+                    animator.get_anim_floored_frame_pose(SIMULATION_TIMER_PROFILE,
+                                                         animator.get_is_using_root_motion(),
+                                                         joint_matrices);
 
-                    // @TODO: get some kind of way to get cached matrix of one specific bone.
-                    assert(false);
+                    uint32_t joint_idx{ animator.get_model_skin().joint_name_to_idx.at(argv[2]) };
+
+                    glm_mat4_mulv3(joint_matrices[joint_idx].raw, position, 1, position);
                 }
+
+                // @NOTE: `simulation_transform` could just be MAT4_IDENTITY bc root motion is off.
+                //        this would happen if the root motion is on during normal gameplay but off
+                //        bc the AFA editor turns off root motion.  -Thea 2026/09/26
+                glm_mat4_mulv3(const_cast<vec4*>(simulation_transform), position, 1, position);
 
                 Skeletal_animator::s_play_audio_at_pos_oneshot_fn(argv[0],
                                                                   position,
@@ -1467,7 +1491,12 @@ void TXP::component_internal::Model_animator::execute_command_code(cmd_code_t co
     {
         if (cmd_code.cmd_name == cmd_doc.cmd.name)
         {   // Execute this cmd.
-            cmd_doc.exec_fn(*this, row_idx, is_reg_first_frame, is_reg_last_frame, cmd_code.argv);
+            cmd_doc.exec_fn(*this,
+                            row_idx,
+                            is_reg_first_frame,
+                            is_reg_last_frame,
+                            m_cached_simulation_transform,
+                            cmd_code.argv);
             executed = true;
             break;
         }

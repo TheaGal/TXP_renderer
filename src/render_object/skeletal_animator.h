@@ -96,6 +96,9 @@ public:
     /// Sets whether animator is paused.
     void set_paused(bool paused);
 
+    /// Caches a transform for simulation update to use.
+    void cache_simulation_transform(mat4 const simulation_transform);
+
     /// Updates the animator, supplying a deltatime.
     /// There are two animator timers, so you need to give which timer to update.
     /// @NOTE: while paused, `update()` may be used to update the AFA data. Also, `delta_time` will
@@ -141,7 +144,12 @@ public:
         };
         std::vector<Name_w_desc_w_type> argv;
 
-        std::function<void(Model_animator&, uint32_t, bool, bool, std::vector<std::string> const&)>
+        std::function<void(Model_animator&,
+                           uint32_t,
+                           bool,
+                           bool,
+                           mat4 const,
+                           std::vector<std::string> const&)>
             exec_fn;
     };
 
@@ -195,6 +203,8 @@ private:
     std::atomic_bool m_is_paused{ false };
 
     bool m_is_using_root_motion;
+
+    mat4 m_cached_simulation_transform;
 
     /// Type for interpreted code.
     using cmd_code_t = anim_frame_action::Runtime_data_controls::Data::
