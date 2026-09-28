@@ -279,7 +279,7 @@ void Shader_basic_diffuse::make_material(
 {
     gpu_type::Material_param_set new_param_set;
 
-    for (auto& [param_key, param_val] : shader_params)
+    for (auto const& [param_key, param_val] : shader_params)
     {
         if (param_key == "texture0")
         {

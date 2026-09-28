@@ -35,8 +35,8 @@ struct Model_transform_set
     float4x4 transforms[65535];
 };
 
-// Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??
-StructuredBuffer<DescriptorHandle<Sampler2D>> textures;  // try this method??
+Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
+// StructuredBuffer<DescriptorHandle<Sampler2D>> textures;  // try this method??
 static const uint32_t TEX_IDX_NONE = (uint32_t)-1;
 
 struct Material_param_set
@@ -89,7 +89,7 @@ VS_output vertex_main(VS_input input,
     output.pos = mul(env_data->projection, frag_pos);
 
     output.world_pos = world_pos.xyz;
-    output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);  // @CHECK: this may be incorrect.
+    output.normal = normalize(mul((float3x3)model_mat, input.normal));
     output.uv = input.uv;
 
     output.view_vec = -frag_pos.xyz;
@@ -152,7 +152,8 @@ float4 sample_texture_idx(uint32_t texture_idx, float2 uv, float4 default_value)
     if (texture_idx == TEX_IDX_NONE)
         return default_value;
     
-    return textures[texture_idx].Sample(uv);
+    return textures[NonUniformResourceIndex(texture_idx)].Sample(uv);
+    // return textures[texture_idx].Sample(uv);  // try this method??
 }
 
 /// Samples a texture at UV if the texture index is valid.

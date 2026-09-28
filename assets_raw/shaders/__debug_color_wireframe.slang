@@ -73,7 +73,7 @@ VS_output vertex_main(VS_input input,
                      mul(env_data->view,
                          mul(model_mat,
                              float4(input.pos.xyz, 1.0))));
-    output.normal = mul((float3x3)model_mat, input.normal);
+    output.normal = normalize(mul((float3x3)model_mat, input.normal));
 
     // output.bary_coords = float3(fmod(vert_index, 3) == 0 ? 1 : 0,
     //                             fmod(vert_index, 3) == 1 ? 1 : 0,

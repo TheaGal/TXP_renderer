@@ -311,7 +311,7 @@ void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
 
     Shader_postprocess_push_constants push_consts{
         .use_ui_image = use_ui_image,
-        .exposure = 2.5f,
+        .exposure = 10.0f,
         .gamma = 2.2f,
     };
     vkCmdPushConstants(cmd,

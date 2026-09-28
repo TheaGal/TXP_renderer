@@ -19,15 +19,15 @@ namespace Shader
 {
 
 /// Textured, diffuse shader.
-class Shader_basic_diffuse
+class Shader_pbr
 {
 public:
-    static constexpr char const* k_name{ "basic_diffuse" };
+    static constexpr char const* k_name{ "pbr" };
 
-    Shader_basic_diffuse(Material_organizer& material_organizer,
-                         Render_model_data_collection& render_model_data_collection,
-                         void* graphics);
-    ~Shader_basic_diffuse();
+    Shader_pbr(Material_organizer& material_organizer,
+               Render_model_data_collection& render_model_data_collection,
+               void* graphics);
+    ~Shader_pbr();
 
     void make_material(std::string const& material_name,
                        std::unordered_map<std::string, std::string> const& shader_params);

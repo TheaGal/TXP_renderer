@@ -4,14 +4,19 @@
             "name": "textures",
             "binding": {"kind": "descriptorTableSlot", "index": 0},
             "type": {
-                "kind": "resource",
-                "baseShape": "structuredBuffer",
-                "resultType": {
-                    "kind": "vector",
-                    "elementCount": 2,
-                    "elementType": {
-                        "kind": "scalar",
-                        "scalarType": "uint32"
+                "kind": "array",
+                "elementCount": 0,
+                "elementType": {
+                    "kind": "resource",
+                    "baseShape": "texture2D",
+                    "combined": true,
+                    "resultType": {
+                        "kind": "vector",
+                        "elementCount": 4,
+                        "elementType": {
+                            "kind": "scalar",
+                            "scalarType": "float32"
+                        }
                     }
                 }
             }
