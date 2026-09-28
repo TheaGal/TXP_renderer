@@ -160,6 +160,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/pbr.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/pbr.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/postprocess.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/postprocess.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/skinned_model.shader
@@ -167,6 +169,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/sprite.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/sprite.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/default_tex.ktx2
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/tiles084_normal.ktx2
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/tiles084_physdesc.ktx2
 )
 
 # macOS: add all files in assets dir into app bundle package.
