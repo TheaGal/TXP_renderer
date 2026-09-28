@@ -10,6 +10,9 @@
 # Clangd compile_commands.json (@NOTE: Only appears when using clang compiler)
 compile_commands.json
 
+# Python venv
+venv/
+
 # Get this macOS shit OUTTA HERE
 .DS_Store
 xcode_build/

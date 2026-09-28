@@ -81,6 +81,19 @@ For macOS, install the pkg. (uninstall with `sudo ktx-uninstall`)
 For Windows, download the .exe and place it somewhere where it's available from PATH.
 
 
+### The various python scripts.
+
+Create a venv:
+
+```sh
+python3 -m venv venv
+source ./venv/bin/activate
+pip install -r requirements.txt
+```
+
+Then use the scripts as wanted. Ensure the CWD is the same directory as the scripts.
+
+
 ## Details
 
 For Win64, macOS, and Linux, this renderer uses Vulkan 1.3 (MacOS being thru KosmicKrisp).

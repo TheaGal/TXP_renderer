@@ -1,0 +1,44 @@
+default_tex:
+  Texture2D:
+    channels: 4
+    format: ldr_srgb
+    mipmapped: true
+    source_image: default_tex.jpg
+
+grid_1m:
+  Texture2D:
+    channels: 4
+    format: ldr_srgb
+    mipmapped: true
+    source_image: grid_1m.jpg
+
+tiles084_basecolor:
+  Texture2D:
+    channels: 4
+    format: ldr_srgb
+    mipmapped: true
+    source_image: Tiles084_1K-JPG_Color.jpg
+
+tiles084_physdesc:
+  Texture2D_channelmapped:
+    channels: 4
+    format: ldr_unorm
+    mipmapped: true
+    source_image_r: 0
+    source_image_g: Tiles084_1K-JPG_Roughness.jpg
+    source_image_b: 0
+    source_image_a: 1
+
+tiles084_normal:
+  Texture2D:
+    channels: 4
+    format: ldr_unorm
+    mipmapped: true
+    source_image: Tiles084_1K-JPG_NormalGL.jpg
+
+tiles084_occlusion:
+  Texture2D:
+    channels: 4
+    format: ldr_unorm
+    mipmapped: true
+    source_image: Tiles084_1K-JPG_AmbientOcclusion.jpg
