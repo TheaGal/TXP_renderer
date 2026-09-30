@@ -7,7 +7,9 @@
 #include "tiny_obj_loader.h"
 #include "vertex.h"
 
+#include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <unordered_map>
 
 
@@ -208,9 +210,113 @@ void TXP::load_obj_model_from_disk(Render_model_data_collection& data_collection
             indices.emplace_back(key_to_vertex_map.at(key).index);
         }
 
+        // Calc tangents for each vertex.  @COPYPASTA
+        // @REF: https://sotrh.github.io/learn-wgpu/showcase/compute/#possible-improvements
+        if (!indices.empty())
+        {
+            std::unordered_map<uint32_t, std::vector<uint32_t>> vertex_idx_to_triangle_idx;
+            vertex_idx_to_triangle_idx.reserve(vertices.size());
+
+            std::vector<vec3s> per_triangle_tangent_results;
+            per_triangle_tangent_results.reserve(indices.size() / 3);
+
+            ivec2s lowest_highest_vert_idx{ std::numeric_limits<int32_t>::max(),
+                                            std::numeric_limits<int32_t>::min() };
+            auto const k_add_vert_idx_to_lowest_highest_fn =
+                [&lowest_highest_vert_idx](int32_t const vert_idx) {
+                    lowest_highest_vert_idx.x = std::min(lowest_highest_vert_idx.x, vert_idx);
+                    lowest_highest_vert_idx.y = std::max(lowest_highest_vert_idx.y, vert_idx);
+                };
+
+            for (size_t i = 0; i < indices.size(); i += 3)
+            {
+                uint32_t const idx0{ indices[i + 0] };
+                uint32_t const idx1{ indices[i + 1] };
+                uint32_t const idx2{ indices[i + 2] };
+                auto const& v0{ vertices[idx0] };
+                auto const& v1{ vertices[idx1] };
+                auto const& v2{ vertices[idx2] };
+
+                k_add_vert_idx_to_lowest_highest_fn(idx0);
+                k_add_vert_idx_to_lowest_highest_fn(idx1);
+                k_add_vert_idx_to_lowest_highest_fn(idx2);
+
+                vec3 pos0;
+                glm_vec3_copy(const_cast<Vertex&>(v0).position_vec3(), pos0);
+                vec3 pos1;
+                glm_vec3_copy(const_cast<Vertex&>(v1).position_vec3(), pos1);
+                vec3 pos2;
+                glm_vec3_copy(const_cast<Vertex&>(v2).position_vec3(), pos2);
+
+                vec2 uv0;
+                glm_vec2_copy(const_cast<Vertex&>(v0).uv_vec2(), uv0);
+                vec2 uv1;
+                glm_vec2_copy(const_cast<Vertex&>(v1).uv_vec2(), uv1);
+                vec2 uv2;
+                glm_vec2_copy(const_cast<Vertex&>(v2).uv_vec2(), uv2);
+
+                vec3 delta_pos1;
+                glm_vec3_sub(pos1, pos0, delta_pos1);
+                vec3 delta_pos2;
+                glm_vec3_sub(pos2, pos0, delta_pos2);
+
+                vec2 delta_uv1;
+                glm_vec2_sub(uv1, uv0, delta_uv1);
+                vec2 delta_uv2;
+                glm_vec2_sub(uv2, uv0, delta_uv2);
+
+                float_t r{ 1.0f / (delta_uv1[0] * delta_uv2[1] - delta_uv1[1] * delta_uv2[0]) };
+
+                // Ref: tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
+                vec3s tangent;
+                glm_vec3_scale(delta_pos1, delta_uv2[1], tangent.raw);
+                glm_vec3_mulsubs(delta_pos2, delta_uv1[1], tangent.raw);
+                glm_vec3_scale(tangent.raw, r, tangent.raw);
+
+                // Write result to destination.
+                uint32_t current_triangle_idx = per_triangle_tangent_results.size();
+                vertex_idx_to_triangle_idx[idx0].emplace_back(current_triangle_idx);
+                vertex_idx_to_triangle_idx[idx1].emplace_back(current_triangle_idx);
+                vertex_idx_to_triangle_idx[idx2].emplace_back(current_triangle_idx);
+                per_triangle_tangent_results.emplace_back(std::move(tangent));
+            }
+
+            for (uint32_t idx = lowest_highest_vert_idx.x; idx <= lowest_highest_vert_idx.y; idx++)
+            {
+                auto const& triangle_idx_list{ vertex_idx_to_triangle_idx.at(idx) };
+
+                vec4 avg_tangent = GLM_VEC3_ZERO_INIT;
+                uint32_t n{ 0 };
+
+                for (uint32_t tri_idx : triangle_idx_list)
+                {
+                    glm_vec3_add(avg_tangent,
+                                 per_triangle_tangent_results[tri_idx].raw,
+                                 avg_tangent);
+                    n++;
+                }
+
+                glm_vec3_scale(avg_tangent, 1.0f / n, avg_tangent);
+                glm_vec3_normalize(avg_tangent);
+
+                avg_tangent[3] = 1;  // set tangent handedness
+
+                glm_vec4_copy(avg_tangent, vertices[idx].tangent_vec4());
+            }
+        }
+
         // Create mesh.
         meshes.emplace_back(shape.name, vec3s{ 0, 0, 0 }, std::move(indices));
     }
+
+    // Sanity check that all tangents are created.  @COPYPASTA
+    for (auto const& vert : vertices)
+    {
+        float_t tangent_norm{ glm_vec3_norm(const_cast<float_t*>(&vert.tangent_x)) };
+        // assert(std::abs(tangent_norm - 1) < 1e-4f);
+        assert(vert.tangent_w == 1 || vert.tangent_w == -1);
+    }
+
 
     // Place data into collection.
     data_collection.emplace_static_model_data_set(model_name, std::move(new_static_model_data_set));

@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cstdint>
 #include <filesystem>
+#include <limits>
 #include <list>
 #include <stdexcept>
 #include <unordered_map>
@@ -592,7 +593,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 indices.emplace_back(base_vertex_idx + ind);
             }
 
-            // Calc tangents for each vertex.
+            // Calc tangents for each vertex.  @COPYPASTA
             // @REF: https://sotrh.github.io/learn-wgpu/showcase/compute/#possible-improvements
             if (tangent_accessor == nullptr)
             {
@@ -602,6 +603,14 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 std::vector<vec3s> per_triangle_tangent_results;
                 per_triangle_tangent_results.reserve(indices_accessor.count / 3);
 
+                ivec2s lowest_highest_vert_idx{ std::numeric_limits<int32_t>::max(),
+                                                std::numeric_limits<int32_t>::min() };
+                auto const k_add_vert_idx_to_lowest_highest_fn =
+                    [&lowest_highest_vert_idx](int32_t const vert_idx) {
+                        lowest_highest_vert_idx.x = std::min(lowest_highest_vert_idx.x, vert_idx);
+                        lowest_highest_vert_idx.y = std::max(lowest_highest_vert_idx.y, vert_idx);
+                    };
+
                 for (size_t i = 0; i < indices.size(); i += 3)
                 {
                     uint32_t const idx0{ indices[i + 0] };
@@ -610,6 +619,10 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     auto const& v0{ vertices[idx0] };
                     auto const& v1{ vertices[idx1] };
                     auto const& v2{ vertices[idx2] };
+
+                    k_add_vert_idx_to_lowest_highest_fn(idx0);
+                    k_add_vert_idx_to_lowest_highest_fn(idx1);
+                    k_add_vert_idx_to_lowest_highest_fn(idx2);
 
                     vec3 pos0;
                     glm_vec3_copy(const_cast<Vertex&>(v0).position_vec3(), pos0);
@@ -651,10 +664,10 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     per_triangle_tangent_results.emplace_back(std::move(tangent));
                 }
 
-                for (uint32_t idx = 0; idx < pos_accessor.count; idx++)
+                for (uint32_t idx = lowest_highest_vert_idx.x; idx <= lowest_highest_vert_idx.y;
+                     idx++)
                 {
-                    auto const& triangle_idx_list{ vertex_idx_to_triangle_idx.at(base_vertex_idx +
-                                                                                 idx) };
+                    auto const& triangle_idx_list{ vertex_idx_to_triangle_idx.at(idx) };
 
                     vec4 avg_tangent = GLM_VEC3_ZERO_INIT;
                     uint32_t n{ 0 };
@@ -672,7 +685,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
 
                     avg_tangent[3] = 1;  // set tangent handedness
 
-                    glm_vec4_copy(avg_tangent, vertices[base_vertex_idx + idx].tangent_vec4());
+                    glm_vec4_copy(avg_tangent, vertices[idx].tangent_vec4());
                 }
             }
 
@@ -681,7 +694,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         }
     }
 
-    // Sanity check that all tangents are created.
+    // Sanity check that all tangents are created.  @COPYPASTA
     for (auto const& vert : vertices)
     {
         float_t tangent_norm{ glm_vec3_norm(const_cast<float_t*>(&vert.tangent_x)) };
