@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <limits>
@@ -648,7 +649,11 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     vec2 delta_uv2;
                     glm_vec2_sub(uv2, uv0, delta_uv2);
 
+                    glm_vec2_maxv(vec2{ 1e-6f, 1e-6f }, delta_uv1, delta_uv1);  // fudge
+                    glm_vec2_maxv(vec2{ 1e-6f, 1e-6f }, delta_uv2, delta_uv2);  // fudge
+
                     float_t r{ 1.0f / (delta_uv1[0] * delta_uv2[1] - delta_uv1[1] * delta_uv2[0]) };
+                    assert(!std::isnan(r));
 
                     // Ref: tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
                     vec3s tangent;
