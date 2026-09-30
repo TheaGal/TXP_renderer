@@ -30,6 +30,10 @@ struct alignas(16) Vertex
     float_t normal_z;
     float_t uv_x;
     float_t uv_y;
+    float_t tangent_x;
+    float_t tangent_y;
+    float_t tangent_z;
+    float_t tangent_w;
 
     /// Handle of vec3 for position attribute.
     float_t* position_vec3()
@@ -47,6 +51,12 @@ struct alignas(16) Vertex
     float_t* uv_vec2()
     {
         return &uv_x;
+    }
+
+    /// Handle of vec4 for tangent attribute.
+    float_t* tangent_vec4()
+    {
+        return &tangent_x;
     }
 };
 static_assert(sizeof(Vertex) % 16 == 0, "Size must be multiple of 16 bytes");

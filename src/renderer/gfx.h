@@ -31,6 +31,7 @@ struct Environment_data
 {
     mat4 projection;
     mat4 view;
+    vec4 camera_position;
     Directional_light directional_light;
 
     static constexpr uint32_t k_lighting_mode_full        = 0;
@@ -168,7 +169,10 @@ public:
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
     /// Sets GPU camera properties for a render view.
-    void set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view);
+    void set_render_view_camera(size_t render_view_idx,
+                                mat4 const camera_projection,
+                                mat4 const camera_view,
+                                vec3 const camera_position);
 
     /// Sets GPU directional light properties for a render view.
     void set_directional_light(size_t render_view_idx,

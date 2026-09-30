@@ -1674,14 +1674,16 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 }
 
 void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
-                                            mat4 camera_projection,
-                                            mat4 camera_view)
+                                            mat4 const camera_projection,
+                                            mat4 const camera_view,
+                                            vec3 const camera_position)
 {
     auto& env_data{ *static_cast<gpu_type::Environment_data*>(
         get_current_frame().environment_data_buffers[render_view_idx].get_p_mapped_data()) };
 
-    glm_mat4_copy(camera_projection, env_data.projection);
-    glm_mat4_copy(camera_view, env_data.view);
+    glm_mat4_copy(const_cast<vec4*>(camera_projection), env_data.projection);
+    glm_mat4_copy(const_cast<vec4*>(camera_view), env_data.view);
+    glm_vec3_copy(const_cast<float_t*>(camera_position), env_data.camera_position);
 }
 
 void Graphics::Impl::set_directional_light(size_t render_view_idx,

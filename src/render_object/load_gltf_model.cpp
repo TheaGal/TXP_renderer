@@ -15,9 +15,11 @@
 
 #include <algorithm>
 #include <cassert>
+#include <cstdint>
 #include <filesystem>
 #include <list>
 #include <stdexcept>
+#include <unordered_map>
 
 
 void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collection,
@@ -425,26 +427,34 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         for (auto& primitive : mesh.primitives)
         {   // Load vertices.
             // Find all wanted accessors.
-            auto pos_attribute{ primitive.findAttribute("POSITION") };
-            auto norm_attribute{ primitive.findAttribute("NORMAL") };
-            auto tex_coord_attribute{ primitive.findAttribute("TEXCOORD_0") };
-            auto joints_attribute{ primitive.findAttribute("JOINTS_0") };
-            auto weights_attribute{ primitive.findAttribute("WEIGHTS_0") };
+            auto* pos_attribute{ primitive.findAttribute("POSITION") };
+            auto* norm_attribute{ primitive.findAttribute("NORMAL") };
+            auto* tex_coord_attribute{ primitive.findAttribute("TEXCOORD_0") };
+            auto* tangent_attribute{ primitive.findAttribute("TANGENT") };
+            auto* joints_attribute{ primitive.findAttribute("JOINTS_0") };
+            auto* weights_attribute{ primitive.findAttribute("WEIGHTS_0") };
 
-            assert(pos_attribute != nullptr);  // POSITION is definitely required.
-            assert(norm_attribute != nullptr);
-            assert(tex_coord_attribute != nullptr);
-            assert((joints_attribute != nullptr) == (weights_attribute != nullptr));
+            assert(pos_attribute != primitive.attributes.end());  // POSITION is definitely required.
+            assert(norm_attribute != primitive.attributes.end());
+            assert(tex_coord_attribute != primitive.attributes.end());
+            assert((joints_attribute != primitive.attributes.end()) ==
+                   (weights_attribute != primitive.attributes.end()));
 
             auto& pos_accessor{ asset.accessors[pos_attribute->accessorIndex] };
             auto& norm_accessor{ asset.accessors[norm_attribute->accessorIndex] };
             auto& tex_coord_accessor{ asset.accessors[tex_coord_attribute->accessorIndex] };
+            fastgltf::Accessor* tangent_accessor{
+                tangent_attribute != primitive.attributes.end()
+                    ? &asset.accessors[tangent_attribute->accessorIndex]
+                    : nullptr
+            };
             fastgltf::Accessor* joints_accessor{ nullptr };
             fastgltf::Accessor* weights_accessor{ nullptr };
             bool has_skin{ false };
 
             // @NOTE: ignore joints/weights attributes if there are no skins in model.
-            if (overall_has_skin && joints_attribute != nullptr && weights_attribute != nullptr)
+            if (overall_has_skin && joints_attribute != primitive.attributes.end() &&
+                weights_attribute != primitive.attributes.end())
             {   // Include skinning accessors.
                 joints_accessor = &asset.accessors[joints_attribute->accessorIndex];
                 weights_accessor = &asset.accessors[weights_attribute->accessorIndex];
@@ -469,24 +479,40 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             }
 
             // Load data for new vertices.
-            fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(asset, pos_accessor,
+            fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(
+                asset,
+                pos_accessor,
                 [&model_aabb, &vertices, base_vertex_idx](fastgltf::math::fvec3 v, size_t index) {
                     model_aabb.feed_position(v.data());
                     glm_vec3_copy(v.data(),
                                   vertices[base_vertex_idx + index].position_vec3());
                 });
 
-            fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(asset, norm_accessor,
+            fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec3>(
+                asset,
+                norm_accessor,
                 [&vertices, base_vertex_idx](fastgltf::math::fvec3 v, size_t index) {
                     glm_vec3_copy(v.data(),
                                   vertices[base_vertex_idx + index].normal_vec3());
                 });
 
-            fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(asset, tex_coord_accessor,
+            fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec2>(
+                asset,
+                tex_coord_accessor,
                 [&vertices, base_vertex_idx](fastgltf::math::fvec2 v, size_t index) {
                     glm_vec2_copy(v.data(),
                                   vertices[base_vertex_idx + index].uv_vec2());
                 });
+
+            if (tangent_accessor != nullptr)
+            {
+                fastgltf::iterateAccessorWithIndex<fastgltf::math::fvec4>(
+                    asset,
+                    *tangent_accessor,
+                    [&vertices, base_vertex_idx](fastgltf::math::fvec4 v, size_t index) {
+                        glm_vec4_copy(v.data(), vertices[base_vertex_idx + index].tangent_vec4());
+                    });
+            }
 
             if (has_skin)
             {   // Joint indices.
@@ -566,9 +592,101 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 indices.emplace_back(base_vertex_idx + ind);
             }
 
+            // Calc tangents for each vertex.
+            // @REF: https://sotrh.github.io/learn-wgpu/showcase/compute/#possible-improvements
+            if (tangent_accessor == nullptr)
+            {
+                std::unordered_map<uint32_t, std::vector<uint32_t>> vertex_idx_to_triangle_idx;
+                vertex_idx_to_triangle_idx.reserve(pos_accessor.count);
+
+                std::vector<vec3s> per_triangle_tangent_results;
+                per_triangle_tangent_results.reserve(indices_accessor.count / 3);
+
+                for (size_t i = 0; i < indices.size(); i += 3)
+                {
+                    uint32_t const idx0{ indices[i + 0] };
+                    uint32_t const idx1{ indices[i + 1] };
+                    uint32_t const idx2{ indices[i + 2] };
+                    auto const& v0{ vertices[idx0] };
+                    auto const& v1{ vertices[idx1] };
+                    auto const& v2{ vertices[idx2] };
+
+                    vec3 pos0;
+                    glm_vec3_copy(const_cast<Vertex&>(v0).position_vec3(), pos0);
+                    vec3 pos1;
+                    glm_vec3_copy(const_cast<Vertex&>(v1).position_vec3(), pos1);
+                    vec3 pos2;
+                    glm_vec3_copy(const_cast<Vertex&>(v2).position_vec3(), pos2);
+
+                    vec2 uv0;
+                    glm_vec2_copy(const_cast<Vertex&>(v0).uv_vec2(), uv0);
+                    vec2 uv1;
+                    glm_vec2_copy(const_cast<Vertex&>(v1).uv_vec2(), uv1);
+                    vec2 uv2;
+                    glm_vec2_copy(const_cast<Vertex&>(v2).uv_vec2(), uv2);
+
+                    vec3 delta_pos1;
+                    glm_vec3_sub(pos1, pos0, delta_pos1);
+                    vec3 delta_pos2;
+                    glm_vec3_sub(pos2, pos0, delta_pos2);
+
+                    vec2 delta_uv1;
+                    glm_vec2_sub(uv1, uv0, delta_uv1);
+                    vec2 delta_uv2;
+                    glm_vec2_sub(uv2, uv0, delta_uv2);
+
+                    float_t r{ 1.0f / (delta_uv1[0] * delta_uv2[1] - delta_uv1[1] * delta_uv2[0]) };
+
+                    // Ref: tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
+                    vec3s tangent;
+                    glm_vec3_scale(delta_pos1, delta_uv2[1], tangent.raw);
+                    glm_vec3_mulsubs(delta_pos2, delta_uv1[1], tangent.raw);
+                    glm_vec3_scale(tangent.raw, r, tangent.raw);
+
+                    // Write result to destination.
+                    uint32_t current_triangle_idx = per_triangle_tangent_results.size();
+                    vertex_idx_to_triangle_idx[idx0].emplace_back(current_triangle_idx);
+                    vertex_idx_to_triangle_idx[idx1].emplace_back(current_triangle_idx);
+                    vertex_idx_to_triangle_idx[idx2].emplace_back(current_triangle_idx);
+                    per_triangle_tangent_results.emplace_back(std::move(tangent));
+                }
+
+                for (uint32_t idx = 0; idx < pos_accessor.count; idx++)
+                {
+                    auto const& triangle_idx_list{ vertex_idx_to_triangle_idx.at(base_vertex_idx +
+                                                                                 idx) };
+
+                    vec4 avg_tangent = GLM_VEC3_ZERO_INIT;
+                    uint32_t n{ 0 };
+
+                    for (uint32_t tri_idx : triangle_idx_list)
+                    {
+                        glm_vec3_add(avg_tangent,
+                                     per_triangle_tangent_results[tri_idx].raw,
+                                     avg_tangent);
+                        n++;
+                    }
+
+                    glm_vec3_scale(avg_tangent, 1.0f / n, avg_tangent);
+                    glm_vec3_normalize(avg_tangent);
+
+                    avg_tangent[3] = 1;  // set tangent handedness
+
+                    glm_vec4_copy(avg_tangent, vertices[base_vertex_idx + idx].tangent_vec4());
+                }
+            }
+
             // Create mesh in model.
             meshes.emplace_back(node_name, mesh_origin_position, std::move(indices));
         }
+    }
+
+    // Sanity check that all tangents are created.
+    for (auto const& vert : vertices)
+    {
+        float_t tangent_norm{ glm_vec3_norm(const_cast<float_t*>(&vert.tangent_x)) };
+        // assert(std::abs(tangent_norm - 1) < 1e-4f);
+        assert(vert.tangent_w == 1 || vert.tangent_w == -1);
     }
 
 #define OPENGL_SPECIFIC_STUFF 0

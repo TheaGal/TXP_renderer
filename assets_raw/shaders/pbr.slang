@@ -3,6 +3,7 @@ struct VS_input
     float3 pos;
     float3 normal;
     float2 uv;
+    float4 tangent;
 };
 
 struct Directional_light
@@ -15,6 +16,7 @@ struct Environment_data
 {
     float4x4 projection;
     float4x4 view;
+    float4 camera_position;
     Directional_light directional_light;
     uint32_t lighting_mode;
 };
@@ -63,7 +65,8 @@ struct VS_output
     float3 world_pos;
     float3 normal;
     float2 uv;
-    float3 view_vec;
+    float4 tangent;
+    float3 camera_pos;
     uint32_t lighting_mode;
     Directional_light directional_light;
     Material_param_set mat_param_set;
@@ -88,11 +91,12 @@ VS_output vertex_main(VS_input input,
     float4 frag_pos = mul(env_data->view, world_pos);
     output.pos = mul(env_data->projection, frag_pos);
 
-    output.world_pos = world_pos.xyz;
+    output.world_pos = world_pos.xyz / world_pos.w;
     output.normal = normalize(mul((float3x3)model_mat, input.normal));
     output.uv = input.uv;
+    output.tangent = input.tangent;
 
-    output.view_vec = -frag_pos.xyz;
+    output.camera_pos = env_data->camera_position.xyz;
 
     output.lighting_mode = env_data->lighting_mode;
     output.directional_light = env_data->directional_light;
@@ -203,15 +207,8 @@ float4 fragment_main(VS_output input)
                 2.0 -
             1.0;
 
-        // Construct tangent. @REF: http://www.thetenthplanet.de/archives/1180
-        const float3 q1 = ddx(input.world_pos);
-        const float3 q2 = ddy(input.world_pos);
-        const float2 st1 = ddx(input.uv);
-        const float2 st2 = ddy(input.uv);
-
-        // Construct tangent-space to world-space transformation matrix (TBN)
-        const float3 T = normalize(q1 * st2.y - q2 * st1.y);
-        const float3 B = -normalize(cross(N, T));  // bitangent (negated for handedness)
+        const float3 T = normalize(input.tangent.xyz);  // tangent
+        const float3 B = normalize(cross(N, T)) * input.tangent.w;  // bitangent (w = handedness)
         const float3x3 TBN = float3x3(T, B, N);  // Tangent-Bitangent-Normal matrix
 
         // Transform normal from tangent space to world space
@@ -220,7 +217,7 @@ float4 fragment_main(VS_output input)
 
     // --- LIGHTING SETUP --------------------------------------------------------------------------
     // Calculate view direction (fragment to camera)
-    const float3 V = normalize(input.view_vec);
+    const float3 V = normalize(input.camera_pos - input.world_pos);
 
     // Calculate reflection vector for environment mapping
     const float3 R = reflect(-V, N);

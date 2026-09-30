@@ -13,6 +13,7 @@ struct Cam_matrix
 {
     mat4 projection;
     mat4 view;
+    vec3 camera_position;
 };
 
 /// Externally-facing camera class.

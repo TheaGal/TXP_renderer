@@ -14,6 +14,7 @@ struct Environment_data
 {
     float4x4 projection;
     float4x4 view;
+    float4 camera_position;
     Directional_light directional_light;
     uint32_t lighting_mode;
 };

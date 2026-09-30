@@ -30,7 +30,7 @@
                 {
                     "name": "input",
                     "stage": "vertex",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 4},
                     "type": {
                         "kind": "struct",
                         "name": "VS_input",
@@ -73,6 +73,19 @@
                                 },
                                 "stage": "vertex",
                                 "binding": {"kind": "varyingInput", "index": 2}
+                            },
+                            {
+                                "name": "tangent",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 3}
                             }
                         ]
                     }
@@ -120,7 +133,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 16},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 17},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -177,10 +190,10 @@
                             "binding": {"kind": "varyingOutput", "index": 2}
                         },
                         {
-                            "name": "view_vec",
+                            "name": "tangent",
                             "type": {
                                 "kind": "vector",
-                                "elementCount": 3,
+                                "elementCount": 4,
                                 "elementType": {
                                     "kind": "scalar",
                                     "scalarType": "float32"
@@ -190,13 +203,26 @@
                             "binding": {"kind": "varyingOutput", "index": 3}
                         },
                         {
+                            "name": "camera_pos",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 4}
+                        },
+                        {
                             "name": "lighting_mode",
                             "type": {
                                 "kind": "scalar",
                                 "scalarType": "uint32"
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 4}
+                            "binding": {"kind": "varyingOutput", "index": 5}
                         },
                         {
                             "name": "directional_light",
@@ -233,7 +259,7 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 5, "count": 2}
+                            "binding": {"kind": "varyingOutput", "index": 6, "count": 2}
                         },
                         {
                             "name": "mat_param_set",
@@ -329,7 +355,7 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 7, "count": 9}
+                            "binding": {"kind": "varyingOutput", "index": 8, "count": 9}
                         }
                     ]
                 }
@@ -348,7 +374,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 16},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 17},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -405,10 +431,10 @@
                                 "binding": {"kind": "varyingInput", "index": 2}
                             },
                             {
-                                "name": "view_vec",
+                                "name": "tangent",
                                 "type": {
                                     "kind": "vector",
-                                    "elementCount": 3,
+                                    "elementCount": 4,
                                     "elementType": {
                                         "kind": "scalar",
                                         "scalarType": "float32"
@@ -418,13 +444,26 @@
                                 "binding": {"kind": "varyingInput", "index": 3}
                             },
                             {
+                                "name": "camera_pos",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 4}
+                            },
+                            {
                                 "name": "lighting_mode",
                                 "type": {
                                     "kind": "scalar",
                                     "scalarType": "uint32"
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 4}
+                                "binding": {"kind": "varyingInput", "index": 5}
                             },
                             {
                                 "name": "directional_light",
@@ -461,7 +500,7 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 5, "count": 2}
+                                "binding": {"kind": "varyingInput", "index": 6, "count": 2}
                             },
                             {
                                 "name": "mat_param_set",
@@ -557,7 +596,7 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 7, "count": 9}
+                                "binding": {"kind": "varyingInput", "index": 8, "count": 9}
                             }
                         ]
                     }

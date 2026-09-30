@@ -165,6 +165,9 @@ void Camera_internal::calc_cam_matrices()
         glm_vec3_add(cam_position, const_cast<float_t*>(cam.view_direction.raw), center);
         glm_lookat(cam_position, center, up, new_cam_matrix.view);
 
+        // Write camera position.
+        glm_vec3_copy(cam_position, new_cam_matrix.camera_position);
+
         cam_matrices.emplace_back(std::move(new_cam_matrix));
     }
 
