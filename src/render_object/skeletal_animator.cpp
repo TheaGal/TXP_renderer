@@ -944,6 +944,52 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
     }
 }
 
+int32_t TXP::component_internal::Model_animator::calc_action_map_weighted_action_idx(
+    std::string const& action_map_name,
+    float_t const distance_to_target,
+    float_t const random_value_01) const
+{
+    if (m_anim_frame_action_controls == nullptr)
+        throw std::runtime_error("This shouldn't be nullptr if you're trying to access this.");
+
+    assert(random_value_01 >= 0 && random_value_01 < 1);
+
+    for (auto const& action_map : m_anim_frame_action_controls->data.action_maps)
+    {
+        if (action_map.name == action_map_name)
+        {
+            // Find the action index.
+            float_t weights_total{ 0 };
+            for (auto const& action : action_map.actions)
+                if (action.min_max_range.first <= distance_to_target &&
+                    distance_to_target <= action.min_max_range.second)
+                    weights_total += action.weight;
+
+            float_t random_scaled{ random_value_01 * weights_total };
+            for (int32_t i = 0; i < action_map.actions.size(); i++)
+            {
+                auto const& action{ action_map.actions[i] };
+
+                if (action.min_max_range.first <= distance_to_target &&
+                    distance_to_target <= action.min_max_range.second)
+                {
+                    float_t const action_weight{ action.weight };
+
+                    if (random_scaled <= action_weight)
+                        return i;
+
+                    random_scaled -= action_weight;
+                }
+            }
+
+            // No action possible.
+            return -1;
+        }
+    }
+
+    throw std::runtime_error("Correct action map was never found. Wrong name?");
+}
+
 TXP::anim_frame_action::Runtime_controllable_data&
 TXP::component_internal::Model_animator::get_anim_frame_action_data_handle()
 {
@@ -1347,7 +1393,7 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                     {
                         if (evq->event_transition_state_set_as_str == action_map.name)
                         {
-                            state_set_str = &action_map.state_sets[evq->queue_items[i].arg];
+                            state_set_str = &action_map.actions[evq->queue_items[i].arg].state_set;
                             found = true;
                         }
                     }
