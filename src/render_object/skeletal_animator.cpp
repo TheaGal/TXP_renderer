@@ -962,7 +962,7 @@ int32_t TXP::component_internal::Model_animator::calc_action_map_weighted_action
             float_t weights_total{ 0 };
             for (auto const& action : action_map.actions)
                 if (action.min_max_range.first <= distance_to_target &&
-                    distance_to_target <= action.min_max_range.second)
+                    distance_to_target <= action.min_max_range.second && action.weight >= 1e-6f)
                     weights_total += action.weight;
 
             float_t random_scaled{ random_value_01 * weights_total };
@@ -971,7 +971,7 @@ int32_t TXP::component_internal::Model_animator::calc_action_map_weighted_action
                 auto const& action{ action_map.actions[i] };
 
                 if (action.min_max_range.first <= distance_to_target &&
-                    distance_to_target <= action.min_max_range.second)
+                    distance_to_target <= action.min_max_range.second && action.weight >= 1e-6f)
                 {
                     float_t const action_weight{ action.weight };
 
@@ -1474,10 +1474,10 @@ void TXP::component_internal::Model_animator::clear_expired_event_queue_items()
         size_t post_delete_size{ evq.queue_items.size() };
         if (pre_delete_size != post_delete_size)
         {
-            BT_WARNF("Event queue %s : size %zu -> %zu",
-                     _.c_str(),
-                     pre_delete_size,
-                     post_delete_size);
+            BT_TRACEF("Event queue %s : size %zu -> %zu",
+                      _.c_str(),
+                      pre_delete_size,
+                      post_delete_size);
         }
     }
 }
