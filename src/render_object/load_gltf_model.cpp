@@ -405,6 +405,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     };
     auto& vert_skin_datas{ emplaced_model_skin.vert_skin_datas };
 
+    bool needed_delta_uv_fudging{ false };
+
     for (size_t i = 0; i < asset.meshes.size(); i++)
     {
         auto& mesh{ asset.meshes[i] };
@@ -649,17 +651,28 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     vec2 delta_uv2;
                     glm_vec2_sub(uv2, uv0, delta_uv2);
 
-                    glm_vec2_maxv(vec2{ 1e-6f, 1e-6f }, delta_uv1, delta_uv1);  // fudge
-                    glm_vec2_maxv(vec2{ 1e-6f, 1e-6f }, delta_uv2, delta_uv2);  // fudge
-
-                    float_t r{ 1.0f / (delta_uv1[0] * delta_uv2[1] - delta_uv1[1] * delta_uv2[0]) };
-                    assert(!std::isnan(r));
+                    static auto const k_fudge_away_from_zero = [](float_t& in_out_val,
+                                                                  bool& needed_delta_uv_fudging) {
+                        constexpr float_t k_fudge_val{ 1e-4f };
+                        if (std::abs(in_out_val) < k_fudge_val)
+                        {
+                            in_out_val = (in_out_val < 0 ? -k_fudge_val : k_fudge_val);
+                            needed_delta_uv_fudging = true;
+                        }
+                    };
+                    k_fudge_away_from_zero(delta_uv1[0], needed_delta_uv_fudging);
+                    k_fudge_away_from_zero(delta_uv1[1], needed_delta_uv_fudging);
+                    k_fudge_away_from_zero(delta_uv2[0], needed_delta_uv_fudging);
+                    k_fudge_away_from_zero(delta_uv2[1], needed_delta_uv_fudging);
 
                     // Ref: tangent = (delta_pos1 * delta_uv2.y - delta_pos2 * delta_uv1.y) * r;
                     vec3s tangent;
                     glm_vec3_scale(delta_pos1, delta_uv2[1], tangent.raw);
                     glm_vec3_mulsubs(delta_pos2, delta_uv1[1], tangent.raw);
-                    glm_vec3_scale(tangent.raw, r, tangent.raw);
+
+                    assert(!std::isnan(tangent.x) && !std::isinf(tangent.x));
+                    assert(!std::isnan(tangent.y) && !std::isinf(tangent.y));
+                    assert(!std::isnan(tangent.z) && !std::isinf(tangent.z));
 
                     // Write result to destination.
                     uint32_t current_triangle_idx = per_triangle_tangent_results.size();
@@ -700,12 +713,20 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
     }
 
     // Sanity check that all tangents are created.  @COPYPASTA
+    size_t num_bad_tangents{ 0 };
     for (auto const& vert : vertices)
     {
         float_t tangent_norm{ glm_vec3_norm(const_cast<float_t*>(&vert.tangent_x)) };
-        // assert(std::abs(tangent_norm - 1) < 1e-4f);
         assert(vert.tangent_w == 1 || vert.tangent_w == -1);
+
+        if (tangent_norm < 1e-4f)
+            num_bad_tangents++;
     }
+    if (needed_delta_uv_fudging)
+        BT_WARNF("Model \"%s\" needed delta UV fudging during import.", model_name.c_str());
+    if (num_bad_tangents > 0)
+        BT_WARNF("Model \"%s\" has bad tangents: %zu", model_name.c_str(), num_bad_tangents);
+
 
 #define OPENGL_SPECIFIC_STUFF 0
 #if OPENGL_SPECIFIC_STUFF
@@ -786,10 +807,15 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                 new_data.interp_type = sampler.interpolation;
                 if (new_data.interp_type == fastgltf::AnimationInterpolation::Step)
                 {
-                    BT_WARN(
-                        "`Step` animation interpolation type not supported. May be "
-                        "supported in the future but for now it will just be imported as "
-                        "`Linear`.");
+                    static uint32_t s_num_times_warned{ 0 };
+                    if (s_num_times_warned++ < 10)
+                        BT_WARN(
+                            (s_num_times_warned < 10)
+                                ? "`Step` animation interpolation type not supported. May be "
+                                  "supported in the future but for now it will just be imported as "
+                                  "`Linear`."
+                                : "  Ok, so I've warned you 10 times now, so get your ass in gear "
+                                  "or ignore me, ya hoe.");
                     new_data.interp_type = fastgltf::AnimationInterpolation::Linear;
                 }
                 if (new_data.interp_type == fastgltf::AnimationInterpolation::CubicSpline)
@@ -919,7 +945,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
             float_t num_frames_raw{ ((end_time - start_time) / k_anim_frame_time) + 1.0f };
             float_t num_frames_rounded{ std::roundf(num_frames_raw) };
             float_t deviation{ num_frames_raw - num_frames_rounded };
-            float_t deviation_epsilon{ 1e-5f };
+            float_t deviation_epsilon{ 1e-4f };
 
             if (abs(deviation) > deviation_epsilon)
             {

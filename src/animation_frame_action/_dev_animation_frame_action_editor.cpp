@@ -144,9 +144,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     k_skeletal_anim_frames_per_second);  // Offset for ensuring no floating point error.
 
                 {
-                    // @CHECK: Create mocked simulation transform from root bone position.
-                    BT::date_deadline(2026, 9, 30);
-
+                    // Create mocked simulation transform from root bone position.
                     assert(!eds.working_model_animator->get_is_using_root_motion());  // assumes no root motion zeroing inside editor.
 
                     std::vector<mat4s> joint_matrices;
