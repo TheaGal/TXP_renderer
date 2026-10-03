@@ -156,9 +156,12 @@ void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_
 
     if (animator_states.size() != data_control_timelines.size())
     {
-        BT_ERROR(
+        BT_ERRORF(
             ".btanitor and .btafa num states check failed. Ensure that there are the same "
-            "number of .btanitor anim states as there are .btafa timelines. Aborting program.");
+            "number of .btanitor anim states (%zu) as there are .btafa timelines (%zu). Aborting "
+            "program.",
+            animator_states.size(),
+            data_control_timelines.size());
         abort();
     }
 
