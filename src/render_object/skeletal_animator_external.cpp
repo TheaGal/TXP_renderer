@@ -53,6 +53,15 @@ void Skeletal_animator::get_anim_root_motion_delta_pos(Animator_timer_profile pr
     m_animator->get_anim_root_motion_delta_pos(profile, out_root_motion_delta_pos);
 }
 
+int32_t Skeletal_animator::calc_action_map_weighted_action_idx(std::string const& action_map_name,
+                                                               float_t const distance_to_target,
+                                                               float_t const random_value_01) const
+{
+    return m_animator->calc_action_map_weighted_action_idx(action_map_name,
+                                                           distance_to_target,
+                                                           random_value_01);
+}
+
 anim_frame_action::Runtime_controllable_data& Skeletal_animator::get_anim_frame_action_data_handle()
 {
     return m_animator->get_anim_frame_action_data_handle();

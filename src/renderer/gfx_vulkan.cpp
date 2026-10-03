@@ -172,9 +172,15 @@ void TXP::Graphics::set_render_view_sizes(std::vector<Render_view_size> const& r
     m_pimpl->set_render_view_sizes(rend_view_sizes);
 }
 
-void TXP::Graphics::set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view)
+void TXP::Graphics::set_render_view_camera(size_t render_view_idx,
+                                           mat4 const camera_projection,
+                                           mat4 const camera_view,
+                                           vec3 const camera_position)
 {
-    m_pimpl->set_render_view_camera(render_view_idx, camera_projection, camera_view);
+    m_pimpl->set_render_view_camera(render_view_idx,
+                                    camera_projection,
+                                    camera_view,
+                                    camera_position);
 }
 
 void TXP::Graphics::set_directional_light(size_t render_view_idx,

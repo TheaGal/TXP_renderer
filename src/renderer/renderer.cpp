@@ -20,6 +20,7 @@
 #include "shader/shader_debug_color_grad_line.h"
 #include "shader/shader_debug_color_wireframe.h"
 #include "shader/shader_gradient.h"
+#include "shader/shader_pbr.h"
 #include "shader/shader_postprocess.h"
 #include "shader/shader_skinned_model.h"
 #include "shader/shader_sprite.h"
@@ -113,6 +114,7 @@ struct Renderer::Impl
     std::unique_ptr<Shader::Shader_gradient> shad_gradient;
     std::unique_ptr<Shader::Shader_skinned_model> shad_skinned_model;
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
+    std::unique_ptr<Shader::Shader_pbr> shad_pbr;
     std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
     std::unique_ptr<Shader::Shader_sprite> shad_sprite;
@@ -509,6 +511,9 @@ void Renderer::build()
         std::make_unique<Shader::Shader_basic_diffuse>(m.material_organizer,
                                                        m.render_model_data_collection,
                                                        g.get_impl());
+    m.shad_pbr = std::make_unique<Shader::Shader_pbr>(m.material_organizer,
+                                                      m.render_model_data_collection,
+                                                      g.get_impl());
     m.shad_debug_color_wireframe =
         std::make_unique<Shader::Shader_debug_color_wireframe>(m.material_organizer,
                                                                m.render_model_data_collection,
@@ -528,6 +533,7 @@ void Renderer::build()
         // clang-format off
         if      (mat_asset.shader_name == m.shad_gradient->k_name)               m.shad_gradient->make_material(mat_asset.material_name, mat_asset.shader_params);  // @THEA: remove this as a material
         else if (mat_asset.shader_name == m.shad_basic_diffuse->k_name)          m.shad_basic_diffuse->make_material(mat_asset.material_name, mat_asset.shader_params);
+        else if (mat_asset.shader_name == m.shad_pbr->k_name)                    m.shad_pbr->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_grad_line->k_name)  m.shad_debug_color_grad_line->make_material(mat_asset.material_name, mat_asset.shader_params);
         // @NOTE: excluding "shad_sprite" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
@@ -539,6 +545,7 @@ void Renderer::build()
     // Organize material param collections into shaders.
     m.shad_gradient->organize_materials();
     m.shad_basic_diffuse->organize_materials();
+    m.shad_pbr->organize_materials();
     m.shad_debug_color_wireframe->organize_materials();
     m.shad_debug_color_grad_line->organize_materials();
 
@@ -653,6 +660,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     m.shad_basic_diffuse->allocate_per_instance_data_slots(m.render_object_list,
                                                            m.model_mesh_ref_list,
                                                            cur_modmesh_ref_idx);
+    m.shad_pbr->allocate_per_instance_data_slots(m.render_object_list,
+                                                 m.model_mesh_ref_list,
+                                                 cur_modmesh_ref_idx);
     m.shad_debug_color_wireframe->allocate_per_instance_data_slots(m.render_object_list,
                                                                    m.model_mesh_ref_list,
                                                                    cur_modmesh_ref_idx);
@@ -689,8 +699,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         auto* render_view{ g.get_render_view(render_view_idx) };
 
         g.set_render_view_camera(render_view_idx,
-                                 const_cast<vec4*>(cam_matrix.projection),
-                                 const_cast<vec4*>(cam_matrix.view));
+                                 cam_matrix.projection,
+                                 cam_matrix.view,
+                                 cam_matrix.camera_position);
         g.set_directional_light(render_view_idx,
                                 vec3{ 0.742781, 0.557086, 0.371391 },  // @HARDCODE
                                 vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
@@ -712,6 +723,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         g.begin_rendering_render_view(render_view_idx);
 
         m.shad_basic_diffuse->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
+        m.shad_pbr->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
 
         bool const display_debug_draws{ !is_main_cam_matrix };
         if (display_debug_draws)

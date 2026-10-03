@@ -8,6 +8,7 @@
 #include "btlogger.h"
 #include "btuuid.h"
 #include "camera/camera_internal.h"
+#include "debug/debug_printable_info_internal.h"
 #include "editor_content/anim_frame_action_editor_content.h"
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -431,6 +432,14 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
     // Clear used manipulate transform list.
     s_manipulate_transform_list.clear();
+
+    // Render debug printable info data.
+    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Printable info data -- debug"))
+    {
+        ImGui::Text("%s", debug::get_printable_info_data_as_str().c_str());
+    }
+    ImGui::End();
 
     // Render performance timers.
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);

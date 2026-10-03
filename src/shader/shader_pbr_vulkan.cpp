@@ -1,7 +1,7 @@
 #if TXP_GFX_BACKEND_VULKAN
 
 // clang-format off
-#include "shader_basic_diffuse.h"
+#include "shader_pbr.h"
 // clang-format on
 
 #include "btglm.h"
@@ -38,14 +38,22 @@ namespace
 /// Material parameters for this shader.
 struct Material_param_set
 {
-    uint32_t texture0_idx;
+    vec4 base_color_factor                   = GLM_VEC4_ONE_INIT;
+    float_t metallic_factor                  = 1.0f;
+    float_t roughness_factor                 = 1.0f;
+    uint32_t base_color_texture_idx          = (uint32_t)-1;
+    uint32_t physical_descriptor_texture_idx = (uint32_t)-1;
+    uint32_t normal_texture_idx              = (uint32_t)-1;
+    uint32_t occlusion_texture_idx           = (uint32_t)-1;
+    uint32_t emissive_texture_idx            = (uint32_t)-1;
+    uint32_t pad0;
 };
 
 }  // namespace
 }  // namespace gpu_type
 
 /// Struct for push constants.
-struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
+struct Shader_pbr_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
 {
     VkDeviceAddress environment_data_dev_addr;
     VkDeviceAddress per_instance_data_collection_dev_addr;
@@ -53,8 +61,8 @@ struct Shader_basic_diffuse_push_constants  // @TODO: move this to gfx_vulkan_im
     VkDeviceAddress material_param_set_collection_dev_addr;
 };
 
-// struct Shader_basic_diffuse::Impl
-struct Shader_basic_diffuse::Impl
+// struct Shader_pbr::Impl
+struct Shader_pbr::Impl
 {
     Impl(TXP::Material_organizer& mat_coll,
          TXP::Render_model_data_collection& rend_mod_data_coll,
@@ -78,8 +86,7 @@ struct Shader_basic_diffuse::Impl
 
         // Create pipeline layout.
         VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                                                 .size =
-                                                     sizeof(Shader_basic_diffuse_push_constants) };
+                                                 .size = sizeof(Shader_pbr_push_constants) };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
@@ -264,8 +271,8 @@ struct Shader_basic_diffuse::Impl
 };
 
 
-// class Shader_basic_diffuse
-Shader_basic_diffuse::Shader_basic_diffuse(
+// class Shader_pbr
+Shader_pbr::Shader_pbr(
     Material_organizer& material_organizer,
     Render_model_data_collection& render_model_data_collection,
     void* graphics)
@@ -275,9 +282,9 @@ Shader_basic_diffuse::Shader_basic_diffuse(
 {
 }
 
-Shader_basic_diffuse::~Shader_basic_diffuse() = default;
+Shader_pbr::~Shader_pbr() = default;
 
-void Shader_basic_diffuse::make_material(
+void Shader_pbr::make_material(
     std::string const& material_name,
     std::unordered_map<std::string, std::string> const& shader_params)
 {
@@ -285,15 +292,53 @@ void Shader_basic_diffuse::make_material(
 
     for (auto const& [param_key, param_val] : shader_params)
     {
-        if (param_key == "texture0")
+        // Helper func.
+        static auto const k_str_to_vecN_fn =
+            [](std::string const& str, float_t* vecN, uint32_t const n) {
+                std::istringstream iss(str);
+                for (uint32_t i = 0; i < n; i++)
+                {
+                    iss >> vecN[i];
+                }
+            };
+
+        // Process params.
+        if (param_key == "base_color_factor")
         {
-            new_param_set.texture0_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
+            k_str_to_vecN_fn(param_val, new_param_set.base_color_factor, 4);
+        }
+        else if (param_key == "metallic_factor")
+        {
+            k_str_to_vecN_fn(param_val, &new_param_set.metallic_factor, 1);
+        }
+        else if (param_key == "roughness_factor")
+        {
+            k_str_to_vecN_fn(param_val, &new_param_set.roughness_factor, 1);
+        }
+        else if (param_key == "base_color_texture")
+        {
+            new_param_set.base_color_texture_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
+        }
+        else if (param_key == "physical_descriptor_texture")
+        {
+            new_param_set.physical_descriptor_texture_idx =
+                m_pimpl->g.texture_entries.at(param_val).gpu_idx;
+        }
+        else if (param_key == "normal_texture")
+        {
+            new_param_set.normal_texture_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
+        }
+        else if (param_key == "occlusion_texture")
+        {
+            new_param_set.occlusion_texture_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
+        }
+        else if (param_key == "emissive_texture")
+        {
+            new_param_set.emissive_texture_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
         }
         else
             BT_WARNF("Unknown shader param: %s", param_key.c_str());
     }
-    if (shader_params.size() != 1)
-        throw std::runtime_error("Wrong number of shader params.");
 
     m_pimpl->material_name_to_idx_map.emplace(material_name, m_pimpl->material_param_sets.size());
     m_pimpl->material_param_sets.emplace_back(std::move(new_param_set));
@@ -301,7 +346,7 @@ void Shader_basic_diffuse::make_material(
     m_pimpl->material_organizer.emplace_material(material_name, k_name);
 }
 
-void Shader_basic_diffuse::organize_materials()
+void Shader_pbr::organize_materials()
 {
     if (m_pimpl->material_param_sets.empty())
     {
@@ -330,7 +375,7 @@ void Shader_basic_diffuse::organize_materials()
     }
 }
 
-void Shader_basic_diffuse::allocate_per_instance_data_slots(
+void Shader_pbr::allocate_per_instance_data_slots(
     std::vector<Render_object> const& render_object_list,
     std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
     size_t& in_out_cur_modmesh_ref_idx)
@@ -379,7 +424,7 @@ void Shader_basic_diffuse::allocate_per_instance_data_slots(
     m_pimpl->draw_inst_list_start_end.back() = in_out_cur_modmesh_ref_idx;
 }
 
-void Shader_basic_diffuse::draw(
+void Shader_pbr::draw(
     std::vector<Render_object> const& render_object_list,
     std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
     void* render_view_param)
@@ -413,7 +458,7 @@ void Shader_basic_diffuse::draw(
                             0, nullptr);
 
 
-    Shader_basic_diffuse_push_constants push_consts{
+    Shader_pbr_push_constants push_consts{
         .environment_data_dev_addr =
             current_frame.environment_data_buffers[render_view.render_view_idx]
                 .get_device_address(),
@@ -428,7 +473,7 @@ void Shader_basic_diffuse::draw(
                        p.shader_pipeline.pipeline_layout,
                        VK_SHADER_STAGE_VERTEX_BIT,
                        0,
-                       sizeof(Shader_basic_diffuse_push_constants),
+                       sizeof(Shader_pbr_push_constants),
                        &push_consts);
 
     // Combined model binding state.

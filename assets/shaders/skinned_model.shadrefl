@@ -81,6 +81,38 @@
                                                 "scalarType": "float32"
                                             },
                                             "binding": {"kind": "uniform", "offset": 28, "size": 4, "elementStride": 0}
+                                        },
+                                        {
+                                            "name": "tangent_x",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            },
+                                            "binding": {"kind": "uniform", "offset": 32, "size": 4, "elementStride": 0}
+                                        },
+                                        {
+                                            "name": "tangent_y",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            },
+                                            "binding": {"kind": "uniform", "offset": 36, "size": 4, "elementStride": 0}
+                                        },
+                                        {
+                                            "name": "tangent_z",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            },
+                                            "binding": {"kind": "uniform", "offset": 40, "size": 4, "elementStride": 0}
+                                        },
+                                        {
+                                            "name": "tangent_w",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            },
+                                            "binding": {"kind": "uniform", "offset": 44, "size": 4, "elementStride": 0}
                                         }
                                     ]
                                 }
@@ -169,6 +201,38 @@
                                                     "scalarType": "float32"
                                                 },
                                                 "binding": {"kind": "uniform", "offset": 28, "size": 4, "elementStride": 0}
+                                            },
+                                            {
+                                                "name": "tangent_x",
+                                                "type": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                },
+                                                "binding": {"kind": "uniform", "offset": 32, "size": 4, "elementStride": 0}
+                                            },
+                                            {
+                                                "name": "tangent_y",
+                                                "type": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                },
+                                                "binding": {"kind": "uniform", "offset": 36, "size": 4, "elementStride": 0}
+                                            },
+                                            {
+                                                "name": "tangent_z",
+                                                "type": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                },
+                                                "binding": {"kind": "uniform", "offset": 40, "size": 4, "elementStride": 0}
+                                            },
+                                            {
+                                                "name": "tangent_w",
+                                                "type": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                },
+                                                "binding": {"kind": "uniform", "offset": 44, "size": 4, "elementStride": 0}
                                             }
                                         ]
                                     }

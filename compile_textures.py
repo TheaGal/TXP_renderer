@@ -4,7 +4,7 @@ from random import choice
 from string import ascii_lowercase
 import subprocess
 import sys
-from typing import List
+from typing import List, Tuple
 import imageio.v3 as imgio
 import numpy as np
 import yaml  # @NOTE: may have to run `pip install pyyaml`
@@ -16,17 +16,20 @@ BUILD_DIR = './assets/textures'
 
 
 def get_exec_list(format_str: str,
+                  transform_to_linear: bool,
                   is_mipmapped: bool,
                   source_image: str,
                   output_path: str) -> List[str]:
     exec_list = ['ktx',
                  'create',
                  '--format', format_str,
-                #  '--fail-on-color-conversions',
-                 '--no-warn-on-color-conversions',  # doesnt work????
+                 '--fail-on-color-conversions',
                  '--fail-on-origin-changes',
                  source_image,
                  output_path]
+
+    if transform_to_linear:
+        exec_list.extend(['--assign-tf', 'linear'])
 
     if is_mipmapped:
         exec_list.extend(['--generate-mipmap'])
@@ -34,20 +37,23 @@ def get_exec_list(format_str: str,
     return exec_list
 
 
-def gen_format_string(num_channels: int, format: str) -> str:
+def gen_format_string(num_channels: int, format: str) -> Tuple[str, bool]:
     assert num_channels in [1, 2, 4]  # 3 channel textures are not supported in the engine.
 
     format_bits = ''
     format_suffix = ''
+    is_linear = False
     if format == 'ldr_unorm':
         format_bits = '8'
         format_suffix = 'UNORM'
+        is_linear = True
     elif format == 'ldr_srgb':
         format_bits = '8'
         format_suffix = 'SRGB'
     elif format == 'hdr':
         format_bits = '8'
         format_suffix = 'SFLOAT'
+        assert False, 'idk here if it\'s linear or not'
 
     full_format_str = ''
     if num_channels >= 1:
@@ -60,7 +66,7 @@ def gen_format_string(num_channels: int, format: str) -> str:
         full_format_str += f'A{format_bits}'
     full_format_str += f'_{format_suffix}'
 
-    return full_format_str
+    return full_format_str, is_linear
 
 
 def build_texture2d(num_channels: int,
@@ -68,7 +74,9 @@ def build_texture2d(num_channels: int,
                     is_mipmapped: bool,
                     source_image: str,
                     output_path: str):
-    exec_list = get_exec_list(gen_format_string(num_channels, format),
+    format_str, transform_to_linear = gen_format_string(num_channels, format)
+    exec_list = get_exec_list(format_str,
+                              transform_to_linear,
                               is_mipmapped,
                               f'{SOURCE_DIR}/{source_image}',
                               output_path)

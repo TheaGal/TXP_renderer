@@ -10,7 +10,7 @@
                 {
                     "name": "input",
                     "stage": "vertex",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 4},
                     "type": {
                         "kind": "struct",
                         "name": "VS_input",
@@ -53,6 +53,19 @@
                                 },
                                 "stage": "vertex",
                                 "binding": {"kind": "varyingInput", "index": 2}
+                            },
+                            {
+                                "name": "tangent",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 3}
                             }
                         ]
                     }

@@ -624,6 +624,8 @@ void Graphics::Impl::init_vulkan_retrieve_queues()
     // @TODO: figure out some way to get multiple queues as long as they have one of the wanted
     //   capabilities. ALSO, would be good to really think about the queue architecture for this to
     //   really shine.  -Thea 2026/02/04
+    // @AMEND: so with kosmickrisp just only having 1 queue on the device, i think i'll just leave
+    //   it be at one queue to rule them all.  -Thea 2026/10/02
 
     // @NOTE: the vv below vv queues are left unused currently.
 
@@ -1674,14 +1676,16 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 }
 
 void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
-                                            mat4 camera_projection,
-                                            mat4 camera_view)
+                                            mat4 const camera_projection,
+                                            mat4 const camera_view,
+                                            vec3 const camera_position)
 {
     auto& env_data{ *static_cast<gpu_type::Environment_data*>(
         get_current_frame().environment_data_buffers[render_view_idx].get_p_mapped_data()) };
 
-    glm_mat4_copy(camera_projection, env_data.projection);
-    glm_mat4_copy(camera_view, env_data.view);
+    glm_mat4_copy(const_cast<vec4*>(camera_projection), env_data.projection);
+    glm_mat4_copy(const_cast<vec4*>(camera_view), env_data.view);
+    glm_vec3_copy(const_cast<float_t*>(camera_position), env_data.camera_position);
 }
 
 void Graphics::Impl::set_directional_light(size_t render_view_idx,

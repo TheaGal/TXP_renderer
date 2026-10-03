@@ -65,9 +65,18 @@ struct Runtime_data_controls
         struct Action_map
         {
             std::string name;
-            std::vector<std::string> state_sets;
 
-            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Action_map, name, state_sets);
+            struct Action
+            {
+                std::pair<float_t, float_t> min_max_range;
+                float_t weight;
+                std::string state_set;
+
+                NLOHMANN_DEFINE_TYPE_INTRUSIVE(Action, min_max_range, weight, state_set);
+            };
+            std::vector<Action> actions;
+
+            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Action_map, name, actions);
         };
         std::vector<Action_map> action_maps;
 

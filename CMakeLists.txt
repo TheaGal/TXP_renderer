@@ -160,6 +160,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/pbr.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/pbr.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/postprocess.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/postprocess.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/skinned_model.shader
@@ -167,6 +169,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/sprite.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/sprite.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/default_tex.ktx2
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/tiles084_normal.ktx2
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/tiles084_physdesc.ktx2
 )
 
 # macOS: add all files in assets dir into app bundle package.
@@ -189,6 +193,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animator/skeletal_animator.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/camera/camera.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_printable_info.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_render_job.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
@@ -220,6 +225,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/camera/camera_internal.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_printable_info.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_printable_info_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/debug/debug_render_job_internal.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/anim_frame_action_editor_content.cpp
@@ -267,6 +274,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_wireframe_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_pbr.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_pbr_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_postprocess.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_postprocess_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_skinned_model.h

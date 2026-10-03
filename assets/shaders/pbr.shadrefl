@@ -1,0 +1,626 @@
+{
+    "parameters": [
+        {
+            "name": "textures",
+            "binding": {"kind": "descriptorTableSlot", "index": 0},
+            "type": {
+                "kind": "array",
+                "elementCount": 0,
+                "elementType": {
+                    "kind": "resource",
+                    "baseShape": "texture2D",
+                    "combined": true,
+                    "resultType": {
+                        "kind": "vector",
+                        "elementCount": 4,
+                        "elementType": {
+                            "kind": "scalar",
+                            "scalarType": "float32"
+                        }
+                    }
+                }
+            }
+        }
+    ],
+    "entryPoints": [
+        {
+            "name": "vertex_main",
+            "stage": "vertex",
+            "parameters": [
+                {
+                    "name": "input",
+                    "stage": "vertex",
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 4},
+                    "type": {
+                        "kind": "struct",
+                        "name": "VS_input",
+                        "fields": [
+                            {
+                                "name": "pos",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 0}
+                            },
+                            {
+                                "name": "normal",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 1}
+                            },
+                            {
+                                "name": "uv",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 2,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 2}
+                            },
+                            {
+                                "name": "tangent",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 3}
+                            }
+                        ]
+                    }
+                },
+                {
+                    "name": "env_data",
+                    "binding": {"kind": "uniform", "offset": 0, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Environment_data"
+                    }
+                },
+                {
+                    "name": "per_instance_data_collection",
+                    "binding": {"kind": "uniform", "offset": 8, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Per_instance_data_collection"
+                    }
+                },
+                {
+                    "name": "model_transform_set",
+                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Model_transform_set"
+                    }
+                },
+                {
+                    "name": "material_param_set_collection",
+                    "binding": {"kind": "uniform", "offset": 24, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Material_param_set_collection"
+                    }
+                },
+                {
+                    "name": "instance_index",
+                    "semanticName": "SV_VULKANINSTANCEID",
+                    "type": {
+                        "kind": "scalar",
+                        "scalarType": "uint32"
+                    }
+                }
+            ],
+            "result": {
+                "stage": "vertex",
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 17},
+                "type": {
+                    "kind": "struct",
+                    "name": "VS_output",
+                    "fields": [
+                        {
+                            "name": "pos",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 4,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "semanticName": "SV_POSITION"
+                        },
+                        {
+                            "name": "world_pos",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 0}
+                        },
+                        {
+                            "name": "normal",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 1}
+                        },
+                        {
+                            "name": "uv",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 2,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 2}
+                        },
+                        {
+                            "name": "tangent",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 4,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 3}
+                        },
+                        {
+                            "name": "camera_pos",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 4}
+                        },
+                        {
+                            "name": "lighting_mode",
+                            "type": {
+                                "kind": "scalar",
+                                "scalarType": "uint32"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 5}
+                        },
+                        {
+                            "name": "directional_light",
+                            "type": {
+                                "kind": "struct",
+                                "name": "Directional_light",
+                                "fields": [
+                                    {
+                                        "name": "direction_xyz_intensity_w",
+                                        "type": {
+                                            "kind": "vector",
+                                            "elementCount": 4,
+                                            "elementType": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            }
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 0}
+                                    },
+                                    {
+                                        "name": "color",
+                                        "type": {
+                                            "kind": "vector",
+                                            "elementCount": 4,
+                                            "elementType": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            }
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 1}
+                                    }
+                                ]
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 6, "count": 2}
+                        },
+                        {
+                            "name": "mat_param_set",
+                            "type": {
+                                "kind": "struct",
+                                "name": "Material_param_set",
+                                "fields": [
+                                    {
+                                        "name": "base_color_factor",
+                                        "type": {
+                                            "kind": "vector",
+                                            "elementCount": 4,
+                                            "elementType": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            }
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 0}
+                                    },
+                                    {
+                                        "name": "metallic_factor",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "float32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 1}
+                                    },
+                                    {
+                                        "name": "roughness_factor",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "float32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 2}
+                                    },
+                                    {
+                                        "name": "base_color_texture_idx",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "uint32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 3}
+                                    },
+                                    {
+                                        "name": "physical_descriptor_texture_idx",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "uint32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 4}
+                                    },
+                                    {
+                                        "name": "normal_texture_idx",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "uint32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 5}
+                                    },
+                                    {
+                                        "name": "occlusion_texture_idx",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "uint32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 6}
+                                    },
+                                    {
+                                        "name": "emissive_texture_idx",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "uint32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 7}
+                                    },
+                                    {
+                                        "name": "pad0",
+                                        "type": {
+                                            "kind": "scalar",
+                                            "scalarType": "uint32"
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 8}
+                                    }
+                                ]
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 8, "count": 9}
+                        }
+                    ]
+                }
+            },
+            "bindings": [
+                {
+                    "name": "textures",
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                }
+            ]
+        },
+        {
+            "name": "fragment_main",
+            "stage": "fragment",
+            "parameters": [
+                {
+                    "name": "input",
+                    "stage": "fragment",
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 17},
+                    "type": {
+                        "kind": "struct",
+                        "name": "VS_output",
+                        "fields": [
+                            {
+                                "name": "pos",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "semanticName": "SV_POSITION"
+                            },
+                            {
+                                "name": "world_pos",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 0}
+                            },
+                            {
+                                "name": "normal",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 1}
+                            },
+                            {
+                                "name": "uv",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 2,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 2}
+                            },
+                            {
+                                "name": "tangent",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 3}
+                            },
+                            {
+                                "name": "camera_pos",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 4}
+                            },
+                            {
+                                "name": "lighting_mode",
+                                "type": {
+                                    "kind": "scalar",
+                                    "scalarType": "uint32"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 5}
+                            },
+                            {
+                                "name": "directional_light",
+                                "type": {
+                                    "kind": "struct",
+                                    "name": "Directional_light",
+                                    "fields": [
+                                        {
+                                            "name": "direction_xyz_intensity_w",
+                                            "type": {
+                                                "kind": "vector",
+                                                "elementCount": 4,
+                                                "elementType": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                }
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 0}
+                                        },
+                                        {
+                                            "name": "color",
+                                            "type": {
+                                                "kind": "vector",
+                                                "elementCount": 4,
+                                                "elementType": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                }
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 1}
+                                        }
+                                    ]
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 6, "count": 2}
+                            },
+                            {
+                                "name": "mat_param_set",
+                                "type": {
+                                    "kind": "struct",
+                                    "name": "Material_param_set",
+                                    "fields": [
+                                        {
+                                            "name": "base_color_factor",
+                                            "type": {
+                                                "kind": "vector",
+                                                "elementCount": 4,
+                                                "elementType": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                }
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 0}
+                                        },
+                                        {
+                                            "name": "metallic_factor",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 1}
+                                        },
+                                        {
+                                            "name": "roughness_factor",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 2}
+                                        },
+                                        {
+                                            "name": "base_color_texture_idx",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "uint32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 3}
+                                        },
+                                        {
+                                            "name": "physical_descriptor_texture_idx",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "uint32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 4}
+                                        },
+                                        {
+                                            "name": "normal_texture_idx",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "uint32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 5}
+                                        },
+                                        {
+                                            "name": "occlusion_texture_idx",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "uint32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 6}
+                                        },
+                                        {
+                                            "name": "emissive_texture_idx",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "uint32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 7}
+                                        },
+                                        {
+                                            "name": "pad0",
+                                            "type": {
+                                                "kind": "scalar",
+                                                "scalarType": "uint32"
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 8}
+                                        }
+                                    ]
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 8, "count": 9}
+                            }
+                        ]
+                    }
+                }
+            ],
+            "result": {
+                "stage": "fragment",
+                "binding": {"kind": "varyingOutput", "index": 0},
+                "type": {
+                    "kind": "vector",
+                    "elementCount": 4,
+                    "elementType": {
+                        "kind": "scalar",
+                        "scalarType": "float32"
+                    }
+                }
+            },
+            "bindings": [
+                {
+                    "name": "textures",
+                    "binding": {"kind": "descriptorTableSlot", "index": 0}
+                }
+            ]
+        }
+    ],
+    "bindlessSpaceIndex": 1
+}

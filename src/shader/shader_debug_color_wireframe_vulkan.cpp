@@ -119,6 +119,10 @@ struct Shader_debug_color_wireframe::Impl
               .binding = 0,
               .format = VK_FORMAT_R32G32_SFLOAT,
               .offset = offsetof(Vertex, uv_x) },
+            { .location = 3,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32B32A32_SFLOAT,
+              .offset = offsetof(Vertex, tangent_x) },
         };
         VkPipelineVertexInputStateCreateInfo vertex_input_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
@@ -286,7 +290,7 @@ void Shader_debug_color_wireframe::make_material(
 {
     gpu_type::Material_param_set new_param_set;
 
-    for (auto& [param_key, param_val] : shader_params)
+    for (auto const& [param_key, param_val] : shader_params)
     {
         if (param_key == "color")
         {

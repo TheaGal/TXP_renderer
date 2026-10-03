@@ -559,7 +559,10 @@ struct Graphics::Impl
     void set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes);
 
     /// Sets render view camera information in the environmental buffer.
-    void set_render_view_camera(size_t render_view_idx, mat4 camera_projection, mat4 camera_view);
+    void set_render_view_camera(size_t render_view_idx,
+                                mat4 const camera_projection,
+                                mat4 const camera_view,
+                                vec3 const camera_position);
 
     /// Sets render view directional light information in the environmental buffer.
     void set_directional_light(size_t render_view_idx,

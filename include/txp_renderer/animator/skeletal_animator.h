@@ -51,6 +51,11 @@ public:
     void get_anim_root_motion_delta_pos(Animator_timer_profile profile,
                                         vec3& out_root_motion_delta_pos) const;
 
+    /// Using a random value [0, 1) supplied, calculate an action idx from the action map.
+    int32_t calc_action_map_weighted_action_idx(std::string const& action_map_name,
+                                                float_t const distance_to_target,
+                                                float_t const random_value_01) const;
+
     /// Gets reference to AFA (animation frame action) data.
     anim_frame_action::Runtime_controllable_data& get_anim_frame_action_data_handle();
 

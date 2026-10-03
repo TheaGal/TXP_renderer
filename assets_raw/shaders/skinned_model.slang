@@ -10,6 +10,10 @@ struct Vertex  // std430 aligned.
     float normal_z;
     float uv_x;
     float uv_y;
+    float tangent_x;
+    float tangent_y;
+    float tangent_z;
+    float tangent_w;
 };
 
 struct Vertex_collection
@@ -65,6 +69,10 @@ void compute_main(uniform Vertex_collection* input_model,
                                         input_vertex.normal_z);
         float2 input_tex_coord = float2(input_vertex.uv_x,
                                         input_vertex.uv_y);
+        float4 input_tangent   = float4(input_vertex.tangent_x,
+                                        input_vertex.tangent_y,
+                                        input_vertex.tangent_z,
+                                        input_vertex.tangent_w);
         uint4 joint            = skin_data_coll->vertex_skin_datas[x].joint_mat_idxs;
         float4 weight          = skin_data_coll->vertex_skin_datas[x].weights;
 
@@ -87,5 +95,9 @@ void compute_main(uniform Vertex_collection* input_model,
         output_vertex.normal_z    = output_normal.z;
         output_vertex.uv_x        = input_tex_coord.x;
         output_vertex.uv_y        = input_tex_coord.y;
+        output_vertex.tangent_x   = input_tangent.x;
+        output_vertex.tangent_y   = input_tangent.y;
+        output_vertex.tangent_z   = input_tangent.z;
+        output_vertex.tangent_w   = input_tangent.w;
     }
 }
