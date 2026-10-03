@@ -624,6 +624,8 @@ void Graphics::Impl::init_vulkan_retrieve_queues()
     // @TODO: figure out some way to get multiple queues as long as they have one of the wanted
     //   capabilities. ALSO, would be good to really think about the queue architecture for this to
     //   really shine.  -Thea 2026/02/04
+    // @AMEND: so with kosmickrisp just only having 1 queue on the device, i think i'll just leave
+    //   it be at one queue to rule them all.  -Thea 2026/10/02
 
     // @NOTE: the vv below vv queues are left unused currently.
 
