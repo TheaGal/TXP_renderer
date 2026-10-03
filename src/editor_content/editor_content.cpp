@@ -270,6 +270,65 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
             ImGui::Image((ImTextureRef)img_descriptor, per_viewport_content_sizes.back());
         #endif  // TXP_GFX_BACKEND_VULKAN
 
+            if (!s_play_flag && ImGui::IsItemHovered() &&
+                input_handler.get_mouse_button_state(BT_MOUSE_BUTTON_RIGHT).pressed)
+                ImGui::OpenPopup("main_viewport_rclick_popup");
+            if (ImGui::BeginPopup("main_viewport_rclick_popup"))
+            {
+        #define MOVE_THIS 1
+        #if MOVE_THIS
+                if (ImGui::Button("Play simulation with player spawned here"))
+                {
+                    // @TODO
+                    // @THEA: also i feel like since it's kinda impossible to move around this
+                    //        camera, it would be better to just have this be an option if you
+                    //        ctrl/cmd rclick a scene view.
+                    assert(false);
+                }
+        #endif // MOVE_THIS
+
+                ImGui::SeparatorText("Camera shot preview slideshow");
+
+                static bool s_cycle_thru_cam_shots{ true };
+                static int32_t s_cam_shot_idx{ 0 };
+                static uint32_t s_num_cam_shots{ 10 };
+                static float_t s_cam_shot_transition_time{ 1 };
+
+                if (ImGui::Button(s_cycle_thru_cam_shots ? "Pause slideshow"
+                                                         : "Play slideshow"))
+                {
+                    s_cycle_thru_cam_shots = !s_cycle_thru_cam_shots;
+
+                    // @TODO
+                    assert(false);
+                }
+
+                ImGui::SameLine();
+                ImGui::Text("showing image %d of %u (next in %dsec)",
+                            s_cam_shot_idx,
+                            s_num_cam_shots,
+                            static_cast<int32_t>(std::ceilf(3.1415f)));
+
+                if (ImGui::InputInt("camera shot", &s_cam_shot_idx))
+                {
+                    while (s_cam_shot_idx < 0)
+                        s_cam_shot_idx += s_num_cam_shots;
+                    while (s_cam_shot_idx >= s_num_cam_shots)
+                        s_cam_shot_idx -= s_num_cam_shots;
+                }
+                if (ImGui::DragFloat("transition time",
+                                 &s_cam_shot_transition_time,
+                                 0.1f,
+                                 0,
+                                 0,
+                                 "%.1f"))
+                {
+                    s_cam_shot_transition_time = glm_max(s_cam_shot_transition_time, 0.1f);
+                }
+
+                ImGui::EndPopup();
+            }
+
             if (s_play_flag)
             {
                 imgui_camera_mode_shift_c_ctrl_prompt_overlay(
