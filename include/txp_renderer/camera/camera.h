@@ -27,6 +27,8 @@ public:
     void get_position(vec3 out_position) const;
     void get_view_direction(vec3 out_direction) const;
 
+    void copy_first_scene_view_cam_transform_to_main_cam_transform();
+
     std::vector<Cam_matrix> const& get_calculated_camera_matrices() const;
 
     bool calc_world_space_to_ndc_space(vec3 const world_position, vec3 ndc_position) const;

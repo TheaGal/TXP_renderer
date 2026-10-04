@@ -42,6 +42,8 @@ public:
     void set_main_cam_follow_orbit_orbits(vec2 const orbit_angles);
     void set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);
 
+    void copy_cam_transform(uint32_t const src_cam_idx, uint32_t const dest_cam_idx);
+
 private:
     Input::Input_handler& m_input_handler;
     Input::Cursor_pos_state m_prev_cursor_state;

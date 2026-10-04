@@ -262,6 +262,21 @@ void Camera_internal::set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 cons
     glm_euler_zyx(const_cast<float_t*>(offset_angles), m_orbit_cam_angle_offset_rotation);
 }
 
+void Camera_internal::copy_cam_transform(uint32_t const src_cam_idx, uint32_t const dest_cam_idx)
+{
+    if (m_camera_states.size() <= std::max(src_cam_idx, dest_cam_idx))
+    {
+        BT_ERROR("Not enough camera states to copy camera transform. Canceling.");
+        return;
+    }
+
+    auto const& src_cam{ m_camera_states[src_cam_idx] };
+    auto& dest_cam{ m_camera_states[dest_cam_idx] };
+
+    btglm_rvec3_copy(src_cam.position.raw, dest_cam.position.raw);
+    glm_vec3_copy(const_cast<float_t*>(src_cam.view_direction.raw), dest_cam.view_direction.raw);
+}
+
 void Camera_internal::update_fly_cam(vec2 look_delta_raw, float_t delta_time)
 {
     auto& camera{ m_camera_states[m_controlling_camera_state_idx] };

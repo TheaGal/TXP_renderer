@@ -33,8 +33,15 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
         reset_agent_model_flag = true;
     }
 
+    bool first{ true };
+
     for (auto&& [entity, afa_agent] : view->each())
     {
+        // @NOTE: maybe vv this vv doesn't belong in here
+        // Set main cam transform to first scene cam transform.
+        if (first)
+            renderer.get_main_camera().copy_first_scene_view_cam_transform_to_main_cam_transform();
+
         // Setup or reset agent model.
         if (reset_agent_model_flag || !reg.any_of<component::Render_object_config>(entity))
         {
@@ -200,5 +207,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     }
             }
         }
+
+        first = true;
     }
 }

@@ -39,6 +39,11 @@ void Camera::get_view_direction(vec3 out_direction) const
     m_pimpl->camera.get_main_cam_view_direction(out_direction);
 }
 
+void Camera::copy_first_scene_view_cam_transform_to_main_cam_transform()
+{
+    m_pimpl->camera.copy_cam_transform(1, 0);
+}
+
 std::vector<Cam_matrix> const& Camera::get_calculated_camera_matrices() const
 {
     return m_pimpl->camera.get_calcd_cam_matrices();
