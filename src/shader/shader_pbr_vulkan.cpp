@@ -47,6 +47,7 @@ struct Material_param_set
     uint32_t occlusion_texture_idx           = (uint32_t)-1;
     uint32_t emissive_texture_idx            = (uint32_t)-1;
     uint32_t pad0;
+    vec4 uv_offset_tiling                    = { 0, 0, 1, 1 };
 };
 
 }  // namespace
@@ -336,6 +337,10 @@ void Shader_pbr::make_material(
         else if (param_key == "emissive_texture")
         {
             new_param_set.emissive_texture_idx = m_pimpl->g.texture_entries.at(param_val).gpu_idx;
+        }
+        else if (param_key == "uv_offset_tiling")
+        {
+            k_str_to_vecN_fn(param_val, new_param_set.uv_offset_tiling, 4);
         }
         else
             BT_WARNF("Unknown shader param: %s", param_key.c_str());
