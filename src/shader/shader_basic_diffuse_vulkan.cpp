@@ -233,7 +233,8 @@ struct Shader_basic_diffuse::Impl
     {
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
-        material_param_set_collection_buffer.destroy();
+        if (material_param_set_collection_buffer.is_created())
+            material_param_set_collection_buffer.destroy();
     }
 
 
