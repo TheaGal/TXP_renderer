@@ -84,12 +84,12 @@ string get_type_prefix_str(Log_type type, bool ansi_colored, uint32_t& out_prefi
 
         case WARN:
         {
-            string no_ansi_str{ "[warn](" + iter_str + ") :: " };
+            string no_ansi_str{ "[warn ](" + iter_str + ") :: " };
             out_prefix_length = no_ansi_str.size();
             if (ansi_colored)
                 return (k_ansi_cc_bold_white  + "[" +
                         k_ansi_cc_bold_yellow + "warn" +
-                        k_ansi_cc_bold_white  + "](" + iter_str + ") :: " +
+                        k_ansi_cc_bold_white  + " ](" + iter_str + ") :: " +
                         k_ansi_cc_reset);
             else
                 return no_ansi_str;
@@ -154,7 +154,7 @@ void BT::logger::printef(Log_type type, string format_str, ...)
 void BT::logger::printe(Log_type type, string entry)
 {
     uint32_t prefix_length;
-    string prefix{ get_type_prefix_str(type, false, prefix_length) };
+    string prefix{ get_type_prefix_str(type, true, prefix_length) };
 
     // Cut up entry into column width.
     vector<string> rows;
@@ -164,19 +164,9 @@ void BT::logger::printe(Log_type type, string entry)
         uint32_t remaining_columns{ k_num_columns };
         stringstream row;
 
-        if (i == 0)
-        {
-            // Add prefix str.
-            row << prefix;
-            remaining_columns -= prefix_length;
-        }
-        else
-        {
-            // Add a small tab.
-            static string const k_small_tab{ "   " };
-            row << k_small_tab;
-            remaining_columns -= k_small_tab.size();
-        }
+        // Add prefix.
+        row << (i == 0 ? prefix : std::string(prefix_length, ' '));
+        remaining_columns -= prefix_length;
 
         // Insert as much as possible.
         uint32_t insert_amount{ min(static_cast<uint32_t>(entry.size() - i),
