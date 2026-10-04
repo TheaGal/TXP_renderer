@@ -29,14 +29,29 @@ float_t Camera::get_aspect_ratio() const
     return m_pimpl->camera.get_main_cam_aspect();
 }
 
+void Camera::set_position(vec3 const position)
+{
+    m_pimpl->camera.set_main_cam_position(position);
+}
+
 void Camera::get_position(vec3 out_position) const
 {
     m_pimpl->camera.get_main_cam_position(out_position);
 }
 
+void Camera::set_view_direction(vec3 const direction)
+{
+    m_pimpl->camera.set_main_cam_view_direction(direction);
+}
+
 void Camera::get_view_direction(vec3 out_direction) const
 {
     m_pimpl->camera.get_main_cam_view_direction(out_direction);
+}
+
+void Camera::copy_main_cam_transform_to_first_scene_view_cam_transform()
+{
+    m_pimpl->camera.copy_cam_transform(0, 1);
 }
 
 void Camera::copy_first_scene_view_cam_transform_to_main_cam_transform()

@@ -190,6 +190,20 @@ float_t Camera_internal::get_main_cam_aspect() const
     return m_camera_states.front().aspect;
 }
 
+void Camera_internal::set_main_cam_position(vec3 const position)
+{
+    if (m_camera_states.empty())
+    {
+        BT_ERROR("No camera states, cant set cam pos. Canceling.");
+        return;
+    }
+
+    BT::date_deadline(2026, 10, 24);  // @TODO: in case if there's a world-streaming or chunking system, figure out more better way of going from real to float.
+    m_camera_states.front().position.x = position[0];  // @TODO: Conform to `write_render_transforms.cpp`
+    m_camera_states.front().position.y = position[1];
+    m_camera_states.front().position.z = position[2];
+}
+
 void Camera_internal::get_main_cam_position(vec3 out_position) const
 {
     if (m_camera_states.empty())
@@ -205,6 +219,17 @@ void Camera_internal::get_main_cam_position(vec3 out_position) const
     out_position[0] = m_camera_states.front().position.x;  // @TODO: Conform to `write_render_transforms.cpp`
     out_position[1] = m_camera_states.front().position.y;
     out_position[2] = m_camera_states.front().position.z;
+}
+
+void Camera_internal::set_main_cam_view_direction(vec3 const direction)
+{
+    if (m_camera_states.empty())
+    {
+        BT_ERROR("No camera states, cant set view dir. Canceling.");
+        return;
+    }
+
+    glm_vec3_copy(const_cast<float_t*>(direction), m_camera_states.front().view_direction.raw);
 }
 
 void Camera_internal::get_main_cam_view_direction(vec3 out_cam_view_direction) const

@@ -24,9 +24,12 @@ public:
     ~Camera();
 
     float_t get_aspect_ratio() const;
+    void set_position(vec3 const position);
     void get_position(vec3 out_position) const;
+    void set_view_direction(vec3 const direction);
     void get_view_direction(vec3 out_direction) const;
 
+    void copy_main_cam_transform_to_first_scene_view_cam_transform();
     void copy_first_scene_view_cam_transform_to_main_cam_transform();
 
     std::vector<Cam_matrix> const& get_calculated_camera_matrices() const;
