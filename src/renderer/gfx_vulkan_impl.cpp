@@ -125,12 +125,12 @@ static void window_resize_callback(GLFWwindow* window, int32_t width, int32_t he
 
 static void window_content_scale_callback(GLFWwindow* window, float_t xscale, float_t yscale)
 {
-    BT_WARNF("%s(%p, %f, %f)", __func__, window, xscale, yscale);
+    BT_INFOF("%s(%p, %f, %f)", __func__, window, xscale, yscale);
 }
 
 static void window_maximize_callback(GLFWwindow* window, int32_t maximized)
 {
-    BT_WARNF("%s(%p, %i)", __func__, window, maximized);
+    BT_INFOF("%s(%p, %i)", __func__, window, maximized);
 }
 
 static void window_close_callback(GLFWwindow* window)
@@ -1012,8 +1012,7 @@ void Graphics::Impl::destroy_texture_entries()
 }
 
 
-void Graphics::Impl::upload_model_entries_to_gpu(
-    Render_model_data_collection& data_collection)
+size_t Graphics::Impl::upload_model_entries_to_gpu(Render_model_data_collection& data_collection)
 {   // Get static model information.
     // @TODO: change this to getting a list of model-data-set indexes, instead of getting names then translating list of names to indexes.
     std::vector<std::string> static_model_names =
@@ -1081,13 +1080,15 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     if (vertex_buf_size == 0)
     {
         BT_WARN("No models to upload in combined static model.");
-        return;
+        return 0;
     }
+
+    size_t const total_vertex_index_buffer_size{ vertex_buf_size + index_buf_size };
 
     combined_static_model.vertex_index_buffer.create(
         gfx.device,
         gfx.allocator,
-        vertex_buf_size + index_buf_size,
+        total_vertex_index_buffer_size,
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -1105,9 +1106,11 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
                 combined_indices.data(),
                 index_buf_size);
+
+    return total_vertex_index_buffer_size;
 }
 
-void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& data_collection)
+size_t Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& data_collection)
 {   // Get static model information.
     // @TODO: change this to getting a list of model-skin indexes, instead of getting names then translating list of names to indexes.
     std::vector<std::string> model_skin_names =
@@ -1120,6 +1123,8 @@ void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& dat
         model_skins.emplace_back(
             const_cast<Deformed_model_skin*>(&data_collection.get_deformed_model_skin(
                 data_collection.get_deformed_model_skin_idx(name))));
+
+    size_t stat_total_size{ 0 };
 
     // Process each model skin.
     for (auto* model_skin : model_skins)
@@ -1138,7 +1143,11 @@ void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& dat
         std::memcpy(model_skin->vert_skin_data_buffer.get_p_mapped_data(),
                     model_skin->vert_skin_datas.data(),
                     model_skin->vert_skin_datas.size() * sizeof(Vertex_skin_data));
+
+        stat_total_size += model_skin->vert_skin_datas.size() * sizeof(Vertex_skin_data);
     }
+
+    return stat_total_size;
 }
 
 void Graphics::Impl::build_deformed_combined_model(

@@ -43,25 +43,30 @@ static array<Row_entry, k_num_rows> s_all_entry_data;
 static atomic_uint32_t s_print_mask{ ALL };
 
 // ANSI color codes (https://gist.github.com/JBlond/2fea43a3049b38287e5e9cefc87b2124).
-static string const k_ansi_cc_reg_black  = "\e[0;30m";
-static string const k_ansi_cc_reg_red    = "\e[0;31m";
-static string const k_ansi_cc_reg_green  = "\e[0;32m";
-static string const k_ansi_cc_reg_yellow = "\e[0;33m";
-static string const k_ansi_cc_reg_blue   = "\e[0;34m";
-static string const k_ansi_cc_reg_purple = "\e[0;35m";
-static string const k_ansi_cc_reg_cyan   = "\e[0;36m";
-static string const k_ansi_cc_reg_white  = "\e[0;37m";
+#define ANSI_CC_REG_BLACK    "\e[0;30m"
+#define ANSI_CC_REG_RED      "\e[0;31m"
+#define ANSI_CC_REG_GREEN    "\e[0;32m"
+#define ANSI_CC_REG_YELLOW   "\e[0;33m"
+#define ANSI_CC_REG_BLUE     "\e[0;34m"
+#define ANSI_CC_REG_PURPLE   "\e[0;35m"
+#define ANSI_CC_REG_CYAN     "\e[0;36m"
+#define ANSI_CC_REG_WHITE    "\e[0;37m"
 
-static string const k_ansi_cc_bold_black  = "\e[1;30m";
-static string const k_ansi_cc_bold_red    = "\e[1;31m";
-static string const k_ansi_cc_bold_green  = "\e[1;32m";
-static string const k_ansi_cc_bold_yellow = "\e[1;33m";
-static string const k_ansi_cc_bold_blue   = "\e[1;34m";
-static string const k_ansi_cc_bold_purple = "\e[1;35m";
-static string const k_ansi_cc_bold_cyan   = "\e[1;36m";
-static string const k_ansi_cc_bold_white  = "\e[1;37m";
+#define ANSI_CC_BOLD_BLACK   "\e[1;30m"
+#define ANSI_CC_BOLD_RED     "\e[1;31m"
+#define ANSI_CC_BOLD_GREEN   "\e[1;32m"
+#define ANSI_CC_BOLD_YELLOW  "\e[1;33m"
+#define ANSI_CC_BOLD_BLUE    "\e[1;34m"
+#define ANSI_CC_BOLD_PURPLE  "\e[1;35m"
+#define ANSI_CC_BOLD_CYAN    "\e[1;36m"
+#define ANSI_CC_BOLD_WHITE   "\e[1;37m"
 
-static string const k_ansi_cc_reset = "\e[0m";
+#define ANSI_CC_RESET        "\e[0m"
+
+// Prefix string funcs.
+#define PREFIX_STRING_PART1(__ansi_color_1, __ansi_color_2, __text)                                \
+    __ansi_color_1 "[" __ansi_color_2 __text __ansi_color_1 "]("
+#define PREFIX_STRING_PART2(__ansi_color_reset) ") :: " __ansi_color_reset
 
 // Helper functions.
 string get_type_prefix_str(Log_type type, bool ansi_colored, uint32_t& out_prefix_length)
@@ -71,41 +76,86 @@ string get_type_prefix_str(Log_type type, bool ansi_colored, uint32_t& out_prefi
     {
         case TRACE:
         {
-            string no_ansi_str{ "[trace](" + iter_str + ") :: " };
-            out_prefix_length = no_ansi_str.size();
+            constexpr char k_prefix_string_part1[]{ PREFIX_STRING_PART1("", "", "trace") };
+            constexpr char k_prefix_string_part2[]{ PREFIX_STRING_PART2("") };
+            out_prefix_length = sizeof(k_prefix_string_part1) - 1 + sizeof(k_prefix_string_part2) -
+                                1 + iter_str.size();
+
             if (ansi_colored)
-                return (k_ansi_cc_bold_white + "[" +
-                        k_ansi_cc_bold_cyan  + "trace" +
-                        k_ansi_cc_bold_white + "](" + iter_str + ") :: " +
-                        k_ansi_cc_reset);
+            {
+                constexpr char k_colored_prefix_string_part1[]{
+                    PREFIX_STRING_PART1(ANSI_CC_BOLD_WHITE, ANSI_CC_BOLD_CYAN, "trace")
+                };
+                constexpr char k_colored_prefix_string_part2[]{ PREFIX_STRING_PART2(
+                    ANSI_CC_RESET) };
+
+                return (k_colored_prefix_string_part1 + iter_str + k_colored_prefix_string_part2);
+            }
             else
-                return no_ansi_str;
+                return (k_prefix_string_part1 + iter_str + k_prefix_string_part2);
         }
 
         case WARN:
         {
-            string no_ansi_str{ "[warn ](" + iter_str + ") :: " };
-            out_prefix_length = no_ansi_str.size();
+            constexpr char k_prefix_string_part1[]{ PREFIX_STRING_PART1("", "", "warn ") };
+            constexpr char k_prefix_string_part2[]{ PREFIX_STRING_PART2("") };
+            out_prefix_length = sizeof(k_prefix_string_part1) - 1 + sizeof(k_prefix_string_part2) -
+                                1 + iter_str.size();
+
             if (ansi_colored)
-                return (k_ansi_cc_bold_white  + "[" +
-                        k_ansi_cc_bold_yellow + "warn" +
-                        k_ansi_cc_bold_white  + " ](" + iter_str + ") :: " +
-                        k_ansi_cc_reset);
+            {
+                constexpr char k_colored_prefix_string_part1[]{
+                    PREFIX_STRING_PART1(ANSI_CC_BOLD_WHITE, ANSI_CC_BOLD_YELLOW, "warn ")
+                };
+                constexpr char k_colored_prefix_string_part2[]{ PREFIX_STRING_PART2(
+                    ANSI_CC_RESET) };
+
+                return (k_colored_prefix_string_part1 + iter_str + k_colored_prefix_string_part2);
+            }
             else
-                return no_ansi_str;
+                return (k_prefix_string_part1 + iter_str + k_prefix_string_part2);
         }
 
         case ERROR:
         {
-            string no_ansi_str{ "[error](" + iter_str + ") :: " };
-            out_prefix_length = no_ansi_str.size();
+            constexpr char k_prefix_string_part1[]{ PREFIX_STRING_PART1("", "", "error") };
+            constexpr char k_prefix_string_part2[]{ PREFIX_STRING_PART2("") };
+            out_prefix_length = sizeof(k_prefix_string_part1) - 1 + sizeof(k_prefix_string_part2) -
+                                1 + iter_str.size();
+
             if (ansi_colored)
-                return (k_ansi_cc_bold_white + "[" +
-                        k_ansi_cc_bold_red   + "error" +
-                        k_ansi_cc_bold_white + "](" + iter_str + ") :: " +
-                        k_ansi_cc_reset);
+            {
+                constexpr char k_colored_prefix_string_part1[]{
+                    PREFIX_STRING_PART1(ANSI_CC_BOLD_WHITE, ANSI_CC_BOLD_RED, "error")
+                };
+                constexpr char k_colored_prefix_string_part2[]{ PREFIX_STRING_PART2(
+                    ANSI_CC_RESET) };
+
+                return (k_colored_prefix_string_part1 + iter_str + k_colored_prefix_string_part2);
+            }
             else
-                return no_ansi_str;
+                return (k_prefix_string_part1 + iter_str + k_prefix_string_part2);
+        }
+
+        case INFO:
+        {
+            constexpr char k_prefix_string_part1[]{ PREFIX_STRING_PART1("", "", "info ") };
+            constexpr char k_prefix_string_part2[]{ PREFIX_STRING_PART2("") };
+            out_prefix_length = sizeof(k_prefix_string_part1) - 1 + sizeof(k_prefix_string_part2) -
+                                1 + iter_str.size();
+
+            if (ansi_colored)
+            {
+                constexpr char k_colored_prefix_string_part1[]{
+                    PREFIX_STRING_PART1(ANSI_CC_BOLD_WHITE, ANSI_CC_BOLD_PURPLE, "info ")
+                };
+                constexpr char k_colored_prefix_string_part2[]{ PREFIX_STRING_PART2(
+                    ANSI_CC_RESET) };
+
+                return (k_colored_prefix_string_part1 + iter_str + k_colored_prefix_string_part2);
+            }
+            else
+                return (k_prefix_string_part1 + iter_str + k_prefix_string_part2);
         }
 
         default:

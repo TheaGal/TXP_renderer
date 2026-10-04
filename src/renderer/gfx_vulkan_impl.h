@@ -363,9 +363,9 @@ struct Graphics::Impl
     void destroy_texture_entries();
 
     /// Add models.
-    void upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
+    size_t upload_model_entries_to_gpu(Render_model_data_collection& data_collection);
     /// Upload model skins.
-    void upload_model_skins_to_gpu(Render_model_data_collection& data_collection);
+    size_t upload_model_skins_to_gpu(Render_model_data_collection& data_collection);
 
     /// Loads in deformed models using a combined vertex buffer.
     void build_deformed_combined_model(Render_model_data_collection& render_model_data_collection);
