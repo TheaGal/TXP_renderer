@@ -26,7 +26,6 @@
 #include "ktxvulkan.h"
 // clang-format on
 
-#include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
@@ -41,8 +40,6 @@
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
-#include "txp_renderer/ui/ui_state.h"
-#include "ui/ui_types.h"
 
 #include <array>
 #include <cassert>
