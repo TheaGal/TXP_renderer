@@ -354,9 +354,10 @@ struct Graphics::Impl
     std::unordered_map<std::string, Texture_entry> texture_entries;  // @TODO: delete all ktx vk textures. (use `ktxVulkanTexture_Destruct()`)  Also delete all image views and samplers.
 
     ktxVulkanDeviceInfo ktx_vk_device_info;
+    size_t ktx_vk_accum_size{ 0 };
 
     void construct_ktx_vk_device_info();
-    void destruct_ktx_vk_device_info();
+    size_t destruct_ktx_vk_device_info();
 
     ktxVulkanTexture load_and_upload_texture(std::string const& fname);
     void add_texture_entry(std::string const& texture_name, ktxVulkanTexture&& allocated_image);

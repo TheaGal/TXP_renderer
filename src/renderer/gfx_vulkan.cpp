@@ -72,8 +72,28 @@ void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
             tex_asset.texture_name,
             m_pimpl->load_and_upload_texture(texture_asset_dir + tex_asset.ktx2_fname));
     }
-    m_pimpl->destruct_ktx_vk_device_info();
-    BT_INFOF("Loaded all %zu textures.", texture_assets.size());
+    size_t total_texture_memory = m_pimpl->destruct_ktx_vk_device_info();
+
+    constexpr uint32_t k_texture_memory_budget =
+        // @HARDCODE: 1.5gb budget is based off HardwareUnboxed's video on 8gb vs 16gb VRAM GPU
+        //            texture memory pool size performance difference.
+        //            (@REF: https://www.youtube.com/watch?v=Zlzatw1E2vQ)  -Thea 2026/10/04
+        1.5 * 1024 * 1024 * 1024;
+
+    BT_INFOF("Loaded all %zu textures. Total VRAM: %.2fmb (%u%% of %umb budget)",
+             texture_assets.size(),
+             total_texture_memory / 1024.0 / 1024.0,
+             100 * total_texture_memory / k_texture_memory_budget,
+             k_texture_memory_budget / 1024 / 1024);
+
+    if (total_texture_memory > k_texture_memory_budget)
+    {
+        BT_ERRORF(
+            "Total texture VRAM exceeds the %.2fgb texture budget. Time to make a texture "
+            "streaming system. Aborting.",
+            k_texture_memory_budget / 1024.0 / 1024.0 / 1024.0);
+        abort();
+    }
 
     // Create "all textures" descriptor.
     // @NOTE: required before shaders are initialized!!! (order importance)

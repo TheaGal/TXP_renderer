@@ -928,6 +928,9 @@ void Graphics::Impl::construct_ktx_vk_device_info()
     //     .cmdBuffer = frames.front().graphics_queue_command_buffer.get(),
     //     .cmdPool = frames.front().command_pool,
     // };
+
+    ktx_vk_accum_size = 0;
+
     ktxVulkanDeviceInfo_Construct(&ktx_vk_device_info,
                                   gfx.physical_device,
                                   gfx.device,
@@ -936,9 +939,10 @@ void Graphics::Impl::construct_ktx_vk_device_info()
                                   nullptr);
 }
 
-void Graphics::Impl::destruct_ktx_vk_device_info()
+size_t Graphics::Impl::destruct_ktx_vk_device_info()
 {
     ktxVulkanDeviceInfo_Destruct(&ktx_vk_device_info);
+    return ktx_vk_accum_size;
 }
 
 ktxVulkanTexture Graphics::Impl::load_and_upload_texture(std::string const& fname)
@@ -957,6 +961,8 @@ ktxVulkanTexture Graphics::Impl::load_and_upload_texture(std::string const& fnam
            << "  errno: " << errno;
         throw std::runtime_error(ss.str());
     }
+
+    ktx_vk_accum_size += ktxTexture_GetDataSize(ktxtexture);
 
     // Upload to GPU.
     ktxVulkanTexture ktx_vk_texture;
