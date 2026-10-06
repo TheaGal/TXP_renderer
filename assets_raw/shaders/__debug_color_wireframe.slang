@@ -66,15 +66,17 @@ VS_output vertex_main(VS_input input,
                     //   uint vert_index : SV_VertexID,
                       uint instance_index : SV_VulkanInstanceID)
 {
-    Per_instance_data per_inst_data =
+    const Per_instance_data per_inst_data =
         per_instance_data_collection->per_instance_datas[instance_index];
-    float4x4 model_mat = model_transform_set->transforms[per_inst_data.model_transform_set_idx];
+    const float4x4 model_mat =
+        model_transform_set->transforms[per_inst_data.model_transform_set_idx];
 
     VS_output output;
-    output.pos = mul(env_data->projection,
-                     mul(env_data->view,
-                         mul(model_mat,
-                             float4(input.pos.xyz, 1.0))));
+
+    const float4 world_pos = mul(model_mat, float4(input.pos.xyz, 1.0));
+    const float4 frag_pos = mul(env_data->view, world_pos);
+    output.pos = mul(env_data->projection, frag_pos);
+
     output.normal = normalize(mul((float3x3)model_mat, input.normal));
 
     // output.bary_coords = float3(fmod(vert_index, 3) == 0 ? 1 : 0,

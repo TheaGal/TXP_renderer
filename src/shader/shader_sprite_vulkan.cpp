@@ -138,11 +138,11 @@ struct Shader_sprite::Impl
         VkPipelineColorBlendAttachmentState blend_attachment{
             // @THEA: all this is different below vv !!! (for color alpha blending)
             .blendEnable = VK_TRUE,
-            .srcColorBlendFactor = VK_BLEND_FACTOR_ONE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
             .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
             .colorBlendOp = VK_BLEND_OP_ADD,
             .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
             .alphaBlendOp = VK_BLEND_OP_ADD,
             .colorWriteMask = 0xf,
         };
