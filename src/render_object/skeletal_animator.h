@@ -10,6 +10,7 @@
 #include "txp_renderer/types.h"
 
 #include <atomic>
+#include <cmath>
 #include <functional>
 #include <mutex>
 #include <optional>
@@ -124,11 +125,6 @@ public:
     void get_anim_root_motion_delta_pos(Animator_timer_profile profile,
                                         vec3& out_root_motion_delta_pos) const;
 
-    /// Using a random value [0, 1) supplied, calculate an action idx from the action map.
-    int32_t calc_action_map_weighted_action_idx(std::string const& action_map_name,
-                                                float_t const distance_to_target,
-                                                float_t const random_value_01) const;
-
     /// Gets reference to AFA (animation frame action) data.
     anim_frame_action::Runtime_controllable_data& get_anim_frame_action_data_handle();
 
@@ -168,7 +164,9 @@ public:
     std::vector<std::string> get_event_queue_names() const;  // @UNUSED: i think ??
 
     /// Adds an event to an event queue.
-    void emplace_event(std::string const& event_queue_name, float_t queue_expire_time, int32_t arg);
+    void emplace_event(std::string const& event_queue_name,
+                       float_t queue_expire_time,
+                       Event_action_map_arg&& event_action_arg);
 
     /// Resets event queue watchlist to default values.
     void reset_event_queue_watchlist();  // @THEA: @TODO: make this private??
@@ -254,7 +252,7 @@ private:
         struct Queue_item
         {
             double_t queue_expire_time_absolute;
-            int32_t arg;
+            Event_action_map_arg event_action_arg;
         };
         std::vector<Queue_item> queue_items;
     };
@@ -275,6 +273,12 @@ private:
         bool loop;
     };
     Pair_state_set_info get_animator_state_info_from_current_state_set() const;
+
+    /// Using a random value [0, 1) supplied, calculate an action idx from the action map.
+    int32_t calc_action_map_weighted_action_idx(
+        anim_frame_action::Runtime_data_controls::Data::Action_map const& action_map,
+        float_t const distance_to_target,
+        float_t const random_value_01) const;
 
     anim_frame_action::Runtime_data_controls const* m_anim_frame_action_controls{ nullptr };
     anim_frame_action::Runtime_controllable_data m_anim_frame_action_data;

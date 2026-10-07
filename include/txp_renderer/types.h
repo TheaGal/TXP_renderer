@@ -6,6 +6,7 @@
 
 #include <array>
 #include <cassert>
+#include <cmath>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -118,6 +119,13 @@ struct Animator_state_set
 {
     std::vector<uint32_t> anim_state_indices;
     bool loop_final_state;
+};
+
+/// Argument for action map info accompanying an event added to event queue.
+struct Event_action_map_arg
+{
+    int32_t action_idx{ -1 };
+    float_t distance_to_target{ -1 };
 };
 
 
