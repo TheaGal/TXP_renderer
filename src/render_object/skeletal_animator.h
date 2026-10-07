@@ -224,24 +224,6 @@ private:
     std::vector<anim_tmpl_types::Animator_state> m_animator_states;
     std::vector<anim_tmpl_types::Animator_variable> m_animator_variables;
 
-#if 0  // @NOCHECKIN: DELETE THIS!!!!
-    struct Jump_queue_data
-    {
-        bool is_watching;
-        bool default_is_watching;
-        uint32_t priority;
-        uint32_t default_priority;
-
-        struct State_set_queue_item
-        {
-            Animator_state_set state_set;
-            double_t queue_expire_time_absolute;
-        };
-        std::vector<State_set_queue_item> state_set_queue;
-    };
-    std::unordered_map<std::string, Jump_queue_data> m_jump_queue_name_to_jump_queue_map;
-#endif // 0
-
     struct Event_queue_data
     {
         bool is_watching;
