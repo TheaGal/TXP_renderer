@@ -42,6 +42,7 @@ public:
     void set_follow_orbit_follow_pos(vec3 const position);
     void get_follow_orbit_follow_pos(vec3 out_position) const;
     void set_follow_orbit_orbits(vec2 const orbit_angles);
+    void get_follow_orbit_orbits(vec2 out_orbit_angles) const;
     void set_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);  // @CHECK: is this needed??? i think it's unused now.
 
     bool is_cursor_free() const;

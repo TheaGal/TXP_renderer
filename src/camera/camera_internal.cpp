@@ -281,6 +281,11 @@ void Camera_internal::set_main_cam_follow_orbit_orbits(vec2 const orbit_angles)
                             m_max_orbit_y - m_orbit_cam_angle_offset_y);
 }
 
+void Camera_internal::get_main_cam_follow_orbit_orbits(vec2 out_orbit_angles) const
+{
+    glm_vec2_copy(const_cast<float_t*>(m_orbits), out_orbit_angles);
+}
+
 void Camera_internal::set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles)
 {
     m_orbit_cam_angle_offset_y = offset_angles[0];

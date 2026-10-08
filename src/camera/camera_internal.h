@@ -42,6 +42,7 @@ public:
     void set_main_cam_follow_orbit_follow_pos(vec3 const follow_position);
     void get_main_cam_follow_orbit_follow_pos(vec3 out_follow_position) const;
     void set_main_cam_follow_orbit_orbits(vec2 const orbit_angles);
+    void get_main_cam_follow_orbit_orbits(vec2 out_orbit_angles) const;
     void set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);
 
     void copy_cam_transform(uint32_t const src_cam_idx, uint32_t const dest_cam_idx);
