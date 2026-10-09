@@ -5,6 +5,7 @@
 #include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "skeletal_animator.h"
 
+#include <cmath>
 #include <utility>
 
 
@@ -26,9 +27,9 @@ void Skeletal_animator::set_float_variable(std::string const& var_name, float_t 
 
 void Skeletal_animator::emplace_event(std::string const& event_queue_name,
                                       float_t queue_expire_time,
-                                      int32_t arg)
+                                      Event_action_map_arg&& event_action_arg)
 {
-    m_animator->emplace_event(event_queue_name, queue_expire_time, arg);
+    m_animator->emplace_event(event_queue_name, queue_expire_time, std::move(event_action_arg));
 }
 
 void Skeletal_animator::cache_simulation_transform(mat4 const simulation_transform)
@@ -51,15 +52,6 @@ void Skeletal_animator::get_anim_root_motion_delta_pos(Animator_timer_profile pr
                                                        vec3& out_root_motion_delta_pos) const
 {
     m_animator->get_anim_root_motion_delta_pos(profile, out_root_motion_delta_pos);
-}
-
-int32_t Skeletal_animator::calc_action_map_weighted_action_idx(std::string const& action_map_name,
-                                                               float_t const distance_to_target,
-                                                               float_t const random_value_01) const
-{
-    return m_animator->calc_action_map_weighted_action_idx(action_map_name,
-                                                           distance_to_target,
-                                                           random_value_01);
 }
 
 anim_frame_action::Runtime_controllable_data& Skeletal_animator::get_anim_frame_action_data_handle()

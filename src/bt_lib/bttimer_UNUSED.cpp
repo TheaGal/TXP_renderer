@@ -1,10 +1,15 @@
 #include "bttimer_UNUSED.h"
 
+#include "btdatecheck.h"
+
 #include <cassert>
 
 
 void BT::Timer::start_timer()
 {
+    // @TODO: rename this to just `bttimer.cpp/.h` and modify the BTZC engine version to match.
+    date_deadline(2026, 10, 30);
+
     m_started = true;
     m_prev_time = std::chrono::high_resolution_clock::now();
 }

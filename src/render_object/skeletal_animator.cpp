@@ -8,6 +8,7 @@
 #include "render_model.h"  // for Deformed_model_data_set (@TODO: remove this after moving)
 #include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "txp_renderer/animator/skeletal_animator.h"
+#include "txp_renderer/callbacks.h"
 #include "txp_renderer/types.h"
 
 #include <algorithm>
@@ -944,52 +945,6 @@ void TXP::component_internal::Model_animator::get_anim_root_motion_delta_pos(
     }
 }
 
-int32_t TXP::component_internal::Model_animator::calc_action_map_weighted_action_idx(
-    std::string const& action_map_name,
-    float_t const distance_to_target,
-    float_t const random_value_01) const
-{
-    if (m_anim_frame_action_controls == nullptr)
-        throw std::runtime_error("This shouldn't be nullptr if you're trying to access this.");
-
-    assert(random_value_01 >= 0 && random_value_01 < 1);
-
-    for (auto const& action_map : m_anim_frame_action_controls->data.action_maps)
-    {
-        if (action_map.name == action_map_name)
-        {
-            // Find the action index.
-            float_t weights_total{ 0 };
-            for (auto const& action : action_map.actions)
-                if (action.min_max_range.first <= distance_to_target &&
-                    distance_to_target <= action.min_max_range.second && action.weight >= 1e-6f)
-                    weights_total += action.weight;
-
-            float_t random_scaled{ random_value_01 * weights_total };
-            for (int32_t i = 0; i < action_map.actions.size(); i++)
-            {
-                auto const& action{ action_map.actions[i] };
-
-                if (action.min_max_range.first <= distance_to_target &&
-                    distance_to_target <= action.min_max_range.second && action.weight >= 1e-6f)
-                {
-                    float_t const action_weight{ action.weight };
-
-                    if (random_scaled <= action_weight)
-                        return i;
-
-                    random_scaled -= action_weight;
-                }
-            }
-
-            // No action possible.
-            return -1;
-        }
-    }
-
-    throw std::runtime_error("Correct action map was never found. Wrong name?");
-}
-
 TXP::anim_frame_action::Runtime_controllable_data&
 TXP::component_internal::Model_animator::get_anim_frame_action_data_handle()
 {
@@ -1316,10 +1271,33 @@ std::vector<std::string> TXP::component_internal::Model_animator::get_event_queu
 
 void TXP::component_internal::Model_animator::emplace_event(std::string const& event_queue_name,
                                                             float_t queue_expire_time,
-                                                            int32_t arg)
+                                                            Event_action_map_arg&& event_action_arg)
 {
-    m_event_queue_name_to_event_queue_map.at(event_queue_name)
-        .queue_items.emplace_back(s_sim_timer.load() + queue_expire_time, arg);
+    auto& ev_queue_queue_items{
+        m_event_queue_name_to_event_queue_map.at(event_queue_name).queue_items
+    };
+    ev_queue_queue_items.emplace_back(s_sim_timer.load() + queue_expire_time,
+                                      std::move(event_action_arg));
+
+    if (ev_queue_queue_items.size() > 10)
+    {
+        // Leave out this calc if this is too expensive.
+        size_t stale_item_cnt{ 0 };
+        auto const sim_timer_time{ s_sim_timer.load() };
+
+        for (auto const& item : ev_queue_queue_items)
+            if (item.queue_expire_time_absolute < sim_timer_time)
+                stale_item_cnt++;
+
+        BT_WARNF(
+            "Event queue \"%s\" has grown to have a lot of events (maybe flush? or maybe look into "
+            "this?).\n"
+            "  num items:       %zu\n"
+            "  num stale items: %zu",
+            event_queue_name.c_str(),
+            ev_queue_queue_items.size(),
+            stale_item_cnt);
+    }
 }
 
 void TXP::component_internal::Model_animator::reset_event_queue_watchlist()
@@ -1375,7 +1353,7 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
     }
 
     // Fetch first non-expired state-set (lowest is highest priority).
-    auto sim_timer_time{ s_sim_timer.load() };
+    auto const sim_timer_time{ s_sim_timer.load() };
 
     for (auto const& [_, evq] : sorted_priority_to_state_set_queue)
     {
@@ -1393,8 +1371,20 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                     {
                         if (evq->event_transition_state_set_as_str == action_map.name)
                         {
-                            state_set_str = &action_map.actions[evq->queue_items[i].arg].state_set;
+                            auto const& ev_act_arg{ evq->queue_items[i].event_action_arg };
+                            int32_t const action_idx{
+                                ev_act_arg.action_idx < 0
+                                    ? calc_action_map_weighted_action_idx(
+                                          action_map,
+                                          ev_act_arg.distance_to_target,
+                                          callback::calc_random_value_01_exclusive_callback())
+                                    : ev_act_arg.action_idx
+                            };
+                            assert(action_idx >= 0);
+
+                            state_set_str = &action_map.actions[action_idx].state_set;
                             found = true;
+                            break;
                         }
                     }
 
@@ -1440,6 +1430,7 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                     .anim_state_indices = std::move(anim_state_indices),
                     .loop_final_state = evq->loop_final_ev_trans_state_set_state,
                 };
+                assert(!state_set->anim_state_indices.empty());
 
                 // Delete this event queue's queue item.
                 evq->queue_items.erase(evq->queue_items.begin() + i);
@@ -1590,6 +1581,41 @@ bool TXP::component_internal::Model_animator::change_state_set_state_idx_goto_ne
 
     // Successful transition!
     return true;
+}
+
+int32_t TXP::component_internal::Model_animator::calc_action_map_weighted_action_idx(
+    anim_frame_action::Runtime_data_controls::Data::Action_map const& action_map,
+    float_t const distance_to_target,
+    float_t const random_value_01) const
+{
+    assert(random_value_01 >= 0 && random_value_01 < 1);
+
+    // Find the action index.
+    float_t weights_total{ 0 };
+    for (auto const& action : action_map.actions)
+        if (action.min_max_range.first <= distance_to_target &&
+            distance_to_target <= action.min_max_range.second && action.weight >= 1e-6f)
+            weights_total += action.weight;
+
+    float_t random_scaled{ random_value_01 * weights_total };
+    for (int32_t i = 0; i < action_map.actions.size(); i++)
+    {
+        auto const& action{ action_map.actions[i] };
+
+        if (action.min_max_range.first <= distance_to_target &&
+            distance_to_target <= action.min_max_range.second && action.weight >= 1e-6f)
+        {
+            float_t const action_weight{ action.weight };
+
+            if (random_scaled <= action_weight)
+                return i;
+
+            random_scaled -= action_weight;
+        }
+    }
+
+    // No action possible.
+    return -1;
 }
 
 auto TXP::component_internal::Model_animator::get_animator_state_info_from_current_state_set() const

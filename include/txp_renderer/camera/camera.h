@@ -24,8 +24,13 @@ public:
     ~Camera();
 
     float_t get_aspect_ratio() const;
+    void set_position(vec3 const position);
     void get_position(vec3 out_position) const;
+    void set_view_direction(vec3 const direction);
     void get_view_direction(vec3 out_direction) const;
+
+    void copy_main_cam_transform_to_first_scene_view_cam_transform();
+    void copy_first_scene_view_cam_transform_to_main_cam_transform();
 
     std::vector<Cam_matrix> const& get_calculated_camera_matrices() const;
 
@@ -37,6 +42,7 @@ public:
     void set_follow_orbit_follow_pos(vec3 const position);
     void get_follow_orbit_follow_pos(vec3 out_position) const;
     void set_follow_orbit_orbits(vec2 const orbit_angles);
+    void get_follow_orbit_orbits(vec2 out_orbit_angles) const;
     void set_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles);  // @CHECK: is this needed??? i think it's unused now.
 
     bool is_cursor_free() const;

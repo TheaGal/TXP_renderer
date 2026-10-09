@@ -477,7 +477,7 @@ void Renderer::build()
     add_material("__debug_color_wireframe_physics_mesh",
                  "__debug_color_wireframe",
                  {
-                     { "color", "0 1 0 1" },
+                     { "color", "0 1 0 0.25" },
                  });
     add_material_palette("__debug_color_wireframe_physics_mesh_mat_pal",
                          { "__debug_color_wireframe_physics_mesh" });
@@ -485,7 +485,7 @@ void Renderer::build()
     add_material("__debug_color_wireframe_selected_mesh",
                  "__debug_color_wireframe",
                  {
-                     { "color", "1 0 1 1" },
+                     { "color", "1 0 1 0.25" },
                  });
     add_material_palette("__debug_color_wireframe_selected_mesh_mat_pal",
                          { "__debug_color_wireframe_selected_mesh" });

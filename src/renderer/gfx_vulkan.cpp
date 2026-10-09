@@ -13,6 +13,7 @@
 #include "animation_frame_action/runtime_data_controls.h"
 #include "btdatecheck.h"
 #include "btlogger.h"
+#include "bttimer_UNUSED.h"
 #include "gfx_vulkan/vk_image.h"
 #include "material_organizer/material_organizer.h"
 #include "render_object/render_model.h"
@@ -61,6 +62,9 @@ void TXP::Graphics::request_load_settings()
 void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
                                         std::vector<Texture_asset_create_info>&& texture_assets)
 {   // Load textures.
+    BT::Timer my_timer;
+    my_timer.start_timer();
+
     m_pimpl->construct_ktx_vk_device_info();
     for (auto const& tex_asset : texture_assets)
     {
@@ -68,13 +72,35 @@ void TXP::Graphics::load_texture_assets(std::string const& texture_asset_dir,
             tex_asset.texture_name,
             m_pimpl->load_and_upload_texture(texture_asset_dir + tex_asset.ktx2_fname));
     }
-    m_pimpl->destruct_ktx_vk_device_info();
-    BT_TRACEF("Loaded all %zu textures.", texture_assets.size());
+    size_t total_texture_memory = m_pimpl->destruct_ktx_vk_device_info();
+
+    constexpr uint32_t k_texture_memory_budget =
+        // @HARDCODE: 1.5gb budget is based off HardwareUnboxed's video on 8gb vs 16gb VRAM GPU
+        //            texture memory pool size performance difference.
+        //            (@REF: https://www.youtube.com/watch?v=Zlzatw1E2vQ)  -Thea 2026/10/04
+        1.5 * 1024 * 1024 * 1024;
+
+    BT_INFOF("Loaded all %zu textures. Total VRAM: %.2fmb (%u%% of %umb budget)",
+             texture_assets.size(),
+             total_texture_memory / 1024.0 / 1024.0,
+             100 * total_texture_memory / k_texture_memory_budget,
+             k_texture_memory_budget / 1024 / 1024);
+
+    if (total_texture_memory > k_texture_memory_budget)
+    {
+        BT_ERRORF(
+            "Total texture VRAM exceeds the %.2fgb texture budget. Time to make a texture "
+            "streaming system. Aborting.",
+            k_texture_memory_budget / 1024.0 / 1024.0 / 1024.0);
+        abort();
+    }
 
     // Create "all textures" descriptor.
     // @NOTE: required before shaders are initialized!!! (order importance)
     m_pimpl->create_all_textures_descriptor();
     BT_TRACE("Created all-textures descriptor.");
+
+    BT_INFOF("Loaded textures and descriptor sets in %.2fms", my_timer.calc_delta_time() * 1024.0);
 }
 
 void TXP::Graphics::load_material_palettes(
@@ -89,7 +115,7 @@ void TXP::Graphics::load_material_palettes(
         material_organizer.emplace_material_palette(mat_pal_asset.mat_set_name,
                                                     std::move(new_mat_pal));
     }
-    BT_TRACEF("Loaded all %zu material palettes.", material_palette_assets.size());
+    BT_INFOF("Loaded all %zu material palettes.", material_palette_assets.size());
 }
 
 void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
@@ -97,6 +123,9 @@ void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
                                       Render_model_data_collection& render_model_data_collection,
                                       Material_organizer& material_organizer)
 {   // Load models.
+    BT::Timer my_timer;
+    my_timer.start_timer();
+
     for (auto const& mod_asset : model_assets)
     {
         load_model_from_disk(render_model_data_collection,
@@ -107,12 +136,12 @@ void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
     BT_TRACEF("Loaded all %zu models.", model_assets.size());
 
     render_model_data_collection.lock_in_number_of_static_models();
-    m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
-    BT_TRACE("Uploaded combined model to GPU.");
+    size_t combined_model_size = m_pimpl->upload_model_entries_to_gpu(render_model_data_collection);
+    BT_INFOF("Uploaded combined model GPU size: %.2fmb", combined_model_size / 1024.0 / 1024.0);
 
     // Upload all skins to GPU.
-    m_pimpl->upload_model_skins_to_gpu(render_model_data_collection);
-    BT_TRACE("Uploaded all model skins to GPU.");
+    size_t all_model_skins_size = m_pimpl->upload_model_skins_to_gpu(render_model_data_collection);
+    BT_INFOF("Uploaded all model skins GPU size: %.2fmb", all_model_skins_size / 1024.0 / 1024.0);
 
     // Load animators and anim frame actions.
     size_t num_afas_loaded{ 0 };
@@ -134,7 +163,11 @@ void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
         else if (mod_asset.load_anim_frame_action)
             throw std::runtime_error("Requires loading animator template if wanting to load AFA.");
     }
-    BT_TRACEF("Loaded all %zu anim frame action files.", num_afas_loaded);
+
+    BT_INFOF(
+        "Loaded model assets (meshes, skins, animations, animators, and anim frame actions) in "
+        "%.2fms",
+        my_timer.calc_delta_time() * 1024.0);
 }
 
 void TXP::Graphics::build_deformed_combined_model(

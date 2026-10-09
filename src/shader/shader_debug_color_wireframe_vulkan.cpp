@@ -190,7 +190,17 @@ struct Shader_debug_color_wireframe::Impl
             .depthAttachmentFormat = g.render_views[0].depth_image.get_format(),
         };
 
-        VkPipelineColorBlendAttachmentState blend_attachment{ .colorWriteMask = 0xf, };
+        VkPipelineColorBlendAttachmentState blend_attachment{
+            // @THEA: all this is different below vv !!! (for color alpha blending)
+            .blendEnable = VK_TRUE,
+            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+            .colorBlendOp = VK_BLEND_OP_ADD,
+            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+            .alphaBlendOp = VK_BLEND_OP_ADD,
+            .colorWriteMask = 0xf,
+        };
         VkPipelineColorBlendStateCreateInfo color_blend_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
             .attachmentCount = 1,
@@ -240,7 +250,8 @@ struct Shader_debug_color_wireframe::Impl
     {
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
-        material_param_set_collection_buffer.destroy();
+        if (material_param_set_collection_buffer.is_created())
+            material_param_set_collection_buffer.destroy();
     }
 
 

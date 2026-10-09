@@ -1,6 +1,6 @@
 #include "_dev_animation_frame_action_editor.h"
 
-#include "btdatecheck.h"
+#include "btglm.h"
 #include "btservice_finder.h"
 #include "btuuid.h"
 #include "editor_state.h"
@@ -33,8 +33,15 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
         reset_agent_model_flag = true;
     }
 
+    bool first{ true };
+
     for (auto&& [entity, afa_agent] : view->each())
     {
+        // @NOTE: maybe vv this vv doesn't belong in here
+        // Set main cam transform to first scene cam transform.
+        if (first)
+            renderer.get_main_camera().copy_first_scene_view_cam_transform_to_main_cam_transform();
+
         // Setup or reset agent model.
         if (reset_agent_model_flag || !reg.any_of<component::Render_object_config>(entity))
         {
@@ -156,12 +163,37 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     auto const& root_bone_matrix{ joint_matrices[0] };
 
                     vec3 root_bone_position;
-                    glm_vec4_copy(const_cast<float_t*>(root_bone_matrix.raw[3]),
+                    glm_vec3_copy(const_cast<float_t*>(root_bone_matrix.raw[3]),
                                   root_bone_position);
-                    root_bone_position[1] = 0;  // yeah??
 
+                    // @NOTE: sim transform has zero'd out y val for root bone's root motion.
                     mat4 mocked_sim_transform;
-                    glm_translate_make(mocked_sim_transform, root_bone_position);
+                    glm_translate_make(mocked_sim_transform,
+                                       vec3{ root_bone_position[0], 0, root_bone_position[2] });
+
+                    // Use root bone offset if not adjusting camera position.
+                    if (renderer.get_main_camera().is_cursor_free())
+                    {
+                        vec3 cam_position;
+                        glm_vec3_add(root_bone_position, eds.root_bone_offset, cam_position);
+                        renderer.get_main_camera().set_position(cam_position);
+
+                        glm_vec3_copy(cam_position, eds.prev_cam_pos);
+
+                        // If first tick for animator agent, reset view direction too.
+                        if (!eds.is_view_direction_set)
+                        {
+                            vec3 view_direction;
+                            glm_vec3_negate_to(eds.root_bone_offset, view_direction);
+                            glm_vec3_normalize(view_direction);
+                            renderer.get_main_camera().set_view_direction(view_direction);
+
+                            eds.is_view_direction_set = true;
+                        }
+
+                        renderer.get_main_camera()
+                            .copy_main_cam_transform_to_first_scene_view_cam_transform();
+                    }
 
                     eds.working_model_animator->cache_simulation_transform(mocked_sim_transform);
                 }
@@ -199,6 +231,22 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                             .check_if_rising_edge_occurred();
                     }
             }
+            else
+            {
+                // Update root bone offset from camera position.
+                vec3 cam_position;
+                renderer.get_main_camera().get_position(cam_position);
+
+                vec3 delta_cam_pos;
+                glm_vec3_sub(cam_position, eds.prev_cam_pos, delta_cam_pos);
+                if (glm_vec3_norm2(delta_cam_pos) > 1e-6f * 1e-6f)
+                {
+                    glm_vec3_add(eds.root_bone_offset, delta_cam_pos, eds.root_bone_offset);
+                    glm_vec3_copy(cam_position, eds.prev_cam_pos);
+                }
+            }
         }
+
+        first = true;
     }
 }

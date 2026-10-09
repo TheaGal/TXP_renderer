@@ -26,7 +26,6 @@
 #include "ktxvulkan.h"
 // clang-format on
 
-#include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
@@ -41,8 +40,6 @@
 #include "renderer/types.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
-#include "txp_renderer/ui/ui_state.h"
-#include "ui/ui_types.h"
 
 #include <array>
 #include <cassert>
@@ -59,6 +56,9 @@
 
 namespace
 {
+
+// Physical device double checks.
+constexpr size_t k_texture_entry_budget{ 1024 * 256 };  // @REF: https://vulkan.gpuinfo.org/displaydevicelimit.php?name=maxPerStageDescriptorSamplers&platform=all
 
 // Helper pointers for GLFW callbacks.
 static TXP::Input::Input_handler* s_input_handler{ nullptr };
@@ -125,12 +125,12 @@ static void window_resize_callback(GLFWwindow* window, int32_t width, int32_t he
 
 static void window_content_scale_callback(GLFWwindow* window, float_t xscale, float_t yscale)
 {
-    BT_WARNF("%s(%p, %f, %f)", __func__, window, xscale, yscale);
+    BT_INFOF("%s(%p, %f, %f)", __func__, window, xscale, yscale);
 }
 
 static void window_maximize_callback(GLFWwindow* window, int32_t maximized)
 {
-    BT_WARNF("%s(%p, %i)", __func__, window, maximized);
+    BT_INFOF("%s(%p, %i)", __func__, window, maximized);
 }
 
 static void window_close_callback(GLFWwindow* window)
@@ -442,31 +442,100 @@ void Graphics::Impl::init_vulkan_build_device()
     gfx.physical_device = physical_device.physical_device;
     gfx.physical_device_properties = physical_device.properties;
 
-    // @TODO: import bttrace and print the vv below vv out!
-    // // Print phsyical device properties.
-    // constexpr uint32_t k_built_sdk_version{ VK_HEADER_VERSION_COMPLETE };
-    // std::cout << "-=-=- Chosen Physical Device Properties -=-=-" << std::endl;
-    // std::cout << "BUILT_SDK_VERSION                 : " << VK_API_VERSION_MAJOR(k_built_sdk_version) << "." << VK_API_VERSION_MINOR(k_built_sdk_version) << "." << VK_API_VERSION_PATCH(k_built_sdk_version) << "." << VK_API_VERSION_VARIANT(k_built_sdk_version) << std::endl;
-    // std::cout << "API_VERSION                       : " << VK_API_VERSION_MAJOR(out_physical_device_properties.apiVersion) << "." << VK_API_VERSION_MINOR(out_physical_device_properties.apiVersion) << "." << VK_API_VERSION_PATCH(out_physical_device_properties.apiVersion) << "." << VK_API_VERSION_VARIANT(out_physical_device_properties.apiVersion) << std::endl;
-    // std::cout << "DRIVER_VERSION(raw)               : " << out_physical_device_properties.driverVersion << std::endl;
-    // std::cout << "VENDOR_ID                         : " << out_physical_device_properties.vendorID << std::endl;
-    // std::cout << "DEVICE_ID                         : " << out_physical_device_properties.deviceID << std::endl;
-    // std::cout << "DEVICE_TYPE                       : " << out_physical_device_properties.deviceType << std::endl;
-    // std::cout << "DEVICE_NAME                       : " << out_physical_device_properties.deviceName << std::endl;
-    // std::cout << "MAX_IMAGE_DIMENSION_1D            : " << out_physical_device_properties.limits.maxImageDimension1D << std::endl;
-    // std::cout << "MAX_IMAGE_DIMENSION_2D            : " << out_physical_device_properties.limits.maxImageDimension2D << std::endl;
-    // std::cout << "MAX_IMAGE_DIMENSION_3D            : " << out_physical_device_properties.limits.maxImageDimension3D << std::endl;
-    // std::cout << "MAX_IMAGE_DIMENSION_CUBE          : " << out_physical_device_properties.limits.maxImageDimensionCube << std::endl;
-    // std::cout << "MAX_IMAGE_ARRAY_LAYERS            : " << out_physical_device_properties.limits.maxImageArrayLayers << std::endl;
-    // std::cout << "MAX_SAMPLER_ANISOTROPY            : " << out_physical_device_properties.limits.maxSamplerAnisotropy << std::endl;
-    // std::cout << "MAX_BOUND_DESCRIPTOR_SETS         : " << out_physical_device_properties.limits.maxBoundDescriptorSets << std::endl;
-    // std::cout << "MINIMUM_BUFFER_ALIGNMENT          : " << out_physical_device_properties.limits.minUniformBufferOffsetAlignment << std::endl;
-    // std::cout << "MAX_COLOR_ATTACHMENTS             : " << out_physical_device_properties.limits.maxColorAttachments << std::endl;
-    // std::cout << "MAX_DRAW_INDIRECT_COUNT           : " << out_physical_device_properties.limits.maxDrawIndirectCount << std::endl;
-    // std::cout << "MAX_DESCRIPTOR_SET_SAMPLED_IMAGES : " << out_physical_device_properties.limits.maxDescriptorSetSampledImages << std::endl;
-    // std::cout << "MAX_DESCRIPTOR_SET_SAMPLERS       : " << out_physical_device_properties.limits.maxDescriptorSetSamplers << std::endl;
-    // std::cout << "MAX_SAMPLER_ALLOCATION_COUNT      : " << out_physical_device_properties.limits.maxSamplerAllocationCount << std::endl;
-    // std::cout << std::endl;
+    // Print phsyical device properties.
+    {
+        std::string const vk_sdk_header_version{
+            std::to_string(VK_API_VERSION_MAJOR(VK_HEADER_VERSION_COMPLETE)) + "." +
+            std::to_string(VK_API_VERSION_MINOR(VK_HEADER_VERSION_COMPLETE)) + "." +
+            std::to_string(VK_API_VERSION_PATCH(VK_HEADER_VERSION_COMPLETE)) + "." +
+            std::to_string(VK_API_VERSION_VARIANT(VK_HEADER_VERSION_COMPLETE))
+        };
+        std::string const api_version{
+            std::to_string(VK_API_VERSION_MAJOR(gfx.physical_device_properties.apiVersion)) + "." +
+            std::to_string(VK_API_VERSION_MINOR(gfx.physical_device_properties.apiVersion)) + "." +
+            std::to_string(VK_API_VERSION_PATCH(gfx.physical_device_properties.apiVersion)) + "." +
+            std::to_string(VK_API_VERSION_VARIANT(gfx.physical_device_properties.apiVersion))
+        };
+
+        std::string const driver_version{ [vendor_id = gfx.physical_device_properties.vendorID,
+                                           version =
+                                               gfx.physical_device_properties.driverVersion]() {
+            // @REF: https://github.com/SaschaWillems/vulkan.gpuinfo.org/blob/93ade5050f21d92556101e5ba285936bb14f93e1/includes/functions.php#L417
+            switch (vendor_id)
+            {
+            case 0x10DE:  // NVIDIA
+                return std::to_string((version >> 22) & 0x3ff) + "." +
+                       std::to_string((version >> 14) & 0x0ff) + "." +
+                       std::to_string((version >> 6) & 0x0ff) + "." +
+                       std::to_string(version & 0x003f);
+            case 0x8086:  // Intel
+                return std::to_string(version >> 14) + "." + std::to_string(version & 0x3ff);
+            case 5348:  // Broadcom
+                assert(false);  // @TODO: implement.
+            case 0x1010:  // Imagination Technologies
+                assert(false);  // @TODO: implement.
+            default:
+                return std::to_string(VK_API_VERSION_MAJOR(version)) + "." +
+                       std::to_string(VK_API_VERSION_MINOR(version)) + "." +
+                       std::to_string(VK_API_VERSION_PATCH(version)) + "." +
+                       std::to_string(VK_API_VERSION_VARIANT(version));
+            }
+        }() };
+
+        std::string const vendor_id{
+            [vendor_id = gfx.physical_device_properties.vendorID]() -> std::string {
+                switch (vendor_id)
+                {
+                // @NOTE: these numbers are from https://pcisig.com/membership/member-companies
+                case 0x106B: return "Apple";
+                case 0x1022: return "AMD";
+                case 0x10DE: return "NVIDIA";
+                case 0x8086: return "Intel";
+                case 0x13B5: return "ARM";
+                case 0x17CB: return "Qualcomm";
+                default: return "UNKNOWN: " + std::to_string(vendor_id);
+                }
+            }()
+        };
+
+        std::string const device_type{ [device_type = gfx.physical_device_properties.deviceType]() {
+            switch (device_type)
+            {
+            case VK_PHYSICAL_DEVICE_TYPE_OTHER:          return "OTHER";
+            case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return "INTEGRATED GPU";
+            case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:   return "DISCRETE GPU";
+            case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:    return "VIRTUAL GPU";
+            case VK_PHYSICAL_DEVICE_TYPE_CPU:            return "CPU";
+            default:                                     return "UNKNOWN";
+            }
+        }() };
+
+        BT_INFOF(
+            "-=-=- Chosen Physical Device Properties -=-=-\n"
+            "  VK_SDK_HEADER_VERSION : %s\n"
+            "  API_VERSION           : %s\n"
+            "  DRIVER_VERSION        : %s\n"
+            "  VENDOR_ID             : %s\n"
+            "  DEVICE_ID             : %u\n"
+            "  DEVICE_TYPE           : %s\n"
+            "  DEVICE_NAME           : %s\n",
+            vk_sdk_header_version.c_str(),
+            api_version.c_str(),
+            driver_version.c_str(),
+            vendor_id.c_str(),
+            gfx.physical_device_properties.deviceID,
+            device_type.c_str(),
+            gfx.physical_device_properties.deviceName);
+    }
+
+    // Double check physical device limits.
+    auto const& gpu_limits{ gfx.physical_device_properties.limits };
+    if (gpu_limits.maxDescriptorSetSampledImages < k_texture_entry_budget ||
+        gpu_limits.maxDescriptorSetSamplers < k_texture_entry_budget)
+    {
+        BT_ERROR("GPU physical device limits are not met. Aborting.");
+        throw std::runtime_error("Limits not met.");
+    }
 
     // Build Vulkan device.
     vkb::DeviceBuilder device_builder{ physical_device };
@@ -928,6 +997,9 @@ void Graphics::Impl::construct_ktx_vk_device_info()
     //     .cmdBuffer = frames.front().graphics_queue_command_buffer.get(),
     //     .cmdPool = frames.front().command_pool,
     // };
+
+    ktx_vk_accum_size = 0;
+
     ktxVulkanDeviceInfo_Construct(&ktx_vk_device_info,
                                   gfx.physical_device,
                                   gfx.device,
@@ -936,9 +1008,10 @@ void Graphics::Impl::construct_ktx_vk_device_info()
                                   nullptr);
 }
 
-void Graphics::Impl::destruct_ktx_vk_device_info()
+size_t Graphics::Impl::destruct_ktx_vk_device_info()
 {
     ktxVulkanDeviceInfo_Destruct(&ktx_vk_device_info);
+    return ktx_vk_accum_size;
 }
 
 ktxVulkanTexture Graphics::Impl::load_and_upload_texture(std::string const& fname)
@@ -957,6 +1030,8 @@ ktxVulkanTexture Graphics::Impl::load_and_upload_texture(std::string const& fnam
            << "  errno: " << errno;
         throw std::runtime_error(ss.str());
     }
+
+    ktx_vk_accum_size += ktxTexture_GetDataSize(ktxtexture);
 
     // Upload to GPU.
     ktxVulkanTexture ktx_vk_texture;
@@ -1012,8 +1087,7 @@ void Graphics::Impl::destroy_texture_entries()
 }
 
 
-void Graphics::Impl::upload_model_entries_to_gpu(
-    Render_model_data_collection& data_collection)
+size_t Graphics::Impl::upload_model_entries_to_gpu(Render_model_data_collection& data_collection)
 {   // Get static model information.
     // @TODO: change this to getting a list of model-data-set indexes, instead of getting names then translating list of names to indexes.
     std::vector<std::string> static_model_names =
@@ -1081,13 +1155,15 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     if (vertex_buf_size == 0)
     {
         BT_WARN("No models to upload in combined static model.");
-        return;
+        return 0;
     }
+
+    size_t const total_vertex_index_buffer_size{ vertex_buf_size + index_buf_size };
 
     combined_static_model.vertex_index_buffer.create(
         gfx.device,
         gfx.allocator,
-        vertex_buf_size + index_buf_size,
+        total_vertex_index_buffer_size,
         VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
@@ -1105,9 +1181,11 @@ void Graphics::Impl::upload_model_entries_to_gpu(
     std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
                 combined_indices.data(),
                 index_buf_size);
+
+    return total_vertex_index_buffer_size;
 }
 
-void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& data_collection)
+size_t Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& data_collection)
 {   // Get static model information.
     // @TODO: change this to getting a list of model-skin indexes, instead of getting names then translating list of names to indexes.
     std::vector<std::string> model_skin_names =
@@ -1120,6 +1198,8 @@ void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& dat
         model_skins.emplace_back(
             const_cast<Deformed_model_skin*>(&data_collection.get_deformed_model_skin(
                 data_collection.get_deformed_model_skin_idx(name))));
+
+    size_t stat_total_size{ 0 };
 
     // Process each model skin.
     for (auto* model_skin : model_skins)
@@ -1138,7 +1218,11 @@ void Graphics::Impl::upload_model_skins_to_gpu(Render_model_data_collection& dat
         std::memcpy(model_skin->vert_skin_data_buffer.get_p_mapped_data(),
                     model_skin->vert_skin_datas.data(),
                     model_skin->vert_skin_datas.size() * sizeof(Vertex_skin_data));
+
+        stat_total_size += model_skin->vert_skin_datas.size() * sizeof(Vertex_skin_data);
     }
+
+    return stat_total_size;
 }
 
 void Graphics::Impl::build_deformed_combined_model(
@@ -1348,27 +1432,16 @@ void Graphics::Impl::create_all_textures_descriptor()
             "be very disappointed. Not mad, just disappointed.");
         throw std::runtime_error("No texture entries.");
     }
-    if (texture_entries.size() > 16)
+
+    if (texture_entries.size() > k_texture_entry_budget)
     {
         BT_ERRORF(
-            "Texture entries exceeded macOS limit of maxPerStageDescritorSamplers: %zu. At "
-            "this point, separate out the COMBINED_IMAGE_SAMPLERS thingies into sampled images "
-            "and samplers. Change this error message to just error when the number of samplers "
-            "goes over whatever the device limit is, or 16, whichever is smaller.",
-            texture_entries.size());
-        throw std::runtime_error("Too many samplers.");
-    }
-    if (texture_entries.size() > 256)
-    {
-        BT_ERRORF(
-            "Texture entries exceeded macOS limit of maxPerStageDescritorSampledImages: %zu. "
-            "At this point, you need to make a material-sampledimage-sampler batcher that can "
-            "handle the sampler and sampledimage device limits. Once you make this, uncap the "
-            "sampler limit from the random 16 limit. Also, change this error message to error "
-            "if the sampled image size exceeds device limits once you implement the batcher "
-            "system. Good luck, future Thea!!",
-            texture_entries.size());
-        throw std::runtime_error("Too many sampled images.");
+            "Texture entries exceeds budget for `maxDescriptorSetSamplers`. You're going to have "
+            "to write a texture streaming system for bindless texture samplers. %zu texture "
+            "entries exceeds budget of %zu",
+            texture_entries.size(),
+            k_texture_entry_budget);
+        throw std::runtime_error("Too many texture entries.");
     }
 
     std::vector<VkDescriptorImageInfo> desc_img_infos;

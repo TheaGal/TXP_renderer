@@ -192,6 +192,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_frame_action/_dev_animation_frame_action_editor_agent.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animation_frame_action/runtime_data.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/animator/skeletal_animator.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/callbacks.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/camera/camera.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_printable_info.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_render_job.h

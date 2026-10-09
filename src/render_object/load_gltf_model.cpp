@@ -811,7 +811,7 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     if (s_num_times_warned++ < 10)
                         BT_WARN(
                             (s_num_times_warned < 10)
-                                ? "`Step` animation interpolation type not supported. May be "
+                                ? "Animation interpolation type `Step` not supported. May be "
                                   "supported in the future but for now it will just be imported as "
                                   "`Linear`."
                                 : "  Ok, so I've warned you 10 times now, so get your ass in gear "

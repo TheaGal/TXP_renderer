@@ -11,6 +11,7 @@
 #include "render_object/skeletal_animator.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
+#include "txp_renderer/types.h"
 
 #include <cmath>
 #include <cstddef>
@@ -695,7 +696,32 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         anim_frame_action::s_editor_state.anim_current_frame,
                         s_final_frame,
                         k_skeletal_anim_frames_per_second);
-            ImGui::InputInt("Selected Frame", &s_current_frame);
+
+            // Play animation looped using selected frame.
+            {
+                static bool s_play_anim_looped{ false };
+                static float_t s_delta_time_accum{ 0 };
+                if (s_play_anim_looped)
+                {
+                    constexpr float_t k_tick_time{ 1.0f / k_skeletal_anim_frames_per_second };
+                    if (s_delta_time_accum >= k_tick_time)
+                    {
+                        s_delta_time_accum -= k_tick_time;
+
+                        s_current_frame++;
+                        if (s_current_frame > s_final_frame)
+                            s_current_frame = 0;
+                    }
+
+                    s_delta_time_accum += delta_time;
+                }
+                else
+                    s_delta_time_accum = 0;
+
+                ImGui::InputInt("Selected Frame", &s_current_frame);
+                ImGui::SameLine();
+                ImGui::Checkbox("play anim looped", &s_play_anim_looped);
+            }
 
             ImGui::PopItemWidth();
 

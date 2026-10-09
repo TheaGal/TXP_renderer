@@ -47,6 +47,13 @@ half4 srgb_to_linear(half4 srgb_in)
 #endif // MANUAL_SRGB
 }
 
+half3 apply_vignette(const half3 in_color, const half2 screen_uv)
+{
+    static const half vignette_strength = 0.75h;
+    half dist_from_center = min(1.0h, length(screen_uv) - 0.5h);
+    return lerp(in_color, half3(0), dist_from_center * vignette_strength);
+}
+
 
 [shader("compute")]
 [numthreads(16, 16, 1)]
@@ -61,14 +68,28 @@ void compute_main(uniform uint32_t use_ui_image,
 
     if (thread_idx.x < color_image_w && thread_idx.y < color_image_h)
     {
+        // Tonemap HDR image.
         half4 raw_color = color_image.Load(thread_idx);
         half3 color = srgb_to_linear(tonemap(raw_color, exposure, gamma)).rgb;
+        color = clamp(color, half3(0), half3(1));
 
-        float4 ui_color = float4(0);
+        // Vignette.
         if (bool(use_ui_image))
-            ui_color = ui_image.Load(thread_idx);
+        {
+            half2 screen_uv = half2(half(thread_idx.x) / half(color_image_w),
+                                    half(thread_idx.y) / half(color_image_h));
+            screen_uv = screen_uv * 2 - 1;
 
-        dest_image.Store(uint2(thread_idx.x, thread_idx.y),
-                         float4(lerp(color, ui_color.rgb, ui_color.a), 1.0));
+            color = apply_vignette(color, screen_uv);
+        }
+
+        // Incorporate UI.
+        half4 ui_color = half4(0);
+        if (bool(use_ui_image))
+            ui_color = half4(ui_image.Load(thread_idx));
+        color = lerp(color, ui_color.rgb, ui_color.a);
+
+        // Spit it out!
+        dest_image.Store(uint2(thread_idx.x, thread_idx.y), float4(color, 1.0));
     }
 }

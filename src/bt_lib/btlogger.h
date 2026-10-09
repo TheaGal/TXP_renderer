@@ -23,6 +23,7 @@ enum Log_type : uint32_t
     TRACE = 0b0001,
     WARN  = 0b0010,
     ERROR = 0b0100,
+    INFO  = 0b1000,
 };
 
 void notify_start_new_mainloop_iteration();
@@ -57,6 +58,12 @@ void clear_log_entries();
     #define BT_ERROR(x)  BT::logger::printe(BT::logger::ERROR, x)
 #endif  // BT_ERROR
 
+#ifdef BT_INFO
+    #error Macro `BT_INFO` already defined.
+#else
+    #define BT_INFO(x)  BT::logger::printe(BT::logger::INFO, x)
+#endif  // BT_INFO
+
 #ifdef BT_TRACEF
     #error Macro `BT_TRACEF` already defined.
 #else
@@ -74,3 +81,9 @@ void clear_log_entries();
 #else
     #define BT_ERRORF(x, ...)  BT::logger::printef(BT::logger::ERROR, x, __VA_ARGS__)
 #endif  // BT_ERRORF
+
+#ifdef BT_INFOF
+    #error Macro `BT_INFOF` already defined.
+#else
+    #define BT_INFOF(x, ...)  BT::logger::printef(BT::logger::INFO, x, __VA_ARGS__)
+#endif  // BT_INFOF

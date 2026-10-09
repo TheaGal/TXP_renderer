@@ -133,7 +133,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 17},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 18},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -351,11 +351,24 @@
                                         },
                                         "stage": "vertex",
                                         "binding": {"kind": "varyingOutput", "index": 8}
+                                    },
+                                    {
+                                        "name": "uv_offset_tiling",
+                                        "type": {
+                                            "kind": "vector",
+                                            "elementCount": 4,
+                                            "elementType": {
+                                                "kind": "scalar",
+                                                "scalarType": "float32"
+                                            }
+                                        },
+                                        "stage": "vertex",
+                                        "binding": {"kind": "varyingOutput", "index": 9}
                                     }
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 8, "count": 9}
+                            "binding": {"kind": "varyingOutput", "index": 8, "count": 10}
                         }
                     ]
                 }
@@ -374,7 +387,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 17},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 18},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -592,11 +605,24 @@
                                             },
                                             "stage": "fragment",
                                             "binding": {"kind": "varyingInput", "index": 8}
+                                        },
+                                        {
+                                            "name": "uv_offset_tiling",
+                                            "type": {
+                                                "kind": "vector",
+                                                "elementCount": 4,
+                                                "elementType": {
+                                                    "kind": "scalar",
+                                                    "scalarType": "float32"
+                                                }
+                                            },
+                                            "stage": "fragment",
+                                            "binding": {"kind": "varyingInput", "index": 9}
                                         }
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 8, "count": 9}
+                                "binding": {"kind": "varyingInput", "index": 8, "count": 10}
                             }
                         ]
                     }
