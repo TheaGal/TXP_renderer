@@ -1380,6 +1380,7 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                                           callback::calc_random_value_01_exclusive_callback())
                                     : ev_act_arg.action_idx
                             };
+                            assert(action_idx >= 0);
 
                             state_set_str = &action_map.actions[action_idx].state_set;
                             found = true;
