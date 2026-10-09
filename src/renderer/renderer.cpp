@@ -115,8 +115,8 @@ struct Renderer::Impl
     std::unique_ptr<Shader::Shader_skinned_model> shad_skinned_model;
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
     std::unique_ptr<Shader::Shader_pbr> shad_pbr;
-    std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
+    std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
     std::unique_ptr<Shader::Shader_sprite> shad_sprite;
     std::unique_ptr<Shader::Shader_postprocess> shad_postprocess;
 
@@ -514,12 +514,12 @@ void Renderer::build()
     m.shad_pbr = std::make_unique<Shader::Shader_pbr>(m.material_organizer,
                                                       m.render_model_data_collection,
                                                       g.get_impl());
-    m.shad_debug_color_wireframe =
-        std::make_unique<Shader::Shader_debug_color_wireframe>(m.material_organizer,
-                                                               m.render_model_data_collection,
-                                                               g.get_impl());
     m.shad_debug_color_grad_line =
         std::make_unique<Shader::Shader_debug_color_grad_line>(m.material_organizer,
+                                                               m.render_model_data_collection,
+                                                               g.get_impl());
+    m.shad_debug_color_wireframe =
+        std::make_unique<Shader::Shader_debug_color_wireframe>(m.material_organizer,
                                                                m.render_model_data_collection,
                                                                g.get_impl());
     m.shad_sprite =
@@ -534,8 +534,8 @@ void Renderer::build()
         if      (mat_asset.shader_name == m.shad_gradient->k_name)               m.shad_gradient->make_material(mat_asset.material_name, mat_asset.shader_params);  // @THEA: remove this as a material
         else if (mat_asset.shader_name == m.shad_basic_diffuse->k_name)          m.shad_basic_diffuse->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_pbr->k_name)                    m.shad_pbr->make_material(mat_asset.material_name, mat_asset.shader_params);
-        else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_grad_line->k_name)  m.shad_debug_color_grad_line->make_material(mat_asset.material_name, mat_asset.shader_params);
+        else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
         // @NOTE: excluding "shad_sprite" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         // @NOTE: excluding "shad_postprocess" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         else throw std::runtime_error("Unknown shader name");
@@ -546,8 +546,8 @@ void Renderer::build()
     m.shad_gradient->organize_materials();
     m.shad_basic_diffuse->organize_materials();
     m.shad_pbr->organize_materials();
-    m.shad_debug_color_wireframe->organize_materials();
     m.shad_debug_color_grad_line->organize_materials();
+    m.shad_debug_color_wireframe->organize_materials();
 
     // Load material palettes (aligns with meshes inside models to assign materials).
     g.load_material_palettes(std::move(*material_assets),
@@ -663,10 +663,10 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     m.shad_pbr->allocate_per_instance_data_slots(m.render_object_list,
                                                  m.model_mesh_ref_list,
                                                  cur_modmesh_ref_idx);
-    m.shad_debug_color_wireframe->allocate_per_instance_data_slots(m.render_object_list,
+    m.shad_debug_color_grad_line->allocate_per_instance_data_slots(m.render_object_list,
                                                                    m.model_mesh_ref_list,
                                                                    cur_modmesh_ref_idx);
-    m.shad_debug_color_grad_line->allocate_per_instance_data_slots(m.render_object_list,
+    m.shad_debug_color_wireframe->allocate_per_instance_data_slots(m.render_object_list,
                                                                    m.model_mesh_ref_list,
                                                                    cur_modmesh_ref_idx);
 
@@ -728,10 +728,10 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         bool const display_debug_draws{ !is_main_cam_matrix };
         if (display_debug_draws)
         {
-            m.shad_debug_color_wireframe->draw(m.render_object_list,
+            m.shad_debug_color_grad_line->draw(m.render_object_list,
                                                m.model_mesh_ref_list,
                                                render_view);
-            m.shad_debug_color_grad_line->draw(m.render_object_list,
+            m.shad_debug_color_wireframe->draw(m.render_object_list,
                                                m.model_mesh_ref_list,
                                                render_view);
         }

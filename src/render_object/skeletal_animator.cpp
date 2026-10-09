@@ -1366,11 +1366,13 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
 
                 if (evq->event_transition_state_set_as_str.starts_with("ACTION_MAP_"))
                 {
-                    bool found{ false };
+                    bool found_action_map{ false };
                     for (auto const& action_map : m_anim_frame_action_controls->data.action_maps)
                     {
                         if (evq->event_transition_state_set_as_str == action_map.name)
                         {
+                            found_action_map = true;
+
                             auto const& ev_act_arg{ evq->queue_items[i].event_action_arg };
                             int32_t const action_idx{
                                 ev_act_arg.action_idx < 0
@@ -1380,15 +1382,14 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                                           callback::calc_random_value_01_exclusive_callback())
                                     : ev_act_arg.action_idx
                             };
-                            assert(action_idx >= 0);
 
-                            state_set_str = &action_map.actions[action_idx].state_set;
-                            found = true;
+                            if (action_idx >= 0)
+                                state_set_str = &action_map.actions[action_idx].state_set;
                             break;
                         }
                     }
 
-                    if (!found)
+                    if (!found_action_map)
                     {
                         throw std::runtime_error("Not a valid ACTION MAP");
                     }
@@ -1398,39 +1399,42 @@ std::optional<TXP::Animator_state_set> TXP::component_internal::Model_animator::
                     state_set_str = &evq->event_transition_state_set_as_str;
                 }
 
-                std::vector<uint32_t> anim_state_indices;
-
-                int32_t str_head{ 0 };
-                for (int32_t str_i = 0; str_i <= state_set_str->size(); str_i++)
+                if (state_set_str != nullptr)
                 {
-                    switch ((*state_set_str)[str_i])
+                    std::vector<uint32_t> anim_state_indices;
+
+                    int32_t str_head{ 0 };
+                    for (int32_t str_i = 0; str_i <= state_set_str->size(); str_i++)
                     {
-                    case ',':
-                    case '\0':
-                    {
-                        // Try emplacing new entry!
-                        int32_t str_length{ str_i - str_head };
-                        if (str_length >= 1)
+                        switch ((*state_set_str)[str_i])
                         {
-                            uint32_t new_state_idx{ get_animator_state_idx(
-                                state_set_str->substr(str_head, str_length)) };
-                            anim_state_indices.emplace_back(new_state_idx);
+                        case ',':
+                        case '\0':
+                        {
+                            // Try emplacing new entry!
+                            int32_t str_length{ str_i - str_head };
+                            if (str_length >= 1)
+                            {
+                                uint32_t new_state_idx{ get_animator_state_idx(
+                                    state_set_str->substr(str_head, str_length)) };
+                                anim_state_indices.emplace_back(new_state_idx);
+                            }
+
+                            // Start a new string head now.
+                            str_head = str_i + 1;
+                            break;
                         }
+                        }
+                    }
+                    anim_state_indices.shrink_to_fit();
 
-                        // Start a new string head now.
-                        str_head = str_i + 1;
-                        break;
-                    }
-                    }
+                    // Construct state set!!
+                    state_set = {
+                        .anim_state_indices = std::move(anim_state_indices),
+                        .loop_final_state = evq->loop_final_ev_trans_state_set_state,
+                    };
+                    assert(!state_set->anim_state_indices.empty());
                 }
-                anim_state_indices.shrink_to_fit();
-
-                // Construct state set!!
-                state_set = {
-                    .anim_state_indices = std::move(anim_state_indices),
-                    .loop_final_state = evq->loop_final_ev_trans_state_set_state,
-                };
-                assert(!state_set->anim_state_indices.empty());
 
                 // Delete this event queue's queue item.
                 evq->queue_items.erase(evq->queue_items.begin() + i);
@@ -1615,6 +1619,7 @@ int32_t TXP::component_internal::Model_animator::calc_action_map_weighted_action
     }
 
     // No action possible.
+    BT_WARNF("No action possible at distance %.3f", distance_to_target);
     return -1;
 }
 
