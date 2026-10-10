@@ -30,6 +30,8 @@ def get_exec_list(format_str: str,
 
     if transform_to_linear:
         exec_list.extend(['--assign-tf', 'linear'])
+    else:
+        exec_list.extend(['--assign-tf', 'srgb'])
 
     if is_mipmapped:
         exec_list.extend(['--generate-mipmap'])
