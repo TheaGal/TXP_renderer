@@ -28,6 +28,9 @@ struct Renderer_settings
     int32_t windowed_width{ 640 };
     int32_t windowed_height{ 360 };
 
+    bool is_vsync_on{ true };
+    // @TODO: add frame cap. @HERE
+
     bool is_resizable{ true };
     bool has_border{ true };
     bool is_fullscreen{ false };

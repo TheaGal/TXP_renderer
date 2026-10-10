@@ -627,17 +627,26 @@ void Graphics::Impl::init_vulkan_build_swapchain()
 
     // Build swapchain.
     vkb::SwapchainBuilder swapchain_builder{ gfx.physical_device, gfx.device, gfx.surface };
+
+    if (settings.is_vsync_on)
+    {
+        swapchain_builder
+            .set_desired_present_mode(VK_PRESENT_MODE_FIFO_RELAXED_KHR)  // Vsync while allowing late frames
+            .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR);        // Vsync
+    }
+    else
+    {
+        swapchain_builder
+            .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)     // G-Sync
+            .add_fallback_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)  // Freesync / Vsync off
+            .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR);      // Vsync (fallback)
+    }
+
     vkb::Swapchain swapchain{
         swapchain_builder
             .set_old_swapchain(old_swapchain)  // @NOTE: first init will be NULL_HANDLE.
             .set_desired_extent(fb_width, fb_height)
             .set_desired_format(gfx.surface_format)
-            .set_desired_present_mode(VK_PRESENT_MODE_MAILBOX_KHR)  // G-Sync.
-            .add_fallback_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)  // Freesync / V-Sync off.
-            .add_fallback_present_mode(VK_PRESENT_MODE_FIFO_KHR)    // V-Sync on.
-            // @TODO: TRANSFER_DST image usage added below. Try removing once renderer is finished
-            // (assuming you're not gonna have some kind of image transfer as the last step into the
-            // swapchain image).
             .set_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT)
             .build()
