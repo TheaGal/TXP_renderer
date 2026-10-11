@@ -98,7 +98,11 @@ private:
 
     struct UI_element_pun
     {
+    #if _WIN64
+        uint64_t pad[11];
+    #elif __APPLE__
         uint64_t pad[9];
+    #endif
     };
     std::vector<UI_element_pun> m_elems;  // punned into UI::UI_element type (static assert fails if
                                           // types are not identical).
