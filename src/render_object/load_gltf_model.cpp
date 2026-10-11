@@ -303,7 +303,8 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
                     next_joints_sorted_breadth_first_idx);
 
                 Model_joint new_model_joint{
-                    std::string(asset.nodes[job.node_idx].name), };
+                    .name = std::string(asset.nodes[job.node_idx].name),
+                };
                 glm_mat4_copy(inv_bind_mats[job.inv_bind_mat_idx].raw,
                               new_model_joint.inverse_bind_matrix);
                 // @NOTE: Add parent-child relation later.

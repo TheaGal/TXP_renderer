@@ -14,10 +14,10 @@ namespace TXP
 {
 
 /// Joint within a hierarchy.
-struct Model_joint
+struct alignas(k_mat4_alignment) Model_joint
 {
-    std::string name;
     mat4 inverse_bind_matrix;
+    std::string name;
     uint32_t parent_idx{ (uint32_t)-1 };  // @NOTE: Idx instead of pointer for cache lookup.  -Thea 2025/07/10
     std::vector<Model_joint*> children;
 };
