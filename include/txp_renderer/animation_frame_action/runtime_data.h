@@ -59,6 +59,7 @@ enum Controllable_data_label : std::uint32_t
         X_reeve(broadcast_attack_to_enemies)                  \
         X_reeve(broadcast_healing_to_enemies)                 \
         X_reeve(request_new_attack)                           \
+        X_reeve(request_new_attack_early)                     \
         X_reeve(play_sfx_footstep)                            \
         X_reeve(play_sfx_ready_guard)                         \
         X_reeve(play_sfx_blade_swing)                         \
