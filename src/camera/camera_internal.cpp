@@ -150,11 +150,9 @@ void Camera_internal::calc_cam_matrices()
             glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
         }
 
-        vec3 cam_position{  // @TODO: figure out how to convert real to float here!!
-            cam.position.x,
-            cam.position.y,
-            cam.position.z,
-        };
+        vec3 cam_position;
+        btglm_rvec3_to_vec3(cam.position.raw, cam_position);
+
         if (glm_vec3_max(cam_position) > 2500.0f ||
             glm_vec3_min(cam_position) < -2500.0f)  // @NOTE: this is a forced crash to ensure that I work on this issue someday in the future.  -Thea 2026/03/03
             throw std::runtime_error(
@@ -198,10 +196,7 @@ void Camera_internal::set_main_cam_position(vec3 const position)
         return;
     }
 
-    BT::date_deadline(2026, 10, 24);  // @TODO: in case if there's a world-streaming or chunking system, figure out more better way of going from real to float.
-    m_camera_states.front().position.x = position[0];  // @TODO: Conform to `write_render_transforms.cpp`
-    m_camera_states.front().position.y = position[1];
-    m_camera_states.front().position.z = position[2];
+    btglm_vec3_to_rvec3(position, m_camera_states.front().position.raw);
 }
 
 void Camera_internal::get_main_cam_position(vec3 out_position) const
@@ -215,10 +210,7 @@ void Camera_internal::get_main_cam_position(vec3 out_position) const
         return;
     }
 
-    BT::date_deadline(2026, 10, 24);  // @TODO: in case if there's a world-streaming or chunking system, figure out more better way of going from real to float.
-    out_position[0] = m_camera_states.front().position.x;  // @TODO: Conform to `write_render_transforms.cpp`
-    out_position[1] = m_camera_states.front().position.y;
-    out_position[2] = m_camera_states.front().position.z;
+    btglm_rvec3_to_vec3(m_camera_states.front().position.raw, out_position);
 }
 
 void Camera_internal::set_main_cam_view_direction(vec3 const direction)
@@ -420,8 +412,10 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
     glm_mat4_mulv3(look_rotation, offset_from_follow_obj, 0.0f, offset_from_follow_obj);
 
     // Position camera transform.
-    glm_vec3_copy(m_orbit_follow_position, camera.position.raw);
-    glm_vec3_add(camera.position.raw, offset_from_follow_obj, camera.position.raw);
+    vec3 temp_cam_position;
+    glm_vec3_copy(m_orbit_follow_position, temp_cam_position);
+    glm_vec3_add(temp_cam_position, offset_from_follow_obj, temp_cam_position);
+    btglm_vec3_to_rvec3(temp_cam_position, camera.position.raw);
 
     glm_vec3_negate_to(const_cast<float_t*>(cam_offset_pos), camera.view_direction.raw);
     glm_mat4_mulv3(m_orbit_cam_angle_offset_rotation,

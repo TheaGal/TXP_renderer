@@ -9,6 +9,7 @@
     #error BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION is 0
 #endif // BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
 
+#include "btdatecheck.h"
 #include "btjson.h"
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "cglm/cglm.h"
@@ -66,6 +67,38 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(rvec3s, x, y, z);
 
 
 /// RVec3 funcs.
+inline void btglm_rvec3_to_vec3(rvec3 const v, vec3 dest)
+{
+#if BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
+    BT::date_deadline(2026, 10, 24);  // @TODO: in case if there's a world-streaming or chunking system, figure out more better way of going from real to float.
+
+    // @TODO: add ability to use chunking system for this.
+    dest[0] = v[0];
+    dest[1] = v[1];
+    dest[2] = v[2];
+#else
+    // Normal copy since it's just float to float.
+    dest[0] = v[0];
+    dest[1] = v[1];
+    dest[2] = v[2];
+#endif // BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
+}
+
+inline void btglm_vec3_to_rvec3(vec3 const v, rvec3 dest)
+{
+#if BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
+    // @TODO: add ability to use chunking system for this.
+    dest[0] = v[0];
+    dest[1] = v[1];
+    dest[2] = v[2];
+#else
+    // Normal copy since it's just float to float.
+    dest[0] = v[0];
+    dest[1] = v[1];
+    dest[2] = v[2];
+#endif // BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
+}
+
 inline void btglm_rvec3_copy(rvec3 const v, rvec3 dest)
 {
     dest[0] = v[0];

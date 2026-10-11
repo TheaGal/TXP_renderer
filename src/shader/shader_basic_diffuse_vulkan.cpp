@@ -395,8 +395,8 @@ void Shader_basic_diffuse::draw(
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
     // Render.
-    VkViewport viewport{ .width = static_cast<float>(render_view.color_image.get_extent().width),
-                         .height = static_cast<float>(render_view.color_image.get_extent().height),
+    VkViewport viewport{ .width = static_cast<float_t>(render_view.color_image.get_extent().width),
+                         .height = static_cast<float_t>(render_view.color_image.get_extent().height),
                          .minDepth = 0.0f,
                          .maxDepth = 1.0f };
     vkCmdSetViewport(cmd, 0, 1, &viewport);

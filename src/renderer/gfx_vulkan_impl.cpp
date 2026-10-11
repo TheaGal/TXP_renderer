@@ -1469,7 +1469,7 @@ void Graphics::Impl::create_all_textures_descriptor()
                                                          : VK_SAMPLER_MIPMAP_MODE_LINEAR),
             .anisotropyEnable = VK_TRUE,  // @TODO: put this into a setting!
             .maxAnisotropy = 8.0f,  // 8 is a widely supported value for max anisotropy.  @TODO: put this into a setting!
-            .maxLod = static_cast<float>(entry.texture.levelCount),
+            .maxLod = static_cast<float_t>(entry.texture.levelCount),
         };
 
         err = vkCreateSampler(gfx.device, &sampler_info, nullptr, &entry.sampler);
