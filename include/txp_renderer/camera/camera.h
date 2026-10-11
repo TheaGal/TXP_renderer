@@ -16,6 +16,8 @@ struct Cam_matrix
     mat4 view;
     vec3 camera_position;
 };
+static_assert(offsetof(Cam_matrix, projection) % k_mat4_alignment == 0);
+static_assert(offsetof(Cam_matrix, view) % k_mat4_alignment == 0);
 
 /// Externally-facing camera class.
 class Camera

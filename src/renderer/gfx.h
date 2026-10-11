@@ -27,6 +27,8 @@ struct Directional_light
     vec4 direction_xyz_intensity_w;
     vec4 color;
 };
+static_assert(offsetof(Directional_light, direction_xyz_intensity_w) % k_vec4_alignment == 0);
+static_assert(offsetof(Directional_light, color) % k_vec4_alignment == 0);
 
 struct Environment_data
 {
@@ -41,6 +43,10 @@ struct Environment_data
     static constexpr uint32_t k_lighting_mode_basic_unlit = 2;
     uint32_t lighting_mode;
 };
+static_assert(offsetof(Environment_data, projection) % k_mat4_alignment == 0);
+static_assert(offsetof(Environment_data, view) % k_mat4_alignment == 0);
+static_assert(offsetof(Environment_data, camera_position) % k_vec4_alignment == 0);
+static_assert(offsetof(Environment_data, directional_light) % k_vec4_alignment == 0);
 
 struct Per_instance_data
 {
@@ -58,6 +64,8 @@ struct Model_transform_set
     #warning struct uses cglm
     mat4 transforms[65535];
 };
+static_assert(offsetof(Model_transform_set, transforms[0]) % k_mat4_alignment == 0);
+static_assert(offsetof(Model_transform_set, transforms[1]) % k_mat4_alignment == 0);
 
 /// Sprite params per instance.
 struct Sprite_data_set_element
@@ -72,6 +80,7 @@ struct Sprite_data_set_element
     uint32_t pad1;
     uint32_t pad2;
 };
+static_assert(offsetof(Sprite_data_set_element, model_mat) % k_mat4_alignment == 0);
 
 constexpr size_t k_num_sprites{ 8192 };
 

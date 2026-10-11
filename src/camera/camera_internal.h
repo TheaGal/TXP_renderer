@@ -90,6 +90,12 @@ private:
 
     size_t m_controlling_camera_state_idx{ k_controlling_camera_state_none };
     int32_t m_ignore_mouse_delta_frames{ 0 };
+
+    consteval void __donotuse()
+    {
+        static_assert(
+            offsetof(Camera_internal, m_orbit_cam_angle_offset_rotation) % k_mat4_alignment == 0);
+    }
 };
 
 }  // namespace TXP

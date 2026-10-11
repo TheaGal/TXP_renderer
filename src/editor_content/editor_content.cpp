@@ -43,6 +43,7 @@ struct Manipulate_transform
     mat4 transform;
     std::function<void(mat4 const)> manipulated_callback;
 };
+static_assert(offsetof(Manipulate_transform, transform) % k_mat4_alignment == 0);
 std::vector<Manipulate_transform> s_manipulate_transform_list;
 
 /// Prompt overlay for a camera mode to get unlocked or toggled with shift+c.

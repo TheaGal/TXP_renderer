@@ -41,6 +41,7 @@ struct Material_param_set
     #warning struct uses cglm
     vec4 color;
 };
+static_assert(offsetof(Material_param_set, color) % k_vec4_alignment == 0);
 
 }  // namespace
 }  // namespace gpu_type

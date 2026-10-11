@@ -277,6 +277,12 @@ private:
     };
     Blend_value_result calc_blend_value_of_blendtree(
         anim_tmpl_types::Animator_state const& anim_state) const;
+
+    static consteval void __donotuse()
+    {
+        static_assert(offsetof(Model_animator, m_cached_simulation_transform) % k_mat4_alignment ==
+                      0);
+    }
 };
 
 }  // namespace component_internal

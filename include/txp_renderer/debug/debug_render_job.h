@@ -44,6 +44,8 @@ struct Debug_line
     vec4 color1;
     vec4 color2;
 };
+static_assert(offsetof(Debug_line, color1) % k_vec4_alignment == 0);
+static_assert(offsetof(Debug_line, color2) % k_vec4_alignment == 0);
 
 /// Submits one debug line for a certain amount of time.
 void emplace_debug_line(Debug_line&& line, float_t timeout);

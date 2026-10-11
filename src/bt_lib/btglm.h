@@ -1,14 +1,31 @@
 #pragma once
 
-// #include "../btzc_game_engine.h"  // @NOTE: @THEA: @NOCHECKIN: this is where the double precision thing comes from.
+// #include "btzc_game_engine.h"  // @NOTE: @THEA: @NOCHECKIN: this is where the double precision thing comes from.
+#define BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION 1
+
+#ifndef BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
+    #error BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION not defined
+#elif BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION == 0
+    #error BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION is 0
+#endif // BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
+
 #include "btjson.h"
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 #include "cglm/cglm.h"
 #include "cglm/quat.h"
 #include "cglm/types-struct.h"
-#include "cglm/vec3-ext.h"
 
 #include <cmath>
+
+
+constexpr uint64_t k_vec4_alignment{ 16 };
+constexpr uint64_t k_mat2_alignment{ 16 };
+
+#if _WIN64
+constexpr uint64_t k_mat4_alignment{ 32 };
+#else
+constexpr uint64_t k_mat4_alignment{ 16 };
+#endif
 
 
 /// Whether to use double or single precision for real type.

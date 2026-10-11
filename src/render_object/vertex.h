@@ -69,5 +69,6 @@ struct Vertex_skin_data
     uint32_t joint_mat_idxs[4];
     vec4     weights;
 };
+static_assert(offsetof(Vertex_skin_data, weights) % k_vec4_alignment == 0);
 
 }  // namespace TXP

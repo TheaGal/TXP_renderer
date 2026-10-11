@@ -39,6 +39,8 @@ struct Model_joint_animation_frame  // @TODO: rename to `Skeletal_animation_fram
         Joint_local_transform interpolate_fast(Joint_local_transform const& other,
                                                float_t t) const;
     };
+    static_assert(offsetof(Joint_local_transform, rotation) % k_vec4_alignment == 0);
+
     std::vector<Joint_local_transform> joint_transforms_in_order;
 
     vec3 root_motion_delta_pos;

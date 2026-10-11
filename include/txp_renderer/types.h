@@ -152,15 +152,17 @@ struct Render_object_config
     Render_layer render_layer{ 0 };
     std::string model_name;
 
-#if _WIN64
-    #warning Try to figure out some way to have the alignment work without forcing padding here.
-    uint32_t pad2;
-    uint32_t pad3;
-    uint32_t pad4;
-    uint32_t pad5;
-#endif // _WIN64
+// #if _WIN64
+//     #warning Try to figure out some way to have the alignment work without forcing padding here.
+//     uint32_t pad2;
+//     uint32_t pad3;
+//     uint32_t pad4;
+//     uint32_t pad5;
+// #endif // _WIN64
 
+    // static_assert(alignof(mat4s) == 32);
     mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
+    // alignas(32) mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
 
     // ^^ Required ^^ / vv Optional vv
 
@@ -185,6 +187,7 @@ struct Render_object_config
                                                 material_palette,
                                                 is_deformed);
 };
+static_assert(offsetof(Render_object_config, transform) % k_mat4_alignment == 0);
 
 /// Component to store data from animator and AFA data for root motion.
 struct Animator_root_motion

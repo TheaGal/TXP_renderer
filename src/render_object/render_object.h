@@ -39,6 +39,7 @@ struct Render_object
         return (animator_idx != (uint16_t)-1);
     }
 };
+static_assert(offsetof(Render_object, transform) % k_mat4_alignment == 0);
 
 /// Holds reference for a render object's model mesh.
 /// For keeping track of model's mesh when different materials are used per mesh.

@@ -21,6 +21,7 @@ struct Model_joint
     uint32_t parent_idx{ (uint32_t)-1 };  // @NOTE: Idx instead of pointer for cache lookup.  -Thea 2025/07/10
     std::vector<Model_joint*> children;
 };
+static_assert(offsetof(Model_joint, inverse_bind_matrix) % k_mat4_alignment == 0);
 
 /// Data to deform a vertex buffer of a model.
 struct Deformed_model_skin
@@ -36,5 +37,7 @@ struct Deformed_model_skin
     std::unordered_map<std::string, uint32_t> joint_name_to_idx;
     std::vector<Model_joint> joints_sorted_breadth_first;
 };
+static_assert(offsetof(Deformed_model_skin, baseline_transform) % k_mat4_alignment == 0);
+static_assert(offsetof(Deformed_model_skin, inverse_global_transform) % k_mat4_alignment == 0);
 
 }  // namespace TXP

@@ -50,6 +50,8 @@ struct Material_param_set
     uint32_t pad0;
     vec4 uv_offset_tiling                    = { 0, 0, 1, 1 };
 };
+static_assert(offsetof(Material_param_set, base_color_factor) % k_vec4_alignment == 0);
+static_assert(offsetof(Material_param_set, uv_offset_tiling) % k_vec4_alignment == 0);
 
 }  // namespace
 }  // namespace gpu_type
