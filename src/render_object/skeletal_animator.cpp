@@ -416,13 +416,13 @@ void TXP::component_internal::Model_animator::change_state_set(
         std::lock_guard<std::mutex> lock{ m_current_state_set.mutex };
         m_current_state_set.state_set = to_state_set;  // Make copy of state set.
 
-        BT_WARNF("Inserted state-set (loop_final=%u):",
+        BT_TRACEF("Inserted state-set (loop_final=%u):",
                   m_current_state_set.state_set.loop_final_state);
 
         for (size_t i = 0; i < m_current_state_set.state_set.anim_state_indices.size(); i++)
         {
             auto state_idx = m_current_state_set.state_set.anim_state_indices[i];
-            BT_WARNF("   state-idx[%llu]=%u", i, state_idx);
+            BT_TRACEF("   state-idx[%llu]=%u", i, state_idx);
         }
     }
 
