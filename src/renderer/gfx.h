@@ -23,12 +23,14 @@ namespace gpu_type
 
 struct Directional_light
 {
+    #warning struct uses cglm
     vec4 direction_xyz_intensity_w;
     vec4 color;
 };
 
 struct Environment_data
 {
+    #warning struct uses cglm
     mat4 projection;
     mat4 view;
     vec4 camera_position;
@@ -53,12 +55,14 @@ struct Per_instance_data_collection
 
 struct Model_transform_set
 {
+    #warning struct uses cglm
     mat4 transforms[65535];
 };
 
 /// Sprite params per instance.
 struct Sprite_data_set_element
 {
+    #warning struct uses cglm
     mat4 model_mat;
     vec2 anchor;
     float_t opacity;

@@ -38,6 +38,7 @@ namespace
 /// Material parameters for this shader.
 struct Material_param_set
 {
+    #warning struct uses cglm
     vec4 base_color_factor                   = GLM_VEC4_ONE_INIT;
     float_t metallic_factor                  = 1.0f;
     float_t roughness_factor                 = 1.0f;

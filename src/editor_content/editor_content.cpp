@@ -39,6 +39,7 @@ std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
 
 struct Manipulate_transform
 {
+    #warning struct uses cglm
     mat4 transform;
     std::function<void(mat4 const)> manipulated_callback;
 };

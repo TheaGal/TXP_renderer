@@ -24,6 +24,7 @@ void set_model_directory(std::string const& dir_path);
 /// Bounding box.
 struct AA_bounding_box
 {
+    #warning struct uses cglm
     vec3 min;
     vec3 max;
 

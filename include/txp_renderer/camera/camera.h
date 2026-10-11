@@ -11,6 +11,7 @@ namespace TXP
 /// Projection and view matrices for a camera.
 struct Cam_matrix
 {
+    #warning struct uses cglm
     mat4 projection;
     mat4 view;
     vec3 camera_position;

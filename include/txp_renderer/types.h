@@ -146,8 +146,9 @@ struct Entity_metadata
 };
 
 /// Config for a render object (to be used as ECS component).
-struct CGLM_ALIGN_MAT Render_object_config
+struct Render_object_config
 {
+    #warning struct uses cglm
     Render_layer render_layer{ 0 };
     std::string model_name;
 
@@ -188,6 +189,7 @@ struct CGLM_ALIGN_MAT Render_object_config
 /// Component to store data from animator and AFA data for root motion.
 struct Animator_root_motion
 {   // Settings and also captured.
+    #warning struct uses cglm
     float_t root_motion_multiplier{ 1.0f };  // @TODO: @THINK: Should this automatically set the AFA data when initialized that?
 
     // Captured values.

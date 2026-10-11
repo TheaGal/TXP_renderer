@@ -127,6 +127,7 @@ public:
     {
         struct Basic_vertex
         {
+            #warning struct uses cglm
             vec3 position;
         };
         std::vector<Basic_vertex> vertices;

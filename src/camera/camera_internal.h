@@ -14,6 +14,7 @@ namespace TXP
 /// Camera_internal service.
 class Camera_internal
 {
+    #warning struct uses cglm
 public:
     Camera_internal();
 
@@ -70,6 +71,7 @@ private:
 
     struct Camera_state
     {
+        #warning struct uses cglm
         rvec3s position;
         vec3s view_direction;
 

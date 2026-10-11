@@ -10,8 +10,6 @@
 namespace TXP
 {
 
-// class Model;  // ???
-
 namespace component_internal
 {
 class Model_animator;
@@ -24,6 +22,7 @@ struct Runtime_data_controls;
 
 struct Editor_state
 {
+    #warning struct uses cglm
     bool is_editor_state_untouched{ true };  // Set to true when editor state is reset.
 
     vec3 root_bone_offset = { 1.5, 1.8, 2.2 };

@@ -225,6 +225,7 @@ void debug::emplace_debug_line_based_capsule(vec3 const origin_a,
 
     struct Transformed_end_cap_point_set
     {
+        #warning struct uses cglm
         std::vector<vec3s> const& base_end_cap_ref;
         bool use_origin_a;
         std::vector<vec3s> trans_end_cap;

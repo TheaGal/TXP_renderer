@@ -38,6 +38,7 @@ namespace
 /// Material parameters for this shader.
 struct Material_param_set
 {
+    #warning struct uses cglm
     vec4 color;
 };
 

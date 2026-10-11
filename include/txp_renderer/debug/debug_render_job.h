@@ -38,6 +38,7 @@ void update_debug_model_transform(debug_model_id_t model_id, mat4 transform);
 /// Line struct.
 struct Debug_line
 {
+    #warning struct uses cglm
     vec3 pos1;
     vec3 pos2;
     vec4 color1;
