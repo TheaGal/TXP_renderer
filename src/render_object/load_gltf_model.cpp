@@ -180,14 +180,16 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         {   // Load all inverse bind matrices.
             auto& inv_bind_mats_accessor{
                 asset.accessors[skin.inverseBindMatrices.value()] };
+            inv_bind_mats.reserve(inv_bind_mats_accessor.count);
+
             for (auto element :
                      fastgltf::iterateAccessor<fastgltf::math::fmat4x4>(asset,
                                                                         inv_bind_mats_accessor))
             {
                 // @NOTE: `_ucopy()` is used instead of the normal copy to force no SIMD.
                 mat4s new_inv_bind_mat;
-                glm_mat4_ucopy(reinterpret_cast<vec4*>(element.data()), new_inv_bind_mat.raw);
-                inv_bind_mats.emplace_back(std::move(new_inv_bind_mat));
+                inv_bind_mats.emplace_back();
+                glm_mat4_ucopy(reinterpret_cast<vec4*>(element.data()), inv_bind_mats.back().raw);
             }
         }
 

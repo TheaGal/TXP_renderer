@@ -146,10 +146,18 @@ struct Entity_metadata
 };
 
 /// Config for a render object (to be used as ECS component).
-struct Render_object_config
+struct CGLM_ALIGN_MAT Render_object_config
 {
     Render_layer render_layer{ 0 };
     std::string model_name;
+
+#if _WIN64
+    #warning Try to figure out some way to have the alignment work without forcing padding here.
+    uint32_t pad2;
+    uint32_t pad3;
+    uint32_t pad4;
+    uint32_t pad5;
+#endif // _WIN64
 
     mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
 

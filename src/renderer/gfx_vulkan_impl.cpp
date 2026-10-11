@@ -2120,7 +2120,7 @@ void Graphics::Impl::present_frame_to_screen()
     };
 
     err = vkQueuePresentKHR(gfx.graphics_queue, &present_info);
-    if (err == VK_SUBOPTIMAL_KHR)
+    if (err == VK_SUBOPTIMAL_KHR || err == VK_ERROR_OUT_OF_DATE_KHR)
     {
         rebuild_swapchain_flag = true;
     }

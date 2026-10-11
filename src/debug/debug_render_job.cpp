@@ -298,14 +298,15 @@ void debug::tick_debug_render_jobs(float_t delta_time)
     // Check over non-expired indexes to see if they are expired.
     std::vector<uint32_t> expired_indexes_copy(dbg_line_info_coll->expired_indexes.begin(),
                                                dbg_line_info_coll->expired_indexes.end());
-    static std::vector<uint32_t> const k_dummy_list{ (uint32_t)-1 };
 
-    auto it{ !expired_indexes_copy.empty() ? expired_indexes_copy.begin() : k_dummy_list.begin() };
+    auto it{ expired_indexes_copy.begin() };
+    auto const it_end{ expired_indexes_copy.end() };
+
     uint32_t i{ 0 };
 
     for (float_t& timeout : dbg_line_info_coll->dbg_lines_timeouts)
     {
-        if (i == *it)
+        if (it != it_end && i == *it)
         {   // Expired.
             it++;
         }
@@ -340,16 +341,14 @@ void debug::write_debug_line_mem(void* dest)
     // Copy information to memory position.
     auto dbg_line_info_coll{ g_dbg_line_info_coll.scoped_lock() };
 
-    static std::set<uint32_t> const k_dummy_set{ (uint32_t)-1 };
-
-    auto it{ !dbg_line_info_coll->expired_indexes.empty()
-                 ? dbg_line_info_coll->expired_indexes.begin()
-                 : k_dummy_set.begin() };
+    auto it{ dbg_line_info_coll->expired_indexes.begin() };
+    auto const it_end{ dbg_line_info_coll->expired_indexes.end() };
+    
     uint32_t i{ 0 };
 
     for (auto& dbg_line : dbg_line_info_coll->dbg_lines)
     {
-        if (i == *it)
+        if (it != it_end && i == *it)
         {   // Expired.
             it++;
         }
@@ -357,10 +356,10 @@ void debug::write_debug_line_mem(void* dest)
         {
             // Copy information.
             glm_vec3_copy(dbg_line.pos1, data->position());
-            glm_vec4_copy(dbg_line.color1, data->color());
+            glm_vec4_ucopy(dbg_line.color1, data->color());
             data++;
             glm_vec3_copy(dbg_line.pos2, data->position());
-            glm_vec4_copy(dbg_line.color2, data->color());
+            glm_vec4_ucopy(dbg_line.color2, data->color());
             data++;
         }
 
