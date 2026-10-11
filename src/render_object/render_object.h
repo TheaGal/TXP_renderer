@@ -13,7 +13,6 @@ namespace TXP
 /// Lightweight object with properties on what to render in the render-object stage.
 struct Render_object
 {
-    #warning struct uses cglm
     bool is_stale{ false };
 
     bool padding0;

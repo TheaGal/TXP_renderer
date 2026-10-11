@@ -20,7 +20,6 @@ struct Model_joint_animation_frame  // @TODO: rename to `Skeletal_animation_fram
 {
     struct Joint_local_transform
     {
-        #warning struct uses cglm
         vec3 position;
         versor rotation;
         vec3 scale;

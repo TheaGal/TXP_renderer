@@ -20,7 +20,6 @@ class Model_animator;
 /// Individual hit-capsule. Multiple grouped together form a `Hitcapsule_group`.
 struct Hitcapsule
 {
-    #warning struct uses cglm
     vec3s   origin_a;  // Origins of both ends of the spheres making up the capsule.
     vec3s   origin_b;
     float_t radius;

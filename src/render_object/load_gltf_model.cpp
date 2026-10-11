@@ -784,7 +784,6 @@ void TXP::load_gltf_model_from_disk(Render_model_data_collection& data_collectio
         // Extract glTF-style animation data.
         struct Sampler_extracted_data
         {
-            #warning struct uses cglm
             fastgltf::AnimationInterpolation interp_type;  // @NOTE: 永久に使われないかも。
             std::vector<float_t> times;
             std::vector<vec4s> trs_fragments;  // Could be trans, rot, or sca.

@@ -23,7 +23,6 @@ namespace gpu_type
 
 struct Directional_light
 {
-    #warning struct uses cglm
     vec4 direction_xyz_intensity_w;
     vec4 color;
 };
@@ -32,7 +31,6 @@ static_assert(offsetof(Directional_light, color) % k_vec4_alignment == 0);
 
 struct Environment_data
 {
-    #warning struct uses cglm
     mat4 projection;
     mat4 view;
     vec4 camera_position;
@@ -61,7 +59,6 @@ struct Per_instance_data_collection
 
 struct Model_transform_set
 {
-    #warning struct uses cglm
     mat4 transforms[65535];
 };
 static_assert(offsetof(Model_transform_set, transforms[0]) % k_mat4_alignment == 0);
@@ -70,7 +67,6 @@ static_assert(offsetof(Model_transform_set, transforms[1]) % k_mat4_alignment ==
 /// Sprite params per instance.
 struct Sprite_data_set_element
 {
-    #warning struct uses cglm
     mat4 model_mat;
     vec2 anchor;
     float_t opacity;

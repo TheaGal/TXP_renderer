@@ -65,7 +65,6 @@ static_assert(std::alignment_of<Vertex>::value == 16, "Must be 16 byte aligned")
 /// Vertex-level deformation data to point to joint indices.
 struct Vertex_skin_data
 {
-    #warning struct uses cglm
     uint32_t joint_mat_idxs[4];
     vec4     weights;
 };

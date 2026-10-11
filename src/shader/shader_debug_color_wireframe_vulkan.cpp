@@ -38,7 +38,6 @@ namespace
 /// Material parameters for this shader.
 struct Material_param_set
 {
-    #warning struct uses cglm
     vec4 color;
 };
 static_assert(offsetof(Material_param_set, color) % k_vec4_alignment == 0);
