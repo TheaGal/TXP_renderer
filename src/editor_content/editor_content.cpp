@@ -572,16 +572,6 @@ void imgui_editor_viewport_windows(
     bool& in_out_focus_main_viewport,
     std::vector<Render_view_size>& out_rend_view_sizes)
 {
-    // Should be empty until manip transforms are added.
-    assert(s_manipulate_transform_list.empty());
-
-    // Custom imgui information.
-    if (!s_imgui_build_contents_callback_fn)
-        throw std::runtime_error("ImGui build contents callback not defined!");
-
-    if (s_editor_mode == EDITOR_MODE_LEVEL)
-        s_imgui_build_contents_callback_fn();  //< here s_manipulate_transform_list gets added to
-
     // Collect size of available content in viewports.
     std::vector<ImVec2> per_viewport_content_sizes;
     per_viewport_content_sizes.reserve(1 + settings.open_scene_view_ids.size());  // +1 for main viewport.
@@ -669,6 +659,14 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0);  // main dockspace.
 
+    // Custom imgui information.
+    if (!s_imgui_build_contents_callback_fn)
+        throw std::runtime_error("ImGui build contents callback not defined!");
+
+    if (s_editor_mode == EDITOR_MODE_LEVEL)
+        s_imgui_build_contents_callback_fn();  //< here s_manipulate_transform_list gets added to
+
+    // Editor viewport windows.
     imgui_editor_viewport_windows(settings,
                                   input_handler,
                                   render_view_image_content,
