@@ -88,6 +88,12 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
                 s_editor_mode = EDITOR_MODE_ANIM_FRAME_ACTION;
                 info_hook_struct.set_dev_anim_editor_view_fn(true);
             }
+            if (ImGui::MenuItem("UI Editor",
+                                "",
+                                s_editor_mode == EDITOR_MODE_UI_EDITOR))
+            {
+                s_editor_mode = EDITOR_MODE_UI_EDITOR;
+            }
 
             if (s_editor_mode != prev_mode)
             {
@@ -555,6 +561,76 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
     }
 }
 
+/// .
+void imgui_editor_viewport_windows(
+    TXP::Renderer_settings& settings,
+    TXP::Input::Input_handler const& input_handler,
+    editor_content::Render_view_image_content const& render_view_image_content,
+    std::function<void(bool)> const& lock_cursor_fn,
+    Camera_internal& camera,
+    bool& in_out_play_flag,
+    bool& in_out_focus_main_viewport,
+    std::vector<Render_view_size>& out_rend_view_sizes)
+{
+    // Should be empty until manip transforms are added.
+    assert(s_manipulate_transform_list.empty());
+
+    // Custom imgui information.
+    if (!s_imgui_build_contents_callback_fn)
+        throw std::runtime_error("ImGui build contents callback not defined!");
+
+    if (s_editor_mode == EDITOR_MODE_LEVEL)
+        s_imgui_build_contents_callback_fn();  //< here s_manipulate_transform_list gets added to
+
+    // Collect size of available content in viewports.
+    std::vector<ImVec2> per_viewport_content_sizes;
+    per_viewport_content_sizes.reserve(1 + settings.open_scene_view_ids.size());  // +1 for main viewport.
+
+    // Draw main viewport window (only 1).
+    if (s_editor_mode == EDITOR_MODE_LEVEL || s_editor_mode == EDITOR_MODE_UI_EDITOR)
+    {
+        imgui_main_viewport_window(input_handler,
+                                   render_view_image_content,
+                                   lock_cursor_fn,
+                                   camera,
+                                   per_viewport_content_sizes,
+                                   in_out_play_flag,
+                                   in_out_focus_main_viewport);
+    }
+    if (per_viewport_content_sizes.empty())
+    {   // Put in dummy 1x1 view for main viewport since is obfuscated or closed.
+        per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
+    }
+
+    // Draw scene viewport windows.
+    if (s_editor_mode == EDITOR_MODE_LEVEL || s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
+    {
+        imgui_all_scene_editor_windows(settings,
+                                       input_handler,
+                                       render_view_image_content,
+                                       lock_cursor_fn,
+                                       camera,
+                                       per_viewport_content_sizes);
+    }
+    for (size_t i = per_viewport_content_sizes.size(); i < 1 + settings.open_scene_view_ids.size();
+         i++)
+    {   // Put in dummy 1x1 view for any obfuscated or temporarily hidden scene editor viewports.
+        per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
+    }
+
+    // Clear used manipulate transform list.
+    s_manipulate_transform_list.clear();
+
+    // Report back render view sizes.
+    out_rend_view_sizes.reserve(per_viewport_content_sizes.size());
+    for (auto const& per_viewport_content_size : per_viewport_content_sizes)
+    {
+        out_rend_view_sizes.emplace_back(Render_view_size{
+            .width = static_cast<int32_t>(glm_max(per_viewport_content_size.x, 1)),
+            .height = static_cast<int32_t>(glm_max(per_viewport_content_size.y, 1)) });
+    }
+}
+
 }  // namespace
 
 
@@ -593,72 +669,23 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
     ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0);  // main dockspace.
 
-    // Should be empty until manip transforms are added.
-    assert(s_manipulate_transform_list.empty());
-
-    // Custom imgui information.
-    if (!s_imgui_build_contents_callback_fn)
-        throw std::runtime_error("ImGui build contents callback not defined!");
-    s_imgui_build_contents_callback_fn();
-
-    // Collect size of available content in viewports.
-    std::vector<ImVec2> per_viewport_content_sizes;
-    per_viewport_content_sizes.reserve(1 + settings.open_scene_view_ids.size());  // +1 for main viewport.
-
-    // Draw main viewport window (only 1).
-    if (s_editor_mode == EDITOR_MODE_LEVEL || s_editor_mode == EDITOR_MODE_UI_EDITOR)
-    {
-        imgui_main_viewport_window(input_handler,
-                                   render_view_image_content,
-                                   lock_cursor_fn,
-                                   camera,
-                                   per_viewport_content_sizes,
-                                   s_play_flag,
-                                   focus_main_viewport);
-    }
-    if (per_viewport_content_sizes.empty())
-    {   // Put in dummy 1x1 view for main viewport since is obfuscated or closed.
-        per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
-    }
+    imgui_editor_viewport_windows(settings,
+                                  input_handler,
+                                  render_view_image_content,
+                                  lock_cursor_fn,
+                                  camera,
+                                  s_play_flag,
+                                  focus_main_viewport,
+                                  out_rend_view_sizes);
 
     if (s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
-    {
         anim_frame_action_editor_content(false, delta_time);
-    }
-
-    if (s_editor_mode == EDITOR_MODE_LEVEL || s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
-    {
-        imgui_all_scene_editor_windows(settings,
-                                       input_handler,
-                                       render_view_image_content,
-                                       lock_cursor_fn,
-                                       camera,
-                                       per_viewport_content_sizes);
-    }
-    for (size_t i = per_viewport_content_sizes.size(); i < 1 + settings.open_scene_view_ids.size();
-         i++)
-    {   // Put in dummy 1x1 view for any obfuscated or temporarily hidden scene editor viewports.
-        per_viewport_content_sizes.emplace_back(ImVec2(1, 1));
-    }
-
-    // Clear used manipulate transform list.
-    s_manipulate_transform_list.clear();
-
-    imgui_debug_printable_info_data();
 
     if (s_editor_mode == EDITOR_MODE_LEVEL)
         imgui_performance_timers(info_hook_struct);
 
+    imgui_debug_printable_info_data();
     imgui_demo_window_content(input_handler);
-
-    // Report back render view sizes.
-    out_rend_view_sizes.reserve(per_viewport_content_sizes.size());
-    for (auto const& per_viewport_content_size : per_viewport_content_sizes)
-    {
-        out_rend_view_sizes.emplace_back(
-            Render_view_size{ .width = static_cast<int32_t>(per_viewport_content_size.x),
-                              .height = static_cast<int32_t>(per_viewport_content_size.y) });
-    }
 }
 
 }  // namespace TXP
