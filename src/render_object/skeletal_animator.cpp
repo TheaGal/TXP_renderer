@@ -1328,6 +1328,11 @@ bool TXP::component_internal::Model_animator::set_watch_event_queue(
     }
     else
     {
+        BT_ERRORF(
+            "Event queue is already being watched (row %u) while trying to watch it again on row "
+            "%u",
+            evq.priority,
+            priority);
         return false;
     }
 }
