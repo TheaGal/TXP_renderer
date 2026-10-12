@@ -33,132 +33,38 @@ namespace TXP
 namespace
 {
 
+enum Editor_mode
+{
+    EDITOR_MODE_LEVEL,
+    EDITOR_MODE_ANIM_FRAME_ACTION,
+    EDITOR_MODE_UI_EDITOR,
+};
+Editor_mode s_editor_mode{ EDITOR_MODE_LEVEL };
+
+
 bool s_show_demo_window{ false };
 
-std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
 
-struct Manipulate_transform
+/// .
+void imgui_main_menu_bar(TXP::Renderer_settings& settings,
+                         Information_hook_struct const& info_hook_struct,
+                         bool& in_out_play_flag,
+                         bool& in_out_focus_main_viewport)
 {
-    mat4 transform;
-    std::function<void(mat4 const)> manipulated_callback;
-};
-static_assert(offsetof(Manipulate_transform, transform) % k_mat4_alignment == 0);
-std::vector<Manipulate_transform> s_manipulate_transform_list;
-
-/// Prompt overlay for a camera mode to get unlocked or toggled with shift+c.
-void imgui_camera_mode_shift_c_ctrl_prompt_overlay(
-    TXP::Input::Input_handler const& input_handler,
-    std::function<void()> const& press_shift_c_fn,
-    std::string const& prompt_text,
-    ImVec2 topleft_pos)
-{
-    constexpr float_t k_padding{ 10.0f };
-    ImGui::SetNextWindowPos(ImVec2(topleft_pos.x + k_padding, topleft_pos.y + k_padding),
-                            ImGuiCond_Always,
-                            ImVec2(0, 0));
-
-    ImGui::SetNextWindowBgAlpha(0.6f);
-    if (ImGui::BeginChild(ImGui::GetID("Camera cursor control prompt overlay"),
-                          ImVec2(0, 0),
-                          ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX |
-                              ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding,
-                          ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings |
-                              ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
-                              ImGuiWindowFlags_NoMove))
-    {
-        ImGui::Text("%s", prompt_text.c_str());
-
-        static size_t s_prev_key_c_event_tick{ 0 };
-        if (auto ks = input_handler.get_keyboard_key_state(BT_KEY_C);
-            ks.last_event_tick > s_prev_key_c_event_tick)
-        {
-            if (ks.pressed && ks.modbits.has_shift())
-            {
-                press_shift_c_fn();
-            }
-            s_prev_key_c_event_tick = ks.last_event_tick;
-        }
-    }
-    ImGui::EndChild();
-}
-
-/// Optional ImGui demo window drawing (enable/disable-able).
-void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
-{
-    // ImGui demo window.
-    static size_t s_prev_key_d_event_tick{ 0 };
-    if (auto ks = input_handler.get_keyboard_key_state(BT_KEY_D);
-        ks.last_event_tick > s_prev_key_d_event_tick)
-    {
-        if (ks.pressed && ks.modbits.has_control() && ks.modbits.has_alt() &&
-            ks.modbits.has_shift())
-        {
-            s_show_demo_window = !s_show_demo_window;
-        }
-        s_prev_key_d_event_tick = ks.last_event_tick;
-    }
-    if (s_show_demo_window)
-    {
-        ImGui::ShowDemoWindow();
-    }
-}
-
-}  // namespace
-
-
-void editor_content::set_imgui_build_contents_callback(std::function<void()>&& callback)
-{
-    s_imgui_build_contents_callback_fn = callback;
-}
-
-void editor_content::set_imguizmo_enabled(bool flag)
-{
-    ImGuizmo::Enable(flag);
-}
-
-void editor_content::add_to_imguizmo_manipulate(mat4 transform,
-                                                std::function<void(mat4 const)>&& changed_callback)
-{
-    Manipulate_transform nt{ .manipulated_callback = std::move(changed_callback) };
-    glm_mat4_copy(transform, nt.transform);
-
-    s_manipulate_transform_list.emplace_back(std::move(nt));
-}
-
-void editor_content::build_content(TXP::Renderer_settings& settings,
-                                   TXP::Input::Input_handler const& input_handler,
-                                   Render_view_image_content const& render_view_image_content,
-                                   std::function<void(bool)> const& lock_cursor_fn,
-                                   Camera_internal& camera,
-                                   Information_hook_struct const& info_hook_struct,
-                                   float_t delta_time,
-                                   std::vector<Render_view_size>& out_rend_view_sizes)
-{
-    static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
-    bool focus_main_viewport{ false };
-
-    enum Editor_mode
-    {
-        EDITOR_MODE_LEVEL,
-        EDITOR_MODE_ANIM_FRAME_ACTION,
-    };
-    static Editor_mode s_editor_mode{ EDITOR_MODE_LEVEL };
-
-    // Main menu bar.
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("Simulation"))
         {
             ImGui::BeginDisabled(s_editor_mode != EDITOR_MODE_LEVEL);
 
-            if (ImGui::MenuItem("Simulation playing", nullptr, s_play_flag))
+            if (ImGui::MenuItem("Simulation playing", nullptr, in_out_play_flag))
             {
-                s_play_flag = !s_play_flag;
-                info_hook_struct.set_play_flag_fn(s_play_flag);
+                in_out_play_flag = !in_out_play_flag;
+                info_hook_struct.set_play_flag_fn(in_out_play_flag);
 
                 // Focus onto main viewport when starting simulation.
-                if (s_play_flag)
-                    focus_main_viewport = true;
+                if (in_out_play_flag)
+                    in_out_focus_main_viewport = true;
             }
 
             ImGui::EndDisabled();
@@ -169,7 +75,7 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
         {
             auto prev_mode{ s_editor_mode };
 
-            ImGui::BeginDisabled(s_play_flag);
+            ImGui::BeginDisabled(in_out_play_flag);
 
             if (ImGui::MenuItem("Level Editor", "", s_editor_mode == EDITOR_MODE_LEVEL))
             {
@@ -238,13 +144,219 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
         }
         ImGui::EndMainMenuBar();
     }
+}
 
-    // Main dockspace.
-    ImGui::DockSpaceOverViewport(0,
-                                 ImGui::GetMainViewport(),
-                                 0);
 
-    // Just a check.
+std::function<void()> s_imgui_build_contents_callback_fn{ nullptr };
+
+struct Manipulate_transform
+{
+    mat4 transform;
+    std::function<void(mat4 const)> manipulated_callback;
+};
+static_assert(offsetof(Manipulate_transform, transform) % k_mat4_alignment == 0);
+std::vector<Manipulate_transform> s_manipulate_transform_list;
+
+/// Prompt overlay for a camera mode to get unlocked or toggled with shift+c.
+void imgui_camera_mode_shift_c_ctrl_prompt_overlay(
+    TXP::Input::Input_handler const& input_handler,
+    std::function<void()> const& press_shift_c_fn,
+    std::string const& prompt_text,
+    ImVec2 topleft_pos)
+{
+    constexpr float_t k_padding{ 10.0f };
+    ImGui::SetNextWindowPos(ImVec2(topleft_pos.x + k_padding, topleft_pos.y + k_padding),
+                            ImGuiCond_Always,
+                            ImVec2(0, 0));
+
+    ImGui::SetNextWindowBgAlpha(0.6f);
+    if (ImGui::BeginChild(ImGui::GetID("Camera cursor control prompt overlay"),
+                          ImVec2(0, 0),
+                          ImGuiChildFlags_AlwaysAutoResize | ImGuiChildFlags_AutoResizeX |
+                              ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_AlwaysUseWindowPadding,
+                          ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings |
+                              ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav |
+                              ImGuiWindowFlags_NoMove))
+    {
+        ImGui::Text("%s", prompt_text.c_str());
+
+        static size_t s_prev_key_c_event_tick{ 0 };
+        if (auto ks = input_handler.get_keyboard_key_state(BT_KEY_C);
+            ks.last_event_tick > s_prev_key_c_event_tick)
+        {
+            if (ks.pressed && ks.modbits.has_shift())
+            {
+                press_shift_c_fn();
+            }
+            s_prev_key_c_event_tick = ks.last_event_tick;
+        }
+    }
+    ImGui::EndChild();
+}
+
+/// .
+void imgui_debug_printable_info_data()
+{
+    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Printable info data -- debug"))
+    {
+        ImGui::Text("%s", debug::get_printable_info_data_as_str().c_str());
+    }
+    ImGui::End();
+}
+
+/// .
+void imgui_performance_timers(Information_hook_struct const& info_hook_struct)
+{
+    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    if (ImGui::Begin("Performance timers"))
+    {
+        for (uint32_t i = 0; i < NUM_PERF_TIME_TYPES; i++)
+        {
+            auto perf_time_type{ static_cast<Performance_time_type>(i) };
+            if (info_hook_struct.perf_time_map.find(perf_time_type) ==
+                info_hook_struct.perf_time_map.end())
+                continue;
+
+            enum Perf_quality
+            {
+                PERFQ_ABOVE_120fps = 0,
+                PERFQ_ABOVE_60fps,
+                PERFQ_ABOVE_30fps,
+                PERFQ_ABOVE_15fps,
+                PERFQ_GARBAGE,
+
+                NUM_PERF_QLYS
+            };
+            static std::array<ImU32, NUM_PERF_QLYS> const k_perf_quality_color_map{
+                ImGui::GetColorU32(ImVec4(0, 1, 0, 1)),
+                ImGui::GetColorU32(ImVec4(1, 1, 1, 1)),
+                ImGui::GetColorU32(ImVec4(1, 1, 0, 1)),
+                ImGui::GetColorU32(ImVec4(1, 0, 1, 1)),
+                ImGui::GetColorU32(ImVec4(1, 0, 0, 1)),
+            };
+            static auto const k_calc_perf_quality = [](float_t fps) {
+                Perf_quality quality = PERFQ_GARBAGE;
+                if (fps >= 120)
+                    quality = PERFQ_ABOVE_120fps;
+                else if (fps >= 60)
+                    quality = PERFQ_ABOVE_60fps;
+                else if (fps >= 30)
+                    quality = PERFQ_ABOVE_30fps;
+                else if (fps >= 15)
+                    quality = PERFQ_ABOVE_15fps;
+                return quality;
+            };
+
+            auto perf_samples = info_hook_struct.perf_time_map.at(perf_time_type).get_samples();
+            ImGui::PushID(&perf_samples);
+
+            float_t highest_sample = 0;
+            for (auto s : perf_samples)
+                highest_sample = glm_max(highest_sample, s);
+
+            float_t latest_sample = perf_samples.back();
+            float_t ms = latest_sample * 1000.0f;
+            float_t fps = 1.0f / latest_sample;
+
+            constexpr float_t k_ms_max_scale{ 500 };
+
+            // Draw stats.
+            ImGui::Text("PERF TIMER: %s", k_performance_time_type_labels[perf_time_type]);
+            ImGui::Text(" %.2f ms (%.0f FPS)", ms, fps);
+
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram,
+                                  k_perf_quality_color_map[k_calc_perf_quality(fps)]);
+            ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 2), "");
+            ImGui::PopStyleColor();
+
+            float_t cur_ms_max_scale = (10 / 1000.0f);
+            while (highest_sample > cur_ms_max_scale)
+                cur_ms_max_scale *= 2;
+            while (highest_sample <= cur_ms_max_scale * 0.5f)
+                cur_ms_max_scale *= 0.5f;
+
+            float_t content_width{ ImGui::GetContentRegionAvail().x };
+
+            size_t clamped_perf_samples_size = glm_min(perf_samples.size(), content_width);
+            size_t right_align_perf_samples_idx_offset =
+                glm_max(0, perf_samples.size() - 1 - content_width);
+
+            ImGui::PlotLines(("##plotlines" + std::to_string(i)).c_str(),
+                             perf_samples.data() + right_align_perf_samples_idx_offset,
+                             clamped_perf_samples_size,
+                             0,
+                             nullptr,
+                             0,
+                             glm_min(cur_ms_max_scale, k_ms_max_scale),
+                             ImVec2(content_width, 32));
+
+            ImGui::PopID();
+        }
+    }
+    ImGui::End();
+}
+
+/// Optional ImGui demo window drawing (enable/disable-able).
+void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
+{
+    // ImGui demo window.
+    static size_t s_prev_key_d_event_tick{ 0 };
+    if (auto ks = input_handler.get_keyboard_key_state(BT_KEY_D);
+        ks.last_event_tick > s_prev_key_d_event_tick)
+    {
+        if (ks.pressed && ks.modbits.has_control() && ks.modbits.has_alt() &&
+            ks.modbits.has_shift())
+        {
+            s_show_demo_window = !s_show_demo_window;
+        }
+        s_prev_key_d_event_tick = ks.last_event_tick;
+    }
+    if (s_show_demo_window)
+    {
+        ImGui::ShowDemoWindow();
+    }
+}
+
+}  // namespace
+
+
+void editor_content::set_imgui_build_contents_callback(std::function<void()>&& callback)
+{
+    s_imgui_build_contents_callback_fn = callback;
+}
+
+void editor_content::set_imguizmo_enabled(bool flag)
+{
+    ImGuizmo::Enable(flag);
+}
+
+void editor_content::add_to_imguizmo_manipulate(mat4 transform,
+                                                std::function<void(mat4 const)>&& changed_callback)
+{
+    Manipulate_transform nt{ .manipulated_callback = std::move(changed_callback) };
+    glm_mat4_copy(transform, nt.transform);
+
+    s_manipulate_transform_list.emplace_back(std::move(nt));
+}
+
+void editor_content::build_content(TXP::Renderer_settings& settings,
+                                   TXP::Input::Input_handler const& input_handler,
+                                   Render_view_image_content const& render_view_image_content,
+                                   std::function<void(bool)> const& lock_cursor_fn,
+                                   Camera_internal& camera,
+                                   Information_hook_struct const& info_hook_struct,
+                                   float_t delta_time,
+                                   std::vector<Render_view_size>& out_rend_view_sizes)
+{
+    static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
+    bool focus_main_viewport{ false };
+
+    imgui_main_menu_bar(settings, info_hook_struct, s_play_flag, focus_main_viewport);
+
+    ImGui::DockSpaceOverViewport(0, ImGui::GetMainViewport(), 0);  // main dockspace.
+
+    // Should be empty until manip transforms are added.
     assert(s_manipulate_transform_list.empty());
 
     // Custom imgui information.
@@ -257,7 +369,7 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     per_viewport_content_sizes.reserve(1 + settings.open_scene_view_ids.size());  // +1 for main viewport.
 
     // Draw main viewport window (only 1).
-    if (s_editor_mode == EDITOR_MODE_LEVEL)
+    if (s_editor_mode == EDITOR_MODE_LEVEL || s_editor_mode == EDITOR_MODE_UI_EDITOR)
     {
         ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
         if (ImGui::Begin("Main Viewport"))
@@ -493,104 +605,11 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     // Clear used manipulate transform list.
     s_manipulate_transform_list.clear();
 
-    // Render debug printable info data.
-    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Printable info data -- debug"))
-    {
-        ImGui::Text("%s", debug::get_printable_info_data_as_str().c_str());
-    }
-    ImGui::End();
+    imgui_debug_printable_info_data();
 
-    // Render performance timers.
-    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
-    if (ImGui::Begin("Performance timers"))
-    {
-        for (uint32_t i = 0; i < NUM_PERF_TIME_TYPES; i++)
-        {
-            auto perf_time_type{ static_cast<Performance_time_type>(i) };
-            if (info_hook_struct.perf_time_map.find(perf_time_type) ==
-                info_hook_struct.perf_time_map.end())
-                continue;
+    if (s_editor_mode == EDITOR_MODE_LEVEL)
+        imgui_performance_timers(info_hook_struct);
 
-            enum Perf_quality
-            {
-                PERFQ_ABOVE_120fps = 0,
-                PERFQ_ABOVE_60fps,
-                PERFQ_ABOVE_30fps,
-                PERFQ_ABOVE_15fps,
-                PERFQ_GARBAGE,
-
-                NUM_PERF_QLYS
-            };
-            static std::array<ImU32, NUM_PERF_QLYS> const k_perf_quality_color_map{
-                ImGui::GetColorU32(ImVec4(0, 1, 0, 1)),
-                ImGui::GetColorU32(ImVec4(1, 1, 1, 1)),
-                ImGui::GetColorU32(ImVec4(1, 1, 0, 1)),
-                ImGui::GetColorU32(ImVec4(1, 0, 1, 1)),
-                ImGui::GetColorU32(ImVec4(1, 0, 0, 1)),
-            };
-            static auto const k_calc_perf_quality = [](float_t fps) {
-                Perf_quality quality = PERFQ_GARBAGE;
-                if (fps >= 120)
-                    quality = PERFQ_ABOVE_120fps;
-                else if (fps >= 60)
-                    quality = PERFQ_ABOVE_60fps;
-                else if (fps >= 30)
-                    quality = PERFQ_ABOVE_30fps;
-                else if (fps >= 15)
-                    quality = PERFQ_ABOVE_15fps;
-                return quality;
-            };
-
-            auto perf_samples = info_hook_struct.perf_time_map.at(perf_time_type).get_samples();
-            ImGui::PushID(&perf_samples);
-
-            float_t highest_sample = 0;
-            for (auto s : perf_samples)
-                highest_sample = glm_max(highest_sample, s);
-
-            float_t latest_sample = perf_samples.back();
-            float_t ms = latest_sample * 1000.0f;
-            float_t fps = 1.0f / latest_sample;
-
-            constexpr float_t k_ms_max_scale{ 500 };
-
-            // Draw stats.
-            ImGui::Text("PERF TIMER: %s", k_performance_time_type_labels[perf_time_type]);
-            ImGui::Text(" %.2f ms (%.0f FPS)", ms, fps);
-
-            ImGui::PushStyleColor(ImGuiCol_PlotHistogram,
-                                  k_perf_quality_color_map[k_calc_perf_quality(fps)]);
-            ImGui::ProgressBar(ms / k_ms_max_scale, ImVec2(-FLT_MIN, 2), "");
-            ImGui::PopStyleColor();
-
-            float_t cur_ms_max_scale = (10 / 1000.0f);
-            while (highest_sample > cur_ms_max_scale)
-                cur_ms_max_scale *= 2;
-            while (highest_sample <= cur_ms_max_scale * 0.5f)
-                cur_ms_max_scale *= 0.5f;
-
-            float_t content_width{ ImGui::GetContentRegionAvail().x };
-
-            size_t clamped_perf_samples_size = glm_min(perf_samples.size(), content_width);
-            size_t right_align_perf_samples_idx_offset =
-                glm_max(0, perf_samples.size() - 1 - content_width);
-
-            ImGui::PlotLines(("##plotlines" + std::to_string(i)).c_str(),
-                             perf_samples.data() + right_align_perf_samples_idx_offset,
-                             clamped_perf_samples_size,
-                             0,
-                             nullptr,
-                             0,
-                             glm_min(cur_ms_max_scale, k_ms_max_scale),
-                             ImVec2(content_width, 32));
-
-            ImGui::PopID();
-        }
-    }
-    ImGui::End();
-
-    // .
     imgui_demo_window_content(input_handler);
 
     // Report back render view sizes.
