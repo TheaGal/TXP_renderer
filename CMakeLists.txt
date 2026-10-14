@@ -234,6 +234,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/anim_frame_action_editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/editor_content.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/editor_content.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/ui_editor_content.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/editor_content/ui_editor_content.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/input_handler/input_handler.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/material_organizer/material_organizer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/material_organizer/material_organizer.h

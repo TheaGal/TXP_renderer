@@ -16,9 +16,24 @@ struct UI_element;  // Forward decl.
 } // namespace UI
 
 
+namespace editor_content
+{
+namespace ui_editor
+{
+
+class UI_editor;  // Forward decl.
+
+} // namespace ui_editor
+} // namespace editor_content
+
+
 /// Sets the directory that UI assets are stored.
 /// @NOTE: should be internal
 void set_ui_directory(std::string const& dir_name);
+
+/// Retrieves a list of available ui canvases from the filesystem.
+/// @NOTE: this is a dev function.
+std::vector<std::string> fetch_all_ui_files();
 
 /// Sets a reference to the implementation of the graphics.
 /// @NOTE: should be internal
@@ -109,6 +124,7 @@ private:
 
     friend class std::unordered_map<std::string, UI_canvas_state>;
     friend class UI_state;
+    friend class editor_content::ui_editor::UI_editor;
 };
 
 /// .
@@ -193,6 +209,8 @@ private:
                               std::vector<std::string>& loaded_canvases_list);
 
     bool m_is_draw_cached{ false };
+
+    friend class editor_content::ui_editor::UI_editor;
 };
 
 } // namespace TXP

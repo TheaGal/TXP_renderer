@@ -12,6 +12,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <stdexcept>
 #include <string>
@@ -38,6 +39,21 @@ void set_ui_directory(std::string const& dir_name)
 {
     s_ui_directory = dir_name;
 }
+
+std::vector<std::string> fetch_all_ui_files()
+{
+    std::vector<std::string> fnames;
+
+    for (auto const& p : std::filesystem::recursive_directory_iterator(s_ui_directory))
+    {
+        if (p.is_regular_file() && p.path().extension() == ".btui")
+            fnames.emplace_back(
+                std::filesystem::relative(p.path(), s_ui_directory).relative_path().string());
+    }
+
+    return fnames;
+}
+
 
 void set_ui_gfx_reference(void* graphics)
 {
@@ -341,8 +357,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
                 "Trying to unload something that was never loaded or collision?!?");
         }
 
-        BT::date_deadline(2026, 9, 17);
-        elem_state.m_loaded_elem = nullptr;  // @CHECK: that this is manipulating the reference and not a copy.
+        elem_state.m_loaded_elem = nullptr;  // this is manipulating the ref `elem_state`.
     }
 
     // Remove from list.

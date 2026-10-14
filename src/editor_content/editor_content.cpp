@@ -19,6 +19,7 @@
 #include "txp_renderer/input_handler/input_key_codes.h"
 #include "txp_renderer/renderer.h"
 #include "txp_renderer/types.h"
+#include "ui_editor_content.h"
 
 #include <cmath>
 #include <cstddef>
@@ -88,19 +89,27 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
                 s_editor_mode = EDITOR_MODE_ANIM_FRAME_ACTION;
                 info_hook_struct.set_dev_anim_editor_view_fn(true);
             }
-            if (ImGui::MenuItem("UI Editor",
-                                "",
-                                s_editor_mode == EDITOR_MODE_UI_EDITOR))
+            if (ImGui::MenuItem("UI Editor", "", s_editor_mode == EDITOR_MODE_UI_EDITOR))
             {
                 s_editor_mode = EDITOR_MODE_UI_EDITOR;
+                editor_content::ui_editor::open_editor();
             }
 
             if (s_editor_mode != prev_mode)
             {
-                if (prev_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
+                switch (prev_mode)
                 {
+                case EDITOR_MODE_LEVEL:
+                    break;
+
+                case EDITOR_MODE_ANIM_FRAME_ACTION:
                     info_hook_struct.set_dev_anim_editor_view_fn(false);
                     anim_frame_action::reset_editor_state();
+                    break;
+                
+                case EDITOR_MODE_UI_EDITOR:
+                    editor_content::ui_editor::close_editor();
+                    break;
                 }
             }
 
@@ -676,11 +685,14 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
                                   focus_main_viewport,
                                   out_rend_view_sizes);
 
+    if (s_editor_mode == EDITOR_MODE_LEVEL)
+        imgui_performance_timers(info_hook_struct);
+
     if (s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
         anim_frame_action_editor_content(false, delta_time);
 
-    if (s_editor_mode == EDITOR_MODE_LEVEL)
-        imgui_performance_timers(info_hook_struct);
+    if (s_editor_mode == EDITOR_MODE_UI_EDITOR)
+        editor_content::ui_editor::ui_editor_content();
 
     imgui_debug_printable_info_data();
     imgui_demo_window_content(input_handler);
