@@ -3,11 +3,14 @@
 #include "btlogger.h"
 #include "btservice_finder.h"
 #include "imgui.h"
+#include "imgui_internal.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include "txp_renderer/ui/ui_state.h"
 #include "ui/ui_types.h"
 
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <stdexcept>
@@ -76,6 +79,11 @@ UI_editor::~UI_editor()
     }
 }
 
+void UI_editor::force_ui_redraw()
+{
+    m_ui_ref.invalidate_draw_cache();
+}
+
 void UI_editor::load_canvas_to_edit(std::string const& canvas_name)
 {
     m_ui_ref.canvas(canvas_name);
@@ -129,6 +137,7 @@ void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx)
     m_editing_elems.clear();
 
     m_editing_canvas_idx = canvas_idx;
+    m_editing_canvas_element_ptr = nullptr;
 
     if (canvas_idx < 0)
         return;
@@ -151,6 +160,16 @@ void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx)
 std::vector<UI::UI_element*>& UI_editor::get_editing_elems()
 {
     return m_editing_elems;
+}
+
+void UI_editor::set_selected_editing_elem(UI::UI_element* elem)
+{
+    m_editing_canvas_element_ptr = elem;
+}
+
+UI::UI_element* UI_editor::get_selected_editing_elem()
+{
+    return m_editing_canvas_element_ptr;
 }
 
 } // namespace ui_editor
@@ -176,6 +195,115 @@ void TXP::editor_content::ui_editor::close_editor()
     s_cur_loaded_ui_files.clear();
     delete s_ui_editor;
 }
+
+
+namespace
+{
+
+struct UI_hierarchy_node
+{
+    UI::UI_element* node;
+    std::vector<UI_hierarchy_node*> children;
+};
+
+/// Gets appropriate node flags depending on the modifiers.  @COPYPASTA
+constexpr ImGuiTreeNodeFlags get_tree_node_flags(bool is_selected, bool is_leaf_node)
+{   // Base flags.
+    ImGuiTreeNodeFlags flags{ ImGuiTreeNodeFlags_SpanAvailWidth |
+                              ImGuiTreeNodeFlags_DrawLinesToNodes |
+                              ImGuiTreeNodeFlags_OpenOnDoubleClick |
+                              ImGuiTreeNodeFlags_OpenOnArrow |
+                              ImGuiTreeNodeFlags_DefaultOpen };
+
+    if (is_selected)
+        flags |= ImGuiTreeNodeFlags_Selected;
+
+    if (is_leaf_node)
+        flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    return flags;
+}
+
+void render_ui_hierarchy_level_recurse(UI_hierarchy_node* node)
+{
+    bool const is_leaf_node{ node->children.empty() };
+
+    bool const tree_node_open = ImGui::TreeNodeEx(
+        (node->node->name + "##ui_hierarchy_node").c_str(),
+        get_tree_node_flags(s_ui_editor->get_selected_editing_elem() == node->node, is_leaf_node));
+
+    if (ImGui::IsItemClicked())
+        s_ui_editor->set_selected_editing_elem(node->node);
+
+    if (tree_node_open)
+    {
+        for (auto* node_child : node->children)
+            render_ui_hierarchy_level_recurse(node_child);
+
+        if (!is_leaf_node)
+            ImGui::TreePop();
+    }
+}
+
+// @COPYPASTA
+void render_deselect_ui_elem_field()
+{
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0);
+    ImGui::PushStyleColor(ImGuiCol_Button, 0x00000000);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, 0x00000000);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, 0x00000000);
+    ImGui::ButtonEx("##deselect_ui_elem_field_hidden_button",
+                    ImVec2(ImGui::GetContentRegionAvail().x,
+                        std::max(24.0f, ImGui::GetContentRegionAvail().y)),
+                    ImGuiButtonFlags_NoNavFocus);
+    ImGui::PopStyleColor(3);
+    ImGui::PopStyleVar();
+
+    if (ImGui::IsItemClicked())
+        s_ui_editor->set_selected_editing_elem(nullptr);
+}
+
+void render_ui_hierarchy()
+{
+    // Create hierarchy elems structure.
+    std::vector<UI_hierarchy_node> all_nodes;
+    all_nodes.reserve(s_ui_editor->get_editing_elems().size());
+
+    for (auto* elem : s_ui_editor->get_editing_elems())
+    {
+        all_nodes.emplace_back(elem, std::vector<UI_hierarchy_node*>{});
+    }
+
+    std::vector<UI_hierarchy_node*> root_nodes;
+
+    for (auto& hier_node : all_nodes)
+    {
+        UI::UI_element* parent_node{ hier_node.node->parent };
+        if (parent_node == nullptr)
+        {
+            root_nodes.emplace_back(&hier_node);
+            continue;
+        }
+
+        for (auto& search_node : all_nodes)
+            if (search_node.node == parent_node)
+            {
+                search_node.children.emplace_back(&hier_node);
+                break;
+            }
+    }
+
+    // Render out hierarchy.
+    for (auto* node : root_nodes)
+    {
+        render_ui_hierarchy_level_recurse(node);
+    }
+
+    render_deselect_ui_elem_field();
+}
+
+} // namespace
+
 
 void TXP::editor_content::ui_editor::ui_editor_content()
 {
@@ -282,11 +410,57 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             ImGui::SameLine();
             ImGui::Text("%zu elements", s_ui_editor->get_editing_elems().size());
 
-            for (auto* elem : s_ui_editor->get_editing_elems())
-            {
-                ImGui::Text("%s (%p)", elem->name.c_str(), elem);
-            }
+            render_ui_hierarchy();
         }
+    }
+    ImGui::End();
+
+    // UI element editor.
+    ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
+    ImGui::Begin("UI element editor");
+    if (s_ui_editor->get_editing_canvas_idx() < 0 ||
+        s_ui_editor->get_selected_editing_elem() == nullptr)
+    {
+        ImGui::Text("%s", "Select a UI element to edit.");
+    }
+    else
+    {
+        // Edit the properties of the UI element.
+        static size_t const s_id_gen{ 0xdefec8 };
+        ImGui::PushID(reinterpret_cast<void*>(s_id_gen));
+
+        UI::UI_element* editing_elem{ s_ui_editor->get_selected_editing_elem() };
+
+        bool edited{ false };
+
+        edited |= ImGui::InputText("name", &editing_elem->name);
+        /*edited |=*/ ImGui::Text("parent: %p", editing_elem->parent);
+        if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            edited |= ImGui::DragFloat("x", &editing_elem->transform.x);
+            edited |= ImGui::DragFloat("y", &editing_elem->transform.y);
+            edited |= ImGui::DragFloat("w", &editing_elem->transform.w);
+            edited |= ImGui::DragFloat("h", &editing_elem->transform.h);
+            edited |= ImGui::DragFloat("rot", &editing_elem->transform.rot, 2 * M_PI / 360);
+
+            if (ImGui::TreeNodeEx("anchor", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                edited |= ImGui::DragFloat("x", &editing_elem->transform.anchor.x, 0.01);
+                edited |= ImGui::DragFloat("y", &editing_elem->transform.anchor.y, 0.01);
+
+                ImGui::TreePop();
+            }
+
+            ImGui::TreePop();
+        }
+        edited |= ImGui::DragFloat("opacity", &editing_elem->opacity, 0.01, 0, 1);
+        /*edited |=*/ ImGui::Text("texture_idx: %u", editing_elem->texture_idx);
+        edited |= ImGui::Checkbox("is_nine_slice", &editing_elem->is_nine_slice);
+
+        ImGui::PopID();
+
+        if (edited)
+            s_ui_editor->force_ui_redraw();
     }
     ImGui::End();
 }

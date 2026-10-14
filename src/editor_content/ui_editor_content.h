@@ -26,6 +26,8 @@ public:
     UI_editor(UI_state& ui_ref);
     ~UI_editor();
 
+    void force_ui_redraw();
+
     void load_canvas_to_edit(std::string const& canvas_name);
     void unload_editing_canvas(std::string const& canvas_name);
 
@@ -33,6 +35,9 @@ public:
     void build_editing_elems_for_canvas_idx(int32_t const canvas_idx);
 
     std::vector<UI::UI_element*>& get_editing_elems();
+
+    void set_selected_editing_elem(UI::UI_element* elem);
+    UI::UI_element* get_selected_editing_elem();
 
 private:
     UI_state& m_ui_ref;
@@ -44,6 +49,7 @@ private:
     } m_pre_hijack_state;
 
     int32_t m_editing_canvas_idx{ -1 };
+    UI::UI_element* m_editing_canvas_element_ptr{ nullptr };
     std::vector<UI::UI_element*> m_editing_elems;
 };
 
