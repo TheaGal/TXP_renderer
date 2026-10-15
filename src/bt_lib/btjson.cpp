@@ -6,12 +6,24 @@
 json BT::json_load_from_disk(std::string const& fname)
 {
     std::ifstream f{ fname };
+
+    if (!f.is_open())
+    {
+        throw std::runtime_error("Opening file failed.");
+    }
+
     return json::parse(f);
 }
 
 void BT::json_save_to_disk(json const& data_j, std::string const& fname)
 {
     std::ofstream f{ fname };
+
+    if (!f.is_open())
+    {
+        throw std::runtime_error("Opening file failed.");
+    }
+
     f << data_j.dump(4);
 }
 

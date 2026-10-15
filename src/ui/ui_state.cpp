@@ -6,14 +6,13 @@
 #include "renderer/gfx_vulkan_impl.h"
 #endif // TXP_GFX_BACKEND_VULKAN
 
-#include "btdatecheck.h"
+#include "btjson.h"
 #include "btservice_finder.h"
 #include "ui/ui_types.h"
 
 #include <cassert>
 #include <cstdint>
 #include <filesystem>
-#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
@@ -178,29 +177,6 @@ void assert_that_canvas_exists(
     }
 }
 
-UI::UI_file_data load_file_data(std::string const& canvas_name)
-{
-    std::ifstream f{ s_ui_directory + canvas_name };
-    if (!f.is_open())
-    {
-        throw std::runtime_error("Opening file failed.");
-    }
-
-    return json::parse(f);
-}
-
-void save_file_data(std::string const& canvas_name, UI::UI_file_data const& file_data)
-{
-    std::ofstream f{ s_ui_directory + canvas_name };
-    if (!f.is_open())
-    {
-        throw std::runtime_error("Opening file failed.");
-    }
-
-    json file_data_as_json(file_data);
-    f << file_data_as_json;
-}
-
 } // namespace
 
 
@@ -237,7 +213,7 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
     }
 
     // Write data to file.
-    save_file_data(canvas_name, file_data);
+    BT::json_save_to_disk(file_data, s_ui_directory + canvas_name);
 }
 
 void UI_state::tick()
@@ -330,7 +306,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     canvas_state.m_load_idx = 0;
 
     // Load in canvas.
-    UI::UI_file_data ui_file_data{ load_file_data(canvas_name) };
+    UI::UI_file_data ui_file_data = BT::json_load_from_disk(s_ui_directory + canvas_name);
 
     std::unordered_map<std::string, uint32_t> temp_elem_name_to_idx;
     temp_elem_name_to_idx.reserve(ui_file_data.elements.size());
