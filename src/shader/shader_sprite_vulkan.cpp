@@ -265,6 +265,9 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 
         ui_data_set_data->opacity = elem->opacity;  // @THOUGHT: inherit opacity from parents??
         ui_data_set_data->texture_idx = elem->texture_idx;
+
+        glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
+
         ui_data_set_data->is_nine_slice = elem->is_nine_slice;
 
         ui_data_set_data++;

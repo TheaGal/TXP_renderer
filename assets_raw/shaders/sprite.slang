@@ -4,10 +4,8 @@ struct Sprite_data_set_element
     float2 anchor;
     float opacity;
     uint32_t texture_idx;
+    float3 color_tint;
     uint32_t is_nine_slice;
-    uint32_t pad0;
-    uint32_t pad1;
-    uint32_t pad2;
 };
 
 struct Sprite_data_set
@@ -23,6 +21,7 @@ struct VS_output
     float2 uv;
     float sprite_opacity;
     uint32_t sprite_texture_idx;
+    float3 sprite_color_tint;
 };
 
 
@@ -67,6 +66,7 @@ VS_output vertex_main(uniform Sprite_data_set* sprite_data_set,
 
     output.sprite_opacity = sprite_data_elem.opacity;
     output.sprite_texture_idx = sprite_data_elem.texture_idx;
+    output.sprite_color_tint = sprite_data_elem.color_tint;
 
     return output;
 }
@@ -78,5 +78,5 @@ float4 fragment_main(VS_output input)
     // Unlit sample from texture.
     float4 color = textures[NonUniformResourceIndex(input.sprite_texture_idx)]
                        .Sample(input.uv).rgba;
-    return float4(color.rgb, color.a * input.sprite_opacity);
+    return float4(color.rgb * input.sprite_color_tint, color.a * input.sprite_opacity);
 }

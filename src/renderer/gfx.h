@@ -71,10 +71,8 @@ struct Sprite_data_set_element
     vec2 anchor;
     float_t opacity;
     uint32_t texture_idx;
+    vec3 color_tint;
     uint32_t is_nine_slice;
-    uint32_t pad0;
-    uint32_t pad1;
-    uint32_t pad2;
 };
 static_assert(offsetof(Sprite_data_set_element, model_mat) % k_mat4_alignment == 0);
 

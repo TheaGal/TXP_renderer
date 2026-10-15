@@ -39,6 +39,16 @@ std::vector<std::string> fetch_all_ui_files();
 /// @NOTE: should be internal
 void set_ui_gfx_reference(void* graphics);
 
+
+namespace gfx_helper  // @THEA: idk if this needs to be moved somewhere else.
+{
+
+/// Puts together list of texture names and indexes.
+std::vector<std::pair<std::string, uint32_t>> fetch_texture_name_w_idx_list();
+
+} // namespace gfx_helper
+
+
 /// .
 enum UI_event : uint32_t
 {
@@ -114,9 +124,9 @@ private:
     struct UI_element_pun
     {
     #if _WIN64
-        uint64_t pad[11];
+        uint64_t pad[13];
     #elif __APPLE__
-        uint64_t pad[9];
+        uint64_t pad[11];
     #endif
     };
     std::vector<UI_element_pun> m_elems;  // punned into UI::UI_element type (static assert fails if

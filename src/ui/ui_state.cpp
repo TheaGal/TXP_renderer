@@ -64,6 +64,21 @@ void set_ui_gfx_reference(void* graphics)
 #endif // UNKNOWN_TYPE
 }
 
+
+std::vector<std::pair<std::string, uint32_t>> gfx_helper::fetch_texture_name_w_idx_list()
+{
+    std::vector<std::pair<std::string, uint32_t>> tex_name_w_idx_list;
+    tex_name_w_idx_list.reserve(s_gfx->texture_entries.size());
+
+    for (auto const& [tex_name, entry] : s_gfx->texture_entries)
+    {
+        tex_name_w_idx_list.emplace_back(tex_name, entry.gpu_idx);
+    }
+
+    return tex_name_w_idx_list;
+}
+
+
 // class UI_element_state
 void UI_element_state::add_event(UI_event event_type, std::function<void(void)>&& callback_fn)
 {

@@ -70,7 +70,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 3},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 4},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -117,6 +117,19 @@
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 2}
+                        },
+                        {
+                            "name": "sprite_color_tint",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 3}
                         }
                     ]
                 }
@@ -135,7 +148,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 3},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 4},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -182,6 +195,19 @@
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 2}
+                            },
+                            {
+                                "name": "sprite_color_tint",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 3}
                             }
                         ]
                     }

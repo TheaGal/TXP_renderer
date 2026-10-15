@@ -1,5 +1,6 @@
 #pragma once
 
+#include "btglm.h"
 #include "btjson.h"
 
 #include <cmath>
@@ -65,6 +66,7 @@ struct UI_element
     Rect_transform transform;  // local transform.
     float_t opacity;
     uint32_t texture_idx;
+    vec3 color_tint{ 1, 1, 1 };
     bool is_nine_slice;
 };
 

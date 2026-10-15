@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <stdexcept>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 
@@ -454,7 +455,38 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             ImGui::TreePop();
         }
         edited |= ImGui::DragFloat("opacity", &editing_elem->opacity, 0.01, 0, 1);
-        /*edited |=*/ ImGui::Text("texture_idx: %u", editing_elem->texture_idx);
+
+        {
+            // Dropdown for texture indexes.
+            auto tex_name_w_idx_list{ gfx_helper::fetch_texture_name_w_idx_list() };
+
+            std::unordered_map<uint32_t, int32_t> gpu_tex_idx_to_texture_name_list_idx_map;
+            gpu_tex_idx_to_texture_name_list_idx_map.reserve(tex_name_w_idx_list.size());
+
+            std::unordered_map<int32_t, uint32_t> texture_name_list_idx_to_gpu_tex_idx_map;
+            texture_name_list_idx_to_gpu_tex_idx_map.reserve(tex_name_w_idx_list.size());
+
+            std::vector<char const*> texture_names;
+            texture_names.reserve(tex_name_w_idx_list.size());
+
+            for (auto const& [tex_name, tex_idx] : tex_name_w_idx_list)
+            {
+                gpu_tex_idx_to_texture_name_list_idx_map[tex_idx] = texture_names.size();
+                texture_name_list_idx_to_gpu_tex_idx_map[texture_names.size()] = tex_idx;
+                texture_names.emplace_back(tex_name.c_str());
+            }
+
+            int32_t cur_tex_idx{ gpu_tex_idx_to_texture_name_list_idx_map.at(
+                editing_elem->texture_idx) };
+            if (ImGui::Combo("texture", &cur_tex_idx, texture_names.data(), texture_names.size()))
+            {
+                editing_elem->texture_idx =
+                    texture_name_list_idx_to_gpu_tex_idx_map.at(cur_tex_idx);
+                edited |= true;
+            }
+        }
+
+        edited |= ImGui::ColorEdit3("color_tint", editing_elem->color_tint);
         edited |= ImGui::Checkbox("is_nine_slice", &editing_elem->is_nine_slice);
 
         ImGui::PopID();
