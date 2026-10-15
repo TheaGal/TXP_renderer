@@ -178,9 +178,9 @@ void assert_that_canvas_exists(
     }
 }
 
-UI::UI_file_data load_file_data(std::string const& file_name)
+UI::UI_file_data load_file_data(std::string const& canvas_name)
 {
-    std::ifstream f{ s_ui_directory + file_name };
+    std::ifstream f{ s_ui_directory + canvas_name };
     if (!f.is_open())
     {
         throw std::runtime_error("Opening file failed.");
@@ -189,8 +189,56 @@ UI::UI_file_data load_file_data(std::string const& file_name)
     return json::parse(f);
 }
 
+void save_file_data(std::string const& canvas_name, UI::UI_file_data const& file_data)
+{
+    std::ofstream f{ s_ui_directory + canvas_name };
+    if (!f.is_open())
+    {
+        throw std::runtime_error("Opening file failed.");
+    }
+
+    json file_data_as_json(file_data);
+    f << file_data_as_json;
+}
+
 } // namespace
 
+
+void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) const
+{
+    auto& canvas_state{ m_canvas_states.at(canvas_name) };
+
+    assert(canvas_state.is_persistent() && canvas_state.is_loaded());
+
+    auto const& my_elems{ reinterpret_cast<std::vector<UI::UI_element> const&>(
+        canvas_state.m_elems) };
+
+    // Create map to texture names.
+    std::unordered_map<uint32_t, std::string> gpu_idx_to_tex_name_map;
+    gpu_idx_to_tex_name_map.reserve(s_gfx->texture_entries.size());
+    for (auto const& [tex_name, tex_entry] : s_gfx->texture_entries)
+    {
+        gpu_idx_to_tex_name_map[tex_entry.gpu_idx] = tex_name;
+    }
+
+    // Create file data.
+    UI::UI_file_data file_data;
+
+    for (auto const& elem : my_elems)
+    {
+        file_data.elements.emplace_back(UI::UI_file_element_data{
+            .name = elem.name,
+            .parent = (elem.parent == nullptr ? "" : elem.parent->name),
+            .transform = elem.transform,
+            .opacity = elem.opacity,
+            .image = gpu_idx_to_tex_name_map.at(elem.texture_idx),
+            .is_nine_slice = elem.is_nine_slice,
+        });
+    }
+
+    // Write data to file.
+    save_file_data(canvas_name, file_data);
+}
 
 void UI_state::tick()
 {

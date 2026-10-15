@@ -85,7 +85,7 @@ void UI_editor::force_ui_redraw()
     m_ui_ref.invalidate_draw_cache();
 }
 
-void UI_editor::load_canvas_to_edit(std::string const& canvas_name)
+void UI_editor::load_canvas_to_view(std::string const& canvas_name)
 {
     m_ui_ref.canvas(canvas_name);
     m_ui_ref.load_persistent_canvas(canvas_name);
@@ -106,7 +106,7 @@ void UI_editor::load_canvas_to_edit(std::string const& canvas_name)
         throw std::runtime_error("Could not find canvas fname to load.");
 }
 
-void UI_editor::unload_editing_canvas(std::string const& canvas_name)
+void UI_editor::unload_viewing_canvas(std::string const& canvas_name)
 {
     m_ui_ref.unload_persistent_canvas(canvas_name);
     m_ui_ref.tick();
@@ -133,12 +133,14 @@ int32_t UI_editor::get_editing_canvas_idx() const
     return m_editing_canvas_idx;
 }
 
-void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx)
+void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx,
+                                                   bool const force_reload)
 {
     m_editing_elems.clear();
 
     m_editing_canvas_idx = canvas_idx;
     m_editing_canvas_element_ptr = nullptr;
+    make_not_dirty_also_known_as_clean();
 
     if (canvas_idx < 0)
         return;
@@ -147,7 +149,12 @@ void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx)
     if (std::find(s_cur_loaded_ui_files.begin(), s_cur_loaded_ui_files.end(), canvas_idx) ==
         s_cur_loaded_ui_files.end())
     {
-        load_canvas_to_edit(s_avail_ui_files[canvas_idx]);
+        load_canvas_to_view(s_avail_ui_files[canvas_idx]);
+    }
+    else if (force_reload)
+    {
+        unload_viewing_canvas(s_avail_ui_files[canvas_idx]);
+        load_canvas_to_view(s_avail_ui_files[canvas_idx]);
     }
 
     // Build the editing elems.
@@ -156,6 +163,11 @@ void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx)
 
     for (auto& elem : my_elems)
         m_editing_elems.emplace_back(&elem);
+}
+
+void UI_editor::save_editing_canvas() const
+{
+    m_ui_ref.save_persistent_canvas_to_disk(s_avail_ui_files[m_editing_canvas_idx]);
 }
 
 std::vector<UI::UI_element*>& UI_editor::get_editing_elems()
@@ -171,6 +183,21 @@ void UI_editor::set_selected_editing_elem(UI::UI_element* elem)
 UI::UI_element* UI_editor::get_selected_editing_elem()
 {
     return m_editing_canvas_element_ptr;
+}
+
+void UI_editor::mark_dirty()
+{
+    m_is_data_dirty = true;
+}
+
+bool UI_editor::is_dirty() const
+{
+    return m_is_data_dirty;
+}
+
+void UI_editor::make_not_dirty_also_known_as_clean()
+{
+    m_is_data_dirty = false;
 }
 
 } // namespace ui_editor
@@ -335,9 +362,9 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             if (ImGui::Checkbox((fname + "##load_ui_file_btn").c_str(), &is_loaded))
             {
                 if (is_loaded)
-                    s_ui_editor->load_canvas_to_edit(fname);
+                    s_ui_editor->load_canvas_to_view(fname);
                 else
-                    s_ui_editor->unload_editing_canvas(fname);
+                    s_ui_editor->unload_viewing_canvas(fname);
             }
             if (loaded_level >= 0)
             {
@@ -369,27 +396,36 @@ void TXP::editor_content::ui_editor::ui_editor_content()
                          ui_files_as_cstr.data(),
                          ui_files_as_cstr.size()))
         {
-            s_ui_editor->build_editing_elems_for_canvas_idx(editing_canvas_idx);
+            s_ui_editor->build_editing_elems_for_canvas_idx(editing_canvas_idx, false);
         }
         if (editing_canvas_idx >= 0)
         {
+            ImGui::BeginDisabled(!s_ui_editor->is_dirty());
+
             if (ImGui::Button("Save"))
             {
-                assert(false);
+                s_ui_editor->save_editing_canvas();
+                s_ui_editor->make_not_dirty_also_known_as_clean();
             }
 
             ImGui::SameLine();
             if (ImGui::Button("Discard"))
             {
-                assert(false);
+                s_ui_editor->build_editing_elems_for_canvas_idx(editing_canvas_idx, true);
             }
+
+            ImGui::EndDisabled();
+
+            ImGui::BeginDisabled(s_ui_editor->is_dirty());
 
             ImGui::SameLine();
             if (ImGui::Button("Close"))
             {
-                s_ui_editor->build_editing_elems_for_canvas_idx(-1);
+                s_ui_editor->build_editing_elems_for_canvas_idx(-1, false);
                 editing_canvas_idx = -1;
             }
+
+            ImGui::EndDisabled();
         }
 
         ImGui::Separator();
@@ -411,6 +447,7 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             ImGui::SameLine();
             ImGui::Text("%zu elements", s_ui_editor->get_editing_elems().size());
 
+            ImGui::SeparatorText("UI element hierarchy");
             render_ui_hierarchy();
         }
     }
@@ -434,8 +471,114 @@ void TXP::editor_content::ui_editor::ui_editor_content()
 
         bool edited{ false };
 
-        edited |= ImGui::InputText("name", &editing_elem->name);
-        /*edited |=*/ ImGui::Text("parent: %p", editing_elem->parent);
+        {
+            // Edit strings.
+            static std::string s_editing_str;
+
+            using Field_check_fn_t = std::function<std::string(std::string const&)>;
+            static Field_check_fn_t s_str_editing_field_check_fn;
+
+            using Confirm_fn_t = std::function<void(std::string const&)>;
+            static Confirm_fn_t s_str_editing_confirm_fn;
+
+            ImGui::Text("name: %s", editing_elem->name.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("edit..##edit_name_btn"))
+            {
+                s_editing_str = editing_elem->name;
+
+                s_str_editing_field_check_fn = [](std::string const& text) -> std::string {
+                    for (auto* elem : s_ui_editor->get_editing_elems())
+                        if (elem->name == text)
+                        {
+                            return "Name must be unique.";
+                        }
+                    return "";
+                };
+
+                s_str_editing_confirm_fn = [&editing_elem](std::string const& text) -> void {
+                    editing_elem->name = text;
+                };
+
+                ImGui::OpenPopup("edit_str_field_popup");
+            }
+
+            ImGui::Text("parent: %s",
+                        editing_elem->parent == nullptr ? "<NO_PARENT>"
+                                                        : editing_elem->parent->name.c_str());
+            ImGui::SameLine();
+            if (ImGui::Button("edit..##edit_parent_btn"))
+            {
+                s_editing_str = (editing_elem->parent == nullptr ? "" : editing_elem->parent->name);
+
+                s_str_editing_field_check_fn = [&editing_elem](std::string const& text) -> std::string {
+                    if (text.empty())
+                        return "";
+
+                    for (auto* elem : s_ui_editor->get_editing_elems())
+                        if (elem->name == text)
+                        {
+                            if (elem->name != editing_elem->name)
+                                return "";
+                            return "Cannot be parented to self.\nNOTE: empty string means no "
+                                   "parent.";
+                        }
+                    return "This elem name does not match another elem in the hierarchy.\nNOTE: "
+                           "empty string means no parent.";
+                };
+
+                s_str_editing_confirm_fn = [&elem_parent = editing_elem->parent](std::string const& text) -> void {
+                    if (text.empty())
+                    {
+                        elem_parent = nullptr;
+                        return;
+                    }
+
+                    for (auto* elem : s_ui_editor->get_editing_elems())
+                        if (elem->name == text)
+                        {
+                            elem_parent = elem;
+                            return;
+                        }
+                };
+
+                ImGui::OpenPopup("edit_str_field_popup");
+            }
+
+            if (ImGui::BeginPopup("edit_str_field_popup"))
+            {
+                ImGui::InputText("##edit_str_text_input", &s_editing_str);
+
+                std::string err_msg = s_str_editing_field_check_fn(s_editing_str);
+
+                if (!err_msg.empty())
+                {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "%s", err_msg.c_str());
+                }
+
+                ImGui::Separator();
+
+                ImGui::BeginDisabled(!err_msg.empty());
+
+                if (ImGui::Button("Confirm##edit_str_confirm_btn"))
+                {
+                    s_str_editing_confirm_fn(s_editing_str);
+                    edited |= true;
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndDisabled();
+
+                ImGui::SameLine();
+                if (ImGui::Button("Cancel##edit_str_cancel_btn"))
+                {
+                    ImGui::CloseCurrentPopup();
+                }
+
+                ImGui::EndPopup();
+            }
+        }
+
         if (ImGui::TreeNodeEx("transform", ImGuiTreeNodeFlags_DefaultOpen))
         {
             edited |= ImGui::DragFloat("x", &editing_elem->transform.x);
@@ -492,7 +635,10 @@ void TXP::editor_content::ui_editor::ui_editor_content()
         ImGui::PopID();
 
         if (edited)
+        {
             s_ui_editor->force_ui_redraw();
+            s_ui_editor->mark_dirty();
+        }
     }
     ImGui::End();
 }

@@ -164,6 +164,10 @@ public:
     /// @NOTE: this call stages, where `.tick()` commits the staged changes.
     void unload_persistent_canvas(std::string const& canvas_name);
 
+    /// Saves a persistenly loaded canvas to its original file.
+    /// @NOTE: this is for the editor really.
+    void save_persistent_canvas_to_disk(std::string const& canvas_name) const;
+
     /// This must be called once per frame (ideally after all the ui_state changes, and
     /// right before `render_one_frame()`).
     void tick();
