@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 
@@ -278,6 +279,52 @@ void UI_editor::delete_selected_editing_elem()
     });
 
     m_editing_canvas_element_ptr = nullptr;
+}
+
+void UI_editor::move_selected_editing_elem(int32_t offset)
+{
+    auto& my_elems{
+        m_ui_ref.canvas(s_avail_ui_files[m_editing_canvas_idx]).m_elem_container->elems
+    };
+
+    auto const* my_parent{ m_editing_canvas_element_ptr->parent };
+
+    std::vector<UI::UI_element*> elems_with_same_parent;
+    for (auto& elem : my_elems)
+        if (elem.parent == my_parent)
+            elems_with_same_parent.emplace_back(&elem);
+
+    size_t swap_a;
+    size_t swap_b;
+
+    for (size_t i = 0; i < elems_with_same_parent.size(); i++)
+        if (elems_with_same_parent[i] == m_editing_canvas_element_ptr)
+        {
+            swap_a = i;
+            swap_b = swap_a + offset;
+
+            if (swap_b >= elems_with_same_parent.size())  // loops so no eg numbers
+            {
+                // Invalid swap position. Silently quit.
+                return;
+            }
+
+            break;
+        }
+
+    // Perform swap (Assume no reallocations!!)
+    std::swap(*elems_with_same_parent[swap_a], *elems_with_same_parent[swap_b]);
+
+    // Rebuild pointers.
+    for (auto& elem : my_elems)
+    {
+        if (elem.parent == elems_with_same_parent[swap_a])
+            elem.parent = elems_with_same_parent[swap_b];
+        else if (elem.parent == elems_with_same_parent[swap_b])
+            elem.parent = elems_with_same_parent[swap_a];
+    }
+
+    m_editing_canvas_element_ptr = elems_with_same_parent[swap_b];
 }
 
 void UI_editor::mark_dirty()
@@ -717,6 +764,30 @@ void TXP::editor_content::ui_editor::ui_editor_content()
 
             ImGui::EndDisabled();
 
+            ImGui::Separator();
+
+            ImGui::BeginDisabled(s_ui_editor->get_selected_editing_elem() == nullptr);
+
+            if (ImGui::Button("move up"))
+            {
+                s_ui_editor->move_selected_editing_elem(-1);
+
+                s_ui_editor->force_ui_redraw();
+                s_ui_editor->mark_dirty();
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button("move down"))
+            {
+                s_ui_editor->move_selected_editing_elem(1);
+
+                s_ui_editor->force_ui_redraw();
+                s_ui_editor->mark_dirty();
+            }
+
+            ImGui::EndDisabled();
+
+            ImGui::SameLine();
             ImGui::Text("%zu elements", s_ui_editor->get_editing_elems().size());
 
             ImGui::SeparatorText("UI element hierarchy");

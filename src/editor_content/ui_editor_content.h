@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -42,6 +43,8 @@ public:
     void set_selected_editing_elem(UI::UI_element* elem);
     UI::UI_element* get_selected_editing_elem();
     void delete_selected_editing_elem();
+
+    void move_selected_editing_elem(int32_t offset);
 
     void mark_dirty();
     bool is_dirty() const;
