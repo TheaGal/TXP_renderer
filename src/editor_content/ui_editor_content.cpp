@@ -34,6 +34,12 @@ editor_content::ui_editor::UI_editor* s_ui_editor{ nullptr };
 
 namespace TXP
 {
+
+struct UI_canvas_state::UI_element_list_container  // @THEA: blamo!
+{
+    std::vector<UI::UI_element> elems;
+};
+
 namespace editor_content
 {
 namespace ui_editor
@@ -158,11 +164,66 @@ void UI_editor::build_editing_elems_for_canvas_idx(int32_t const canvas_idx,
     }
 
     // Build the editing elems.
-    auto& my_elems{ reinterpret_cast<std::vector<UI::UI_element>&>(
-        m_ui_ref.canvas(s_avail_ui_files[m_editing_canvas_idx]).m_elems) };
+    auto& my_elems{
+        m_ui_ref.canvas(s_avail_ui_files[m_editing_canvas_idx]).m_elem_container->elems
+    };
 
     for (auto& elem : my_elems)
         m_editing_elems.emplace_back(&elem);
+}
+
+
+namespace
+{
+
+void perform_breaking_operation_safe(std::vector<UI::UI_element>& my_elems,
+                                     std::vector<UI::UI_element*>& my_editing_elems,
+                                     std::function<void()>&& operation)
+{
+    // Build pointer -> idx map to recover from emplace breaking memory addresses.
+    std::unordered_map<void*, size_t> ptr_to_idx_map;
+    for (auto const& elem : my_elems)
+        for (size_t i = 0; i < my_elems.size(); i++)
+            if (elem.parent == nullptr)
+            {
+                break;
+            }
+            else if (elem.parent == &my_elems[i])
+            {
+                ptr_to_idx_map[elem.parent] = i;
+                break;
+            }
+
+    // Do operation!!
+    operation();
+
+    // Rebuild parent pointers.
+    for (auto& elem : my_elems)
+        if (elem.parent != nullptr)
+        {
+            elem.parent = &my_elems[ptr_to_idx_map.at(elem.parent)];
+        }
+
+    // Rebuild editing elems pointer list.
+    my_editing_elems.clear();
+    for (auto& elem : my_elems)
+        my_editing_elems.emplace_back(&elem);
+}
+
+} // namespace
+
+
+void UI_editor::add_elem_to_editing_canvas(UI::UI_element&& elem)
+{
+    auto& my_elems{
+        m_ui_ref.canvas(s_avail_ui_files[m_editing_canvas_idx]).m_elem_container->elems
+    };
+
+    perform_breaking_operation_safe(my_elems, m_editing_elems, [&my_elems, &elem]() {
+        my_elems.emplace_back(std::move(elem));
+    });
+
+    m_editing_canvas_element_ptr = m_editing_elems.back();
 }
 
 void UI_editor::save_editing_canvas() const
@@ -183,6 +244,38 @@ void UI_editor::set_selected_editing_elem(UI::UI_element* elem)
 UI::UI_element* UI_editor::get_selected_editing_elem()
 {
     return m_editing_canvas_element_ptr;
+}
+
+void UI_editor::delete_selected_editing_elem()
+{
+    auto& my_elems{
+        m_ui_ref.canvas(s_avail_ui_files[m_editing_canvas_idx]).m_elem_container->elems
+    };
+
+    // Collect all children or self of deleted elem.
+    std::vector<size_t> elem_idxs_to_delete;
+    for (size_t i = 0; i < my_elems.size(); i++)
+    {
+        UI::UI_element const* cursor{ &my_elems[i] };
+        do
+        {
+            if (cursor == m_editing_canvas_element_ptr)
+            {
+                elem_idxs_to_delete.emplace_back(i);
+                break;
+            }
+            cursor = cursor->parent;
+        } while (cursor != nullptr);
+    }
+
+    std::ranges::sort(elem_idxs_to_delete, std::ranges::greater());  // sort desc
+
+    perform_breaking_operation_safe(my_elems, m_editing_elems, [&my_elems, &elem_idxs_to_delete]() {
+        for (size_t delete_idx : elem_idxs_to_delete)
+            my_elems.erase(my_elems.begin() + delete_idx);
+    });
+
+    m_editing_canvas_element_ptr = nullptr;
 }
 
 void UI_editor::mark_dirty()
@@ -435,16 +528,188 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             ImGui::Text("%s", "Load a new UI file from the dropdown to edit it.");
         else
         {
-            if (ImGui::Button("Create new elem.."))
-                ImGui::OpenPopup("create_new_ui_elem_popup");
-            if (ImGui::BeginPopup("create_new_ui_elem_popup"))
-            {
-                ImGui::Text("@TODO");
+            static auto const k_get_non_colliding_name =
+                [](std::vector<UI::UI_element*> const& editing_elems,
+                   std::string const& base_name) {
+                    std::string new_name = base_name;
+                    int32_t suffix_counter{ 0 };
 
-                ImGui::EndPopup();
+                    bool collision;
+                    do
+                    {
+                        collision = false;
+
+                        std::string try_name =
+                            new_name +
+                            (suffix_counter > 0 ? " (" + std::to_string(suffix_counter) + ")" : "");
+                        for (auto const* elem : editing_elems)
+                            if (elem->name == try_name)
+                            {
+                                collision = true;
+                                break;
+                            }
+
+                        if (!collision)
+                            new_name = try_name;
+                        else
+                            suffix_counter++;
+                    } while (collision);
+
+                    return new_name;
+                };
+
+            if (ImGui::Button("Create new elem"))
+            {
+                s_ui_editor->add_elem_to_editing_canvas(UI::UI_element{
+                    .name = k_get_non_colliding_name(s_ui_editor->get_editing_elems(),
+                                                     "New UI element") });
+                s_ui_editor->force_ui_redraw();
+            }
+
+            ImGui::BeginDisabled(s_ui_editor->get_selected_editing_elem() == nullptr);
+
+            ImGui::SameLine();
+            if (ImGui::Button("Duplicate elem"))
+            {
+                // Gather all elems to duplicate.
+                std::vector<UI::UI_element const*> elems_to_duplicate;
+                elems_to_duplicate.emplace_back(s_ui_editor->get_selected_editing_elem());
+
+                bool keep_going{ true };
+                while (keep_going)
+                {
+                    keep_going = false;
+
+                    for (auto const* elem : s_ui_editor->get_editing_elems())
+                    {
+                        bool found_parent{ false };
+                        bool found_self{ false };
+
+                        for (auto const* elem_to_dupe : elems_to_duplicate)
+                        {
+                            if (elem == elem_to_dupe)
+                            {
+                                found_self = true;
+                                break;
+                            }
+                            if (elem->parent == elem_to_dupe)
+                            {
+                                found_parent = true;
+                            }
+                        }
+
+                        if (!found_self && found_parent)
+                        {
+                            keep_going = true;
+                            elems_to_duplicate.emplace_back(elem);
+                        }
+                    }
+                }
+
+                // Create new names for elems to dupe.
+                std::vector<std::string> dupe_names;
+                dupe_names.reserve(elems_to_duplicate.size());
+
+                std::vector<std::string> dupe_parent_names;
+                dupe_parent_names.reserve(elems_to_duplicate.size());
+
+                for (auto const* elem_to_dupe : elems_to_duplicate)
+                {
+                    dupe_names.emplace_back(
+                        k_get_non_colliding_name(s_ui_editor->get_editing_elems(),
+                                                 elem_to_dupe->name));
+
+                    if (elem_to_dupe->parent == nullptr)
+                        dupe_parent_names.emplace_back("");
+                    else
+                    {
+                        for (auto const* editing_elem : s_ui_editor->get_editing_elems())
+                            if (editing_elem == elem_to_dupe->parent)
+                            {
+                                if (dupe_parent_names.empty())
+                                    // Keep OG parent name since original dupe's parent isn't
+                                    // getting duped.
+                                    dupe_parent_names.emplace_back(editing_elem->name);
+                                else
+                                    // Trust that the non-colliding name will be correct!!!
+                                    // (don't worry about this unless the check below fails)
+                                    dupe_parent_names.emplace_back(
+                                        k_get_non_colliding_name(s_ui_editor->get_editing_elems(),
+                                                                 editing_elem->name));
+                                break;
+                            }
+                    }
+                }
+
+                // Final name collision check.
+                bool must_abort{ false };
+
+                for (size_t i = 0; i < dupe_names.size(); i++)
+                    for (size_t j = 0; j < dupe_names.size(); j++)
+                        if (i != j && dupe_names[i] == dupe_names[j])
+                        {
+                            BT_ERROR("i wasnt sure this would happen but it did.");
+                            must_abort = true;
+                        }
+
+                // Perform the duplication!
+                if (!must_abort)
+                {
+                    for (size_t i = 0; i < elems_to_duplicate.size(); i++)
+                    {
+                        // Do basic copies.
+                        static auto const k_copy_elem = [](UI::UI_element const& elem_to_copy,
+                                                           std::string const& new_name) {
+                            UI::UI_element elem_copy = elem_to_copy;
+                            elem_copy.name = new_name;
+
+                            s_ui_editor->add_elem_to_editing_canvas(std::move(elem_copy));
+                        };
+                        k_copy_elem(*elems_to_duplicate[i], dupe_names[i]);
+                    }
+
+                    for (size_t i = 0; i < elems_to_duplicate.size(); i++)
+                    {
+                        // Set the parents correctly.
+                        static auto const k_bind_parent = [](std::string const& child_name,
+                                                             std::string const& parent_name) {
+                            UI::UI_element* child{nullptr};
+                            UI::UI_element* parent{nullptr};
+                            for (auto* elem : s_ui_editor->get_editing_elems())
+                            {
+                                if (elem->name == child_name)
+                                {
+                                    child = elem;
+                                }
+                                if (elem->name == parent_name)
+                                {
+                                    parent = elem;
+                                }
+                            }
+
+                            assert(child != nullptr);
+                            assert(parent != nullptr || parent_name == "");
+                            assert(child != parent);
+
+                            child->parent = parent;
+                        };
+                        k_bind_parent(dupe_names[i], dupe_parent_names[i]);
+                    }
+                }
+
+                s_ui_editor->force_ui_redraw();
             }
 
             ImGui::SameLine();
+            if (ImGui::Button("Delete elem"))
+            {
+                s_ui_editor->delete_selected_editing_elem();
+
+                s_ui_editor->force_ui_redraw();
+            }
+
+            ImGui::EndDisabled();
+
             ImGui::Text("%zu elements", s_ui_editor->get_editing_elems().size());
 
             ImGui::SeparatorText("UI element hierarchy");

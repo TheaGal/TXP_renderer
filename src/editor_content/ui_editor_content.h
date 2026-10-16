@@ -34,12 +34,14 @@ public:
     int32_t get_editing_canvas_idx() const;
     void build_editing_elems_for_canvas_idx(int32_t const canvas_idx, bool const force_reload);
 
+    void add_elem_to_editing_canvas(UI::UI_element&& elem);
     void save_editing_canvas() const;
 
     std::vector<UI::UI_element*>& get_editing_elems();
 
     void set_selected_editing_elem(UI::UI_element* elem);
     UI::UI_element* get_selected_editing_elem();
+    void delete_selected_editing_elem();
 
     void mark_dirty();
     bool is_dirty() const;

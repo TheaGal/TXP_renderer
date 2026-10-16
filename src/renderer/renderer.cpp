@@ -4,6 +4,7 @@
 #include "animation_frame_action/runtime_data_controls.h"
 #include "btdatecheck.h"
 #include "btservice_finder.h"
+#include "bttimer_UNUSED.h"
 #include "camera/camera_internal.h"
 #include "debug/debug_render_job_internal.h"
 #include "editor_content/editor_content.h"
@@ -143,6 +144,9 @@ struct Renderer::Impl
 
     /// Debug stats' performance times.
     Performance_time_map_t perf_time_map;
+
+    /// Debug stats for time for waiting for next frame to acquire.
+    float_t perf_frame_acquire_time;
 
 
     // ---- Functions ------------------------------------------------------------------------------
@@ -470,6 +474,7 @@ void Renderer::build()
             .get_play_flag_fn = m.get_play_flag_fn,
             .set_dev_anim_editor_view_fn = m.set_dev_anim_editor_view_fn,
             .perf_time_map = m.perf_time_map,
+            .perf_frame_acquire_time = m.perf_frame_acquire_time,
         });
     auto& g{ *m.graphics };
 
@@ -620,8 +625,15 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     // Wait until can start rendering.
     bool frame_acquired{ false };
-    if (!render_view_sizes_changed)
-        frame_acquired = g.start_next_frame();
+    {
+        BT::Timer acquire_timer;
+        acquire_timer.start_timer();
+
+        if (!render_view_sizes_changed)
+            frame_acquired = g.start_next_frame();
+
+        m_pimpl->perf_frame_acquire_time = acquire_timer.calc_delta_time();
+    }
 
     // Set render view sizes.
     g.set_render_view_sizes(render_view_sizes);

@@ -89,6 +89,8 @@ private:
 class UI_canvas_state
 {
 public:
+    ~UI_canvas_state();
+
     /// Gets or emplaces an element state.
     UI_element_state& elem(std::string const& elem_name);
 
@@ -106,10 +108,9 @@ public:
     }
 
 private:
-    UI_canvas_state(UI_state& ui_state)
-        : m_ui_state(ui_state)
-    {
-    }
+    UI_canvas_state(UI_state& ui_state);
+
+    void init();  // @HACK: must call this before use
 
     UI_state& m_ui_state;
 
@@ -121,16 +122,8 @@ private:
 
     std::unordered_map<std::string, UI_element_state> m_elem_states_map;
 
-    struct UI_element_pun
-    {
-    #if _WIN64
-        uint64_t pad[13];
-    #elif __APPLE__
-        uint64_t pad[11];
-    #endif
-    };
-    std::vector<UI_element_pun> m_elems;  // punned into UI::UI_element type (static assert fails if
-                                          // types are not identical).
+    struct UI_element_list_container;  // to be defined in .cpp
+    UI_element_list_container* m_elem_container{ nullptr };  // I own this pointer! (big oof)
 
     friend class std::unordered_map<std::string, UI_canvas_state>;
     friend class UI_state;

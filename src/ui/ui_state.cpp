@@ -1,5 +1,6 @@
 // clang-format off
 #include "txp_renderer/ui/ui_state.h"
+#include <memory>
 // clang-format on
 
 #if TXP_GFX_BACKEND_VULKAN
@@ -116,17 +117,31 @@ void UI_element_state::set_opacity(float_t alpha)
 
 
 // class UI_canvas_state
+struct UI_canvas_state::UI_element_list_container  // @THEA @HACK: jojojjojojojoojojojo
+{
+    std::vector<UI::UI_element> elems;
+};
+
+UI_canvas_state::~UI_canvas_state()
+{
+    delete m_elem_container;
+}
+
 UI_element_state& UI_canvas_state::elem(std::string const& elem_name)
 {
-    static_assert(sizeof(UI_element_pun) == sizeof(UI::UI_element),
-                  "Pun type and actual type must be the same size");
-    static_assert(std::alignment_of<UI_element_pun>::value ==
-                      std::alignment_of<UI::UI_element>::value,
-                  "Pun type and actual type must be the same alignment");
-
     if (m_elem_states_map.find(elem_name) == m_elem_states_map.end())
         m_elem_states_map.emplace(elem_name, UI_element_state{ m_ui_state });
     return m_elem_states_map.at(elem_name);
+}
+
+UI_canvas_state::UI_canvas_state(UI_state& ui_state)
+    : m_ui_state(ui_state)
+{
+}
+
+void UI_canvas_state::init()
+{
+    m_elem_container = new UI_element_list_container();
 }
 
 
@@ -139,7 +154,10 @@ UI_state::UI_state()
 UI_canvas_state& UI_state::canvas(std::string const& canvas_name)
 {
     if (m_canvas_states.find(canvas_name) == m_canvas_states.end())
+    {
         m_canvas_states.emplace(canvas_name, UI_canvas_state{ *this });
+        m_canvas_states.at(canvas_name).init();
+    }
     return m_canvas_states.at(canvas_name);
 }
 
@@ -186,8 +204,7 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
 
     assert(canvas_state.is_persistent() && canvas_state.is_loaded());
 
-    auto const& my_elems{ reinterpret_cast<std::vector<UI::UI_element> const&>(
-        canvas_state.m_elems) };
+    auto const& my_elems{ canvas_state.m_elem_container->elems };
 
     // Create map to texture names.
     std::unordered_map<uint32_t, std::string> gpu_idx_to_tex_name_map;
@@ -282,9 +299,8 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     for (auto const& loaded_canvases_list : { m_loaded_canvases, m_loaded_persistent_canvases })
     {
         for (auto const& canvas_name : loaded_canvases_list)
-            for (auto& elem : m_canvas_states.at(canvas_name).m_elems)
-                render_ui_elems.emplace_back(reinterpret_cast<UI::UI_element*>(
-                    const_cast<UI_canvas_state::UI_element_pun*>(&elem)));
+            for (auto& elem : m_canvas_states.at(canvas_name).m_elem_container->elems)
+                render_ui_elems.emplace_back(&elem);
     }
 
     return render_ui_elems;
@@ -311,7 +327,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     std::unordered_map<std::string, uint32_t> temp_elem_name_to_idx;
     temp_elem_name_to_idx.reserve(ui_file_data.elements.size());
 
-    auto& my_elems{ reinterpret_cast<std::vector<UI::UI_element>&>(canvas_state.m_elems) };
+    auto& my_elems{ canvas_state.m_elem_container->elems };
 
     my_elems.clear();
     my_elems.reserve(ui_file_data.elements.size());
@@ -386,7 +402,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     canvas_state.m_load_idx = -1;
 
     // Remove loaded data.
-    canvas_state.m_elems.clear();
+    canvas_state.m_elem_container->elems.clear();
 
     for (auto&& [_, elem_state] : canvas_state.m_elem_states_map)
     {
