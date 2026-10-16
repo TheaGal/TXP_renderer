@@ -41,6 +41,7 @@ struct UI_file_element_data
     Rect_transform transform;
     float_t opacity;
     std::string image;
+    vec3s color_tint;
     bool is_nine_slice;
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(UI_file_element_data,
@@ -49,6 +50,7 @@ struct UI_file_element_data
                                    transform,
                                    opacity,
                                    image,
+                                   color_tint,
                                    is_nine_slice);
 };
 

@@ -183,6 +183,7 @@ void perform_breaking_operation_safe(std::vector<UI::UI_element>& my_elems,
     // Build pointer -> idx map to recover from emplace breaking memory addresses.
     std::unordered_map<void*, size_t> ptr_to_idx_map;
     for (auto const& elem : my_elems)
+    {
         for (size_t i = 0; i < my_elems.size(); i++)
             if (elem.parent == nullptr)
             {
@@ -193,13 +194,14 @@ void perform_breaking_operation_safe(std::vector<UI::UI_element>& my_elems,
                 ptr_to_idx_map[elem.parent] = i;
                 break;
             }
+    }
 
     // Do operation!!
     operation();
 
     // Rebuild parent pointers.
     for (auto& elem : my_elems)
-        if (elem.parent != nullptr)
+        if (elem.parent != nullptr && ptr_to_idx_map.find(elem.parent) != ptr_to_idx_map.end())
         {
             elem.parent = &my_elems[ptr_to_idx_map.at(elem.parent)];
         }
@@ -483,6 +485,8 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             ui_files_as_cstr.emplace_back(fname.c_str());
 
         // Load a ui file for editing.
+        ImGui::BeginDisabled(s_ui_editor->is_dirty());
+
         int32_t editing_canvas_idx{ s_ui_editor->get_editing_canvas_idx() };
         if (ImGui::Combo("Editing UI File##ui_canvas_editor_dropdown",
                          &editing_canvas_idx,
@@ -491,6 +495,9 @@ void TXP::editor_content::ui_editor::ui_editor_content()
         {
             s_ui_editor->build_editing_elems_for_canvas_idx(editing_canvas_idx, false);
         }
+
+        ImGui::EndDisabled();
+
         if (editing_canvas_idx >= 0)
         {
             ImGui::BeginDisabled(!s_ui_editor->is_dirty());
