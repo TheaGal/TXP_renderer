@@ -327,6 +327,107 @@ void UI_editor::move_selected_editing_elem(int32_t offset)
     m_editing_canvas_element_ptr = elems_with_same_parent[swap_b];
 }
 
+void UI_editor::sort_editing_canvas_elems()
+{
+    auto& my_elems{
+        m_ui_ref.canvas(s_avail_ui_files[m_editing_canvas_idx]).m_elem_container->elems
+    };
+
+    // Do a quick circular dependency check.
+    for (auto const& elem : my_elems)
+    {
+        UI::UI_element const* ptr = elem.parent;
+        bool found_end{ false };
+
+        for (uint32_t i = 0; i < 10000; i++)
+            if (ptr == nullptr)
+            {
+                found_end = true;
+                break;
+            }
+            else
+                ptr = ptr->parent;
+        
+        if (!found_end)
+            throw std::runtime_error("Circular dependency oh no!!!");
+    }
+
+    // Find relationships.
+    using Elem_w_idx_t = std::pair<UI::UI_element const*, size_t>;
+
+    std::vector<Elem_w_idx_t> elems_in_order;
+
+    std::vector<Elem_w_idx_t> current_depth;
+    current_depth.emplace_back(nullptr, 0);
+
+    while (!current_depth.empty())
+    {
+        auto& [looking_for_parent, cursor]{ current_depth.back() };
+
+        bool performed_emplace{ false };
+
+        for (; cursor < my_elems.size(); cursor++)
+        {
+            // Look for children.
+            auto& this_elem{ my_elems[cursor] };
+            if (looking_for_parent == this_elem.parent)
+            {
+                elems_in_order.emplace_back(&this_elem, cursor);
+
+                cursor++;  // do before the `current_depth` emplace
+                current_depth.emplace_back(&this_elem, 0);
+
+                performed_emplace = true;
+                break;
+            }
+        }
+
+        if (!performed_emplace && cursor >= my_elems.size())
+        {
+            current_depth.erase(current_depth.begin() + current_depth.size() - 1);
+        }
+    }
+
+    assert(elems_in_order.size() == my_elems.size());
+
+    // Make conversion map.
+    std::unordered_map<UI::UI_element const*, size_t> elem_ptr_to_idx_map;
+    std::unordered_map<size_t, size_t> old_to_new_idx_map;
+    for (size_t i = 0; i < elems_in_order.size(); i++)
+    {
+        elem_ptr_to_idx_map[elems_in_order[i].first] = elems_in_order[i].second;
+        old_to_new_idx_map[elems_in_order[i].second] = i;
+    }
+
+    // Is the remap even necessary?
+    bool should_do_remap{ false };
+    for (auto const [old_idx, new_idx] : old_to_new_idx_map)
+        if (old_idx != new_idx)
+        {
+            should_do_remap = true;
+            break;
+        }
+
+    if (!should_do_remap)
+        return;
+
+    mark_dirty();
+
+    // Do remap.
+    std::vector<UI::UI_element> elems_copy = my_elems;
+    for (size_t i = 0; i < my_elems.size(); i++)
+    {
+        my_elems[old_to_new_idx_map.at(i)] = elems_copy[i];
+    }
+
+    // Fix broken parent pointers.
+    for (auto& elem : my_elems)
+    {
+        if (elem.parent != nullptr)
+            elem.parent = &my_elems[old_to_new_idx_map.at(elem_ptr_to_idx_map.at(elem.parent))];
+    }
+}
+
 void UI_editor::mark_dirty()
 {
     m_is_data_dirty = true;
@@ -541,6 +642,7 @@ void TXP::editor_content::ui_editor::ui_editor_content()
                          ui_files_as_cstr.size()))
         {
             s_ui_editor->build_editing_elems_for_canvas_idx(editing_canvas_idx, false);
+            s_ui_editor->sort_editing_canvas_elems();
         }
 
         ImGui::EndDisabled();
@@ -617,6 +719,9 @@ void TXP::editor_content::ui_editor::ui_editor_content()
                 s_ui_editor->add_elem_to_editing_canvas(UI::UI_element{
                     .name = k_get_non_colliding_name(s_ui_editor->get_editing_elems(),
                                                      "New UI element") });
+
+                s_ui_editor->sort_editing_canvas_elems();
+
                 s_ui_editor->force_ui_redraw();
             }
 
@@ -751,6 +856,8 @@ void TXP::editor_content::ui_editor::ui_editor_content()
                     }
                 }
 
+                s_ui_editor->sort_editing_canvas_elems();
+
                 s_ui_editor->force_ui_redraw();
             }
 
@@ -758,6 +865,7 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             if (ImGui::Button("Delete elem"))
             {
                 s_ui_editor->delete_selected_editing_elem();
+                s_ui_editor->sort_editing_canvas_elems();
 
                 s_ui_editor->force_ui_redraw();
             }
@@ -771,6 +879,7 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             if (ImGui::Button("move up"))
             {
                 s_ui_editor->move_selected_editing_elem(-1);
+                s_ui_editor->sort_editing_canvas_elems();
 
                 s_ui_editor->force_ui_redraw();
                 s_ui_editor->mark_dirty();
@@ -780,6 +889,7 @@ void TXP::editor_content::ui_editor::ui_editor_content()
             if (ImGui::Button("move down"))
             {
                 s_ui_editor->move_selected_editing_elem(1);
+                s_ui_editor->sort_editing_canvas_elems();
 
                 s_ui_editor->force_ui_redraw();
                 s_ui_editor->mark_dirty();
@@ -883,6 +993,8 @@ void TXP::editor_content::ui_editor::ui_editor_content()
                             elem_parent = elem;
                             return;
                         }
+
+                    s_ui_editor->sort_editing_canvas_elems();
                 };
 
                 ImGui::OpenPopup("edit_str_field_popup");

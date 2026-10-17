@@ -46,6 +46,8 @@ public:
 
     void move_selected_editing_elem(int32_t offset);
 
+    void sort_editing_canvas_elems();
+
     void mark_dirty();
     bool is_dirty() const;
     void make_not_dirty_also_known_as_clean();

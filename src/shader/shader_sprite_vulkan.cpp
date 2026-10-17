@@ -246,6 +246,8 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
     {
         glm_mat4_identity(ui_data_set_data->model_mat);
 
+        uint32_t parent_overflow_count{ 10000 };
+
         UI::UI_element const* elem_node{ elem };
         while (elem_node != nullptr)
         {
@@ -258,6 +260,10 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
             glm_mat4_mul(node_model_mat, ui_data_set_data->model_mat, ui_data_set_data->model_mat);
 
             elem_node = elem_node->parent;
+
+            parent_overflow_count--;
+            if (parent_overflow_count == 0)
+                throw std::runtime_error("Circular dependency detected! Youre a slut!");
         }
 
         glm_vec2_copy(vec2{ elem->transform.anchor.x, elem->transform.anchor.y },
