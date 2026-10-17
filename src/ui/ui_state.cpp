@@ -26,6 +26,8 @@ namespace TXP
 namespace
 {
 
+constexpr float_t k_ui_canvas_fixed_height{ 360 };
+
 static std::string s_ui_directory;
 
 #if TXP_GFX_BACKEND_VULKAN
@@ -101,6 +103,12 @@ void UI_element_state::set_position(float_t x, float_t y)
     m_loaded_elem->transform.y = y;
 
     m_ui_state.invalidate_draw_cache();
+}
+
+void UI_element_state::set_position_from_ndc_coord(float_t const cam_aspect, float_t x, float_t y)
+{
+    set_position(x * 0.5f * k_ui_canvas_fixed_height * cam_aspect,
+                 y * 0.5f * k_ui_canvas_fixed_height);
 }
 
 void UI_element_state::set_opacity(float_t alpha)

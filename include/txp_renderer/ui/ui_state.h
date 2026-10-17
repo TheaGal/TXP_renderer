@@ -68,6 +68,7 @@ public:
     void add_event(UI_event event_type, std::function<void(void)>&& callback_fn);
 
     void set_position(float_t x, float_t y);
+    void set_position_from_ndc_coord(float_t const cam_aspect, float_t x, float_t y);
     void set_opacity(float_t alpha);
 
 private:
