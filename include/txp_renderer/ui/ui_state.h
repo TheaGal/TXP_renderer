@@ -1,5 +1,7 @@
 #pragma once
 
+#include "btglm.h"
+
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -48,6 +50,13 @@ std::vector<std::pair<std::string, uint32_t>> fetch_texture_name_w_idx_list();
 
 } // namespace gfx_helper
 
+class Camera;  // forward decl
+
+/// Converts a world position to UI position.
+bool convert_world_position_to_ui_position(Camera const& camera,
+                                           vec3 const world_position,
+                                           vec2 out_ui_position);
+
 
 /// .
 enum UI_event : uint32_t
@@ -68,7 +77,6 @@ public:
     void add_event(UI_event event_type, std::function<void(void)>&& callback_fn);
 
     void set_position(float_t x, float_t y);
-    void set_position_from_ndc_coord(float_t const cam_aspect, float_t x, float_t y);
     void set_opacity(float_t alpha);
 
 private:

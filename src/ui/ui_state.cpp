@@ -1,6 +1,5 @@
 // clang-format off
 #include "txp_renderer/ui/ui_state.h"
-#include <memory>
 // clang-format on
 
 #if TXP_GFX_BACKEND_VULKAN
@@ -9,6 +8,7 @@
 
 #include "btjson.h"
 #include "btservice_finder.h"
+#include "txp_renderer/camera/camera.h"
 #include "ui/ui_types.h"
 
 #include <cassert>
@@ -16,7 +16,6 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
-#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
@@ -81,6 +80,21 @@ std::vector<std::pair<std::string, uint32_t>> gfx_helper::fetch_texture_name_w_i
 }
 
 
+bool convert_world_position_to_ui_position(Camera const& camera,
+                                           vec3 const world_position,
+                                           vec2 out_ui_position)
+{
+    vec3 ndc_position;
+    bool is_visible = camera.calc_world_space_to_ndc_space(world_position, ndc_position);
+
+    out_ui_position[0] =
+        ndc_position[0] * 0.5f * k_ui_canvas_fixed_height * camera.get_aspect_ratio();
+    out_ui_position[1] = ndc_position[1] * 0.5f * k_ui_canvas_fixed_height;
+
+    return is_visible;
+}
+
+
 // class UI_element_state
 void UI_element_state::add_event(UI_event event_type, std::function<void(void)>&& callback_fn)
 {
@@ -103,12 +117,6 @@ void UI_element_state::set_position(float_t x, float_t y)
     m_loaded_elem->transform.y = y;
 
     m_ui_state.invalidate_draw_cache();
-}
-
-void UI_element_state::set_position_from_ndc_coord(float_t const cam_aspect, float_t x, float_t y)
-{
-    set_position(x * 0.5f * k_ui_canvas_fixed_height * cam_aspect,
-                 y * 0.5f * k_ui_canvas_fixed_height);
 }
 
 void UI_element_state::set_opacity(float_t alpha)
