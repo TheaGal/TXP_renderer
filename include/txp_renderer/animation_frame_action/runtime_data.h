@@ -60,12 +60,9 @@ enum Controllable_data_label : std::uint32_t
         X_reeve(broadcast_healing_to_enemies)                 \
         X_reeve(request_new_attack)                           \
         X_reeve(request_new_attack_early)                     \
-        X_reeve(play_sfx_footstep)                            \
-        X_reeve(play_sfx_ready_guard)                         \
-        X_reeve(play_sfx_blade_swing)                         \
-        X_reeve(play_sfx_hurt_vocalize_human_male_mc)         \
-        X_reeve(play_sfx_guard_receive_hit)                   \
-        X_reeve(play_sfx_deflect_receive_hit)
+        X_reeve(receive_atk_as_hurt)                          \
+        X_reeve(receive_atk_as_guard)                         \
+        X_reeve(receive_atk_as_parry)
 
     INTERNAL__CTRL_DATA_LABEL_MARKER_BEGIN_FLOAT = 0,
 

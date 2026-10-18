@@ -77,6 +77,8 @@ public:
     void add_event(UI_event event_type, std::function<void(void)>&& callback_fn);
 
     void set_position(float_t x, float_t y);
+    void set_width(float_t w);
+    void set_height(float_t h);
     void set_opacity(float_t alpha);
 
 private:

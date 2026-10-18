@@ -119,6 +119,30 @@ void UI_element_state::set_position(float_t x, float_t y)
     m_ui_state.invalidate_draw_cache();
 }
 
+void UI_element_state::set_width(float_t w)
+{
+    if (m_loaded_elem == nullptr)
+    {
+        throw std::runtime_error("elem isnt loaded yet.");
+    }
+
+    m_loaded_elem->transform.w = w;
+
+    m_ui_state.invalidate_draw_cache();
+}
+
+void UI_element_state::set_height(float_t h)
+{
+    if (m_loaded_elem == nullptr)
+    {
+        throw std::runtime_error("elem isnt loaded yet.");
+    }
+
+    m_loaded_elem->transform.h = h;
+
+    m_ui_state.invalidate_draw_cache();
+}
+
 void UI_element_state::set_opacity(float_t alpha)
 {
     if (m_loaded_elem == nullptr)
