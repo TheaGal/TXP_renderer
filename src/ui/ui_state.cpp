@@ -9,6 +9,7 @@
 #include "btjson.h"
 #include "btservice_finder.h"
 #include "txp_renderer/camera/camera.h"
+#include "ui/ui_element_list_container_impl.h"
 #include "ui/ui_types.h"
 
 #include <cassert>
@@ -157,11 +158,6 @@ void UI_element_state::set_opacity(float_t alpha)
 
 
 // class UI_canvas_state
-struct UI_canvas_state::UI_element_list_container  // @THEA @HACK: jojojjojojojoojojojo
-{
-    std::vector<UI::UI_element> elems;
-};
-
 UI_canvas_state::~UI_canvas_state()
 {
     delete m_elem_container;

@@ -290,6 +290,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/reflection_structs.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader_creation/shader_creation.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/ui_element_list_container_impl.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/ui_state.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/ui/ui_types.h
 )

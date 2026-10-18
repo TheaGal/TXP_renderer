@@ -6,6 +6,7 @@
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
 #include "txp_renderer/ui/ui_state.h"
+#include "ui/ui_element_list_container_impl.h"
 #include "ui/ui_types.h"
 
 #include <algorithm>
@@ -35,12 +36,6 @@ editor_content::ui_editor::UI_editor* s_ui_editor{ nullptr };
 
 namespace TXP
 {
-
-struct UI_canvas_state::UI_element_list_container  // @THEA: blamo!
-{
-    std::vector<UI::UI_element> elems;
-};
-
 namespace editor_content
 {
 namespace ui_editor
