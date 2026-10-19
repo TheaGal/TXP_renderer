@@ -6,6 +6,10 @@ struct Sprite_data_set_element
     uint32_t texture_idx;
     float3 color_tint;
     uint32_t is_nine_slice;
+    uint32_t is_msdf;  // combine this with `is_nine_slice` to make a type id
+    uint32_t pad0;
+    uint32_t pad1;
+    uint32_t pad2;
 };
 
 struct Sprite_data_set
@@ -22,6 +26,7 @@ struct VS_output
     float sprite_opacity;
     uint32_t sprite_texture_idx;
     float3 sprite_color_tint;
+    uint32_t is_msdf;
 };
 
 
@@ -67,16 +72,34 @@ VS_output vertex_main(uniform Sprite_data_set* sprite_data_set,
     output.sprite_opacity = sprite_data_elem.opacity;
     output.sprite_texture_idx = sprite_data_elem.texture_idx;
     output.sprite_color_tint = sprite_data_elem.color_tint;
+    output.is_msdf = sprite_data_elem.is_msdf;
 
     return output;
+}
+
+
+float calc_median(float3 value)
+{
+    return max(min(value.r, value.g), min(max(value.r, value.g), value.b));
 }
 
 
 [shader("fragment")]
 float4 fragment_main(VS_output input)
 {
-    // Unlit sample from texture.
     float4 color = textures[NonUniformResourceIndex(input.sprite_texture_idx)]
                        .Sample(input.uv).rgba;
-    return float4(color.rgb * input.sprite_color_tint, color.a * input.sprite_opacity);
+
+    if (bool(input.is_msdf))
+    {
+        // Use sample from texture as MSDF data.
+        float alpha = step(0.5, calc_median(color.rgb));
+        color = float4(float3(0.75), alpha);
+        return color;
+    }
+    else
+    {
+        // Unlit sample from texture.
+        return float4(color.rgb * input.sprite_color_tint, color.a * input.sprite_opacity);
+    }
 }

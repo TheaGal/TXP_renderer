@@ -70,7 +70,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 4},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 5},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -130,6 +130,15 @@
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 3}
+                        },
+                        {
+                            "name": "is_msdf",
+                            "type": {
+                                "kind": "scalar",
+                                "scalarType": "uint32"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 4}
                         }
                     ]
                 }
@@ -148,7 +157,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 4},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 5},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -208,6 +217,15 @@
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 3}
+                            },
+                            {
+                                "name": "is_msdf",
+                                "type": {
+                                    "kind": "scalar",
+                                    "scalarType": "uint32"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 4}
                             }
                         ]
                     }

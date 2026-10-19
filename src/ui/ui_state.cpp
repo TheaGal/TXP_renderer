@@ -26,8 +26,6 @@ namespace TXP
 namespace
 {
 
-constexpr float_t k_ui_canvas_fixed_height{ 360 };
-
 static std::string s_ui_directory;
 
 #if TXP_GFX_BACKEND_VULKAN
@@ -89,8 +87,8 @@ bool convert_world_position_to_ui_position(Camera const& camera,
     bool is_visible = camera.calc_world_space_to_ndc_space(world_position, ndc_position);
 
     out_ui_position[0] =
-        ndc_position[0] * 0.5f * k_ui_canvas_fixed_height * camera.get_aspect_ratio();
-    out_ui_position[1] = ndc_position[1] * 0.5f * k_ui_canvas_fixed_height;
+        ndc_position[0] * 0.5f * UI::k_ui_canvas_fixed_height * camera.get_aspect_ratio();
+    out_ui_position[1] = ndc_position[1] * 0.5f * UI::k_ui_canvas_fixed_height;
 
     return is_visible;
 }
@@ -262,6 +260,7 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
             .opacity = elem.opacity,
             .image = gpu_idx_to_tex_name_map.at(elem.texture_idx),
             .is_nine_slice = elem.is_nine_slice,
+            .is_msdf = elem.is_msdf,
         };
         glm_vec3_copy(const_cast<float_t*>(elem.color_tint), ui_file_elem.color_tint.raw);
 
@@ -383,6 +382,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
             .texture_idx =
                 static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
             .is_nine_slice = file_elem.is_nine_slice,
+            .is_msdf = file_elem.is_msdf,
         });
         glm_vec3_copy(file_elem.color_tint.raw, my_elems.back().color_tint);
 

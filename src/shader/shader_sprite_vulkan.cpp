@@ -275,6 +275,7 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
         glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
 
         ui_data_set_data->is_nine_slice = elem->is_nine_slice;
+        ui_data_set_data->is_msdf = elem->is_msdf;
 
         ui_data_set_data++;
     }
@@ -316,7 +317,7 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
     Shader_sprite_push_constants push_consts{
         .sprite_data_set_dev_addr = current_frame.sprite_data_set_buffer.get_device_address(),
         .camera_view_aspect_ratio = camera_view_aspect_ratio,
-        .render_canvas_height = 360,  // @HARDCODE: typical 640x360 size.
+        .render_canvas_height = UI::k_ui_canvas_fixed_height,
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,

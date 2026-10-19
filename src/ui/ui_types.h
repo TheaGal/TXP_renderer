@@ -14,6 +14,8 @@ namespace TXP
 namespace UI
 {
 
+constexpr float_t k_ui_canvas_fixed_height{ 360 };
+
 struct Rect_transform
 {
     float_t x;
@@ -43,6 +45,7 @@ struct UI_file_element_data
     std::string image;
     vec3s color_tint;
     bool is_nine_slice;
+    bool is_msdf;
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(UI_file_element_data,
                                    name,
@@ -51,7 +54,8 @@ struct UI_file_element_data
                                    opacity,
                                    image,
                                    color_tint,
-                                   is_nine_slice);
+                                   is_nine_slice,
+                                   is_msdf);
 };
 
 struct UI_file_data
@@ -70,6 +74,7 @@ struct UI_element
     uint32_t texture_idx;
     vec3 color_tint{ 1, 1, 1 };
     bool is_nine_slice;
+    bool is_msdf;
 };
 
 } // namespace UI

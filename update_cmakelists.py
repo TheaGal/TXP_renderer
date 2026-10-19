@@ -93,7 +93,8 @@ if __name__ == '__main__':
                              'shadrefl',
                              'btanitor',
                              'btafa',
-                             'btui']
+                             'btui',
+                             'btfont']
     update_file_entries(['./assets/',],
                         RES_SEARCH_EXTENSIONS,
                         'set(ASSET_DIR_FILES',

@@ -1081,6 +1081,7 @@ void TXP::editor_content::ui_editor::ui_editor_content()
 
         edited |= ImGui::ColorEdit3("color_tint", editing_elem->color_tint);
         edited |= ImGui::Checkbox("is_nine_slice", &editing_elem->is_nine_slice);
+        edited |= ImGui::Checkbox("is_msdf", &editing_elem->is_msdf);
 
         ImGui::PopID();
 
