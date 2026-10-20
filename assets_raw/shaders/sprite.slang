@@ -1,3 +1,11 @@
+#language slang 2026
+
+struct VS_input
+{
+    float3 pos;
+    float2 uv;
+};
+
 struct Sprite_data_set_element
 {
     float4x4 model_mat;
@@ -31,25 +39,14 @@ struct VS_output
 
 
 [shader("vertex")]
-VS_output vertex_main(uniform Sprite_data_set* sprite_data_set,
+VS_output vertex_main(VS_input input,
+                      uniform Sprite_data_set* sprite_data_set,
                       uniform float camera_view_aspect_ratio,
                       uniform float render_canvas_height,
-                      uint vertex_index : SV_VertexID,
                       uint instance_index : SV_VulkanInstanceID)
 {
     Sprite_data_set_element sprite_data_elem =
         sprite_data_set->per_instance_sprites[instance_index];
-
-    // @NOTE: use these for UVs as well.
-    constexpr float2 k_unit_square_vertices[] = {
-        float2(0, 0),
-        float2(0, 1),
-        float2(1, 1),
-
-        float2(0, 0),
-        float2(1, 1),
-        float2(1, 0),
-    };
 
     VS_output output;
     if (sprite_data_elem.is_nine_slice == 1)
@@ -59,10 +56,8 @@ VS_output vertex_main(uniform Sprite_data_set* sprite_data_set,
     else
     {
         output.pos = mul(sprite_data_elem.model_mat,
-                         float4(k_unit_square_vertices[vertex_index] - sprite_data_elem.anchor,
-                                0.0,
-                                1.0));
-        output.uv = k_unit_square_vertices[vertex_index];
+                         float4(input.pos - float3(sprite_data_elem.anchor, 0), 1.0));
+        output.uv = input.uv;
     }
 
     float render_canvas_multiplier = (1.0f / render_canvas_height) * 2.0f;
@@ -93,7 +88,10 @@ float4 fragment_main(VS_output input)
     if (bool(input.is_msdf))
     {
         // Use sample from texture as MSDF data.
-        float alpha = step(0.5, calc_median(color.rgb));
+        float dist = calc_median(color.rgb);
+        float smooth_width = fwidth(dist);
+        float alpha = smoothstep(0.5 - smooth_width, 0.5 + smooth_width, dist);
+        // float alpha = step(0.5, calc_median(color.rgb));
         color = float4(float3(0.75), alpha);
         return color;
     }

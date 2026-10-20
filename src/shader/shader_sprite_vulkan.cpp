@@ -23,6 +23,8 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
+#include <unordered_map>
+#include <vector>
 
 
 namespace TXP
@@ -37,6 +39,29 @@ struct Shader_sprite_push_constants  // @TODO: move this to gfx_vulkan_impl!!!  
     float_t camera_view_aspect_ratio;
     float_t render_canvas_height;
 };
+
+/// Vertex for sprites.
+struct Sprite_vertex
+{
+    vec3 position;
+    vec2 uv;
+};
+
+/// Structure to organize mesh to upload.
+struct Sprite_mesh_to_upload
+{
+    std::vector<Sprite_vertex> vertices;
+    std::vector<uint32_t> indices;
+};
+
+struct Uploaded_mesh
+{
+    bool is_volatile;
+    std::unique_ptr<Graphics::Impl::Model_buffer> model_buffer;
+    uint32_t index_count;
+    bool got_used;
+};
+
 
 // struct Shader_sprite::Impl
 struct Shader_sprite::Impl
@@ -77,12 +102,25 @@ struct Shader_sprite::Impl
             throw std::runtime_error("Failed to create pipeline layout.");
 
         // Create pipeline.
+        VkVertexInputBindingDescription vertex_binding{ .binding = 0,
+                                                        .stride = sizeof(Sprite_vertex),
+                                                        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
+        std::vector<VkVertexInputAttributeDescription> vertex_attributes{
+            { .location = 0,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32B32_SFLOAT,
+              .offset = offsetof(Sprite_vertex, position) },
+            { .location = 1,
+              .binding = 0,
+              .format = VK_FORMAT_R32G32_SFLOAT,
+              .offset = offsetof(Sprite_vertex, uv) },
+        };
         VkPipelineVertexInputStateCreateInfo vertex_input_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            .vertexBindingDescriptionCount = 0,
-            .pVertexBindingDescriptions = nullptr,
-            .vertexAttributeDescriptionCount = 0,
-            .pVertexAttributeDescriptions = nullptr,
+            .vertexBindingDescriptionCount = 1,
+            .pVertexBindingDescriptions = &vertex_binding,
+            .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertex_attributes.size()),
+            .pVertexAttributeDescriptions = vertex_attributes.data(),
         };
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
@@ -188,12 +226,175 @@ struct Shader_sprite::Impl
 
         // Cleanup.
         vkDestroyShaderModule(device, shader_module, nullptr);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Create unit square mesh.
+        Sprite_mesh_to_upload smesh;
+
+        smesh.vertices.reserve(4);
+        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 0, 0, 0 }, .uv = { 0, 0 } });
+        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 0, 1, 0 }, .uv = { 0, 1 } });
+        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 1, 1, 0 }, .uv = { 1, 1 } });
+        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 1, 0, 0 }, .uv = { 1, 0 } });
+
+        smesh.indices.reserve(6);
+        smesh.indices.emplace_back(0);
+        smesh.indices.emplace_back(1);
+        smesh.indices.emplace_back(2);
+        smesh.indices.emplace_back(0);
+        smesh.indices.emplace_back(2);
+        smesh.indices.emplace_back(3);
+
+        upload_mesh_to_gpu(nullptr, std::move(smesh), false);
     }
 
     ~Impl()
     {
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
+    }
+
+
+    void upload_mesh_to_gpu(void* ptr_key, Sprite_mesh_to_upload&& smesh, bool is_volatile)
+    {
+        Uploaded_mesh umesh{ .is_volatile = is_volatile };
+
+        // @COPYPASTA of `upload_model_entries_to_gpu()`
+        VkDeviceSize const vertex_buf_size{ sizeof(Sprite_vertex) * smesh.vertices.size() };
+        VkDeviceSize const index_buf_size{ sizeof(uint32_t) * smesh.indices.size() };
+
+        VkDeviceSize const total_vertex_index_buffer_size{ vertex_buf_size + index_buf_size };
+
+        umesh.model_buffer = std::make_unique<Graphics::Impl::Model_buffer>();
+
+        umesh.model_buffer->vertex_index_buffer.create(
+            g.gfx.device,
+            g.gfx.allocator,
+            total_vertex_index_buffer_size,
+            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+
+        umesh.model_buffer->offset_to_index_buffer = vertex_buf_size;
+        umesh.index_count = smesh.indices.size();
+
+        void* p_mapped_data{ umesh.model_buffer->vertex_index_buffer.get_p_mapped_data() };
+        auto const offset_to_idx_buf{ umesh.model_buffer->offset_to_index_buffer };
+
+        std::memcpy(p_mapped_data, smesh.vertices.data(), vertex_buf_size);
+        std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
+                    smesh.indices.data(),
+                    index_buf_size);
+
+        // Save to uploaded mesh map.
+        pointer_to_uploaded_mesh_map.emplace(ptr_key, std::move(umesh));
+    }
+
+// @TODO: do this for text generation!!!
+#if 0
+    void generate_text(void* ptr_key, std::string const& text)
+    {
+        Sprite_mesh_to_upload smesh;
+        uint32_t index_offset = 0;
+
+        float w = static_cast<float>(textures.fontSDF.width);
+
+        float posx = 0.0f;
+        float posy = 0.0f;
+
+        for (uint32_t i = 0; i < text.size(); i++)
+        {
+            bmchar* char_info = &font_chars[(int)text[i]];
+
+            if (char_info->width == 0)
+                char_info->width = 36;
+
+            float charw = ((float)(char_info->width) / 36.0f);
+            float dimx = 1.0f * charw;
+            float charh = ((float)(char_info->height) / 36.0f);
+            float dimy = 1.0f * charh;
+
+            float us = char_info->x / w;
+            float ue = (char_info->x + char_info->width) / w;
+            float ts = char_info->y / w;
+            float te = (char_info->y + char_info->height) / w;
+
+            float xo = char_info->xoffset / 36.0f;
+            float yo = char_info->yoffset / 36.0f;
+
+            posy = yo;
+
+            vertices.push_back({ { posx + dimx + xo, posy + dimy, 0.0f }, { ue, te } });
+            vertices.push_back({ { posx + xo, posy + dimy, 0.0f }, { us, te } });
+            vertices.push_back({ { posx + xo, posy, 0.0f }, { us, ts } });
+            vertices.push_back({ { posx + dimx + xo, posy, 0.0f }, { ue, ts } });
+
+            std::array<uint32_t, 6> letterIndices = { 0, 1, 2, 2, 3, 0 };
+            for (auto& index : letterIndices)
+            {
+                indices.push_back(index_offset + index);
+            }
+            index_offset += 4;
+
+            float advance = ((float)(char_info->xadvance) / 36.0f);
+            posx += advance;
+        }
+        index_count = static_cast<uint32_t>(indices.size());
+
+        // Center
+        for (auto& v : vertices)
+        {
+            v.pos[0] -= posx / 2.0f;
+            v.pos[1] -= 0.5f;
+        }
+
+        // // Generate host accessible buffers for the text vertices and indices and upload the data
+        // VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
+        //                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+        //                                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        //                                            &vertexBuffer,
+        //                                            vertices.size() * sizeof(Vertex),
+        //                                            vertices.data()));
+        // VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        //                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+        //                                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        //                                            &indexBuffer,
+        //                                            indices.size() * sizeof(uint32_t),
+        //                                            indices.data()));
+        upload_mesh_to_gpu(ptr_key, std::move(smesh), true);
+    }
+#endif // 0
+
+    void draw_mesh_for_elem(VkCommandBuffer cmd,
+                            UI::UI_element const& elem,
+                            uint32_t const draw_instance)
+    {
+        Uploaded_mesh* elem_mesh;
+        if (elem.is_msdf)
+        {
+            void* elem_as_ptr{ const_cast<UI::UI_element*>(&elem) };
+
+            auto it{ pointer_to_uploaded_mesh_map.find(elem_as_ptr)};
+            if (it == pointer_to_uploaded_mesh_map.end())
+            {
+                
+                // elem_mesh = &generate_text(elem_as_ptr, elem.text);
+            }
+            else
+            {
+                elem_mesh = &it->second;
+            }
+        }
+        else
+        {
+            elem_mesh = &pointer_to_uploaded_mesh_map.at(nullptr);
+        }
+
+        elem_mesh->model_buffer->bind(cmd);
+        vkCmdDrawIndexed(cmd, elem_mesh->index_count, 1, 0, 0, draw_instance);
+
+        elem_mesh->got_used = true;
     }
 
 
@@ -205,6 +406,9 @@ struct Shader_sprite::Impl
 
     std::string vertex_entry_point_name;
     std::string fragment_entry_point_name;
+
+    /// Holder for uploaded meshes.
+    std::unordered_map<void*, Uploaded_mesh> pointer_to_uploaded_mesh_map;
 
     /// Shader pipeline info for this shader.
     struct Shader_pipeline
@@ -333,13 +537,7 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
 
     for (UI::UI_element* elem : render_order_elem_list)
     {
-        // Depend on in-shader vertex data to construct a mesh on the fly.
-        vkCmdDraw(cmd,
-                  elem->is_nine_slice ? 6 * 9 : 6,
-                  1,
-                  0,
-                  draw_instance);
-
+        p.draw_mesh_for_elem(cmd, *elem, draw_instance);
         draw_instance++;
     }
 }

@@ -28,6 +28,43 @@
             "stage": "vertex",
             "parameters": [
                 {
+                    "name": "input",
+                    "stage": "vertex",
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 2},
+                    "type": {
+                        "kind": "struct",
+                        "name": "VS_input",
+                        "fields": [
+                            {
+                                "name": "pos",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 0}
+                            },
+                            {
+                                "name": "uv",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 2,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "vertex",
+                                "binding": {"kind": "varyingInput", "index": 1}
+                            }
+                        ]
+                    }
+                },
+                {
                     "name": "sprite_data_set",
                     "binding": {"kind": "uniform", "offset": 0, "size": 8, "elementStride": 0},
                     "type": {
@@ -49,14 +86,6 @@
                     "type": {
                         "kind": "scalar",
                         "scalarType": "float32"
-                    }
-                },
-                {
-                    "name": "vertex_index",
-                    "semanticName": "SV_VERTEXID",
-                    "type": {
-                        "kind": "scalar",
-                        "scalarType": "uint32"
                     }
                 },
                 {
