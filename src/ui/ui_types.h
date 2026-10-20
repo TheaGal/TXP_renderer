@@ -45,7 +45,7 @@ struct UI_file_element_data
     std::string image;
     vec3s color_tint;
     bool is_nine_slice;
-    bool is_msdf;
+    std::string render_text;
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(UI_file_element_data,
                                    name,
@@ -55,7 +55,7 @@ struct UI_file_element_data
                                    image,
                                    color_tint,
                                    is_nine_slice,
-                                   is_msdf);
+                                   render_text);
 };
 
 struct UI_file_data
@@ -74,7 +74,7 @@ struct UI_element
     uint32_t texture_idx;
     vec3 color_tint{ 1, 1, 1 };
     bool is_nine_slice;
-    bool is_msdf;
+    std::string render_text;
 };
 
 } // namespace UI

@@ -371,14 +371,14 @@ struct Shader_sprite::Impl
                             uint32_t const draw_instance)
     {
         Uploaded_mesh* elem_mesh;
-        if (elem.is_msdf)
+        if (!elem.render_text.empty())
         {
             void* elem_as_ptr{ const_cast<UI::UI_element*>(&elem) };
 
             auto it{ pointer_to_uploaded_mesh_map.find(elem_as_ptr)};
             if (it == pointer_to_uploaded_mesh_map.end())
             {
-                
+                assert(false);
                 // elem_mesh = &generate_text(elem_as_ptr, elem.text);
             }
             else
@@ -479,7 +479,7 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
         glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
 
         ui_data_set_data->is_nine_slice = elem->is_nine_slice;
-        ui_data_set_data->is_msdf = elem->is_msdf;
+        ui_data_set_data->is_msdf = !elem->render_text.empty();
 
         ui_data_set_data++;
     }

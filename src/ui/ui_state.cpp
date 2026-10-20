@@ -260,7 +260,7 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
             .opacity = elem.opacity,
             .image = gpu_idx_to_tex_name_map.at(elem.texture_idx),
             .is_nine_slice = elem.is_nine_slice,
-            .is_msdf = elem.is_msdf,
+            .render_text = elem.render_text,
         };
         glm_vec3_copy(const_cast<float_t*>(elem.color_tint), ui_file_elem.color_tint.raw);
 
@@ -382,7 +382,7 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
             .texture_idx =
                 static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
             .is_nine_slice = file_elem.is_nine_slice,
-            .is_msdf = file_elem.is_msdf,
+            .render_text = file_elem.render_text,
         });
         glm_vec3_copy(file_elem.color_tint.raw, my_elems.back().color_tint);
 
