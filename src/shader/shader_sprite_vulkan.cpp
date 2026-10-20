@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
@@ -29,6 +30,62 @@
 
 namespace TXP
 {
+namespace Font
+{
+
+struct Font_file_atlas_data
+{
+    std::string type;  // only MSDF support currently!
+    float_t distanceRange;
+    float_t distanceRangeMiddle;
+    float_t size;
+    uint32_t width;
+    uint32_t height;
+    std::string yOrigin;
+};
+
+struct Font_file_metrics_data
+{
+    float_t emSize;
+    float_t lineHeight;
+    float_t ascender;
+    float_t descender;
+    float_t underlineY;
+    float_t underlineThickness;
+};
+
+struct Font_file_glyphs_data
+{
+    uint32_t unicode;
+    float_t advance;
+
+    struct Bounds
+    {
+        float_t left{ std::numeric_limits<float_t>::lowest() };
+        float_t right{ std::numeric_limits<float_t>::lowest() };
+        float_t top{ std::numeric_limits<float_t>::lowest() };
+        float_t bottom{ std::numeric_limits<float_t>::lowest() };
+    };
+
+    Bounds planeBounds;  // optional
+    Bounds atlasBounds;  // optional
+};
+
+struct Font_file_kerning_data
+{
+    // idk what this data looks like right now
+};
+
+struct Font_file_data
+{
+    Font_file_atlas_data atlas;
+    Font_file_metrics_data metrics;
+    std::vector<Font_file_glyphs_data> glyphs;
+    std::vector<Font_file_kerning_data> kerning;
+};
+
+} // namespace Font
+
 namespace Shader
 {
 
@@ -291,37 +348,57 @@ struct Shader_sprite::Impl
         pointer_to_uploaded_mesh_map.emplace(ptr_key, std::move(umesh));
     }
 
-// @TODO: do this for text generation!!!
-#if 0
     void generate_text(void* ptr_key, std::string const& text)
     {
+        auto const& font_texture{ g.texture_entries.at("font_msdf_pitagon_serif_regular").texture };
+        assert(font_texture.width == font_texture.height);
+
+        Font::Font_file_data const ui_file_data =
+            BT::json_load_from_disk(s_font_directory + "pitagon_serif_regular.btfont");
+        assert(ui_file_data.atlas.type == "msdf");
+        assert(glm_eq(ui_file_data.atlas.distanceRange, 2));
+        assert(glm_eq(ui_file_data.atlas.distanceRangeMiddle, 0));
+        assert(ui_file_data.atlas.width == font_texture.width);
+        assert(ui_file_data.atlas.height == font_texture.height);
+
+        std::unordered_map<char, Font::Font_file_glyphs_data const*> char_to_glyph_data_map;
+        char_to_glyph_data_map.reserve(ui_file_data.glyphs.size());
+        for (auto const& glyph : ui_file_data.glyphs)
+        {
+            assert(glyph.unicode >= 0);
+            assert(glyph.unicode < 128);
+            char unicode_char = static_cast<char>(glyph.unicode);
+            char_to_glyph_data_map[unicode_char] = &glyph;
+        }
+
         Sprite_mesh_to_upload smesh;
         uint32_t index_offset = 0;
 
-        float w = static_cast<float>(textures.fontSDF.width);
+        float_t w = static_cast<float_t>(font_texture.width);
 
-        float posx = 0.0f;
-        float posy = 0.0f;
+        float_t posx = 0.0f;
+        float_t posy = 0.0f;
 
         for (uint32_t i = 0; i < text.size(); i++)
         {
-            bmchar* char_info = &font_chars[(int)text[i]];
+            char char_as_char = text[i];
+            auto const& char_info = char_to_glyph_data_map.at(char_as_char);
 
             if (char_info->width == 0)
                 char_info->width = 36;
 
-            float charw = ((float)(char_info->width) / 36.0f);
-            float dimx = 1.0f * charw;
-            float charh = ((float)(char_info->height) / 36.0f);
-            float dimy = 1.0f * charh;
+            float_t charw = ((float_t)(char_info->width) / 36.0f);
+            float_t dimx = 1.0f * charw;
+            float_t charh = ((float_t)(char_info->height) / 36.0f);
+            float_t dimy = 1.0f * charh;
 
-            float us = char_info->x / w;
-            float ue = (char_info->x + char_info->width) / w;
-            float ts = char_info->y / w;
-            float te = (char_info->y + char_info->height) / w;
+            float_t us = char_info->x / w;
+            float_t ue = (char_info->x + char_info->width) / w;
+            float_t ts = char_info->y / w;
+            float_t te = (char_info->y + char_info->height) / w;
 
-            float xo = char_info->xoffset / 36.0f;
-            float yo = char_info->yoffset / 36.0f;
+            float_t xo = char_info->xoffset / 36.0f;
+            float_t yo = char_info->yoffset / 36.0f;
 
             posy = yo;
 
@@ -337,7 +414,7 @@ struct Shader_sprite::Impl
             }
             index_offset += 4;
 
-            float advance = ((float)(char_info->xadvance) / 36.0f);
+            float_t advance = ((float_t)(char_info->xadvance) / 36.0f);
             posx += advance;
         }
         index_count = static_cast<uint32_t>(indices.size());
@@ -364,7 +441,6 @@ struct Shader_sprite::Impl
         //                                            indices.data()));
         upload_mesh_to_gpu(ptr_key, std::move(smesh), true);
     }
-#endif // 0
 
     void draw_mesh_for_elem(VkCommandBuffer cmd,
                             UI::UI_element const& elem,
@@ -378,8 +454,7 @@ struct Shader_sprite::Impl
             auto it{ pointer_to_uploaded_mesh_map.find(elem_as_ptr)};
             if (it == pointer_to_uploaded_mesh_map.end())
             {
-                assert(false);
-                // elem_mesh = &generate_text(elem_as_ptr, elem.text);
+                elem_mesh = &generate_text(elem_as_ptr, elem.text);
             }
             else
             {
