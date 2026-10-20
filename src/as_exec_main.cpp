@@ -78,6 +78,7 @@ int32_t main()
                      "My renderer test!",
                      "assets/textures/",
                      "assets/shaders/",
+                     "assets/fonts/",
                      "assets/models/",
                      "assets/ui/",
                      "assets/anim_frame_actions/",

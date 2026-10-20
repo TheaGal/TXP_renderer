@@ -49,6 +49,7 @@ public:
              std::string const& title,
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,
+             std::string const& font_asset_dir,
              std::string const& model_asset_dir,
              std::string const& ui_asset_dir,
              std::string const& afa_asset_dir,

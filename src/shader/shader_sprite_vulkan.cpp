@@ -30,6 +30,20 @@
 
 namespace TXP
 {
+namespace
+{
+
+static std::string s_font_directory;
+
+} // namespace
+
+
+void set_font_directory(std::string const& dir_name)
+{
+    s_font_directory = dir_name;
+}
+
+
 namespace Font
 {
 
@@ -42,6 +56,15 @@ struct Font_file_atlas_data
     uint32_t width;
     uint32_t height;
     std::string yOrigin;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Font_file_atlas_data,
+                                   type,
+                                   distanceRange,
+                                   distanceRangeMiddle,
+                                   size,
+                                   width,
+                                   height,
+                                   yOrigin);
 };
 
 struct Font_file_metrics_data
@@ -52,6 +75,14 @@ struct Font_file_metrics_data
     float_t descender;
     float_t underlineY;
     float_t underlineThickness;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Font_file_metrics_data,
+                                   emSize,
+                                   lineHeight,
+                                   ascender,
+                                   descender,
+                                   underlineY,
+                                   underlineThickness);
 };
 
 struct Font_file_glyphs_data
@@ -65,15 +96,27 @@ struct Font_file_glyphs_data
         float_t right{ std::numeric_limits<float_t>::lowest() };
         float_t top{ std::numeric_limits<float_t>::lowest() };
         float_t bottom{ std::numeric_limits<float_t>::lowest() };
+
+        NLOHMANN_DEFINE_TYPE_INTRUSIVE(Bounds, left, right, top, bottom);
     };
 
     Bounds planeBounds;  // optional
     Bounds atlasBounds;  // optional
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Font_file_glyphs_data,
+                                                unicode,
+                                                advance,
+                                                planeBounds,
+                                                atlasBounds);
 };
 
 struct Font_file_kerning_data
 {
     // idk what this data looks like right now
+
+    uint32_t some_data_wtf;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Font_file_kerning_data, some_data_wtf);
 };
 
 struct Font_file_data
@@ -82,6 +125,8 @@ struct Font_file_data
     Font_file_metrics_data metrics;
     std::vector<Font_file_glyphs_data> glyphs;
     std::vector<Font_file_kerning_data> kerning;
+
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE(Font_file_data, atlas, metrics, glyphs, kerning);
 };
 
 } // namespace Font
@@ -303,10 +348,16 @@ struct Shader_sprite::Impl
         smesh.indices.emplace_back(3);
 
         upload_mesh_to_gpu(nullptr, std::move(smesh), false);
+        pointer_to_built_text.emplace(nullptr, "");
     }
 
     ~Impl()
     {
+        for (auto&& [_, uploaded_mesh] : pointer_to_uploaded_mesh_map)
+        {
+            uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
+        }
+
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
     }
@@ -344,6 +395,17 @@ struct Shader_sprite::Impl
                     smesh.indices.data(),
                     index_buf_size);
 
+        umesh.got_used = true;
+
+        // Delete previously created mesh first if exists.
+        if (auto it = pointer_to_uploaded_mesh_map.find(ptr_key);
+            it != pointer_to_uploaded_mesh_map.end())
+        {
+            g.wait_until_gpu_idle();  // this is slow if you could @IMPROVE this??
+            it->second.model_buffer->vertex_index_buffer.destroy();
+            pointer_to_uploaded_mesh_map.erase(it);
+        }
+
         // Save to uploaded mesh map.
         pointer_to_uploaded_mesh_map.emplace(ptr_key, std::move(umesh));
     }
@@ -360,6 +422,7 @@ struct Shader_sprite::Impl
         assert(glm_eq(ui_file_data.atlas.distanceRangeMiddle, 0));
         assert(ui_file_data.atlas.width == font_texture.width);
         assert(ui_file_data.atlas.height == font_texture.height);
+        assert(ui_file_data.atlas.yOrigin == "bottom");
 
         std::unordered_map<char, Font::Font_file_glyphs_data const*> char_to_glyph_data_map;
         char_to_glyph_data_map.reserve(ui_file_data.glyphs.size());
@@ -371,75 +434,69 @@ struct Shader_sprite::Impl
             char_to_glyph_data_map[unicode_char] = &glyph;
         }
 
+        float_t const em_to_pix_size = ui_file_data.atlas.size / ui_file_data.atlas.width;
+        float_t const atlas_width = ui_file_data.atlas.width;
+        float_t const atlas_height = ui_file_data.atlas.height;
+
         Sprite_mesh_to_upload smesh;
-        uint32_t index_offset = 0;
 
-        float_t w = static_cast<float_t>(font_texture.width);
-
-        float_t posx = 0.0f;
-        float_t posy = 0.0f;
+        uint32_t vertex_index_offset{ 0 };
+        float_t posx{ 0 };
+        float_t posy{ 0 };
 
         for (uint32_t i = 0; i < text.size(); i++)
         {
             char char_as_char = text[i];
             auto const& char_info = char_to_glyph_data_map.at(char_as_char);
 
-            if (char_info->width == 0)
-                char_info->width = 36;
+            float_t const pos_x_start{ char_info->planeBounds.left * em_to_pix_size };
+            float_t const pos_x_end{ char_info->planeBounds.right * em_to_pix_size };
 
-            float_t charw = ((float_t)(char_info->width) / 36.0f);
-            float_t dimx = 1.0f * charw;
-            float_t charh = ((float_t)(char_info->height) / 36.0f);
-            float_t dimy = 1.0f * charh;
+            float_t const pos_y_start{ -char_info->planeBounds.bottom * em_to_pix_size };
+            float_t const pos_y_end{ -char_info->planeBounds.top * em_to_pix_size };
 
-            float_t us = char_info->x / w;
-            float_t ue = (char_info->x + char_info->width) / w;
-            float_t ts = char_info->y / w;
-            float_t te = (char_info->y + char_info->height) / w;
+            float_t const uv_x_start{ char_info->atlasBounds.left / atlas_width };
+            float_t const uv_x_end{ char_info->atlasBounds.right / atlas_width };
 
-            float_t xo = char_info->xoffset / 36.0f;
-            float_t yo = char_info->yoffset / 36.0f;
+            float_t const uv_y_start{ (atlas_height - char_info->atlasBounds.top) / atlas_height };
+            float_t const uv_y_end{ (atlas_height - char_info->atlasBounds.bottom) / atlas_height };
 
-            posy = yo;
+            smesh.vertices.emplace_back(Sprite_vertex{
+                { posx + pos_x_start, posy + pos_y_start, 0.0f },
+                { uv_x_start, uv_y_end },
+            });
+            smesh.vertices.emplace_back(Sprite_vertex{
+                { posx + pos_x_end, posy + pos_y_start, 0.0f },
+                { uv_x_end, uv_y_end },
+            });
+            smesh.vertices.emplace_back(Sprite_vertex{
+                { posx + pos_x_end, posy + pos_y_end, 0.0f },
+                { uv_x_end, uv_y_start },
+            });
+            smesh.vertices.emplace_back(Sprite_vertex{
+                { posx + pos_x_start, posy + pos_y_end, 0.0f },
+                { uv_x_start, uv_y_start },
+            });
 
-            vertices.push_back({ { posx + dimx + xo, posy + dimy, 0.0f }, { ue, te } });
-            vertices.push_back({ { posx + xo, posy + dimy, 0.0f }, { us, te } });
-            vertices.push_back({ { posx + xo, posy, 0.0f }, { us, ts } });
-            vertices.push_back({ { posx + dimx + xo, posy, 0.0f }, { ue, ts } });
-
-            std::array<uint32_t, 6> letterIndices = { 0, 1, 2, 2, 3, 0 };
-            for (auto& index : letterIndices)
+            std::array<uint32_t, 6> letter_indices = { 0, 1, 2, 2, 3, 0 };
+            for (auto const index : letter_indices)
             {
-                indices.push_back(index_offset + index);
+                smesh.indices.emplace_back(vertex_index_offset + index);
             }
-            index_offset += 4;
+            vertex_index_offset += 4;
 
-            float_t advance = ((float_t)(char_info->xadvance) / 36.0f);
-            posx += advance;
+            posx += (char_info->advance * em_to_pix_size);
         }
-        index_count = static_cast<uint32_t>(indices.size());
 
         // Center
-        for (auto& v : vertices)
+        for (auto& v : smesh.vertices)
         {
-            v.pos[0] -= posx / 2.0f;
-            v.pos[1] -= 0.5f;
+            v.position[0] -= posx * 0.5f;
+            v.position[1] += em_to_pix_size * 0.5f;
         }
 
-        // // Generate host accessible buffers for the text vertices and indices and upload the data
-        // VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-        //                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-        //                                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        //                                            &vertexBuffer,
-        //                                            vertices.size() * sizeof(Vertex),
-        //                                            vertices.data()));
-        // VK_CHECK_RESULT(vulkanDevice->createBuffer(VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-        //                                            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-        //                                                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-        //                                            &indexBuffer,
-        //                                            indices.size() * sizeof(uint32_t),
-        //                                            indices.data()));
         upload_mesh_to_gpu(ptr_key, std::move(smesh), true);
+        pointer_to_built_text.emplace(ptr_key, text);
     }
 
     void draw_mesh_for_elem(VkCommandBuffer cmd,
@@ -452,9 +509,11 @@ struct Shader_sprite::Impl
             void* elem_as_ptr{ const_cast<UI::UI_element*>(&elem) };
 
             auto it{ pointer_to_uploaded_mesh_map.find(elem_as_ptr)};
-            if (it == pointer_to_uploaded_mesh_map.end())
+            if (it == pointer_to_uploaded_mesh_map.end() ||
+                elem.render_text != pointer_to_built_text.at(elem_as_ptr))
             {
-                elem_mesh = &generate_text(elem_as_ptr, elem.text);
+                generate_text(elem_as_ptr, elem.render_text);
+                elem_mesh = &pointer_to_uploaded_mesh_map.at(elem_as_ptr);
             }
             else
             {
@@ -484,6 +543,7 @@ struct Shader_sprite::Impl
 
     /// Holder for uploaded meshes.
     std::unordered_map<void*, Uploaded_mesh> pointer_to_uploaded_mesh_map;
+    std::unordered_map<void*, std::string> pointer_to_built_text;
 
     /// Shader pipeline info for this shader.
     struct Shader_pipeline
@@ -606,6 +666,17 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
                        &push_consts);
 
     p.g.combined_static_model.bind(cmd);
+
+    // Mark all as stale.
+    for (auto&& [_, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
+    {
+        if (!uploaded_mesh.got_used)
+        {
+            BT_WARN("@TODO: delete this mesh!!!");
+        }
+
+        uploaded_mesh.got_used = false;
+    }
 
     // Render instances.
     uint32_t draw_instance{ 0 };

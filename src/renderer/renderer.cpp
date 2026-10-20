@@ -48,6 +48,7 @@ struct Renderer::Impl
          std::string const& title,
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
+         std::string const& font_asset_dir,
          std::string const& model_asset_dir,
          std::string const& ui_asset_dir,
          std::string const& afa_asset_dir,
@@ -60,6 +61,7 @@ struct Renderer::Impl
         , title(title)
         , texture_asset_dir(texture_asset_dir)
         , shader_asset_dir(shader_asset_dir)
+        , font_asset_dir(font_asset_dir)
         , model_asset_dir(model_asset_dir)
         , ui_asset_dir(ui_asset_dir)
         , afa_asset_dir(afa_asset_dir)
@@ -86,6 +88,7 @@ struct Renderer::Impl
 
     std::string texture_asset_dir;
     std::string shader_asset_dir;
+    std::string font_asset_dir;
     std::string model_asset_dir;
     std::string ui_asset_dir;
     std::string afa_asset_dir;
@@ -405,6 +408,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::string const& title,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
+                   std::string const& font_asset_dir,
                    std::string const& model_asset_dir,
                    std::string const& ui_asset_dir,
                    std::string const& afa_asset_dir,
@@ -416,6 +420,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                                      title,
                                      texture_asset_dir,
                                      shader_asset_dir,
+                                     font_asset_dir,
                                      model_asset_dir,
                                      ui_asset_dir,
                                      afa_asset_dir,
@@ -433,6 +438,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
 
     // Small setup of auxiliary systems.
     Shader_Creation::set_shader_directory(m_pimpl->shader_asset_dir);
+    set_font_directory(m_pimpl->font_asset_dir);
     set_model_directory(m_pimpl->model_asset_dir);
     set_ui_directory(m_pimpl->ui_asset_dir);
 

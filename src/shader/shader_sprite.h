@@ -7,6 +7,9 @@
 namespace TXP
 {
 
+/// Sets font directory to load in font information.
+void set_font_directory(std::string const& dir_name);
+
 struct Render_model_data_collection;  // Forward decl.
 struct UI_state;  // Forward decl.
 
