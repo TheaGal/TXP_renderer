@@ -348,7 +348,7 @@ struct Shader_sprite::Impl
         smesh.indices.emplace_back(3);
 
         upload_mesh_to_gpu(nullptr, std::move(smesh), false);
-        pointer_to_built_text.emplace(nullptr, "");
+        pointer_to_built_config[nullptr] = {};
     }
 
     ~Impl()
@@ -410,7 +410,10 @@ struct Shader_sprite::Impl
         pointer_to_uploaded_mesh_map.emplace(ptr_key, std::move(umesh));
     }
 
-    void generate_text(void* ptr_key, std::string const& text)
+    void generate_text(void* ptr_key,
+                       std::string const& text,
+                       UI::UI_element::Align const halign,
+                       UI::UI_element::Align const valign)
     {
         auto const& font_texture{ g.texture_entries.at("font_msdf_pitagon_serif_regular").texture };
         assert(font_texture.width == font_texture.height);
@@ -488,15 +491,24 @@ struct Shader_sprite::Impl
             posx += (char_info->advance * em_to_pix_size);
         }
 
+        constexpr std::array<float_t, 3> k_alignment_multis{ 0, 0.5, 1 };
+
+        float_t const halign_multi{ k_alignment_multis[halign] };
+        float_t const valign_multi{ 1.0f - k_alignment_multis[valign] };
+
         // Center
         for (auto& v : smesh.vertices)
         {
-            v.position[0] -= posx * 0.5f;
-            v.position[1] += em_to_pix_size * 0.5f;
+            v.position[0] -= posx * halign_multi;
+            v.position[1] += em_to_pix_size * valign_multi;
         }
 
         upload_mesh_to_gpu(ptr_key, std::move(smesh), true);
-        pointer_to_built_text.emplace(ptr_key, text);
+        pointer_to_built_config[ptr_key] = {
+            .text = text,
+            .halign = halign,
+            .valign = valign,
+        };
     }
 
     void draw_mesh_for_elem(VkCommandBuffer cmd,
@@ -510,9 +522,10 @@ struct Shader_sprite::Impl
 
             auto it{ pointer_to_uploaded_mesh_map.find(elem_as_ptr)};
             if (it == pointer_to_uploaded_mesh_map.end() ||
-                elem.render_text != pointer_to_built_text.at(elem_as_ptr))
+                !pointer_to_built_config.at(elem_as_ptr)
+                     .is_equal(elem.render_text, elem.halign, elem.valign))
             {
-                generate_text(elem_as_ptr, elem.render_text);
+                generate_text(elem_as_ptr, elem.render_text, elem.halign, elem.valign);
                 elem_mesh = &pointer_to_uploaded_mesh_map.at(elem_as_ptr);
             }
             else
@@ -543,7 +556,21 @@ struct Shader_sprite::Impl
 
     /// Holder for uploaded meshes.
     std::unordered_map<void*, Uploaded_mesh> pointer_to_uploaded_mesh_map;
-    std::unordered_map<void*, std::string> pointer_to_built_text;
+
+    struct Built_config
+    {
+        std::string text;
+        UI::UI_element::Align halign;
+        UI::UI_element::Align valign;
+
+        bool is_equal(std::string const& param_text,
+                      UI::UI_element::Align const param_halign,
+                      UI::UI_element::Align const param_valign) const
+        {
+            return (text == param_text && halign == param_halign && valign == param_valign);
+        }
+    };
+    std::unordered_map<void*, Built_config> pointer_to_built_config;
 
     /// Shader pipeline info for this shader.
     struct Shader_pipeline
@@ -692,6 +719,7 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
         if (!uploaded_mesh.got_used)
         {
             BT_WARN("@TODO: delete this mesh!!!");
+            BT::date_deadline(2026, 10, 30);
         }
 
         uploaded_mesh.got_used = false;
