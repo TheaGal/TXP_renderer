@@ -46,6 +46,7 @@ struct UI_file_render_image_data
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(UI_file_render_image_data,
                                                 enabled,
                                                 image_name,
+                                                color_tint,
                                                 is_nine_slice);
 };
 
