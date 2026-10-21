@@ -258,11 +258,20 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
             .parent = (elem.parent == nullptr ? "" : elem.parent->name),
             .transform = elem.transform,
             .opacity = elem.opacity,
-            .image = gpu_idx_to_tex_name_map.at(elem.texture_idx),
-            .is_nine_slice = elem.is_nine_slice,
-            .render_text = elem.render_text,
+            .render_image{
+                .enabled = (elem.texture_idx == UI::k_texture_idx_no_texture),
+                .image_name = (elem.texture_idx == UI::k_texture_idx_no_texture
+                                   ? ""
+                                   : gpu_idx_to_tex_name_map.at(elem.texture_idx)),
+                .is_nine_slice = elem.is_nine_slice,
+            },
+            .render_text{
+                .enabled = !elem.render_text.empty(),
+                .text = elem.render_text,
+            },
         };
-        glm_vec3_copy(const_cast<float_t*>(elem.color_tint), ui_file_elem.color_tint.raw);
+        glm_vec3_copy(const_cast<float_t*>(elem.color_tint),
+                      ui_file_elem.render_image.color_tint.raw);
 
         file_data.elements.emplace_back(std::move(ui_file_elem));
     }
@@ -380,11 +389,14 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
             .transform = file_elem.transform,
             .opacity = file_elem.opacity,
             .texture_idx =
-                static_cast<uint32_t>(s_gfx->texture_entries.at(file_elem.image).gpu_idx),
-            .is_nine_slice = file_elem.is_nine_slice,
-            .render_text = file_elem.render_text,
+                (file_elem.render_image.enabled
+                     ? static_cast<uint32_t>(
+                           s_gfx->texture_entries.at(file_elem.render_image.image_name).gpu_idx)
+                     : UI::k_texture_idx_no_texture),
+            .is_nine_slice = file_elem.render_image.is_nine_slice,
+            .render_text = (file_elem.render_text.enabled ? file_elem.render_text.text : ""),
         });
-        glm_vec3_copy(file_elem.color_tint.raw, my_elems.back().color_tint);
+        glm_vec3_copy(file_elem.render_image.color_tint.raw, my_elems.back().color_tint);
 
         if (temp_elem_name_to_idx.size() != my_elems.size())
             throw std::runtime_error("These sizes should be the same.");

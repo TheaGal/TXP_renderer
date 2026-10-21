@@ -1069,19 +1069,55 @@ void TXP::editor_content::ui_editor::ui_editor_content()
                 texture_names.emplace_back(tex_name.c_str());
             }
 
-            int32_t cur_tex_idx{ gpu_tex_idx_to_texture_name_list_idx_map.at(
-                editing_elem->texture_idx) };
-            if (ImGui::Combo("texture", &cur_tex_idx, texture_names.data(), texture_names.size()))
+            ImGui::Separator();
+
+            bool editing_elem_has_texture{ editing_elem->texture_idx !=
+                                           UI::k_texture_idx_no_texture };
+            if (ImGui::Checkbox("enable texture", &editing_elem_has_texture))
             {
                 editing_elem->texture_idx =
-                    texture_name_list_idx_to_gpu_tex_idx_map.at(cur_tex_idx);
+                    (editing_elem_has_texture ? 0 : UI::k_texture_idx_no_texture);
+
+                if (editing_elem_has_texture)
+                    editing_elem->render_text = "";
+
                 edited |= true;
+            }
+
+            if (editing_elem_has_texture)
+            {
+                int32_t cur_tex_idx{ gpu_tex_idx_to_texture_name_list_idx_map.at(
+                    editing_elem->texture_idx) };
+                if (ImGui::Combo("texture",
+                                 &cur_tex_idx,
+                                 texture_names.data(),
+                                 texture_names.size()))
+                {
+                    editing_elem->texture_idx =
+                        texture_name_list_idx_to_gpu_tex_idx_map.at(cur_tex_idx);
+                    edited |= true;
+                }
+
+                edited |= ImGui::ColorEdit3("color_tint", editing_elem->color_tint);
+                edited |= ImGui::Checkbox("is_nine_slice", &editing_elem->is_nine_slice);
             }
         }
 
-        edited |= ImGui::ColorEdit3("color_tint", editing_elem->color_tint);
-        edited |= ImGui::Checkbox("is_nine_slice", &editing_elem->is_nine_slice);
-        edited |= ImGui::InputText("render_text", &editing_elem->render_text);
+        ImGui::Separator();
+
+        bool editing_elem_has_render_text{ !editing_elem->render_text.empty() };
+        if (ImGui::Checkbox("enable render text", &editing_elem_has_render_text))
+        {
+            editing_elem->render_text = (editing_elem_has_render_text ? "Some text" : "");
+
+            if (editing_elem_has_render_text)
+                editing_elem->texture_idx = UI::k_texture_idx_no_texture;
+
+            edited |= true;
+        }
+
+        if (editing_elem_has_render_text)
+            edited |= ImGui::InputText("render_text", &editing_elem->render_text);
 
         ImGui::PopID();
 

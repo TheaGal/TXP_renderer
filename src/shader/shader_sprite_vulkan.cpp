@@ -564,6 +564,18 @@ Shader_sprite::Shader_sprite(Render_model_data_collection& render_model_data_col
 
 Shader_sprite::~Shader_sprite() = default;
 
+
+namespace
+{
+
+bool is_empty_ui_node(UI::UI_element const* elem)
+{
+    return (elem->texture_idx == UI::k_texture_idx_no_texture && elem->render_text.empty());
+}
+
+} // namespace
+
+
 void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 {
     auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
@@ -583,6 +595,9 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 
     for (UI::UI_element const* elem : render_order_elem_list)
     {
+        if (is_empty_ui_node(elem))
+            continue;
+
         glm_mat4_identity(ui_data_set_data->model_mat);
 
         uint32_t parent_overflow_count{ 10000 };
@@ -608,13 +623,17 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
         glm_vec2_copy(vec2{ elem->transform.anchor.x, elem->transform.anchor.y },
                       ui_data_set_data->anchor);
 
+        bool const has_render_text{ !elem->render_text.empty() };
+
         ui_data_set_data->opacity = elem->opacity;  // @THOUGHT: inherit opacity from parents??
-        ui_data_set_data->texture_idx = elem->texture_idx;
+        ui_data_set_data->texture_idx =
+            (has_render_text ? p.g.texture_entries.at("font_msdf_pitagon_serif_regular").gpu_idx
+                             : elem->texture_idx);
 
         glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
 
         ui_data_set_data->is_nine_slice = elem->is_nine_slice;
-        ui_data_set_data->is_msdf = !elem->render_text.empty();
+        ui_data_set_data->is_msdf = has_render_text;
 
         ui_data_set_data++;
     }
@@ -683,6 +702,9 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
 
     for (UI::UI_element* elem : render_order_elem_list)
     {
+        if (is_empty_ui_node(elem))
+            continue;
+
         p.draw_mesh_for_elem(cmd, *elem, draw_instance);
         draw_instance++;
     }
