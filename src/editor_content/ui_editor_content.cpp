@@ -1117,7 +1117,15 @@ void TXP::editor_content::ui_editor::ui_editor_content()
         }
 
         if (editing_elem_has_render_text)
+        {
             edited |= ImGui::InputText("render_text", &editing_elem->render_text);
+            edited |= ImGui::Combo("halign",
+                                   reinterpret_cast<int32_t*>(&editing_elem->halign),
+                                   "left\0center\0right\0");
+            edited |= ImGui::Combo("valign",
+                                   reinterpret_cast<int32_t*>(&editing_elem->valign),
+                                   "top\0center\0bottom\0");
+        }
 
         ImGui::PopID();
 

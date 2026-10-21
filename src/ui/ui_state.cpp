@@ -253,21 +253,26 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
 
     for (auto const& elem : my_elems)
     {
+        constexpr std::array<char const*, 3> k_halign_strs{ "left", "center", "right" };
+        constexpr std::array<char const*, 3> k_valign_strs{ "top", "center", "bottom" };
+
         UI::UI_file_element_data ui_file_elem{
             .name = elem.name,
             .parent = (elem.parent == nullptr ? "" : elem.parent->name),
             .transform = elem.transform,
             .opacity = elem.opacity,
             .render_image{
-                .enabled = (elem.texture_idx == UI::k_texture_idx_no_texture),
-                .image_name = (elem.texture_idx == UI::k_texture_idx_no_texture
-                                   ? ""
-                                   : gpu_idx_to_tex_name_map.at(elem.texture_idx)),
+                .enabled = (elem.texture_idx != UI::k_texture_idx_no_texture),
+                .image_name = (elem.texture_idx != UI::k_texture_idx_no_texture
+                                   ? gpu_idx_to_tex_name_map.at(elem.texture_idx)
+                                   : ""),
                 .is_nine_slice = elem.is_nine_slice,
             },
             .render_text{
                 .enabled = !elem.render_text.empty(),
                 .text = elem.render_text,
+                .halign = k_halign_strs[elem.halign],
+                .valign = k_valign_strs[elem.valign],
             },
         };
         glm_vec3_copy(const_cast<float_t*>(elem.color_tint),
@@ -383,6 +388,14 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
     {
         temp_elem_name_to_idx[file_elem.name] = my_elems.size();
 
+        static std::unordered_map<std::string, UI::UI_element::Align> const k_str_to_alignment_map{
+            {"left", UI::UI_element::LEFT},
+            {"center", UI::UI_element::CENTER},
+            {"right", UI::UI_element::RIGHT},
+            {"top", UI::UI_element::TOP},
+            {"bottom", UI::UI_element::BOTTOM},
+        };
+
         my_elems.emplace_back(UI::UI_element{
             .name = file_elem.name,
             .parent = nullptr,  // Will fill in later.
@@ -395,6 +408,8 @@ std::vector<UI::UI_element*> UI_state::gather_rendering_ui_elements_in_render_or
                      : UI::k_texture_idx_no_texture),
             .is_nine_slice = file_elem.render_image.is_nine_slice,
             .render_text = (file_elem.render_text.enabled ? file_elem.render_text.text : ""),
+            .halign = k_str_to_alignment_map.at(file_elem.render_text.halign),
+            .valign = k_str_to_alignment_map.at(file_elem.render_text.valign),
         });
         glm_vec3_copy(file_elem.render_image.color_tint.raw, my_elems.back().color_tint);
 

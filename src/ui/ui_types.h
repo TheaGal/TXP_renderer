@@ -18,12 +18,12 @@ constexpr float_t k_ui_canvas_fixed_height{ 360 };
 
 struct Rect_transform
 {
-    float_t x;
-    float_t y;
-    float_t w;
-    float_t h;
+    float_t x{ 0 };
+    float_t y{ 0 };
+    float_t w{ 100 };
+    float_t h{ 100 };
 
-    float_t rot;
+    float_t rot{ 0 };
 
     struct Anchor
     {
@@ -54,8 +54,14 @@ struct UI_file_render_text_data
 {
     bool enabled{ false };
     std::string text;
+    std::string halign{ "center" };
+    std::string valign{ "center" };
 
-    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(UI_file_render_text_data, enabled, text);
+    NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(UI_file_render_text_data,
+                                                enabled,
+                                                text,
+                                                halign,
+                                                valign);
 };
 
 struct UI_file_element_data
@@ -91,10 +97,24 @@ struct UI_element
     UI_element* parent{ nullptr };
     Rect_transform transform;  // local transform.
     float_t opacity{ 1 };
+
     uint32_t texture_idx{ k_texture_idx_no_texture };
     vec3 color_tint{ 1, 1, 1 };
     bool is_nine_slice{ false };
+
     std::string render_text;
+
+    enum Align : int32_t
+    {
+        LEFT = 0,
+        CENTER,
+        RIGHT,
+
+        TOP = LEFT,
+        BOTTOM = RIGHT,
+    };
+    Align halign;
+    Align valign;
 };
 
 } // namespace UI
