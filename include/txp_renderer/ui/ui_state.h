@@ -80,6 +80,7 @@ public:
     void set_width(float_t w);
     void set_height(float_t h);
     void set_opacity(float_t alpha);
+    void set_text(std::string const& new_text);
 
 private:
     UI_element_state(UI_state& ui_state)

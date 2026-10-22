@@ -154,6 +154,20 @@ void UI_element_state::set_opacity(float_t alpha)
     m_ui_state.invalidate_draw_cache();
 }
 
+void UI_element_state::set_text(std::string const& new_text)
+{
+    if (m_loaded_elem == nullptr)
+    {
+        throw std::runtime_error("elem isnt loaded yet.");
+    }
+
+    if (m_loaded_elem->render_text != new_text)
+    {
+        m_loaded_elem->render_text = new_text;
+        m_ui_state.invalidate_draw_cache();
+    }
+}
+
 
 // class UI_canvas_state
 UI_canvas_state::~UI_canvas_state()
