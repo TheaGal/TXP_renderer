@@ -41,6 +41,7 @@ enum Controllable_data_label : std::uint32_t
         X__bool(can_cancel_attack_w_parry,             false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(blade_has_mizunokata,                  false) \
         X__bool(blade_has_honoonokata,                 false) \
+        X__bool(can_receive_deathblow,                 false) \
         X__bool(hitcapsule_group_0_enabled,            true)   /* this is typically the hitbox group */    \
         X__bool(hitcapsule_group_1_enabled,            false) \
         X__bool(hitcapsule_group_2_enabled,            false) \
