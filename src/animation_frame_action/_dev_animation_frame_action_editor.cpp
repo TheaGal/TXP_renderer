@@ -170,6 +170,8 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     glm_vec3_copy(const_cast<float_t*>(root_bone_matrix.raw[3]),
                                   root_bone_position);
 
+                    glm_vec3(root_bone_position, eds.anim_current_frame_root_bone_pos);
+
                     // @NOTE: sim transform has zero'd out y val for root bone's root motion.
                     mat4 mocked_sim_transform;
                     glm_translate_make(mocked_sim_transform,

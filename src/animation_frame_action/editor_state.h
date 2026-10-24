@@ -41,6 +41,7 @@ struct Editor_state
     size_t anim_current_frame{ 0 };
     size_t prev_anim_current_frame{ (size_t)-1 };
     vec3 anim_current_frame_root_motion_delta_pos;
+    vec3 anim_current_frame_root_bone_pos;
     bool is_working_afa_dirty{ false };
 };
 
