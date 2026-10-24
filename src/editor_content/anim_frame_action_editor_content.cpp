@@ -692,10 +692,14 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
             ImGui::PushItemWidth(130);
 
-            ImGui::Text("Displaying frame %zu/%d. %.2f FPS",
-                        anim_frame_action::s_editor_state.anim_current_frame,
-                        s_final_frame,
-                        k_skeletal_anim_frames_per_second);
+            ImGui::Text(
+                "Displaying frame %zu/%d.  root_motion_velo=(%.3f, %.3f, %.3f).  %.2f FPS",
+                anim_frame_action::s_editor_state.anim_current_frame,
+                s_final_frame,
+                anim_frame_action::s_editor_state.anim_current_frame_root_motion_delta_pos[0],
+                anim_frame_action::s_editor_state.anim_current_frame_root_motion_delta_pos[1],
+                anim_frame_action::s_editor_state.anim_current_frame_root_motion_delta_pos[2],
+                k_skeletal_anim_frames_per_second);
 
             // Play animation looped using selected frame.
             {

@@ -154,6 +154,10 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     // Create mocked simulation transform from root bone position.
                     assert(!eds.working_model_animator->get_is_using_root_motion());  // assumes no root motion zeroing inside editor.
 
+                    eds.working_model_animator->get_anim_root_motion_delta_pos(
+                        SIMULATION_TIMER_PROFILE,
+                        eds.anim_current_frame_root_motion_delta_pos);
+
                     std::vector<mat4s> joint_matrices;
                     eds.working_model_animator->get_anim_floored_frame_pose(
                         SIMULATION_TIMER_PROFILE,

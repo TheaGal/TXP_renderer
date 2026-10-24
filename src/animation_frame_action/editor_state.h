@@ -24,7 +24,8 @@ struct Editor_state
 {
     bool is_editor_state_untouched{ true };  // Set to true when editor state is reset.
 
-    vec3 root_bone_offset = { 1.5, 1.8, 2.2 };
+    // @TODO: rename `root_bone_offset` to `camera_pos_relative_to_root_bone`.
+    vec3 root_bone_offset = { 1.5, 1.8, 2.2 };  // offset from root bone to place camera
     vec3 prev_cam_pos;
     bool is_view_direction_set{ false };
 
@@ -39,6 +40,7 @@ struct Editor_state
     size_t selected_anim_num_frames{ 0 };
     size_t anim_current_frame{ 0 };
     size_t prev_anim_current_frame{ (size_t)-1 };
+    vec3 anim_current_frame_root_motion_delta_pos;
     bool is_working_afa_dirty{ false };
 };
 
