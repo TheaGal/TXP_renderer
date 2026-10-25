@@ -138,6 +138,73 @@ static void window_close_callback(GLFWwindow* window)
     BT::service_finder::find_service<TXP::Renderer>().shutdown_loop();
 }
 
+
+/// Message severity.
+BT::logger::Log_type to_log_type(VkDebugUtilsMessageSeverityFlagBitsEXT s)
+{
+    switch (s)
+    {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+        return BT::logger::TRACE;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+        return BT::logger::ERROR;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+        return BT::logger::WARN;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+        return BT::logger::INFO;
+    default:
+        throw std::runtime_error("unknown msg severity");
+    }
+}
+
+/// Message type.
+char const* to_string_message_type(VkDebugUtilsMessageTypeFlagsEXT s)
+{
+    if (s == 7) return "General | Validation | Performance";
+    if (s == 6) return "Validation | Performance";
+    if (s == 5) return "General | Performance";
+    if (s == 4 /*VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT*/) return "Performance";
+    if (s == 3) return "General | Validation";
+    if (s == 2 /*VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT*/) return "Validation";
+    if (s == 1 /*VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT*/) return "General";
+    return "Unknown";
+}
+
+// Debug messenger.
+inline VKAPI_ATTR VkBool32 VKAPI_CALL
+txp_renderer_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+                            VkDebugUtilsMessageTypeFlagsEXT message_type,
+                            VkDebugUtilsMessengerCallbackDataEXT const* p_callback_data,
+                            void*)
+{
+    auto const log_type = to_log_type(message_severity);
+    char const* msg_type = to_string_message_type(message_type);
+
+    if (message_type & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT)
+    {
+        BT::logger::printef(log_type,
+                            "VULKAN VALIDATION :: %s ::\n\n"
+                            "%s\n\n"
+                            "%s\n\n",
+                            msg_type,
+                            p_callback_data->pMessageIdName,
+                            p_callback_data->pMessage);
+        assert(false);
+    }
+    else
+    {
+        BT::logger::printef(log_type,
+                            "VULKAN :: %s ::\n\n"
+                            "%s\n\n",
+                            msg_type,
+                            p_callback_data->pMessage);
+    }
+
+    // Applications must return false here (Except Validation, if return true, will skip calling to
+    // driver)
+    return VK_FALSE;
+}
+
 }  // namespace
 
 
@@ -352,7 +419,7 @@ void Graphics::Impl::init_vulkan_instance()
             .require_api_version(1, 3, 0)
         #ifndef NDEBUG
             .request_validation_layers(true)
-            .use_default_debug_messenger()
+            .set_debug_callback(txp_renderer_debug_callback)
         #endif
             .build()
     };
