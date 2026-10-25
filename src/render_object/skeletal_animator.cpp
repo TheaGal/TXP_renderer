@@ -2,6 +2,7 @@
 
 #include "animation_frame_action/runtime_data_controls.h"
 #include "animator_template_types.h"
+#include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "btuuid.h"
@@ -511,8 +512,7 @@ void TXP::component_internal::Model_animator::cache_simulation_transform(
     glm_mat4_copy(const_cast<vec4*>(simulation_transform), m_cached_simulation_transform);
 }
 
-void TXP::component_internal::Model_animator::update(Animator_timer_profile profile,
-                                                     float_t delta_time)
+void TXP::component_internal::Model_animator::update_state(Animator_timer_profile profile)
 {   // @TODO: There needs to be some kind of time syncing between timers. Since the creation of
     //        setting triggers and variables to switch states, there will be issues when changing
     //        states.
@@ -520,9 +520,10 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
     //           synced up enough? Only the simulation loop is going to be changing states inside
     //           the animator.
 
-    bool is_paused{ m_is_paused.load() };
-    if (is_paused)
-        delta_time = 0;
+    assert(profile == SIMULATION_TIMER_PROFILE);
+    BT::date_deadline(2026, 11, 1);  // @REFACTOR: make this explicitly for only simulation timer profile!!!
+
+    bool const is_paused{ m_is_paused.load() };
 
     animator_frame_t* frame_handle{ nullptr };
     animator_time_t* time_handle{ nullptr };
@@ -537,13 +538,12 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
         break;
     }
 
-    auto [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
+    auto const [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process anim frame action controls.
-    if (profile == SIMULATION_TIMER_PROFILE &&
-        m_anim_frame_action_controls != nullptr)
+    if (profile == SIMULATION_TIMER_PROFILE && m_anim_frame_action_controls != nullptr)
     {
         // Process anim frame action runtime.
         auto current_action_timeline_idx{
@@ -556,7 +556,6 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
         reset_event_queue_watchlist();
 
         // Get anim frame idx.
-        auto const& anim_state{ m_animator_states[anim_state_idx] };
         auto const& current_anim_for_state{
             m_model_anim_set.animations[anim_state.state_type == anim_state.SINGLE_ANIM
                                             ? anim_state.animation_idx
@@ -611,10 +610,10 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process animator state transitions.
-    bool performed_state_transition{ false };
-
     if (!is_paused && profile == SIMULATION_TIMER_PROFILE)
     {
+        bool performed_state_transition{ false };
+
         // Get state-set transition from watching event queues.
         // @NOTE: this must happen after all regions have processed `execute_command_code()` so that
         //        event queues are being watched/ignored correctly.  -Thea 2026/08/31
@@ -665,48 +664,69 @@ void TXP::component_internal::Model_animator::update(Animator_timer_profile prof
         }
 
         // ^^ (@NOTE: currently @UNUSED) ^^
-    }
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Tick forward.
-    // @NOTE: if just performed a state transition earlier,
-    //        do *not* change time so that frame 0 isn't skipped.  -Thea 2026/01/24
-    if (!is_paused && !performed_state_transition)
-    {
-        switch (profile)
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Redo eaten `update_state()` that was for state transition.
+        if (performed_state_transition)
         {
-        case SIMULATION_TIMER_PROFILE:
-            (*frame_handle)++;  // @NOTE: after 828.5 days (if 60 ticks/sec), this value will wrap around.
-            break;
-
-        case RENDERER_TIMER_PROFILE:
-            *time_handle += delta_time;
-            break;
-        }
-
-        // @NOTE: time dilation in the simulation profile is not allowed.
-        if (profile == SIMULATION_TIMER_PROFILE && delta_time != k_simulation_delta_time)
-        {
-            BT_ERRORF(
-                "SIMULATION_PROFILE animator tick did not match simulation delta-time.  "
-                "k_simulation_delta_time=%0.6f  delta_time=%0.6f",
-                k_simulation_delta_time,
-                delta_time);
-            assert(false);
-            abort();
-            return;
+            // @NOTE: since the state transition change is "immediate" (and requires the AFA to
+            //        update which event queues to watch/ignore before the transition can be
+            //        processed), then this `update_state()` call was for processing the event
+            //        queues and another `update_state()` is needed for the transitioned new state's
+            //        first frame.
+            update_state(profile);
         }
     }
+}
 
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    // Redo eaten `update()` that was for state transition.
-    if (!is_paused && performed_state_transition)
+void TXP::component_internal::Model_animator::progress_time(Animator_timer_profile profile, float_t delta_time)
+{   // @TODO: There needs to be some kind of time syncing between timers. Since the creation of
+    //        setting triggers and variables to switch states, there will be issues when changing
+    //        states.
+    // @THOUGHT: Well, ig since `set_time()` will be setting all the timers, then it will start out
+    //           synced up enough? Only the simulation loop is going to be changing states inside
+    //           the animator.
+
+    bool const is_paused{ m_is_paused.load() };
+    if (is_paused)
+        return;
+
+    animator_frame_t* frame_handle{ nullptr };
+    animator_time_t* time_handle{ nullptr };
+    switch (profile)
     {
-        // @NOTE: since the state transition change is "immediate" (and requires the AFA to update
-        //        which event queues to watch/ignore before the transition can be processed), then
-        //        this `update()` call was for processing the event queues and another `update()` is
-        //        needed for the transitioned new state's first frame.
-        update(profile, delta_time);
+    case SIMULATION_TIMER_PROFILE:
+        frame_handle = &get_profile_frame_handle(profile);
+        break;
+
+    case RENDERER_TIMER_PROFILE:
+        time_handle = &get_profile_time_handle(profile);
+        break;
+    }
+
+    switch (profile)
+    {
+    case SIMULATION_TIMER_PROFILE:
+        (*frame_handle)++;  // @NOTE: after 828.5 days (if 60 ticks/sec), this value will wrap around.
+        break;
+
+    case RENDERER_TIMER_PROFILE:
+        *time_handle += delta_time;
+        break;
+    }
+
+    // @NOTE: time dilation in the simulation profile is not allowed.
+    if (profile == SIMULATION_TIMER_PROFILE && delta_time != k_simulation_delta_time)
+    {
+        BT_ERRORF(
+            "SIMULATION_PROFILE animator tick did not match simulation delta-time.  "
+            "k_simulation_delta_time=%0.6f  delta_time=%0.6f",
+            k_simulation_delta_time,
+            delta_time);
+        assert(false);
+        abort();
+        return;
     }
 }
 

@@ -100,11 +100,14 @@ public:
     /// Caches a transform for simulation update to use.
     void cache_simulation_transform(mat4 const simulation_transform);
 
-    /// Updates the animator, supplying a deltatime.
-    /// There are two animator timers, so you need to give which timer to update.
+    /// Updates the animator's state at its current time.
     /// @NOTE: while paused, `update()` may be used to update the AFA data. Also, `delta_time` will
     ///        do nothing while paused.
-    void update(Animator_timer_profile profile, float_t delta_time);
+    void update_state(Animator_timer_profile profile);
+
+    /// Progresses time in animator on the profile.
+    /// There are two animator timers, so you need to give which timer to update.
+    void progress_time(Animator_timer_profile profile, float_t delta_time);
 
     /// Calculates the set of joint matrices, interpolated.
     /// Also allows for root motion zeroing.

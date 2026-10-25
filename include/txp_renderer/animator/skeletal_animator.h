@@ -41,9 +41,12 @@ public:
     /// Caches sim transform for calculations done inside the simulation update.
     void cache_simulation_transform(mat4 const simulation_transform);
 
-    /// Updates the animator, supplying a deltatime.
+    /// Updates the animator's state at its current time.
+    void update_state(Animator_timer_profile profile);
+
+    /// Progresses time in animator on the profile.
     /// There are two animator timers, so you need to give which timer to update.
-    void update(Animator_timer_profile profile, float_t delta_time);
+    void progress_time(Animator_timer_profile profile, float_t delta_time);
 
 
     /// Gets whether root motion is enabled or not on this animator.

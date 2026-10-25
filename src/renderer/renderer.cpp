@@ -652,12 +652,12 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     // Update animators.
     for (auto&& [_, animator] : m.ecs_registry.view<component_internal::Model_animator>().each())
     {   // Tick animator.
-        animator.update(TXP::RENDERER_TIMER_PROFILE, delta_time);
-
         std::vector<mat4s> joint_matrices;
         animator.calc_anim_pose(TXP::RENDERER_TIMER_PROFILE,
                                 animator.get_is_using_root_motion(),
                                 joint_matrices);
+
+        animator.progress_time(TXP::RENDERER_TIMER_PROFILE, delta_time);
 
         auto& def_mod{ animator.get_deformed_model() };
 
