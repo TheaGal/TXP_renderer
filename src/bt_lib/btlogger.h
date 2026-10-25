@@ -1,12 +1,13 @@
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <tuple>
-#include <utility>
 
-using std::forward;
+using std::array;
 using std::string;
+using std::string_view;
 using std::tuple;
 
 
@@ -14,6 +15,9 @@ namespace BT
 {
 namespace logger
 {
+
+constexpr uint32_t k_num_rows{ 1024 };
+static_assert((k_num_rows & (k_num_rows - 1)) == 0, "Must be a power of 2.");
 
 enum Log_type : uint32_t
 {
@@ -31,8 +35,10 @@ void set_logging_print_mask(Log_type types);
 void printef(Log_type type, string format_str, ...);
 void printe(Log_type type, string entry);
 
-tuple<uint32_t, uint32_t> get_head_and_tail();
-tuple<Log_type, char const*> read_log_entry(uint32_t row_idx);
+// tuple<uint32_t, uint32_t> get_head_and_tail();
+// tuple<Log_type, char const*> read_log_entry(uint32_t row_idx);
+array<tuple<Log_type, uint64_t, string_view>, k_num_rows> read_all_log_entries(
+    uint32_t& out_start_row_idx);
 void clear_log_entries();
 
 }  // namespace logger
