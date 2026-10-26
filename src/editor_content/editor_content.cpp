@@ -46,60 +46,11 @@ Editor_mode s_editor_mode{ EDITOR_MODE_LEVEL };
 
 
 float_t s_show_pulldown_drawer_amount{ 0 };
+ImVec2 s_main_area_work_pos;
+ImVec2 s_main_area_work_size;
 
 
 bool s_show_demo_window{ false };
-
-
-/// Dockspace over viewport helper.
-/// @NOTE: copied from `imgui.cpp`
-ImGuiID imgui_dockspace_over_view_port_sized(float_t const size_ratio_x = 1,
-                                             float_t const size_ratio_y = 1,
-                                             ImGuiID dockspace_id = 0,
-                                             const ImGuiViewport* viewport = NULL,
-                                             ImGuiDockNodeFlags dockspace_flags = 0,
-                                             const ImGuiWindowClass* window_class = NULL)
-{
-    using namespace ImGui;
-
-    if (viewport == NULL)
-        viewport = GetMainViewport();
-
-    // Submit a window filling the entire viewport
-    SetNextWindowPos(viewport->WorkPos);
-    SetNextWindowSize(
-        ImVec2(viewport->WorkSize.x * size_ratio_x, viewport->WorkSize.y * size_ratio_y));
-    SetNextWindowViewport(viewport->ID);
-
-    ImGuiWindowFlags host_window_flags = 0;
-    host_window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking;
-    host_window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-        host_window_flags |= ImGuiWindowFlags_NoBackground;
-
-    // FIXME-OPT: When using ImGuiDockNodeFlags_KeepAliveOnly with DockSpaceOverViewport() we might be able to spare submitting the window,
-    // since DockSpace() with that flag doesn't need a window. We'd only need to compute the default ID accordingly.
-    if (dockspace_flags & ImGuiDockNodeFlags_KeepAliveOnly)
-        host_window_flags |= ImGuiWindowFlags_NoMouseInputs;
-
-    char label[32];
-    ImFormatString(label, IM_ARRAYSIZE(label), "WindowOverViewport_%08X", viewport->ID);
-
-    PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    Begin(label, NULL, host_window_flags);
-    PopStyleVar(3);
-
-    // Submit the dockspace
-    if (dockspace_id == 0)
-        dockspace_id = GetID("DockSpace");
-    DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags, window_class);
-
-    End();
-
-    return dockspace_id;
-}
 
 
 /// .
@@ -517,7 +468,6 @@ void imgui_debug_printable_info_data()
 void imgui_render_console_window()
 {
     static bool s_enable_scroll_to_bottom{ true };
-    static int32_t s_num_frames_scroll_away_from_bottom{ 0 };
     static BT::logger::Log_type s_log_filter_mask{ (uint32_t)BT::logger::ALL ^
                                                (uint32_t)BT::logger::TRACE };
     static std::string s_log_filter_string;
@@ -529,8 +479,7 @@ void imgui_render_console_window()
             BT::logger::clear_log_entries();
 
         ImGui::SameLine();
-        if (ImGui::Checkbox("scroll to bottom", &s_enable_scroll_to_bottom))
-            s_num_frames_scroll_away_from_bottom = 0;
+        ImGui::Checkbox("scroll to bottom", &s_enable_scroll_to_bottom);
 
         ImGui::SameLine();
         if (ImGui::Button("filter types.."))
@@ -609,20 +558,19 @@ void imgui_render_console_window()
                 ImGui::TextWrapped("%s", entry_as_str.c_str());
             }
 
+            if (ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows) &&
+                ImGui::GetIO().MouseWheel > 0)
+            {
+                s_enable_scroll_to_bottom = false;
+            }
+
             if (s_enable_scroll_to_bottom)
             {
                 ImGui::SetScrollHereY(1);
             }
-
-            if (ImGui::GetScrollY() < ImGui::GetScrollMaxY())
+            else if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
             {
-                s_num_frames_scroll_away_from_bottom++;
-                if (s_num_frames_scroll_away_from_bottom > 3)
-                    s_enable_scroll_to_bottom = false;
-            }
-            else
-            {
-                s_num_frames_scroll_away_from_bottom = 0;
+                s_enable_scroll_to_bottom = true;
             }
         }
         ImGui::EndChild();
@@ -858,10 +806,44 @@ void imgui_pulldown_drawer_contents(TXP::Input::Input_handler const& input_handl
     // Move towards pulling drawer.
     {
         float_t const target_show_pulldown_drawer{ s_show_pulldown_drawer ? 1.0f : 0.0f };
-        constexpr float_t k_move_speed{ 4 };
+        constexpr float_t k_move_speed{ 2 };
 
         float_t const delta_amt{ (s_show_pulldown_drawer ? 1 : -1) * k_move_speed * delta_time };
         s_show_pulldown_drawer_amount = glm_clamp(s_show_pulldown_drawer_amount + delta_amt, 0, 1);
+    }
+
+    // Move around the pulldown drawer dockspace.
+    {
+        constexpr float_t k_padding_x{ 50 };
+        constexpr float_t k_padding_y{ 20 };
+        constexpr float_t k_drawer_height{ 512 };
+        ImGui::SetNextWindowPos(
+            ImVec2(s_main_area_work_pos.x + k_padding_x,
+                   s_main_area_work_pos.y + s_main_area_work_size.y +
+                       glm_lerp(0,
+                                -k_drawer_height - k_padding_y,
+                                glm_smooth(glm_smooth(s_show_pulldown_drawer_amount)))));
+        ImGui::SetNextWindowSize(
+            ImVec2(s_main_area_work_size.x - k_padding_x * 2, k_drawer_height));
+        ImGui::SetNextWindowViewport(ImGui::GetMainViewport()->ID);
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+        ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0, 0, 0, 0));
+
+        ImGui::Begin("##auxiliary_dockspace_for_pulldown_host_window",
+                     nullptr,
+                     ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoResize |
+                         ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDocking |
+                         ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNavFocus);
+        {
+            ImGui::PopStyleVar(2);
+            ImGui::PopStyleColor();
+
+            ImGui::DockSpace(ImGui::GetID("Auxiliary Dockspace for Pulldown"));
+        }
+        ImGui::End();
     }
 }
 
@@ -901,9 +883,11 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
 
     imgui_main_menu_bar(settings, info_hook_struct, s_play_flag, focus_main_viewport);
 
-    imgui_dockspace_over_view_port_sized(1,
-                                         glm_lerp(1, 0.667, s_show_pulldown_drawer_amount),
-                                         ImGui::GetID("Main Dockspace"));
+    s_main_area_work_pos = ImGui::GetMainViewport()->WorkPos;
+    s_main_area_work_size = ImGui::GetMainViewport()->WorkSize;
+
+    ImGui::DockSpaceOverViewport();
+    imgui_pulldown_drawer_contents(input_handler, info_hook_struct, delta_time);
 
     // Custom imgui information.
     if (!s_imgui_build_contents_callback_fn)
@@ -922,16 +906,8 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
                                   focus_main_viewport,
                                   out_rend_view_sizes);
 
-    imgui_pulldown_drawer_contents(input_handler, info_hook_struct, delta_time);
-    if (s_show_pulldown_drawer_amount > 0.01)
-    {
-        imgui_dockspace_over_view_port_sized(1,
-                                             1,
-                                             ImGui::GetID("Auxiliary Dockspace for Pulldown"));
-
-        imgui_render_console_window();
-        imgui_performance_timers(info_hook_struct);
-    }
+    imgui_render_console_window();
+    imgui_performance_timers(info_hook_struct);
 
     if (s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
         anim_frame_action_editor_content(false, delta_time);
