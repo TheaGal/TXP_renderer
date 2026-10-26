@@ -9,7 +9,6 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>  // @NOTE: @TEMP: See `printe()`
-#include <limits>
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
@@ -38,10 +37,11 @@ static_assert((k_log_buffer_size & (k_log_buffer_size - 1)) == 0, "ensure log bu
 
 static array<char, k_log_buffer_size> s_log_buffer{};  // zerod out by default
 
-constexpr char k_reserved_empty_buffer_char{ std::numeric_limits<char>::max() };
+constexpr char k_reserved_etx_char{ 3 };
+constexpr char k_reserved_empty_buffer_char{ 127 };
 
-static atomic_uint32_t s_next_head{ 0 };
-static atomic_uint32_t s_log_base_head{ 0 };  // For keeping track of logs.
+static atomic_uint64_t s_next_head{ 0 };
+static atomic_uint64_t s_log_base_head{ 0 };  // For keeping track of logs.
 
 // struct Row_entry
 // {
@@ -182,36 +182,43 @@ bool check_show_type(Log_type type)
     return (s_print_mask & type);
 }
 
-uint32_t reserve_bytes(uint32_t const num_bytes)
+char& log_buffer_at(uint64_t const pos)
 {
+    uint32_t idx = (pos & (k_log_buffer_size - 1));
+    return s_log_buffer[idx];
+}
+
+uint64_t reserve_bytes(uint32_t const num_bytes)
+{
+    assert(num_bytes > 0);
+    assert(num_bytes < k_log_buffer_size);
+
     // Find new head.
-    uint32_t original_head = s_next_head.load();
-    uint32_t real_head;
-    uint32_t next_head;
+    uint64_t original_head = s_next_head.load();
+    uint64_t real_head;
+    uint64_t next_head;
     do
     {
         real_head = original_head;
         next_head = (real_head + num_bytes);
 
-        if (next_head >= k_log_buffer_size)
+        if ((real_head & (k_log_buffer_size - 1)) >= (next_head & (k_log_buffer_size - 1)))
         {
             // Wrap around.
-            real_head = 0;
+            real_head += (k_log_buffer_size - (real_head & (k_log_buffer_size - 1)));
             next_head = (real_head + num_bytes);
+            assert((real_head & (k_log_buffer_size - 1)) == 0);  // ensure modulos to 0
         }
+
+        if (real_head < original_head)
+            throw std::runtime_error(
+                "wraparound. did you run this program for over 20k years?? holy shit");
     } while (!s_next_head.compare_exchange_weak(original_head, next_head));
 
     // Fill in difference of original and real head.
-    for (uint32_t i = original_head; i != real_head;)
+    for (uint64_t i = original_head; i != real_head; i++)
     {
-        if (i >= k_log_buffer_size)
-        {
-            i = 0;
-            continue;
-        }
-        s_log_buffer[i] = k_reserved_empty_buffer_char;
-
-        i++;
+        log_buffer_at(i) = k_reserved_empty_buffer_char;
     }
 
     return real_head;
@@ -257,24 +264,28 @@ void BT::logger::printe(Log_type type, string entry)
 
     // Copy data into buffer.
     {
-        uint32_t write_pos{ reserve_bytes(sizeof(uint32_t) + sizeof(uint64_t) + entry.length() +
-                                          sizeof(uint32_t)) };
+        uint64_t write_pos{ reserve_bytes(sizeof(uint32_t) + sizeof(uint64_t) + entry.length() +
+                                          sizeof(uint32_t) + 1) };
 
         // Log type.
-        reinterpret_cast<uint32_t&>(s_log_buffer[write_pos]) = type;
+        reinterpret_cast<uint32_t&>(log_buffer_at(write_pos)) = type;
         write_pos += sizeof(uint32_t);
 
         // Mainloop iteration.
-        reinterpret_cast<uint64_t&>(s_log_buffer[write_pos]) = mainloop_iteration;
+        reinterpret_cast<uint64_t&>(log_buffer_at(write_pos)) = mainloop_iteration;
         write_pos += sizeof(uint64_t);
 
         // Actual string.
-        strncpy(&s_log_buffer[write_pos], entry.c_str(), entry.length());
+        strncpy(&log_buffer_at(write_pos), entry.c_str(), entry.length());
         write_pos += entry.length();
 
         // String length again (for reading backwards).
-        reinterpret_cast<uint32_t&>(s_log_buffer[write_pos]) = entry.length();
+        reinterpret_cast<uint32_t&>(log_buffer_at(write_pos)) = entry.length();
         write_pos += sizeof(uint32_t);
+
+        // Add reserved ETX.
+        log_buffer_at(write_pos) = k_reserved_etx_char;
+        write_pos++;
     }
 
     // Print to stdout console.
@@ -339,27 +350,23 @@ void BT::logger::printe(Log_type type, string entry)
     }
 }
 
-// tuple<uint32_t, uint32_t> BT::logger::get_head_and_tail()
-// {
-//     uint32_t const head_idx{ s_log_base_head.load() };
-//     uint32_t const tail_idx{ s_next_head.load() };
-//     return { , tail_idx };
-// }
-
-// tuple<BT::logger::Log_type, char const*> BT::logger::read_log_entry(uint32_t row_idx)
-// {
-//     uint32_t actual_row_idx{ row_idx & (k_num_rows - 1) };  // pow2 modulo
-//     return { s_all_entry_data[actual_row_idx].log_type,
-//              s_all_entry_data[actual_row_idx].char_columns };
-// }
-
 auto BT::logger::read_all_log_entries(uint32_t& out_start_row_idx)
     -> array<tuple<Log_type, uint64_t, string_view>, k_num_rows>
 {
     array<tuple<Log_type, uint64_t, string_view>, k_num_rows> all_logs;
 
-    uint32_t const read_head{ s_log_base_head.load() };
-    uint32_t read_pos{ s_next_head.load() };
+    uint64_t read_pos{ s_next_head.load() };
+
+    uint64_t const read_head{ [read_pos]() {
+        uint64_t head{ s_log_base_head.load() };
+        if (read_pos >= k_log_buffer_size)
+        {
+            head = std::max(head, read_pos - (k_log_buffer_size - 2));
+            while (log_buffer_at(head - 1) != k_reserved_etx_char)
+                head++;
+        }
+        return head;
+    }() };
 
     int32_t idx;
     for (idx = static_cast<int32_t>(k_num_rows) - 1; idx >= 0; idx--)
@@ -369,28 +376,29 @@ auto BT::logger::read_all_log_entries(uint32_t& out_start_row_idx)
             break;
 
         // Check for wraparound.
-        if (read_pos == 0)
-        {
-            read_pos = k_log_buffer_size;
-            while (s_log_buffer[read_pos - 1] == k_reserved_empty_buffer_char)
-                read_pos--;
-        }
+        while (log_buffer_at(read_pos - 1) == k_reserved_empty_buffer_char)
+            read_pos--;
+
+        // Ensure there is ETX.
+        read_pos--;
+        char const jojojojojo{ log_buffer_at(read_pos) };
+        assert(jojojojojo == k_reserved_etx_char);
 
         // Read str length.
         read_pos -= sizeof(uint32_t);
-        uint32_t const str_length = reinterpret_cast<uint32_t&>(s_log_buffer[read_pos]);
+        uint32_t const str_length = reinterpret_cast<uint32_t&>(log_buffer_at(read_pos));
 
         // Read string.
         read_pos -= str_length;
-        string_view const str_slice(&s_log_buffer[read_pos], static_cast<size_t>(str_length));
+        string_view const str_slice(&log_buffer_at(read_pos), static_cast<size_t>(str_length));
 
         // Read mainloop iteration.
         read_pos -= sizeof(uint64_t);
-        uint64_t const mainloop_iteration = reinterpret_cast<uint64_t&>(s_log_buffer[read_pos]);
+        uint64_t const mainloop_iteration = reinterpret_cast<uint64_t&>(log_buffer_at(read_pos));
 
         // Read log type.
         read_pos -= sizeof(uint32_t);
-        Log_type type{ reinterpret_cast<uint32_t&>(s_log_buffer[read_pos]) };
+        Log_type type{ reinterpret_cast<uint32_t&>(log_buffer_at(read_pos)) };
 
         // Record entry.
         all_logs[idx] = { type, mainloop_iteration, str_slice };

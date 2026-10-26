@@ -35,8 +35,6 @@ void set_logging_print_mask(Log_type types);
 void printef(Log_type type, string format_str, ...);
 void printe(Log_type type, string entry);
 
-// tuple<uint32_t, uint32_t> get_head_and_tail();
-// tuple<Log_type, char const*> read_log_entry(uint32_t row_idx);
 array<tuple<Log_type, uint64_t, string_view>, k_num_rows> read_all_log_entries(
     uint32_t& out_start_row_idx);
 void clear_log_entries();
