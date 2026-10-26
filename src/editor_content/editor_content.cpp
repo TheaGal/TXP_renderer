@@ -784,9 +784,9 @@ void imgui_editor_viewport_windows(
 }
 
 /// .
-void imgui_pulldown_drawer_contents(TXP::Input::Input_handler const& input_handler,
-                                  Information_hook_struct const& info_hook_struct,
-                                  float_t const delta_time)
+void imgui_pulldown_drawer_dockspace(TXP::Input::Input_handler const& input_handler,
+                                     Information_hook_struct const& info_hook_struct,
+                                     float_t const delta_time)
 {
     static bool s_show_pulldown_drawer{ false };
 
@@ -887,7 +887,7 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
     s_main_area_work_size = ImGui::GetMainViewport()->WorkSize;
 
     ImGui::DockSpaceOverViewport();
-    imgui_pulldown_drawer_contents(input_handler, info_hook_struct, delta_time);
+    imgui_pulldown_drawer_dockspace(input_handler, info_hook_struct, delta_time);
 
     // Custom imgui information.
     if (!s_imgui_build_contents_callback_fn)
