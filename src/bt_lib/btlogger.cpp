@@ -202,7 +202,7 @@ uint32_t reserve_bytes(uint32_t const num_bytes)
     } while (!s_next_head.compare_exchange_weak(original_head, next_head));
 
     // Fill in difference of original and real head.
-    for (uint32_t i = original_head; i != real_head; i++)
+    for (uint32_t i = original_head; i != real_head;)
     {
         if (i >= k_log_buffer_size)
         {
@@ -210,6 +210,8 @@ uint32_t reserve_bytes(uint32_t const num_bytes)
             continue;
         }
         s_log_buffer[i] = k_reserved_empty_buffer_char;
+
+        i++;
     }
 
     return real_head;

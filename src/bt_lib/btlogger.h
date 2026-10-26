@@ -16,7 +16,7 @@ namespace BT
 namespace logger
 {
 
-constexpr uint32_t k_num_rows{ 1024 };
+constexpr uint32_t k_num_rows{ 4096 };
 static_assert((k_num_rows & (k_num_rows - 1)) == 0, "Must be a power of 2.");
 
 enum Log_type : uint32_t
