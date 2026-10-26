@@ -16,12 +16,12 @@ struct Modifier_bits
     int32_t modbits{ 0 };
 
     // Mod bits funcs.
-    bool has_shift();  // @TODO: @THEA: there needs to be a way to have exclusive modbits checking!!!!
-    bool has_control();
-    bool has_alt();
-    bool has_super();
-    bool has_capslock();
-    bool has_numlock();
+    bool has_shift() const;  // @TODO: @THEA: there needs to be a way to have exclusive modbits checking!!!!
+    bool has_control() const;
+    bool has_alt() const;
+    bool has_super() const;
+    bool has_capslock() const;
+    bool has_numlock() const;
 };
 
 /// State of a keyboard key.

@@ -31,27 +31,27 @@ struct Input_handler::Impl
 
 
 // Mod bits funcs.
-bool Modifier_bits::has_shift()
+bool Modifier_bits::has_shift() const
 {
     return static_cast<bool>(modbits & GLFW_MOD_SHIFT);
 }
-bool Modifier_bits::has_control()
+bool Modifier_bits::has_control() const
 {
     return static_cast<bool>(modbits & GLFW_MOD_CONTROL);
 }
-bool Modifier_bits::has_alt()
+bool Modifier_bits::has_alt() const
 {
     return static_cast<bool>(modbits & GLFW_MOD_ALT);
 }
-bool Modifier_bits::has_super()
+bool Modifier_bits::has_super() const
 {
     return static_cast<bool>(modbits & GLFW_MOD_SUPER);
 }
-bool Modifier_bits::has_capslock()
+bool Modifier_bits::has_capslock() const
 {
     return static_cast<bool>(modbits & GLFW_MOD_CAPS_LOCK);
 }
-bool Modifier_bits::has_numlock()
+bool Modifier_bits::has_numlock() const
 {
     return static_cast<bool>(modbits & GLFW_MOD_NUM_LOCK);
 }
