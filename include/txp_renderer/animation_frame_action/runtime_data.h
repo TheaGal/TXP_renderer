@@ -44,6 +44,8 @@ enum Controllable_data_label : std::uint32_t
         X__bool(can_receive_deathblow,                 false) \
         X__bool(align_self_as_deathblow_giver,         false) \
         X__bool(align_self_as_deathblow_receiver,      false) \
+        X__bool(finish_deathblow_give,                 false) \
+        X__bool(finish_deathblow_receive,              false) \
         X__bool(hitcapsule_group_0_enabled,            true)   /* this is typically the hitbox group */    \
         X__bool(hitcapsule_group_1_enabled,            false) \
         X__bool(hitcapsule_group_2_enabled,            false) \
