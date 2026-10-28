@@ -146,8 +146,6 @@ private:
 class UI_state
 {
 public:
-    UI_state();
-
     /// Gets or emplaces a canvas state.
     UI_canvas_state& canvas(std::string const& canvas_name);
 

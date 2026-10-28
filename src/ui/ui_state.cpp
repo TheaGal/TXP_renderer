@@ -194,11 +194,6 @@ void UI_canvas_state::init()
 
 
 // class UI_state
-UI_state::UI_state()
-{
-    BT_SERVICE_FINDER_ADD_SERVICE(UI_state, this);
-}
-
 UI_canvas_state& UI_state::canvas(std::string const& canvas_name)
 {
     if (m_canvas_states.find(canvas_name) == m_canvas_states.end())
