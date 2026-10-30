@@ -41,6 +41,7 @@ enum Controllable_data_label : std::uint32_t
         X__bool(can_cancel_attack_w_parry,             false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(blade_has_mizunokata,                  false) \
         X__bool(blade_has_honoonokata,                 false) \
+        X__bool(is_alive,                              true)  \
         X__bool(can_receive_deathblow,                 false) \
         X__bool(align_self_as_deathblow_giver,         false) \
         X__bool(align_self_as_deathblow_receiver,      false) \

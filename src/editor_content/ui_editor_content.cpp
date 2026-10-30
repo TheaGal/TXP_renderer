@@ -445,7 +445,7 @@ void UI_editor::make_not_dirty_also_known_as_clean()
 
 void TXP::editor_content::ui_editor::open_editor()
 {
-    s_ui_editor = new UI_editor(BT::service_finder::find_service<UI_state>());
+    s_ui_editor = new UI_editor(BT::service_finder::find_service<UI_state>());  // @TODO!!
 
     s_avail_ui_files = fetch_all_ui_files();
     assert(!s_avail_ui_files.empty());
