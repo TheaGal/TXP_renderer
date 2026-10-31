@@ -1,5 +1,6 @@
 #include "txp_renderer/camera/camera.h"
 
+#include "btglm.h"
 #include "btservice_finder.h"
 #include "camera/camera_internal.h"
 
@@ -29,24 +30,24 @@ float_t Camera::get_aspect_ratio() const
     return m_pimpl->camera.get_main_cam_aspect();
 }
 
-void Camera::set_position(vec3 const position)
+void Camera::set_position(rvec3 const position)
 {
-    m_pimpl->camera.set_main_cam_position(position);
+    m_pimpl->camera.set_position(0, position);
 }
 
-void Camera::get_position(vec3 out_position) const
+void Camera::get_position(rvec3 out_position) const
 {
-    m_pimpl->camera.get_main_cam_position(out_position);
+    m_pimpl->camera.get_position(0, out_position);
 }
 
 void Camera::set_view_direction(vec3 const direction)
 {
-    m_pimpl->camera.set_main_cam_view_direction(direction);
+    m_pimpl->camera.set_view_direction(0, direction);
 }
 
 void Camera::get_view_direction(vec3 out_direction) const
 {
-    m_pimpl->camera.get_main_cam_view_direction(out_direction);
+    m_pimpl->camera.get_view_direction(0, out_direction);
 }
 
 void Camera::copy_main_cam_transform_to_first_scene_view_cam_transform()
@@ -64,18 +65,21 @@ std::vector<Cam_matrix> const& Camera::get_calculated_camera_matrices() const
     return m_pimpl->camera.get_calcd_cam_matrices();
 }
 
-bool Camera::calc_world_space_to_ndc_space(vec3 const world_position, vec3 ndc_position) const
+bool Camera::calc_world_space_to_ndc_space(rvec3 const world_position, vec3 ndc_position) const
 {
     // Exit early if behind camera.
     {
-        vec3 cam_position;
-        m_pimpl->camera.get_main_cam_position(cam_position);
+        rvec3 cam_position;
+        m_pimpl->camera.get_position(0, cam_position);
 
         vec3 cam_view_dir;
-        m_pimpl->camera.get_main_cam_view_direction(cam_view_dir);
+        m_pimpl->camera.get_view_direction(0, cam_view_dir);
+
+        rvec3 obj_space_ws_pos_r;
+        btglm_rvec3_sub(world_position, cam_position, obj_space_ws_pos_r);
 
         vec3 obj_space_ws_pos_n;
-        glm_vec3_sub(const_cast<float_t*>(world_position), cam_position, obj_space_ws_pos_n);
+        btglm_rvec3_to_vec3(obj_space_ws_pos_r, obj_space_ws_pos_n);
         glm_vec3_normalize(obj_space_ws_pos_n);
 
         if (glm_vec3_dot(cam_view_dir, obj_space_ws_pos_n) <= 0)
@@ -90,8 +94,11 @@ bool Camera::calc_world_space_to_ndc_space(vec3 const world_position, vec3 ndc_p
                  const_cast<vec4*>(main_cam_matrix.view),
                  projview);
 
+    vec3 world_position_f;
+    btglm_rvec3_to_vec3(world_position, world_position_f);
+
     vec4 my_position;
-    glm_vec4(const_cast<float_t*>(world_position), 1, my_position);
+    glm_vec4(world_position_f, 1, my_position);
     glm_mat4_mulv(projview, my_position, my_position);
     glm_vec3_scale(my_position, 1.0f / my_position[3], ndc_position);
 

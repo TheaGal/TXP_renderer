@@ -36,6 +36,16 @@ struct Renderer_settings
     bool is_fullscreen{ false };
 
     std::vector<std::string> open_scene_view_ids{ "0" };
+
+    /// Camera orientations.
+    struct Camera_orientation
+    {
+        rvec3s position;
+        vec3s facing_dir;
+    };
+
+    Camera_orientation main_viewport_cam_orient;
+    std::vector<Camera_orientation> open_scene_view_cam_orients;
 };
 
 /// Engine that handles render processes and presenting.

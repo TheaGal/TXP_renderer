@@ -773,6 +773,18 @@ void imgui_editor_viewport_windows(
     // Clear used manipulate transform list.
     s_manipulate_transform_list.clear();
 
+    // Record camera settings.
+    for (size_t i = 0; i < 1 + settings.open_scene_view_ids.size(); i++)
+    {
+        rvec3& position = (i == 0 ? settings.main_viewport_cam_orient.position.raw
+                                  : settings.open_scene_view_cam_orients[i - 1].position.raw);
+        vec3& facing_dir = (i == 0 ? settings.main_viewport_cam_orient.facing_dir.raw
+                                   : settings.open_scene_view_cam_orients[i - 1].facing_dir.raw);
+
+        camera.get_position(i, position);
+        camera.get_view_direction(i, facing_dir);
+    }
+
     // Report back render view sizes.
     out_rend_view_sizes.reserve(per_viewport_content_sizes.size());
     for (auto const& per_viewport_content_size : per_viewport_content_sizes)

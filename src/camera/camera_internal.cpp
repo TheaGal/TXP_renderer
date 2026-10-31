@@ -188,7 +188,7 @@ float_t Camera_internal::get_main_cam_aspect() const
     return m_camera_states.front().aspect;
 }
 
-void Camera_internal::set_main_cam_position(vec3 const position)
+void Camera_internal::set_position(size_t const idx, rvec3 const position)
 {
     if (m_camera_states.empty())
     {
@@ -196,24 +196,24 @@ void Camera_internal::set_main_cam_position(vec3 const position)
         return;
     }
 
-    btglm_vec3_to_rvec3(position, m_camera_states.front().position.raw);
+    btglm_rvec3_copy(position, m_camera_states[idx].position.raw);
 }
 
-void Camera_internal::get_main_cam_position(vec3 out_position) const
+void Camera_internal::get_position(size_t const idx, rvec3 out_position) const
 {
     if (m_camera_states.empty())
     {
         BT_WARN(
             "No camera states, just going to use zero vector as default. Fix this if you feel like "
             "it.");
-        glm_vec3_zero(out_position);
+        btglm_rvec3_copy(rvec3{ 0, 0, 0 }, out_position);
         return;
     }
 
-    btglm_rvec3_to_vec3(m_camera_states.front().position.raw, out_position);
+    btglm_rvec3_copy(m_camera_states[idx].position.raw, out_position);
 }
 
-void Camera_internal::set_main_cam_view_direction(vec3 const direction)
+void Camera_internal::set_view_direction(size_t const idx, vec3 const direction)
 {
     if (m_camera_states.empty())
     {
@@ -221,10 +221,10 @@ void Camera_internal::set_main_cam_view_direction(vec3 const direction)
         return;
     }
 
-    glm_vec3_copy(const_cast<float_t*>(direction), m_camera_states.front().view_direction.raw);
+    glm_vec3_copy(const_cast<float_t*>(direction), m_camera_states[idx].view_direction.raw);
 }
 
-void Camera_internal::get_main_cam_view_direction(vec3 out_cam_view_direction) const
+void Camera_internal::get_view_direction(size_t const idx, vec3 out_cam_view_direction) const
 {
     if (m_camera_states.empty())
     {
@@ -235,7 +235,7 @@ void Camera_internal::get_main_cam_view_direction(vec3 out_cam_view_direction) c
         return;
     }
 
-    glm_vec3_copy(const_cast<float_t*>(m_camera_states.front().view_direction.raw),
+    glm_vec3_copy(const_cast<float_t*>(m_camera_states[idx].view_direction.raw),
                   out_cam_view_direction);
 }
 

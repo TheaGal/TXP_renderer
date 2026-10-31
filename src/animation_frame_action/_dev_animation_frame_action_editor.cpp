@@ -182,7 +182,12 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     {
                         vec3 cam_position;
                         glm_vec3_add(root_bone_position, eds.root_bone_offset, cam_position);
-                        renderer.get_main_camera().set_position(cam_position);
+
+                        {
+                            rvec3 cam_position_r;
+                            btglm_vec3_to_rvec3(cam_position, cam_position_r);
+                            renderer.get_main_camera().set_position(cam_position_r);
+                        }
 
                         glm_vec3_copy(cam_position, eds.prev_cam_pos);
 
@@ -241,7 +246,9 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
             {
                 // Update root bone offset from camera position.
                 vec3 cam_position;
-                renderer.get_main_camera().get_position(cam_position);
+                rvec3 cam_position_r;
+                renderer.get_main_camera().get_position(cam_position_r);
+                btglm_rvec3_to_vec3(cam_position_r, cam_position);
 
                 vec3 delta_cam_pos;
                 glm_vec3_sub(cam_position, eds.prev_cam_pos, delta_cam_pos);

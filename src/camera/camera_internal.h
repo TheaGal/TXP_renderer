@@ -5,6 +5,7 @@
 #include "txp_renderer/camera/camera.h"
 #include "txp_renderer/input_handler/input_handler.h"
 
+#include <cstddef>
 #include <vector>
 
 
@@ -31,10 +32,10 @@ public:
 
     float_t get_main_cam_aspect() const;
 
-    void set_main_cam_position(vec3 const position);
-    void get_main_cam_position(vec3 out_cam_position) const;
-    void set_main_cam_view_direction(vec3 const direction);
-    void get_main_cam_view_direction(vec3 out_cam_view_direction) const;
+    void set_position(size_t const idx, rvec3 const position);
+    void get_position(size_t const idx, rvec3 out_cam_position) const;
+    void set_view_direction(size_t const idx, vec3 const direction);
+    void get_view_direction(size_t const idx, vec3 out_cam_view_direction) const;
     bool is_main_cam_follow_orbit() const;
 
     void set_main_cam_follow_orbit_cam_offset_distance(float_t const offset_distance);

@@ -80,7 +80,7 @@ std::vector<std::pair<std::string, uint32_t>> gfx_helper::fetch_texture_name_w_i
 
 
 bool convert_world_position_to_ui_position(Camera const& camera,
-                                           vec3 const world_position,
+                                           rvec3 const world_position,
                                            vec2 out_ui_position)
 {
     vec3 ndc_position;

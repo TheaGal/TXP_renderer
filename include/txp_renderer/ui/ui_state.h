@@ -54,7 +54,7 @@ class Camera;  // forward decl
 
 /// Converts a world position to UI position.
 bool convert_world_position_to_ui_position(Camera const& camera,
-                                           vec3 const world_position,
+                                           rvec3 const world_position,
                                            vec2 out_ui_position);
 
 

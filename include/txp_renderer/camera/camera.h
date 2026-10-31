@@ -26,8 +26,8 @@ public:
     ~Camera();
 
     float_t get_aspect_ratio() const;
-    void set_position(vec3 const position);
-    void get_position(vec3 out_position) const;
+    void set_position(rvec3 const position);
+    void get_position(rvec3 out_position) const;
     void set_view_direction(vec3 const direction);
     void get_view_direction(vec3 out_direction) const;
 
@@ -36,7 +36,7 @@ public:
 
     std::vector<Cam_matrix> const& get_calculated_camera_matrices() const;
 
-    bool calc_world_space_to_ndc_space(vec3 const world_position, vec3 ndc_position) const;
+    bool calc_world_space_to_ndc_space(rvec3 const world_position, vec3 ndc_position) const;
 
     bool is_follow_orbit() const;
     void set_follow_orbit_cam_offset_distance(float_t const offset_distance);
