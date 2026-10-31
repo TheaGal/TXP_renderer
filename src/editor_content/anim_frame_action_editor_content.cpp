@@ -791,12 +791,14 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     ImGui::IsMouseHoveringRect(cr_timeline_min,
                                                cr_timeline_max))
                 {   // Scrolling behavior.
+                #if 0 // idk this seems safe to just delete
                     if (input_handler.get_keyboard_key_state(BT_KEY_LEFT_CONTROL).pressed)
                     {   // @TODO: Add focusing onto where the mouse cursor is instead of global cell size.
                         BT::date_deadline(2026, 9, 30);
                         s_timeline_cell_size.x += scroll_yoffset * 1.5f;
                     }
                     else
+                #endif // 0
                     {
                         (input_handler.get_keyboard_key_state(BT_KEY_LEFT_SHIFT).pressed
                              ? s_sequencer_x_offset

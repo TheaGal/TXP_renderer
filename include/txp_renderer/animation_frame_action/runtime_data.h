@@ -25,14 +25,15 @@ enum Controllable_data_label : std::uint32_t
 {
     #define TXP_MODEL_ANIMATOR_CONTROLLABLE_DATA_LIST         \
         /* Floats */                                          \
-        X_float(model_opacity,                 1.0f)          \
-        X_float(turn_speed,                    0.0f)          \
-        X_float(mvt_input_max_speed,           0.0f)          \
-        X_float(mvt_input_accel,               0.0f)          \
-        X_float(mvt_input_decel,               0.0f)          \
-        X_float(root_motion_multi,             1.0f)          \
-        X_float(attack_send_root_motion_multi, 1.0f)          \
-        X_float(gravity_magnitude,             1.0f)          \
+        X_float(model_opacity,                    1.0f)       \
+        X_float(turn_speed,                       0.0f)       \
+        X_float(mvt_input_max_speed,              0.0f)       \
+        X_float(mvt_input_accel,                  0.0f)       \
+        X_float(mvt_input_decel,                  0.0f)       \
+        X_float(root_motion_multi,                1.0f)       \
+        X_float(attack_send_root_motion_multi,    1.0f)       \
+        X_float(receive_staged_root_motion_multi, 1.0f)       \
+        X_float(gravity_magnitude,                1.0f)       \
         /* Bools */                                           \
         X__bool(can_move,                              true)   /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(can_do_turnaround_anim,                false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
@@ -121,6 +122,21 @@ struct Runtime_controllable_data
             #undef X_reeve
         };
         return s_all_labels;
+    }
+
+    // See if string label exists.
+    static bool str_label_as_enum_exists(std::string const& str_label)
+    {
+        static std::unordered_map<std::string, Controllable_data_label> s_label_to_enum_map{
+            #define X_float(name, def_val)  { #name, CTRL_DATA_LABEL_##name },
+            #define X__bool(name, def_val)  { #name, CTRL_DATA_LABEL_##name },
+            #define X_reeve(name)           { #name, CTRL_DATA_LABEL_##name },
+            TXP_MODEL_ANIMATOR_CONTROLLABLE_DATA_LIST
+            #undef X_float
+            #undef X__bool
+            #undef X_reeve
+        };
+        return (s_label_to_enum_map.find(str_label) != s_label_to_enum_map.end());
     }
 
     // Lookup str->enum.

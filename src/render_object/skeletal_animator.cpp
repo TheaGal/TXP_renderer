@@ -1070,9 +1070,38 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
 
                 auto& afa_data{ animator.m_anim_frame_action_data };
                 auto label{ afa_data.str_label_to_enum(argv[0]) };
-                switch (afa_data.get_data_type(label))
+
+                if (afa_data.str_label_as_enum_exists(argv[1]))
                 {
-                    using CD_t = TXP::anim_frame_action::Runtime_controllable_data::Controllable_data_type;
+                    auto other_label{ afa_data.str_label_to_enum(argv[1]) };
+                    assert(afa_data.get_data_type(label) == afa_data.get_data_type(other_label));
+
+                    switch (afa_data.get_data_type(label))
+                    {
+                    using CD_t = TXP::anim_frame_action::Runtime_controllable_data::
+                        Controllable_data_type;
+
+                    case CD_t::CTRL_DATA_TYPE_FLOAT:
+                        afa_data.get_float_data_handle(label).write_val(
+                            afa_data.get_float_data_handle(other_label).get_val());
+                        break;
+
+                    case CD_t::CTRL_DATA_TYPE_BOOL:
+                        afa_data.get_bool_data_handle(label).write_val(
+                            afa_data.get_bool_data_handle(other_label).get_val());
+                        break;
+
+                    default:
+                        assert(false);
+                        break;
+                    }
+                }
+                else
+                {
+                    switch (afa_data.get_data_type(label))
+                    {
+                    using CD_t = TXP::anim_frame_action::Runtime_controllable_data::
+                        Controllable_data_type;
 
                     case CD_t::CTRL_DATA_TYPE_FLOAT:
                         afa_data.get_float_data_handle(label).write_val(std::stof(argv[1]));
@@ -1082,7 +1111,10 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                         afa_data.get_bool_data_handle(label).write_val(argv[1] == "true");
                         break;
 
-                    default: assert(false); break;
+                    default:
+                        assert(false);
+                        break;
+                    }
                 }
             }
         },
