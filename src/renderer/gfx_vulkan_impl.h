@@ -59,6 +59,7 @@ struct Graphics::Impl
     Renderer_settings& settings;
     float_t monitor_scale{ 1.0f };
     bool load_settings_flag{ false };
+    bool load_cam_orient_settings_flag{ false };
 
 
     void init_glfw_no_api();

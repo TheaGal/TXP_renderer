@@ -725,6 +725,7 @@ void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 
 /// .
 void imgui_editor_viewport_windows(
+    bool const load_cam_orient_settings,
     TXP::Renderer_settings& settings,
     TXP::Input::Input_handler const& input_handler,
     editor_content::Render_view_image_content const& render_view_image_content,
@@ -773,18 +774,6 @@ void imgui_editor_viewport_windows(
     // Clear used manipulate transform list.
     s_manipulate_transform_list.clear();
 
-    // Record camera settings.
-    for (size_t i = 0; i < 1 + settings.open_scene_view_ids.size(); i++)
-    {
-        rvec3& position = (i == 0 ? settings.main_viewport_cam_orient.position.raw
-                                  : settings.open_scene_view_cam_orients[i - 1].position.raw);
-        vec3& facing_dir = (i == 0 ? settings.main_viewport_cam_orient.facing_dir.raw
-                                   : settings.open_scene_view_cam_orients[i - 1].facing_dir.raw);
-
-        camera.get_position(i, position);
-        camera.get_view_direction(i, facing_dir);
-    }
-
     // Report back render view sizes.
     out_rend_view_sizes.reserve(per_viewport_content_sizes.size());
     for (auto const& per_viewport_content_size : per_viewport_content_sizes)
@@ -792,6 +781,30 @@ void imgui_editor_viewport_windows(
         out_rend_view_sizes.emplace_back(Render_view_size{
             .width = static_cast<int32_t>(glm_max(per_viewport_content_size.x, 1)),
             .height = static_cast<int32_t>(glm_max(per_viewport_content_size.y, 1)) });
+    }
+
+    // Settings update.
+    for (size_t i = 0; i < 1 + settings.open_scene_view_ids.size(); i++)
+    {
+        rvec3& position = (i == 0 ? settings.main_viewport_cam_orient.position.raw
+                                  : settings.open_scene_view_cam_orients[i - 1].position.raw);
+        vec3& facing_dir = (i == 0 ? settings.main_viewport_cam_orient.facing_dir.raw
+                                   : settings.open_scene_view_cam_orients[i - 1].facing_dir.raw);
+
+        // Load camera settings.
+        if (load_cam_orient_settings)
+        {
+            camera.set_render_view_sizes(out_rend_view_sizes);  // set to ensure right num of cameras
+
+            camera.set_position(i, position);
+            camera.set_view_direction(i, facing_dir);
+        }
+        // Record camera settings.
+        else
+        {
+            camera.get_position(i, position);
+            camera.get_view_direction(i, facing_dir);
+        }
     }
 }
 
@@ -881,7 +894,8 @@ void editor_content::add_to_imguizmo_manipulate(mat4 transform,
     s_manipulate_transform_list.emplace_back(std::move(nt));
 }
 
-void editor_content::build_content(TXP::Renderer_settings& settings,
+void editor_content::build_content(bool const load_cam_orient_settings,
+                                   TXP::Renderer_settings& settings,
                                    TXP::Input::Input_handler const& input_handler,
                                    Render_view_image_content const& render_view_image_content,
                                    std::function<void(bool)> const& lock_cursor_fn,
@@ -909,7 +923,8 @@ void editor_content::build_content(TXP::Renderer_settings& settings,
         s_imgui_build_contents_callback_fn();  //< here s_manipulate_transform_list gets added to
 
     // Editor viewport windows.
-    imgui_editor_viewport_windows(settings,
+    imgui_editor_viewport_windows(load_cam_orient_settings,
+                                  settings,
                                   input_handler,
                                   render_view_image_content,
                                   lock_cursor_fn,

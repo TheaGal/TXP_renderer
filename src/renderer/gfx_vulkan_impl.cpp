@@ -381,6 +381,7 @@ void Graphics::Impl::destroy_glfw()
 void Graphics::Impl::request_load_settings()
 {
     load_settings_flag = true;
+    load_cam_orient_settings_flag = true;
 }
 
 
@@ -1632,7 +1633,8 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
             rv.imgui_destination_image_descriptor);
     }
 
-    editor_content::build_content(settings,
+    editor_content::build_content(load_cam_orient_settings_flag,
+                                  settings,
                                   *s_input_handler,
                                   render_view_image_content,
                                   lock_cursor_fn,
@@ -1640,6 +1642,8 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
                                   info_hook_struct,
                                   delta_time,
                                   out_rend_view_sizes);
+    if (load_cam_orient_settings_flag)
+        load_cam_orient_settings_flag = false;
 
     // Convert to render instructions.
     ImGui::Render();
