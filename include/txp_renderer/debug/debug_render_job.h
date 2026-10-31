@@ -29,6 +29,11 @@ enum Material_type : uint32_t
 /// Adds render job for a model.
 debug_model_id_t emplace_debug_model(std::string const& model_name, Material_type material);
 
+/// Adds render job for a model's submesh.
+debug_model_id_t emplace_debug_model_submesh(std::string const& model_name,
+                                             std::string const& submesh_name,
+                                             Material_type material);
+
 /// Removes render job for a model.
 void remove_debug_model(debug_model_id_t model_id);
 

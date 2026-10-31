@@ -60,6 +60,13 @@ void debug::set_callbacks_and_references(
 debug::debug_model_id_t debug::emplace_debug_model(std::string const& model_name,
                                                    Material_type material)
 {
+    return emplace_debug_model_submesh(model_name, "", material);
+}
+
+debug::debug_model_id_t debug::emplace_debug_model_submesh(std::string const& model_name,
+                                                           std::string const& submesh_name,
+                                                           Material_type material)
+{
     auto debug_models{ g_debug_models.scoped_lock() };
 
     debug_model_id_t new_id{ 0 };
@@ -73,6 +80,7 @@ debug::debug_model_id_t debug::emplace_debug_model(std::string const& model_name
     auto& rend_obj_cfg = g_reg->emplace<component::Render_object_config>(ent);
     rend_obj_cfg.render_layer = RENDER_LAYER_DEFAULT;
     rend_obj_cfg.model_name = model_name;
+    rend_obj_cfg.sub_mesh_name = submesh_name;
     rend_obj_cfg.material_palette = k_material_type_str_map.at(material);
 
     return new_id;
