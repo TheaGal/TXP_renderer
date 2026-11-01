@@ -7,6 +7,7 @@
 #include <vk_mem_alloc.h>
 // clang-format on
 
+#include "btlogger.h"
 #include "vk_structs.h"
 
 #include <iostream>
@@ -131,9 +132,9 @@ VkImageLayout Image::get_layout()
 
     if (depth_format == VK_FORMAT_D24_UNORM_S8_UINT)
     {
-        std::cout << "WARNING: fixed-point depth buffer, so z-fighting especially far away could "
-                     "be difficult to deal with!"
-                  << std::endl;
+        BT_WARN(
+            "WARNING: fixed-point depth buffer (VK_FORMAT_D24_UNORM_S8_UINT), so z-fighting "
+            "especially far away could be difficult to deal with!");
     }
 
     // Create actual image.
