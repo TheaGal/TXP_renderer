@@ -255,6 +255,11 @@ void imgui_main_viewport_window(
             }
     #endif  // MOVE_THIS
 
+            ImGui::SeparatorText("Bind camera transforms");
+
+            ImGui::Checkbox("Bind main cam and first scene cam transforms",
+                            &camera.bind_main_cam_and_first_scene_cam_handle());
+
             ImGui::SeparatorText("Camera shot preview slideshow");
 
             static bool s_cycle_thru_cam_shots{ true };

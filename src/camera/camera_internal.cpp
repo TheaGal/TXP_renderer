@@ -109,6 +109,13 @@ void Camera_internal::update(float_t delta_time)
         update_orbit_cam(look_delta_raw);
     else
         update_fly_cam(look_delta_raw, delta_time);
+
+    // Update bound cams if the setting is checked.
+    if (m_bind_main_cam_and_first_scene_cam && m_controlling_camera_state_idx <= 1)
+    {
+        copy_cam_transform(m_controlling_camera_state_idx == 0 ? 0 : 1,
+                           m_controlling_camera_state_idx == 0 ? 1 : 0);
+    }
 }
 
 void Camera_internal::calc_cam_matrices()
@@ -297,6 +304,11 @@ void Camera_internal::copy_cam_transform(uint32_t const src_cam_idx, uint32_t co
 
     btglm_rvec3_copy(src_cam.position.raw, dest_cam.position.raw);
     glm_vec3_copy(const_cast<float_t*>(src_cam.view_direction.raw), dest_cam.view_direction.raw);
+}
+
+bool& Camera_internal::bind_main_cam_and_first_scene_cam_handle()
+{
+    return m_bind_main_cam_and_first_scene_cam;
 }
 
 void Camera_internal::update_fly_cam(vec2 look_delta_raw, float_t delta_time)

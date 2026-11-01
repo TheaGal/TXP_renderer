@@ -48,6 +48,8 @@ public:
 
     void copy_cam_transform(uint32_t const src_cam_idx, uint32_t const dest_cam_idx);
 
+    bool& bind_main_cam_and_first_scene_cam_handle();
+
 private:
     Input::Input_handler& m_input_handler;
     Input::Cursor_pos_state m_prev_cursor_state;
@@ -89,6 +91,7 @@ private:
 
     size_t m_controlling_camera_state_idx{ k_controlling_camera_state_none };
     int32_t m_ignore_mouse_delta_frames{ 0 };
+    bool m_bind_main_cam_and_first_scene_cam{ true };
 
     consteval void __donotuse()
     {
