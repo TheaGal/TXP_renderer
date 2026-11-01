@@ -713,17 +713,22 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
 
     p.g.combined_static_model.bind(cmd);
 
-    // Mark all as stale.
-    for (auto&& [_, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
-    {
+    // Erase unused meshes.
+    std::vector<void*> pointers_to_erase;
+    for (auto&& [pointer, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
         if (!uploaded_mesh.got_used)
         {
-            BT_WARN("@TODO: delete this mesh!!!");
-            BT::date_deadline(2026, 10, 30);
+            uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
+            pointers_to_erase.emplace_back(pointer);
+            assert(pointer != nullptr);  // you're not supposed to destroy the nullptr one!!!
         }
 
+    for (void* pointer : pointers_to_erase)
+        p.pointer_to_uploaded_mesh_map.erase(pointer);
+
+    // Mark all as stale.
+    for (auto&& [_, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
         uploaded_mesh.got_used = false;
-    }
 
     // Render instances.
     uint32_t draw_instance{ 0 };
