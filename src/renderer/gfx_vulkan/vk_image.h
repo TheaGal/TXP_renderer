@@ -53,6 +53,10 @@ public:
 
     static Allocated_image create_image_depth_buffer(VkExtent2D extent);
 
+    static Allocated_image create_image_3d(VkFormat format,
+                                           VkExtent3D extent,
+                                           VkImageUsageFlags usage_flags);
+
     static Allocated_image create_image(VkImageType image_type,
                                         VkImageViewType image_view_type,
                                         VkFormat format,
@@ -81,6 +85,12 @@ public:
 
     VkFormat get_format() const;
 
+    VkDeviceSize get_data_size() const;
+
+    uint32_t get_mip_levels() const;
+
+    uint32_t get_array_layers() const;
+
 private:
     inline static VkPhysicalDevice s_physical_device;
     inline static VkDevice s_device;
@@ -95,6 +105,9 @@ private:
     VmaAllocation m_allocation;
     VkExtent3D m_extent;
     VkFormat m_format;
+    VkDeviceSize m_data_size;
+    uint32_t m_mip_levels;
+    uint32_t m_array_layers;
 };
 
 }  // namespace Vk_Image

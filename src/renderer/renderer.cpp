@@ -765,8 +765,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        bool const display_ui_image{ is_main_cam_matrix };
-        m.shad_postprocess->compute(display_ui_image, render_view);
+        bool const do_full_postprocess{ is_main_cam_matrix };
+        m.shad_postprocess->compute(do_full_postprocess, render_view);
 
         render_view_idx++;
     }

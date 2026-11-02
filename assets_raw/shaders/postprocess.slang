@@ -3,6 +3,7 @@
 cbuffer Uniforms
 {
     Texture2D<half4> color_image;
+    Texture2D<half4> clouds_image;
     Texture2D<float4> ui_image;
     WTexture2D<float4> dest_image;
 }
@@ -57,7 +58,7 @@ half3 apply_vignette(const half3 in_color, const half2 screen_uv)
 
 [shader("compute")]
 [numthreads(16, 16, 1)]
-void compute_main(uniform uint32_t use_ui_image,
+void compute_main(uniform uint32_t do_full_postprocess,
                   uniform float exposure,
                   uniform float gamma,
                   uint3 thread_idx : SV_DispatchThreadID,
@@ -74,7 +75,7 @@ void compute_main(uniform uint32_t use_ui_image,
         color = clamp(color, half3(0), half3(1));
 
         // Vignette.
-        if (bool(use_ui_image))
+        if (bool(do_full_postprocess))
         {
             half2 screen_uv = half2(half(thread_idx.x) / half(color_image_w),
                                     half(thread_idx.y) / half(color_image_h));
@@ -84,9 +85,14 @@ void compute_main(uniform uint32_t use_ui_image,
         }
 
         // Incorporate UI.
+        half4 clouds_color = half4(0);
         half4 ui_color = half4(0);
-        if (bool(use_ui_image))
+        if (bool(do_full_postprocess))
+        {
+            clouds_color = clouds_image.Load(thread_idx / 2);
             ui_color = half4(ui_image.Load(thread_idx));
+        }
+        color = lerp(color, clouds_color.rgb, clouds_color.a);
         color = lerp(color, ui_color.rgb, ui_color.a);
 
         // Spit it out!

@@ -1035,6 +1035,7 @@ void Graphics::Impl::destroy_vulkan()
     }
     vkDestroySampler(gfx.device, render_view_imgui_image_sampler, nullptr);
 
+    clouds_image.teardown();
     ui_image.teardown();
 
     for (auto desc_layout : built_descriptor_layouts)
@@ -1758,6 +1759,9 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
             if (i == 0)
             {
+                // Destroy clouds image since this has changed.
+                clouds_image.teardown();
+
                 // Destroy UI image since this has changed.
                 ui_image.teardown();
             }
@@ -1797,6 +1801,14 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
         if (i == 0)
         {
+            VkExtent2D const half_res_extent{ extent.width / 2, extent.height / 2 };
+
+            // Create clouds image.
+            clouds_image = Vk_Image::Allocated_image::create_image_2d(
+                VK_FORMAT_R16G16B16A16_SFLOAT,
+                half_res_extent,
+                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
             // Create UI image.
             ui_image = Vk_Image::Allocated_image::create_image_2d(
                 VK_FORMAT_R8G8B8A8_UNORM,

@@ -2,7 +2,7 @@
     "parameters": [
         {
             "name": "Uniforms",
-            "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 3},
+            "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 4},
             "type": {
                 "kind": "constantBuffer",
                 "elementType": {
@@ -26,6 +26,23 @@
                             "format": "rgba16f"
                         },
                         {
+                            "name": "clouds_image",
+                            "type": {
+                                "kind": "resource",
+                                "baseShape": "texture2D",
+                                "resultType": {
+                                    "kind": "vector",
+                                    "elementCount": 4,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float16"
+                                    }
+                                }
+                            },
+                            "binding": {"kind": "descriptorTableSlot", "index": 1},
+                            "format": "rgba16f"
+                        },
+                        {
                             "name": "ui_image",
                             "type": {
                                 "kind": "resource",
@@ -39,7 +56,7 @@
                                     }
                                 }
                             },
-                            "binding": {"kind": "descriptorTableSlot", "index": 1}
+                            "binding": {"kind": "descriptorTableSlot", "index": 2}
                         },
                         {
                             "name": "dest_image",
@@ -56,7 +73,7 @@
                                     }
                                 }
                             },
-                            "binding": {"kind": "descriptorTableSlot", "index": 2}
+                            "binding": {"kind": "descriptorTableSlot", "index": 3}
                         }
                     ]
                 },
@@ -85,6 +102,23 @@
                                 "format": "rgba16f"
                             },
                             {
+                                "name": "clouds_image",
+                                "type": {
+                                    "kind": "resource",
+                                    "baseShape": "texture2D",
+                                    "resultType": {
+                                        "kind": "vector",
+                                        "elementCount": 4,
+                                        "elementType": {
+                                            "kind": "scalar",
+                                            "scalarType": "float16"
+                                        }
+                                    }
+                                },
+                                "binding": {"kind": "descriptorTableSlot", "index": 1},
+                                "format": "rgba16f"
+                            },
+                            {
                                 "name": "ui_image",
                                 "type": {
                                     "kind": "resource",
@@ -98,7 +132,7 @@
                                         }
                                     }
                                 },
-                                "binding": {"kind": "descriptorTableSlot", "index": 1}
+                                "binding": {"kind": "descriptorTableSlot", "index": 2}
                             },
                             {
                                 "name": "dest_image",
@@ -115,11 +149,11 @@
                                         }
                                     }
                                 },
-                                "binding": {"kind": "descriptorTableSlot", "index": 2}
+                                "binding": {"kind": "descriptorTableSlot", "index": 3}
                             }
                         ]
                     },
-                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 3}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 4}
                 }
             }
         }
@@ -130,7 +164,7 @@
             "stage": "compute",
             "parameters": [
                 {
-                    "name": "use_ui_image",
+                    "name": "do_full_postprocess",
                     "binding": {"kind": "uniform", "offset": 0, "size": 4, "elementStride": 0},
                     "type": {
                         "kind": "scalar",
@@ -182,7 +216,7 @@
             "bindings": [
                 {
                     "name": "Uniforms",
-                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 3}
+                    "binding": {"kind": "descriptorTableSlot", "index": 0, "count": 4}
                 }
             ]
         }
