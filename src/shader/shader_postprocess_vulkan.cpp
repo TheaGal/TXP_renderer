@@ -46,6 +46,7 @@ struct Shader_postprocess::Impl
 
         // @TODO: for vv below vv pull out the `build_Descriptor_layout()` and
         //        `load_shader_module()` functions.
+        // @AMEND: @THEA: what does this todo mean above?
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Descriptors.
@@ -55,7 +56,8 @@ struct Shader_postprocess::Impl
             {
                 { 0, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
                 { 1, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
-                { 2, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+                { 2, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
+                { 3, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
             },
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);
@@ -172,23 +174,23 @@ struct Shader_postprocess::Impl
             // Write descriptors.
             VkDescriptorSet dest_descriptor_set{ sp.allocated_descriptor_sets[render_view_idx] };
 
-            std::vector<VkImageView> const image_views{
-                render_view.color_image.get_image_view(),
-                g.clouds_image.get_image_view(),
-                g.ui_image.get_image_view(),
-                render_view.destination_image.get_image_view(),
+            std::vector<std::pair<VkImageView, VkDescriptorType>> const image_views_w_desc_type{
+                { render_view.color_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+                { g.clouds_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+                { g.ui_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+                { render_view.destination_image.get_image_view(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
             };
 
             std::vector<VkDescriptorImageInfo> desc_image_infos;
-            desc_image_infos.reserve(image_views.size());
+            desc_image_infos.reserve(image_views_w_desc_type.size());
 
             std::vector<VkWriteDescriptorSet> desc_image_writes;
-            desc_image_writes.reserve(image_views.size());
+            desc_image_writes.reserve(image_views_w_desc_type.size());
 
-            for (uint32_t i = 0; i < image_views.size(); i++)
+            for (uint32_t i = 0; i < image_views_w_desc_type.size(); i++)
             {
                 desc_image_infos.emplace_back(VkDescriptorImageInfo{
-                    .imageView = image_views[i],
+                    .imageView = image_views_w_desc_type[i].first,
                     .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
                 });
                 desc_image_writes.emplace_back(VkWriteDescriptorSet{
@@ -198,7 +200,7 @@ struct Shader_postprocess::Impl
                     .dstSet = dest_descriptor_set,
                     .dstBinding = i,
                     .descriptorCount = 1,
-                    .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+                    .descriptorType = image_views_w_desc_type[i].second,
                     .pImageInfo = &desc_image_infos[i],
                 });
             }

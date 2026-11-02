@@ -718,8 +718,9 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
     for (auto&& [pointer, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
         if (!uploaded_mesh.got_used)
         {
-            uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
-            pointers_to_erase.emplace_back(pointer);
+            BT::date_deadline(2026, 11, 5);  // @TODO: add a counter to make sure buffer is for sure never used (since want to avoid using wait for gpu idle func).
+            // uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
+            // pointers_to_erase.emplace_back(pointer);
             assert(pointer != nullptr);  // you're not supposed to destroy the nullptr one!!!
         }
 

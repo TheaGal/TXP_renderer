@@ -8,7 +8,7 @@ namespace TXP
 {
 
 struct Render_model_data_collection;  // Forward decl.
-struct UI_state;  // Forward decl.
+class Camera_internal;  // Forward decl.
 
 namespace Shader
 {
@@ -19,13 +19,14 @@ class Shader_clouds
 public:
     static constexpr char const* k_name{ "clouds" };
 
-    Shader_clouds(Render_model_data_collection& render_model_data_collection,
-                  void* graphics);
+    Shader_clouds(void* graphics);
     ~Shader_clouds();
 
-    void upload_ui_state_data(UI_state const& ui_state);
+    void signal_render_view_sizes_changed();
 
-    void compute(UI_state const& ui_state, float_t camera_view_aspect_ratio);
+    // void upload_ui_state_data(UI_state const& ui_state);
+
+    void compute(Camera_internal const& camera, void* render_view_param);
 
 private:
     struct Impl;

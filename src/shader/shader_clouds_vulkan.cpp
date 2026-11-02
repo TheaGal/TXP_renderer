@@ -1,4 +1,3 @@
-#include "cglm/vec3.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 // clang-format off
@@ -8,21 +7,19 @@
 #include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
+#include "camera/camera_internal.h"
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/gfx_vulkan/vk_image.h"
 #include "renderer/gfx_vulkan_impl.h"
 #include "shader/shader_support.h"
 #include "shader_creation/shader_creation.h"
-#include "txp_renderer/ui/ui_state.h"
-#include "ui/ui_types.h"
 #include "vulkan/vulkan_core.h"
 
 #include <cassert>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
-#include <limits>
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
@@ -37,46 +34,41 @@ namespace Shader
 /// Struct for push constants.
 struct Shader_clouds_push_constants  // @TODO: move this to gfx_vulkan_impl!!!  @AMEND: what is this message????????
 {
-    VkDeviceAddress sprite_data_set_dev_addr;
-    float_t camera_view_aspect_ratio;
-    float_t render_canvas_height;
-};
-
-/// Vertex for sprites.
-struct Sprite_vertex
-{
-    vec3 position;
-    vec2 uv;
-};
-
-/// Structure to organize mesh to upload.
-struct Sprite_mesh_to_upload
-{
-    std::vector<Sprite_vertex> vertices;
-    std::vector<uint32_t> indices;
-};
-
-struct Uploaded_mesh
-{
-    bool is_volatile;
-    std::unique_ptr<Graphics::Impl::Model_buffer> model_buffer;
-    uint32_t index_count;
-    bool got_used;
+    mat4 inv_cam_projview;
+    vec3 voxel_grid_origin;
+    float_t voxel_size;
 };
 
 
 // struct Shader_clouds::Impl
 struct Shader_clouds::Impl
 {
-    Impl(TXP::Render_model_data_collection& rend_mod_data_coll, TXP::Graphics::Impl& graphics)
-        : render_model_data_collection(rend_mod_data_coll)
-        , g(graphics)
+    Impl(TXP::Graphics::Impl& graphics)
+        : g(graphics)
         , device(g.gfx.device)
         , allocator(g.gfx.allocator)
     {
-        Shader_Support::fetch_graphics_shader_info(k_name,
-                                                   vertex_entry_point_name,
-                                                   fragment_entry_point_name);
+        Shader_Support::fetch_compute_shader_info(k_name,
+                                                  compute_entry_point_name,
+                                                  thread_grp_sizes.width,
+                                                  thread_grp_sizes.height,
+                                                  thread_grp_sizes.depth);
+
+        ////////////////////////////////////////////////////////////////////////////////////////////
+        // Descriptors.
+
+        // Descriptor layouts.
+        shader_pipeline.descriptor_layout = g.build_descriptor_layout(
+            {
+                { 0, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
+                { 1, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
+                { 2, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+            },
+            VK_SHADER_STAGE_COMPUTE_BIT,
+            0);
+
+        // Defer building descriptors.
+        shader_pipeline.is_descriptor_set_valid = false;
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Pipeline.
@@ -84,14 +76,13 @@ struct Shader_clouds::Impl
         VkResult err;
 
         // Create pipeline layout.
-        VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
-                                                 .size =
-                                                     sizeof(Shader_clouds_push_constants) };
+        VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT,
+                                                 .size = sizeof(Shader_clouds_push_constants) };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
             .setLayoutCount = 1,
-            .pSetLayouts = &g.all_textures_descriptor_layout,
+            .pSetLayouts = &shader_pipeline.descriptor_layout,
             .pushConstantRangeCount = 1,
             .pPushConstantRanges = &push_constant_range,
         };
@@ -104,127 +95,33 @@ struct Shader_clouds::Impl
             throw std::runtime_error("Failed to create pipeline layout.");
 
         // Create pipeline.
-        VkVertexInputBindingDescription vertex_binding{ .binding = 0,
-                                                        .stride = sizeof(Sprite_vertex),
-                                                        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX, };
-        std::vector<VkVertexInputAttributeDescription> vertex_attributes{
-            { .location = 0,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32B32_SFLOAT,
-              .offset = offsetof(Sprite_vertex, position) },
-            { .location = 1,
-              .binding = 0,
-              .format = VK_FORMAT_R32G32_SFLOAT,
-              .offset = offsetof(Sprite_vertex, uv) },
-        };
-        VkPipelineVertexInputStateCreateInfo vertex_input_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-            .vertexBindingDescriptionCount = 1,
-            .pVertexBindingDescriptions = &vertex_binding,
-            .vertexAttributeDescriptionCount = static_cast<uint32_t>(vertex_attributes.size()),
-            .pVertexAttributeDescriptions = vertex_attributes.data(),
-        };
-
-        VkPipelineInputAssemblyStateCreateInfo input_assembly_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-            .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-        };
-
         VkShaderModule shader_module{ g.load_shader_module(
             Shader_Creation::get_shader_module_path(k_name)) };
 
-        std::vector<VkPipelineShaderStageCreateInfo> stage_infos;
-        stage_infos.reserve(2);
-
-        stage_infos.emplace_back(VkPipelineShaderStageCreateInfo{
+        VkPipelineShaderStageCreateInfo stage_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
             .pNext = nullptr,
-            .stage = VK_SHADER_STAGE_VERTEX_BIT,
+            .stage = VK_SHADER_STAGE_COMPUTE_BIT,
             .module = shader_module,
-            .pName = vertex_entry_point_name.c_str(),
+            .pName = compute_entry_point_name.c_str(),
             // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
-        });
-        stage_infos.emplace_back(VkPipelineShaderStageCreateInfo{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+        };
+
+        VkComputePipelineCreateInfo compute_pipeline_info{
+            .sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO,
             .pNext = nullptr,
-            .stage = VK_SHADER_STAGE_FRAGMENT_BIT,
-            .module = shader_module,
-            .pName = fragment_entry_point_name.c_str(),
-            // .pSpecializationInfo = nullptr,  // @RESEARCH: research this if you want!
-        });
-
-        VkPipelineViewportStateCreateInfo viewport_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-            .viewportCount = 1,
-            .scissorCount = 1,
-        };
-        std::vector<VkDynamicState> dynamic_states{ VK_DYNAMIC_STATE_VIEWPORT,
-                                                    VK_DYNAMIC_STATE_SCISSOR };
-        VkPipelineDynamicStateCreateInfo dynamic_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-            .dynamicStateCount = static_cast<uint32_t>(dynamic_states.size()),
-            .pDynamicStates = dynamic_states.data(),
-        };
-
-        std::vector<VkFormat> color_attachment_formats{
-            g.ui_image.get_format(),
-        };
-        VkPipelineRenderingCreateInfo dynamic_rendering_info{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
-            .colorAttachmentCount = static_cast<uint32_t>(color_attachment_formats.size()),
-            .pColorAttachmentFormats = color_attachment_formats.data(),
-        };
-
-        VkPipelineColorBlendAttachmentState blend_attachment{
-            // @THEA: all this is different below vv !!! (for color alpha blending)
-            .blendEnable = VK_TRUE,
-            .srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
-            .dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-            .colorBlendOp = VK_BLEND_OP_ADD,
-            .srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
-            .dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
-            .alphaBlendOp = VK_BLEND_OP_ADD,
-            .colorWriteMask = 0xf,
-        };
-        VkPipelineColorBlendStateCreateInfo color_blend_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-            .attachmentCount = 1,
-            .pAttachments = &blend_attachment,
-        };
-        VkPipelineRasterizationStateCreateInfo rasterization_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-            .cullMode = VK_CULL_MODE_BACK_BIT,
-            .lineWidth = 1.0f,
-        };
-        VkPipelineMultisampleStateCreateInfo multisample_state{
-            .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-            .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-        };
-
-        VkGraphicsPipelineCreateInfo graphics_pipeline_info{
-            .sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
-            .pNext = &dynamic_rendering_info,
-            .stageCount = static_cast<uint32_t>(stage_infos.size()),
-            .pStages = stage_infos.data(),
-            .pVertexInputState = &vertex_input_state,
-            .pInputAssemblyState = &input_assembly_state,
-            .pViewportState = &viewport_state,
-            .pRasterizationState = &rasterization_state,
-            .pMultisampleState = &multisample_state,
-            .pDepthStencilState = nullptr,
-            .pColorBlendState = &color_blend_state,
-            .pDynamicState = &dynamic_state,
+            .stage = stage_info,
             .layout = shader_pipeline.pipeline_layout,
         };
 
-        err = vkCreateGraphicsPipelines(device,
-                                        VK_NULL_HANDLE,
-                                        1,
-                                        &graphics_pipeline_info,
-                                        nullptr,
-                                        &shader_pipeline.pipeline);
+        err = vkCreateComputePipelines(device,
+                                       VK_NULL_HANDLE,
+                                       1,
+                                       &compute_pipeline_info,
+                                       nullptr,
+                                       &shader_pipeline.pipeline);
         if (err)
-            throw std::runtime_error("Failed to create graphics pipeline.");
+            throw std::runtime_error("Failed to create compute pipeline.");
 
         // Cleanup.
         vkDestroyShaderModule(device, shader_module, nullptr);
@@ -250,8 +147,7 @@ struct Shader_clouds::Impl
 
         #define CLOUD_VOLUME_IMAGE_USE_COMPRESSED_IMAGE_FORMAT 0
 
-        Vk_Image::Allocated_image cloud_volume_image;
-        cloud_volume_image.create_image_3d(
+        cloud_volume_image = Vk_Image::Allocated_image::create_image_3d(
         #if CLOUD_VOLUME_IMAGE_USE_COMPRESSED_IMAGE_FORMAT
             VK_FORMAT_BC4_UNORM_BLOCK,
         #else
@@ -298,6 +194,7 @@ struct Shader_clouds::Impl
 
         Graphics::Impl::Command_buffer one_time_command_buffer;
         one_time_command_buffer.allocate(g.gfx.device, onetime_cmd_pool, true);
+        one_time_command_buffer.reset();
 
         VkCommandBuffer cmd{ one_time_command_buffer.get() };
 
@@ -365,14 +262,16 @@ struct Shader_clouds::Impl
         if (err)
             throw std::runtime_error("Failed to end one-time command buffer.");
 
-        VkCommandBufferSubmitInfo cbOneTimeSubmitInfo{
+        VkCommandBufferSubmitInfo one_time_command_buffer_submit_info{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .commandBuffer = cmd
+            .commandBuffer = cmd,
         };
-        VkSubmitInfo2 oneTimeSI{ .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-                                 .commandBufferInfoCount = 1,
-                                 .pCommandBufferInfos = &cbOneTimeSubmitInfo };
-        err = vkQueueSubmit2(g.gfx.graphics_queue, 1, &oneTimeSI, fence_one_time);
+        VkSubmitInfo2 one_time_submit_info{
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+            .commandBufferInfoCount = 1,
+            .pCommandBufferInfos = &one_time_command_buffer_submit_info,
+        };
+        err = vkQueueSubmit2(g.gfx.graphics_queue, 1, &one_time_submit_info, fence_one_time);
         if (err)
             throw std::runtime_error("One-time queue submit failed.");
 
@@ -380,317 +279,265 @@ struct Shader_clouds::Impl
         if (err)
             throw std::runtime_error("One-time fence wait failed.");
 
-        ////////////////////////////////////////////////////////////////////////////////////////////
-        // Create unit square mesh.
-        Sprite_mesh_to_upload smesh;
-
-        smesh.vertices.reserve(4);
-        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 0, 0, 0 }, .uv = { 0, 0 } });
-        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 0, 1, 0 }, .uv = { 0, 1 } });
-        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 1, 1, 0 }, .uv = { 1, 1 } });
-        smesh.vertices.emplace_back(Sprite_vertex{ .position = { 1, 0, 0 }, .uv = { 1, 0 } });
-
-        smesh.indices.reserve(6);
-        smesh.indices.emplace_back(0);
-        smesh.indices.emplace_back(1);
-        smesh.indices.emplace_back(2);
-        smesh.indices.emplace_back(0);
-        smesh.indices.emplace_back(2);
-        smesh.indices.emplace_back(3);
-
-        upload_mesh_to_gpu(nullptr, std::move(smesh), false);
-        pointer_to_built_config[nullptr] = {};
+        // Cleanup.
+        cloud_volume_image_staging.destroy();
     }
 
     ~Impl()
     {
-        for (auto&& [_, uploaded_mesh] : pointer_to_uploaded_mesh_map)
-        {
-            uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
-        }
-
+        cloud_volume_image.teardown();
         vkDestroyPipelineLayout(device, shader_pipeline.pipeline_layout, nullptr);
         vkDestroyPipeline(device, shader_pipeline.pipeline, nullptr);
     }
 
-
-    void upload_mesh_to_gpu(void* ptr_key, Sprite_mesh_to_upload&& smesh, bool is_volatile)
+    void build_descriptor()
     {
-        Uploaded_mesh umesh{ .is_volatile = is_volatile };
+        g.wait_until_gpu_idle();
 
-        // @COPYPASTA of `upload_model_entries_to_gpu()`
-        VkDeviceSize const vertex_buf_size{ sizeof(Sprite_vertex) * smesh.vertices.size() };
-        VkDeviceSize const index_buf_size{ sizeof(uint32_t) * smesh.indices.size() };
+        auto& sp{ shader_pipeline };
 
-        VkDeviceSize const total_vertex_index_buffer_size{ vertex_buf_size + index_buf_size };
+        // Reallocate.
+        sp.descriptor_set_images.clear();
+        sp.descriptor_set_images.reserve(3);
 
-        umesh.model_buffer = std::make_unique<Graphics::Impl::Model_buffer>();
+        // Build descriptors.
+        size_t const render_view_idx{ 0 };
+        auto& render_view{ g.render_views[render_view_idx] };
 
-        umesh.model_buffer->vertex_index_buffer.create(
-            g.gfx.device,
-            g.gfx.allocator,
-            total_vertex_index_buffer_size,
-            VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
-            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
-                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
-                VMA_ALLOCATION_CREATE_MAPPED_BIT);
+        // Insert image refs.
+        sp.descriptor_set_images.emplace_back(&cloud_volume_image.get_image());
+        sp.descriptor_set_images.emplace_back(&render_view.depth_image.get_image());
+        sp.descriptor_set_images.emplace_back(&g.clouds_image.get_image());
 
-        umesh.model_buffer->offset_to_index_buffer = vertex_buf_size;
-        umesh.index_count = smesh.indices.size();
+        sp.destination_image = &g.clouds_image.get_image();
 
-        void* p_mapped_data{ umesh.model_buffer->vertex_index_buffer.get_p_mapped_data() };
-        auto const offset_to_idx_buf{ umesh.model_buffer->offset_to_index_buffer };
-
-        std::memcpy(p_mapped_data, smesh.vertices.data(), vertex_buf_size);
-        std::memcpy(reinterpret_cast<char*>(p_mapped_data) + offset_to_idx_buf,
-                    smesh.indices.data(),
-                    index_buf_size);
-
-        umesh.got_used = true;
-
-        // Delete previously created mesh first if exists.
-        if (auto it = pointer_to_uploaded_mesh_map.find(ptr_key);
-            it != pointer_to_uploaded_mesh_map.end())
+        // Allocate needed descriptors.
+        if (sp.descriptor_set == VK_NULL_HANDLE)
         {
-            g.wait_until_gpu_idle();  // this is slow if you could @IMPROVE this??
-            it->second.model_buffer->vertex_index_buffer.destroy();
-            pointer_to_uploaded_mesh_map.erase(it);
+            sp.descriptor_set = g.global_descriptor_allocator.allocate(sp.descriptor_layout);
         }
 
-        // Save to uploaded mesh map.
-        pointer_to_uploaded_mesh_map.emplace(ptr_key, std::move(umesh));
+        // Write descriptors.
+        std::vector<std::pair<VkImageView, VkDescriptorType>> const image_views_w_desc_type{
+            { cloud_volume_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+            { render_view.depth_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+            { g.clouds_image.get_image_view(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
+        };
+
+        std::vector<VkDescriptorImageInfo> desc_image_infos;
+        desc_image_infos.reserve(image_views_w_desc_type.size());
+
+        std::vector<VkWriteDescriptorSet> desc_image_writes;
+        desc_image_writes.reserve(image_views_w_desc_type.size());
+
+        for (uint32_t i = 0; i < image_views_w_desc_type.size(); i++)
+        {
+            desc_image_infos.emplace_back(VkDescriptorImageInfo{
+                .imageView = image_views_w_desc_type[i].first,
+                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+            });
+            desc_image_writes.emplace_back(VkWriteDescriptorSet{
+                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                .pNext = nullptr,
+
+                .dstSet = sp.descriptor_set,
+                .dstBinding = i,
+                .descriptorCount = 1,
+                .descriptorType = image_views_w_desc_type[i].second,
+                .pImageInfo = &desc_image_infos[i],
+            });
+        }
+
+        vkUpdateDescriptorSets(device,
+                               desc_image_writes.size(),
+                               desc_image_writes.data(),
+                               0,
+                               nullptr);
+
+        // Finished.
+        sp.is_descriptor_set_valid = true;
     }
 
-    void draw_mesh_for_elem(VkCommandBuffer cmd,
-                            UI::UI_element const& elem,
-                            uint32_t const draw_instance)
-    {
-        Uploaded_mesh* elem_mesh;
-        if (!elem.render_text.empty())
-        {
-            void* elem_as_ptr{ const_cast<UI::UI_element*>(&elem) };
-
-            auto it{ pointer_to_uploaded_mesh_map.find(elem_as_ptr)};
-            if (it == pointer_to_uploaded_mesh_map.end() ||
-                !pointer_to_built_config.at(elem_as_ptr)
-                     .is_equal(elem.render_text, elem.halign, elem.valign))
-            {
-                generate_text(elem_as_ptr, elem.render_text, elem.halign, elem.valign);
-                elem_mesh = &pointer_to_uploaded_mesh_map.at(elem_as_ptr);
-            }
-            else
-            {
-                elem_mesh = &it->second;
-            }
-        }
-        else
-        {
-            elem_mesh = &pointer_to_uploaded_mesh_map.at(nullptr);
-        }
-
-        elem_mesh->model_buffer->bind(cmd);
-        vkCmdDrawIndexed(cmd, elem_mesh->index_count, 1, 0, 0, draw_instance);
-
-        elem_mesh->got_used = true;
-    }
-
-
-    TXP::Render_model_data_collection& render_model_data_collection;
 
     TXP::Graphics::Impl& g;
     VkDevice device;
     VmaAllocator allocator;
 
-    std::string vertex_entry_point_name;
-    std::string fragment_entry_point_name;
+    std::string compute_entry_point_name;
+    VkExtent3D thread_grp_sizes;
 
-    /// Holder for uploaded meshes.
-    std::unordered_map<void*, Uploaded_mesh> pointer_to_uploaded_mesh_map;
-
-    struct Built_config
-    {
-        std::string text;
-        UI::UI_element::Align halign;
-        UI::UI_element::Align valign;
-
-        bool is_equal(std::string const& param_text,
-                      UI::UI_element::Align const param_halign,
-                      UI::UI_element::Align const param_valign) const
-        {
-            return (text == param_text && halign == param_halign && valign == param_valign);
-        }
-    };
-    std::unordered_map<void*, Built_config> pointer_to_built_config;
+    Vk_Image::Allocated_image cloud_volume_image;
 
     /// Shader pipeline info for this shader.
     struct Shader_pipeline
     {
         VkPipeline pipeline;
         VkPipelineLayout pipeline_layout;
+        VkDescriptorSet descriptor_set{ VK_NULL_HANDLE };
+        VkDescriptorSetLayout descriptor_layout;
+
+        std::vector<Vk_Image::Image*> descriptor_set_images;
+        Vk_Image::Image* destination_image;
+
+        bool is_descriptor_set_valid;
     } shader_pipeline;
 };
 
 
 // class Shader_clouds
-Shader_clouds::Shader_clouds(Render_model_data_collection& render_model_data_collection,
-                             void* graphics)
-    : m_pimpl(std::make_unique<Impl>(render_model_data_collection,
-                                     *static_cast<TXP::Graphics::Impl*>(graphics)))
+Shader_clouds::Shader_clouds(void* graphics)
+    : m_pimpl(std::make_unique<Impl>(*static_cast<TXP::Graphics::Impl*>(graphics)))
 {
 }
 
 Shader_clouds::~Shader_clouds() = default;
 
-
-namespace
+void Shader_clouds::signal_render_view_sizes_changed()
 {
-
-bool is_empty_ui_node(UI::UI_element const* elem)
-{
-    return (elem->texture_idx == UI::k_texture_idx_no_texture && elem->render_text.empty());
+    m_pimpl->shader_pipeline.is_descriptor_set_valid = false;
 }
 
-} // namespace
+// namespace
+// {
+
+// bool is_empty_ui_node(UI::UI_element const* elem)
+// {
+//     return (elem->texture_idx == UI::k_texture_idx_no_texture && elem->render_text.empty());
+// }
+
+// } // namespace
 
 
-void Shader_clouds::upload_ui_state_data(UI_state const& ui_state)
+// void Shader_clouds::upload_ui_state_data(UI_state const& ui_state)
+// {
+//     auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
+//     if (render_order_elem_list.empty())
+//         return;
+
+//     if (render_order_elem_list.size() > gpu_type::k_num_sprites)
+//     {
+//         throw std::runtime_error("Too many sprite elems to render.");
+//     }
+
+//     auto& p{ *m_pimpl };
+
+//     // Upload sprite information to GPU.
+//     auto* ui_data_set_data = static_cast<gpu_type::Sprite_data_set_element*>(
+//         p.g.get_current_frame().sprite_data_set_buffer.get_p_mapped_data());
+
+//     for (UI::UI_element const* elem : render_order_elem_list)
+//     {
+//         if (is_empty_ui_node(elem))
+//             continue;
+
+//         glm_mat4_identity(ui_data_set_data->model_mat);
+
+//         uint32_t parent_overflow_count{ 10000 };
+
+//         UI::UI_element const* elem_node{ elem };
+//         while (elem_node != nullptr)
+//         {
+//             auto const& etrans{ elem_node->transform};
+//             mat4 node_model_mat;
+//             glm_translate_make(node_model_mat, vec3{ etrans.x, etrans.y, 0 });
+//             glm_rotate_z(node_model_mat, etrans.rot, node_model_mat);
+//             glm_scale(node_model_mat, vec3{ etrans.w, etrans.h });
+
+//             glm_mat4_mul(node_model_mat, ui_data_set_data->model_mat, ui_data_set_data->model_mat);
+
+//             elem_node = elem_node->parent;
+
+//             parent_overflow_count--;
+//             if (parent_overflow_count == 0)
+//                 throw std::runtime_error("Circular dependency detected! Youre a slut!");
+//         }
+
+//         glm_vec2_copy(vec2{ elem->transform.anchor.x, elem->transform.anchor.y },
+//                       ui_data_set_data->anchor);
+
+//         bool const has_render_text{ !elem->render_text.empty() };
+
+//         ui_data_set_data->opacity = elem->opacity;  // @THOUGHT: inherit opacity from parents??
+//         ui_data_set_data->texture_idx =
+//             (has_render_text ? p.g.texture_entries.at("font_msdf_pitagon_serif_regular").gpu_idx
+//                              : elem->texture_idx);
+
+//         glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
+
+//         ui_data_set_data->is_nine_slice = elem->is_nine_slice;
+//         ui_data_set_data->is_msdf = has_render_text;
+
+//         ui_data_set_data++;
+//     }
+// }
+
+void Shader_clouds::compute(Camera_internal const& camera, void* render_view_param)
 {
-    auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
-    if (render_order_elem_list.empty())
-        return;
-
-    if (render_order_elem_list.size() > gpu_type::k_num_sprites)
-    {
-        throw std::runtime_error("Too many sprite elems to render.");
-    }
-
     auto& p{ *m_pimpl };
 
-    // Upload sprite information to GPU.
-    auto* ui_data_set_data = static_cast<gpu_type::Sprite_data_set_element*>(
-        p.g.get_current_frame().sprite_data_set_buffer.get_p_mapped_data());
+    auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
+    assert(render_view.render_view_idx == 0);
 
-    for (UI::UI_element const* elem : render_order_elem_list)
+    if (!p.shader_pipeline.is_descriptor_set_valid)
     {
-        if (is_empty_ui_node(elem))
-            continue;
-
-        glm_mat4_identity(ui_data_set_data->model_mat);
-
-        uint32_t parent_overflow_count{ 10000 };
-
-        UI::UI_element const* elem_node{ elem };
-        while (elem_node != nullptr)
-        {
-            auto const& etrans{ elem_node->transform};
-            mat4 node_model_mat;
-            glm_translate_make(node_model_mat, vec3{ etrans.x, etrans.y, 0 });
-            glm_rotate_z(node_model_mat, etrans.rot, node_model_mat);
-            glm_scale(node_model_mat, vec3{ etrans.w, etrans.h });
-
-            glm_mat4_mul(node_model_mat, ui_data_set_data->model_mat, ui_data_set_data->model_mat);
-
-            elem_node = elem_node->parent;
-
-            parent_overflow_count--;
-            if (parent_overflow_count == 0)
-                throw std::runtime_error("Circular dependency detected! Youre a slut!");
-        }
-
-        glm_vec2_copy(vec2{ elem->transform.anchor.x, elem->transform.anchor.y },
-                      ui_data_set_data->anchor);
-
-        bool const has_render_text{ !elem->render_text.empty() };
-
-        ui_data_set_data->opacity = elem->opacity;  // @THOUGHT: inherit opacity from parents??
-        ui_data_set_data->texture_idx =
-            (has_render_text ? p.g.texture_entries.at("font_msdf_pitagon_serif_regular").gpu_idx
-                             : elem->texture_idx);
-
-        glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
-
-        ui_data_set_data->is_nine_slice = elem->is_nine_slice;
-        ui_data_set_data->is_msdf = has_render_text;
-
-        ui_data_set_data++;
+        p.build_descriptor();
     }
-}
 
-void Shader_clouds::compute(UI_state const& ui_state, float_t camera_view_aspect_ratio)
-{
-    auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
-    if (render_order_elem_list.empty())
-        return;
+    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
 
-    auto& p{ *m_pimpl };
+    // Ready needed images for compute shader.
+    std::vector<std::pair<Vk_Image::Image*, VkImageLayout>> image_transitions;
+    image_transitions.reserve(p.shader_pipeline.descriptor_set_images.size());
+    for (auto* desc_set_image : p.shader_pipeline.descriptor_set_images)
+    {
+        image_transitions.emplace_back(desc_set_image, VK_IMAGE_LAYOUT_GENERAL);
+    }
 
-    auto& current_frame{ p.g.get_current_frame() };
-    auto cmd{ current_frame.graphics_queue_command_buffer.get() };
+    Vk_Image::Image::transition_to(cmd, std::move(image_transitions));
 
-    // Setup render.
-    uint32_t image_width{ p.g.ui_image.get_extent().width };
-    uint32_t image_height{ p.g.ui_image.get_extent().height };
+    // Bind.
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, p.shader_pipeline.pipeline);
+    vkCmdBindDescriptorSets(
+        cmd,
+        VK_PIPELINE_BIND_POINT_COMPUTE,
+        p.shader_pipeline.pipeline_layout,
+        0,
+        1, &p.shader_pipeline.descriptor_set,
+        0, nullptr);
 
-    VkViewport viewport{ .width = static_cast<float_t>(image_width),
-                         .height = static_cast<float_t>(image_height),
-                         .minDepth = 0.0f,
-                         .maxDepth = 1.0f };
-    vkCmdSetViewport(cmd, 0, 1, &viewport);
+    Shader_clouds_push_constants push_consts;
+    glm_mat4_mul(
+        const_cast<vec4*>(camera.get_calcd_cam_matrices()[render_view.render_view_idx].projection),
+        const_cast<vec4*>(camera.get_calcd_cam_matrices()[render_view.render_view_idx].view),
+        push_consts.inv_cam_projview);
+    glm_mat4_inv(push_consts.inv_cam_projview, push_consts.inv_cam_projview);
+    glm_vec3_zero(push_consts.voxel_grid_origin);
+    push_consts.voxel_size = 8;
 
-    VkRect2D scissor{ .extent{ .width = image_width, .height = image_height } };
-    vkCmdSetScissor(cmd, 0, 1, &scissor);
-
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, p.shader_pipeline.pipeline);
-    vkCmdBindDescriptorSets(cmd,
-                            VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            p.shader_pipeline.pipeline_layout,
-                            0,
-                            1, &p.g.all_textures_descriptor_set,
-                            0, nullptr);
-
-
-    Shader_clouds_push_constants push_consts{
-        .sprite_data_set_dev_addr = current_frame.sprite_data_set_buffer.get_device_address(),
-        .camera_view_aspect_ratio = camera_view_aspect_ratio,
-        .render_canvas_height = UI::k_ui_canvas_fixed_height,
-    };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
-                       VK_SHADER_STAGE_VERTEX_BIT,
+                       VK_SHADER_STAGE_COMPUTE_BIT,
                        0,
                        sizeof(Shader_clouds_push_constants),
                        &push_consts);
 
-    p.g.combined_static_model.bind(cmd);
+    // Run.
+    // @TODO: move this into a real function.
+    static auto const k_cmd_dispatch_fn =
+        [](VkCommandBuffer cmd, VkExtent3D dispatch_thread_sizes, VkExtent3D thread_group_sizes) {
+            vkCmdDispatch(cmd,
+                          (dispatch_thread_sizes.width + thread_group_sizes.width - 1) /
+                              thread_group_sizes.width,
+                          (dispatch_thread_sizes.height + thread_group_sizes.height - 1) /
+                              thread_group_sizes.height,
+                          (dispatch_thread_sizes.depth + thread_group_sizes.depth - 1) /
+                              thread_group_sizes.depth);
+        };
 
-    // Erase unused meshes.
-    std::vector<void*> pointers_to_erase;
-    for (auto&& [pointer, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
-        if (!uploaded_mesh.got_used)
-        {
-            uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
-            pointers_to_erase.emplace_back(pointer);
-            assert(pointer != nullptr);  // you're not supposed to destroy the nullptr one!!!
-        }
+    k_cmd_dispatch_fn(cmd, p.g.clouds_image.get_extent(), p.thread_grp_sizes);
 
-    for (void* pointer : pointers_to_erase)
-        p.pointer_to_uploaded_mesh_map.erase(pointer);
-
-    // Mark all as stale.
-    for (auto&& [_, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
-        uploaded_mesh.got_used = false;
-
-    // Render instances.
-    uint32_t draw_instance{ 0 };
-
-    for (UI::UI_element* elem : render_order_elem_list)
-    {
-        if (is_empty_ui_node(elem))
-            continue;
-
-        p.draw_mesh_for_elem(cmd, *elem, draw_instance);
-        draw_instance++;
-    }
+    // @NOTE: this gets transitioned before next image use, so no need for a
+    //        `wait_until_completion()` step.
 }
 
 }  // namespace Shader

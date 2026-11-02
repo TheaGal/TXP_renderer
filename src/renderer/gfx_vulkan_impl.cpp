@@ -1807,7 +1807,7 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
             clouds_image = Vk_Image::Allocated_image::create_image_2d(
                 VK_FORMAT_R16G16B16A16_SFLOAT,
                 half_res_extent,
-                VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+                VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
 
             // Create UI image.
             ui_image = Vk_Image::Allocated_image::create_image_2d(

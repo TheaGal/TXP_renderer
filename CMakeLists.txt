@@ -156,6 +156,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/__debug_color_wireframe.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/clouds.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/clouds.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader

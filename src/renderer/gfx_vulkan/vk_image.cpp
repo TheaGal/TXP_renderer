@@ -108,6 +108,7 @@ VkImageLayout Image::get_layout()
                         VK_SAMPLE_COUNT_1_BIT,
                         VK_IMAGE_TILING_OPTIMAL,
                         usage_flags,
+                        VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
@@ -146,9 +147,10 @@ VkImageLayout Image::get_layout()
                         1,
                         VK_SAMPLE_COUNT_1_BIT,
                         VK_IMAGE_TILING_OPTIMAL,
-                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                            VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                        VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 /*static*/ Allocated_image Allocated_image::create_image_3d(VkFormat format,
@@ -167,6 +169,7 @@ VkImageLayout Image::get_layout()
                         VK_SAMPLE_COUNT_1_BIT,
                         VK_IMAGE_TILING_OPTIMAL,
                         usage_flags,
+                        VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
@@ -179,7 +182,8 @@ VkImageLayout Image::get_layout()
                                                          VkSampleCountFlagBits msaa_samples,
                                                          VkImageTiling tiling,
                                                          VkImageUsageFlags usage_flags,
-                                                         VkImageAspectFlags aspect_flags,
+                                                         VkImageAspectFlags image_aspect_flags,
+                                                         VkImageAspectFlags image_view_aspect_flags,
                                                          uint32_t view_base_mip_level /*= -1*/,
                                                          uint32_t view_mip_levels /*= -1*/,
                                                          uint32_t view_base_array_layer /*= -1*/,
@@ -226,7 +230,7 @@ VkImageLayout Image::get_layout()
         VkMemoryRequirements mem_requirements;
         vkGetImageMemoryRequirements(s_device, temp_vk_image, &mem_requirements);
 
-        new_img.m_image = Image(std::move(temp_vk_image), aspect_flags);
+        new_img.m_image = Image(std::move(temp_vk_image), image_aspect_flags);
         new_img.m_format = format;
         new_img.m_extent = extent;
         new_img.m_data_size = mem_requirements.size;
@@ -243,7 +247,7 @@ VkImageLayout Image::get_layout()
         .format = format,
         // .components = ,  @CHECK: what is this? (I'm curious)
         .subresourceRange = VkImageSubresourceRange{
-            .aspectMask     = aspect_flags,
+            .aspectMask     = image_view_aspect_flags,
             .baseMipLevel   = (view_base_mip_level == -1 ? 0 : view_base_mip_level),
             .levelCount     = (view_mip_levels == -1 ? mip_levels : view_mip_levels),
             .baseArrayLayer = (view_base_array_layer == -1 ? 0 : view_base_array_layer),
