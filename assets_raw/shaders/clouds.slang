@@ -149,6 +149,9 @@ float traverse(inout uint3 voxel_coord,
 }
 
 
+static const uint k_debug_render = 2;
+
+
 [shader("compute")]
 [numthreads(16, 16, 1)]
 void compute_main(uniform float4x4 inv_cam_projview,
@@ -226,13 +229,14 @@ void compute_main(uniform float4x4 inv_cam_projview,
 
         uint3 voxel_coord = calc_voxel_coord(voxel_grid_info, raymarch_pos);
         uint voxel_value = 0;
+        float transmittance = 1;
 
         [loop]
-        while (traversed_dist * traversed_dist <= raymarch_dist2 && voxel_value == 0)
+        while (traversed_dist * traversed_dist <= raymarch_dist2 && (k_debug_render != 1 || voxel_value == 0))
         {
             // @NOTE: sample before traversal to prevent samples when traveling too far.
             voxel_value = sample_voxel_at_coord(voxel_coord);
-            if (voxel_value != 0)
+            if (k_debug_render == 1 && voxel_value != 0)
                 break;  // found a hit!
 
             // March forward~!
@@ -243,13 +247,45 @@ void compute_main(uniform float4x4 inv_cam_projview,
                                one_over_raymarch_dir);
             raymarch_pos += (raymarch_dir * t);
             traversed_dist += t;
+
+            if (voxel_value != 0)
+            {
+                // Mix in density.
+                const float k_voxel_density = 0.1;
+                const float light_absorption_through_cloud = 0.2;
+
+                const float d = (k_voxel_density * t * light_absorption_through_cloud);
+
+                // lightEnergy += density * stepSize * transmittance * (1.0 - exp(-d * 2.0)) * inScatterTransmittance * phaseValue;       // Beer's-Powder approximation (https://www.guerrilla-games.com/media/News/Files/The-Real-time-Volumetric-Cloudscapes-of-Horizon-Zero-Dawn.pdf PAGE 64)
+                transmittance *= exp(-d);
+
+                if (transmittance < 1e-2)
+                    break;
+            }
         }
 
-        // @DEBUG: just write a debug value.
-        dest_image.Store(thread_idx.xy,
-                         float4((float)voxel_coord.x / (float)voxel_grid_info.grid_dimensions.x,
-                                (float)voxel_coord.y / (float)voxel_grid_info.grid_dimensions.y,
-                                (float)voxel_coord.z / (float)voxel_grid_info.grid_dimensions.z,
-                                voxel_value == 0 ? 0 : 1));
+        if (k_debug_render == 0)
+        {
+            // Normal render.
+            dest_image.Store(thread_idx.xy, float4(1, 0, 1, 1));  // @TODO: just put out error color.
+        }
+        else if (k_debug_render == 1)
+        {
+            // @DEBUG: just write a debug value of the collided voxel.
+            dest_image.Store(thread_idx.xy,
+                            float4((float)voxel_coord.x / (float)voxel_grid_info.grid_dimensions.x,
+                                   (float)voxel_coord.y / (float)voxel_grid_info.grid_dimensions.y,
+                                   (float)voxel_coord.z / (float)voxel_grid_info.grid_dimensions.z,
+                                   voxel_value == 0 ? 0 : 1));
+        }
+        else if (k_debug_render == 2)
+        {
+            // @DEBUG: show transmittance as fluffy green ball.
+            dest_image.Store(thread_idx.xy,
+                            float4(0.5,
+                                   0.75,
+                                   0.25,
+                                   1.0 - transmittance));
+        }
     }
 }

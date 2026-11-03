@@ -6,7 +6,6 @@
 
 #include "btdatecheck.h"
 #include "btglm.h"
-#include "btlogger.h"
 #include "camera/camera_internal.h"
 #include "renderer/gfx.h"
 #include "renderer/gfx_vulkan/vk_buffer.h"
@@ -396,79 +395,6 @@ void Shader_clouds::signal_render_view_sizes_changed()
     m_pimpl->shader_pipeline.is_descriptor_set_valid = false;
 }
 
-// namespace
-// {
-
-// bool is_empty_ui_node(UI::UI_element const* elem)
-// {
-//     return (elem->texture_idx == UI::k_texture_idx_no_texture && elem->render_text.empty());
-// }
-
-// } // namespace
-
-
-// void Shader_clouds::upload_ui_state_data(UI_state const& ui_state)
-// {
-//     auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
-//     if (render_order_elem_list.empty())
-//         return;
-
-//     if (render_order_elem_list.size() > gpu_type::k_num_sprites)
-//     {
-//         throw std::runtime_error("Too many sprite elems to render.");
-//     }
-
-//     auto& p{ *m_pimpl };
-
-//     // Upload sprite information to GPU.
-//     auto* ui_data_set_data = static_cast<gpu_type::Sprite_data_set_element*>(
-//         p.g.get_current_frame().sprite_data_set_buffer.get_p_mapped_data());
-
-//     for (UI::UI_element const* elem : render_order_elem_list)
-//     {
-//         if (is_empty_ui_node(elem))
-//             continue;
-
-//         glm_mat4_identity(ui_data_set_data->model_mat);
-
-//         uint32_t parent_overflow_count{ 10000 };
-
-//         UI::UI_element const* elem_node{ elem };
-//         while (elem_node != nullptr)
-//         {
-//             auto const& etrans{ elem_node->transform};
-//             mat4 node_model_mat;
-//             glm_translate_make(node_model_mat, vec3{ etrans.x, etrans.y, 0 });
-//             glm_rotate_z(node_model_mat, etrans.rot, node_model_mat);
-//             glm_scale(node_model_mat, vec3{ etrans.w, etrans.h });
-
-//             glm_mat4_mul(node_model_mat, ui_data_set_data->model_mat, ui_data_set_data->model_mat);
-
-//             elem_node = elem_node->parent;
-
-//             parent_overflow_count--;
-//             if (parent_overflow_count == 0)
-//                 throw std::runtime_error("Circular dependency detected! Youre a slut!");
-//         }
-
-//         glm_vec2_copy(vec2{ elem->transform.anchor.x, elem->transform.anchor.y },
-//                       ui_data_set_data->anchor);
-
-//         bool const has_render_text{ !elem->render_text.empty() };
-
-//         ui_data_set_data->opacity = elem->opacity;  // @THOUGHT: inherit opacity from parents??
-//         ui_data_set_data->texture_idx =
-//             (has_render_text ? p.g.texture_entries.at("font_msdf_pitagon_serif_regular").gpu_idx
-//                              : elem->texture_idx);
-
-//         glm_vec3_copy(const_cast<float_t*>(elem->color_tint), ui_data_set_data->color_tint);
-
-//         ui_data_set_data->is_nine_slice = elem->is_nine_slice;
-//         ui_data_set_data->is_msdf = has_render_text;
-
-//         ui_data_set_data++;
-//     }
-// }
 
 void Shader_clouds::compute(Camera_internal const& camera, void* render_view_param)
 {
