@@ -22,7 +22,6 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
-#include <unordered_map>
 #include <vector>
 
 
@@ -511,7 +510,8 @@ void Shader_clouds::compute(Camera_internal const& camera, void* render_view_par
         const_cast<vec4*>(camera.get_calcd_cam_matrices()[render_view.render_view_idx].view),
         push_consts.inv_cam_projview);
     glm_mat4_inv(push_consts.inv_cam_projview, push_consts.inv_cam_projview);
-    glm_vec3_zero(push_consts.voxel_grid_origin);
+    glm_vec3_copy(vec3{ -1000, 0, -1000 }, push_consts.voxel_grid_origin);
+    // glm_vec3_copy(vec3{ 0, 0, 0 }, push_consts.voxel_grid_origin);
     push_consts.voxel_size = 8;
 
     vkCmdPushConstants(cmd,
