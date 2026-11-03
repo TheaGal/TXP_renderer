@@ -1059,7 +1059,9 @@ void Graphics::Impl::destroy_vulkan()
     }
 
     vkDestroySurfaceKHR(gfx.instance, gfx.surface, nullptr);
+#ifndef NDEBUG
     vkb::destroy_debug_utils_messenger(gfx.instance, gfx.debug_utils_messenger);
+#endif // NDEBUG
 
     vkDestroyDevice(gfx.device, nullptr);
     vkDestroyInstance(gfx.instance, nullptr);

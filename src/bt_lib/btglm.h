@@ -70,7 +70,7 @@ NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(rvec3s, x, y, z);
 inline void btglm_rvec3_to_vec3(rvec3 const v, vec3 dest)
 {
 #if BTZC_GAME_ENGINE_SETTING_REAL_TYPE_USES_DBL_PRECISION
-    BT::date_deadline(2026, 10, 24);  // @TODO: in case if there's a world-streaming or chunking system, figure out more better way of going from real to float.
+    BT::date_deadline(2026, 11, 24);  // @TODO: in case if there's a world-streaming or chunking system, figure out more better way of going from real to float.
 
     // @TODO: add ability to use chunking system for this.
     dest[0] = v[0];
