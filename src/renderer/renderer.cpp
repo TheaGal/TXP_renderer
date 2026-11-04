@@ -237,7 +237,8 @@ struct Renderer::Impl
                             m.ecs_registry.any_of<component::Animator_root_motion>(ecs_entity)
                         };
 
-                        m.ecs_registry.remove<component_internal::Model_animator>(ecs_entity);
+                        if (m.ecs_registry.any_of<component_internal::Model_animator>(ecs_entity))
+                            m.ecs_registry.erase<component_internal::Model_animator>(ecs_entity);
 
                         auto& skeletal_animator{
                             m.ecs_registry.emplace<component_internal::Model_animator>(
@@ -389,7 +390,8 @@ struct Renderer::Impl
 
             if (rend_obj_cfg.renderer_owned_data.pool_key == k_pool_key_process_flag)
             {   // Remove skeletal animator if still attached to render object.
-                m.ecs_registry.remove<component_internal::Model_animator>(ecs_entity);
+                if (m.ecs_registry.any_of<component_internal::Model_animator>(ecs_entity))
+                    m.ecs_registry.erase<component_internal::Model_animator>(ecs_entity);
             }
         }
 
