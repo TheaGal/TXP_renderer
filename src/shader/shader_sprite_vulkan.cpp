@@ -161,7 +161,7 @@ struct Uploaded_mesh
     bool is_volatile;
     std::unique_ptr<Graphics::Impl::Model_buffer> model_buffer;
     uint32_t index_count;
-    bool got_used;
+    uint32_t unused_frames;
 };
 
 
@@ -395,7 +395,7 @@ struct Shader_sprite::Impl
                     smesh.indices.data(),
                     index_buf_size);
 
-        umesh.got_used = true;
+        umesh.unused_frames = 0;
 
         // Delete previously created mesh first if exists.
         if (auto it = pointer_to_uploaded_mesh_map.find(ptr_key);
@@ -541,7 +541,7 @@ struct Shader_sprite::Impl
         elem_mesh->model_buffer->bind(cmd);
         vkCmdDrawIndexed(cmd, elem_mesh->index_count, 1, 0, 0, draw_instance);
 
-        elem_mesh->got_used = true;
+        elem_mesh->unused_frames = 0;
     }
 
 
@@ -716,20 +716,27 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
     // Erase unused meshes.
     std::vector<void*> pointers_to_erase;
     for (auto&& [pointer, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
-        if (!uploaded_mesh.got_used)
+        if (uploaded_mesh.unused_frames >= p.g.k_frame_overlap * 2 - 1)
         {
-            BT::date_deadline(2026, 11, 5);  // @TODO: add a counter to make sure buffer is for sure never used (since want to avoid using wait for gpu idle func).
-            // uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
-            // pointers_to_erase.emplace_back(pointer);
+            // @NOTE: the reason why the number of unused frames is `k_frame_overlap * 2 - 1` is
+            //        since at k_frame_overlap num of unused frames, we have a guarantee that one of
+            //        the frames in flight is completely done rendering (since we acquired a frame
+            //        and are writing command buffers right now), so we need `k_frame_overlap - 1`
+            //        more times for this to loop and be unused for the remaining frames in flight
+            //        to be guaranteed done rendering too.  -thea 2026/11/05
+            uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
+            pointers_to_erase.emplace_back(pointer);
             assert(pointer != nullptr);  // you're not supposed to destroy the nullptr one!!!
+
+            BT::date_deadline(2026, 11, 25);  // @TODO: delete this if no errors in the mesh deletion system by this date.
         }
 
     for (void* pointer : pointers_to_erase)
         p.pointer_to_uploaded_mesh_map.erase(pointer);
 
-    // Mark all as stale.
+    // Mark all as stale (used meshes will get reset to 0 unused frames).
     for (auto&& [_, uploaded_mesh] : p.pointer_to_uploaded_mesh_map)
-        uploaded_mesh.got_used = false;
+        uploaded_mesh.unused_frames++;
 
     // Render instances.
     uint32_t draw_instance{ 0 };
