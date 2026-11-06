@@ -18,6 +18,7 @@
 #include "render_object/skeletal_animator.h"
 #include "renderer/types.h"
 #include "shader/shader_basic_diffuse.h"
+#include "shader/shader_clouds.h"
 #include "shader/shader_debug_color_grad_line.h"
 #include "shader/shader_debug_color_wireframe.h"
 #include "shader/shader_gradient.h"
@@ -121,6 +122,7 @@ struct Renderer::Impl
     std::unique_ptr<Shader::Shader_pbr> shad_pbr;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
     std::unique_ptr<Shader::Shader_debug_color_wireframe> shad_debug_color_wireframe;
+    std::unique_ptr<Shader::Shader_clouds> shad_clouds;
     std::unique_ptr<Shader::Shader_sprite> shad_sprite;
     std::unique_ptr<Shader::Shader_postprocess> shad_postprocess;
 
@@ -235,7 +237,8 @@ struct Renderer::Impl
                             m.ecs_registry.any_of<component::Animator_root_motion>(ecs_entity)
                         };
 
-                        m.ecs_registry.remove<component_internal::Model_animator>(ecs_entity);
+                        if (m.ecs_registry.any_of<component_internal::Model_animator>(ecs_entity))
+                            m.ecs_registry.erase<component_internal::Model_animator>(ecs_entity);
 
                         auto& skeletal_animator{
                             m.ecs_registry.emplace<component_internal::Model_animator>(
@@ -387,7 +390,8 @@ struct Renderer::Impl
 
             if (rend_obj_cfg.renderer_owned_data.pool_key == k_pool_key_process_flag)
             {   // Remove skeletal animator if still attached to render object.
-                m.ecs_registry.remove<component_internal::Model_animator>(ecs_entity);
+                if (m.ecs_registry.any_of<component_internal::Model_animator>(ecs_entity))
+                    m.ecs_registry.erase<component_internal::Model_animator>(ecs_entity);
             }
         }
 
@@ -533,6 +537,7 @@ void Renderer::build()
         std::make_unique<Shader::Shader_debug_color_wireframe>(m.material_organizer,
                                                                m.render_model_data_collection,
                                                                g.get_impl());
+    m.shad_clouds = std::make_unique<Shader::Shader_clouds>(g.get_impl());
     m.shad_sprite =
         std::make_unique<Shader::Shader_sprite>(m.render_model_data_collection, g.get_impl());
     m.shad_postprocess = std::make_unique<Shader::Shader_postprocess>(g.get_impl());
@@ -547,6 +552,7 @@ void Renderer::build()
         else if (mat_asset.shader_name == m.shad_pbr->k_name)                    m.shad_pbr->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_grad_line->k_name)  m.shad_debug_color_grad_line->make_material(mat_asset.material_name, mat_asset.shader_params);
         else if (mat_asset.shader_name == m.shad_debug_color_wireframe->k_name)  m.shad_debug_color_wireframe->make_material(mat_asset.material_name, mat_asset.shader_params);
+        // @NOTE: excluding "shad_clouds" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         // @NOTE: excluding "shad_sprite" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         // @NOTE: excluding "shad_postprocess" since it's not a material to be used with vertices. mmmm but then "shad_debug_color_grad_line" should be excluded too??????
         else throw std::runtime_error("Unknown shader name");
@@ -626,6 +632,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     if (render_view_sizes_changed)
     {
         ui_state->invalidate_draw_cache();
+        m.shad_clouds->signal_render_view_sizes_changed();
         m.shad_postprocess->signal_render_view_sizes_changed();
     }
 
@@ -758,15 +765,15 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
         if (is_main_cam_matrix)
         {
-            // g.render_clouds();
+            m.shad_clouds->compute(m.camera, render_view);
             // g.render_volumetric_light();
         }
 
         // g.render_particles();
         // g.render_transparent_geometry();
 
-        bool const display_ui_image{ is_main_cam_matrix };
-        m.shad_postprocess->compute(display_ui_image, render_view);
+        bool const do_full_postprocess{ is_main_cam_matrix };
+        m.shad_postprocess->compute(do_full_postprocess, render_view);
 
         render_view_idx++;
     }

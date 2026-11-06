@@ -138,8 +138,8 @@ TXP::Model_joint_animation::calc_joint_local_transforms_interpolated(float_t tim
     assert(m_model_skin.joints_sorted_breadth_first.size() ==
            m_frames[frame_idx_b].joint_transforms_in_order.size());
 
-    float_t interp_t{ (time / k_skeletal_anim_frames_per_second)
-                      - std::floor(time / k_skeletal_anim_frames_per_second) };
+    float_t const interp_t{ (time * k_skeletal_anim_frames_per_second) -
+                            std::floor(time * k_skeletal_anim_frames_per_second) };
 
     Joint_local_transform_set_t local_joint_transforms;
     local_joint_transforms.reserve(m_model_skin.joints_sorted_breadth_first.size());
@@ -521,7 +521,7 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
     //           the animator.
 
     assert(profile == SIMULATION_TIMER_PROFILE);
-    BT::date_deadline(2026, 11, 1);  // @REFACTOR: make this explicitly for only simulation timer profile!!!
+    BT::date_deadline(2026, 11, 10);  // @REFACTOR: make this explicitly for only simulation timer profile!!!
 
     bool const is_paused{ m_is_paused.load() };
 

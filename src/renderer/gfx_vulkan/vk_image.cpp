@@ -7,6 +7,7 @@
 #include <vk_mem_alloc.h>
 // clang-format on
 
+#include "btlogger.h"
 #include "vk_structs.h"
 
 #include <iostream>
@@ -107,6 +108,7 @@ VkImageLayout Image::get_layout()
                         VK_SAMPLE_COUNT_1_BIT,
                         VK_IMAGE_TILING_OPTIMAL,
                         usage_flags,
+                        VK_IMAGE_ASPECT_COLOR_BIT,
                         VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
@@ -131,9 +133,9 @@ VkImageLayout Image::get_layout()
 
     if (depth_format == VK_FORMAT_D24_UNORM_S8_UINT)
     {
-        std::cout << "WARNING: fixed-point depth buffer, so z-fighting especially far away could "
-                     "be difficult to deal with!"
-                  << std::endl;
+        BT_WARN(
+            "WARNING: fixed-point depth buffer (VK_FORMAT_D24_UNORM_S8_UINT), so z-fighting "
+            "especially far away could be difficult to deal with!");
     }
 
     // Create actual image.
@@ -145,9 +147,30 @@ VkImageLayout Image::get_layout()
                         1,
                         VK_SAMPLE_COUNT_1_BIT,
                         VK_IMAGE_TILING_OPTIMAL,
-                        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT |
-                            VK_IMAGE_USAGE_TRANSFER_DST_BIT,
-                        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT);
+                        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT |
+                            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+                        VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT,
+                        VK_IMAGE_ASPECT_DEPTH_BIT);
+}
+
+/*static*/ Allocated_image Allocated_image::create_image_3d(VkFormat format,
+                                                            VkExtent3D extent,
+                                                            VkImageUsageFlags usage_flags)
+{
+    if ((usage_flags & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) != 0)
+        throw std::runtime_error("Usage flags has depth stencil attachment.");
+
+    return create_image(VK_IMAGE_TYPE_3D,
+                        VK_IMAGE_VIEW_TYPE_3D,
+                        format,
+                        extent,
+                        1,
+                        1,
+                        VK_SAMPLE_COUNT_1_BIT,
+                        VK_IMAGE_TILING_OPTIMAL,
+                        usage_flags,
+                        VK_IMAGE_ASPECT_COLOR_BIT,
+                        VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 /*static*/ Allocated_image Allocated_image::create_image(VkImageType image_type,
@@ -159,7 +182,8 @@ VkImageLayout Image::get_layout()
                                                          VkSampleCountFlagBits msaa_samples,
                                                          VkImageTiling tiling,
                                                          VkImageUsageFlags usage_flags,
-                                                         VkImageAspectFlags aspect_flags,
+                                                         VkImageAspectFlags image_aspect_flags,
+                                                         VkImageAspectFlags image_view_aspect_flags,
                                                          uint32_t view_base_mip_level /*= -1*/,
                                                          uint32_t view_mip_levels /*= -1*/,
                                                          uint32_t view_base_array_layer /*= -1*/,
@@ -202,10 +226,16 @@ VkImageLayout Image::get_layout()
                              nullptr);
         if (err)
             throw std::runtime_error("Image creation failed.");
-        
-        new_img.m_image = Image(std::move(temp_vk_image), aspect_flags);
+
+        VkMemoryRequirements mem_requirements;
+        vkGetImageMemoryRequirements(s_device, temp_vk_image, &mem_requirements);
+
+        new_img.m_image = Image(std::move(temp_vk_image), image_aspect_flags);
         new_img.m_format = format;
         new_img.m_extent = extent;
+        new_img.m_data_size = mem_requirements.size;
+        new_img.m_array_layers = mip_levels;
+        new_img.m_mip_levels = array_layers;
     }
 
     // Create image view.
@@ -217,7 +247,7 @@ VkImageLayout Image::get_layout()
         .format = format,
         // .components = ,  @CHECK: what is this? (I'm curious)
         .subresourceRange = VkImageSubresourceRange{
-            .aspectMask     = aspect_flags,
+            .aspectMask     = image_view_aspect_flags,
             .baseMipLevel   = (view_base_mip_level == -1 ? 0 : view_base_mip_level),
             .levelCount     = (view_mip_levels == -1 ? mip_levels : view_mip_levels),
             .baseArrayLayer = (view_base_array_layer == -1 ? 0 : view_base_array_layer),
@@ -275,6 +305,27 @@ VkFormat Allocated_image::get_format() const
     if (!m_initialized)
         throw std::runtime_error("Uninitialized Allocated_image.");
     return m_format;
+}
+
+VkDeviceSize Allocated_image::get_data_size() const
+{
+    if (!m_initialized)
+        throw std::runtime_error("Uninitialized Allocated_image.");
+    return m_data_size;
+}
+
+uint32_t Allocated_image::get_mip_levels() const
+{
+    if (!m_initialized)
+        throw std::runtime_error("Uninitialized Allocated_image.");
+    return m_mip_levels;
+}
+
+uint32_t Allocated_image::get_array_layers() const
+{
+    if (!m_initialized)
+        throw std::runtime_error("Uninitialized Allocated_image.");
+    return m_array_layers;
 }
 
 }  // namespace Vk_Structs

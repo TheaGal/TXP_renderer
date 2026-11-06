@@ -111,11 +111,14 @@ struct Graphics::Impl
         VkQueue graphics_queue;
         uint32_t graphics_queue_family_idx;
 
-        VkQueue async_compute_queue;
-        uint32_t async_compute_queue_family_idx;
+        // @NOTE: so with kosmickrisp just only having 1 queue on the device, i think i'll just
+        //        leave it be at one queue to rule them all.  -Thea 2026/10/02
 
-        VkQueue transfer_queue;
-        uint32_t transfer_queue_family_idx;
+        // VkQueue async_compute_queue;
+        // uint32_t async_compute_queue_family_idx;
+
+        // VkQueue transfer_queue;
+        // uint32_t transfer_queue_family_idx;
 
         VkPipelineCache pipeline_cache{ VK_NULL_HANDLE };  // Unused for now.
 
@@ -288,6 +291,9 @@ struct Graphics::Impl
     };
     std::vector<Render_view_data> render_views;
     VkSampler render_view_imgui_image_sampler{ VK_NULL_HANDLE };
+
+    /// Clouds image data.
+    Vk_Image::Allocated_image clouds_image;
 
     /// UI image data.
     Vk_Image::Allocated_image ui_image;

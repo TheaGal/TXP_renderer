@@ -91,3 +91,21 @@ void clear_log_entries();
 #else
     #define BT_INFOF(x, ...)  BT::logger::printef(BT::logger::INFO, x, __VA_ARGS__)
 #endif  // BT_INFOF
+
+#ifdef BT_CHK_RETVAL
+    #error Macro `BT_CHK_RETVAL` already defined.
+#else
+#define BT_CHK_RETVAL(__checkstmnt, __expectedval)                                                 \
+    do                                                                                             \
+    {                                                                                              \
+        auto const actual_val{ (__checkstmnt) };                                                   \
+        auto const expected_val{ (__expectedval) };                                                \
+        if (actual_val != expected_val)                                                            \
+        {                                                                                          \
+            BT_ERROR(std::string(__FILE__ "(") + std::to_string(__LINE__) +                        \
+                     std::string("): statement `" #__checkstmnt "` expected: ") +                  \
+                     std::to_string(expected_val) + "  actual: " + std::to_string(actual_val));    \
+            assert(false);                                                                         \
+        }                                                                                          \
+    } while (0)
+#endif // BT_CHK_RETVAL

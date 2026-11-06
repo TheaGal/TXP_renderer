@@ -156,6 +156,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/__debug_color_wireframe.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/basic_diffuse.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/clouds.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/clouds.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
@@ -271,6 +273,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_basic_diffuse_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_clouds.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_clouds_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_grad_line.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_grad_line_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_wireframe.h

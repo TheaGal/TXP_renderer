@@ -14,6 +14,7 @@
 #include <memory>
 #include <stdexcept>
 #include <unordered_map>
+#include <vector>
 
 
 namespace TXP
@@ -24,7 +25,7 @@ namespace Shader
 /// Struct for push constants.
 struct Shader_postprocess_push_constants
 {
-    uint32_t use_ui_image;
+    uint32_t do_full_postprocess;
     float_t exposure;
     float_t gamma;
 };
@@ -45,6 +46,7 @@ struct Shader_postprocess::Impl
 
         // @TODO: for vv below vv pull out the `build_Descriptor_layout()` and
         //        `load_shader_module()` functions.
+        // @AMEND: @THEA: what does this todo mean above?
 
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Descriptors.
@@ -54,7 +56,8 @@ struct Shader_postprocess::Impl
             {
                 { 0, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
                 { 1, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
-                { 2, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
+                { 2, { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE } },
+                { 3, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE } },
             },
             VK_SHADER_STAGE_COMPUTE_BIT,
             0);
@@ -147,11 +150,14 @@ struct Shader_postprocess::Impl
         {
             // Create map entry.
             std::vector<Vk_Image::Image*> descriptor_set_images;
-            descriptor_set_images.reserve(render_view_idx == 0 ? 3 : 2);
+            descriptor_set_images.reserve(render_view_idx == 0 ? 4 : 2);
             descriptor_set_images.emplace_back(&render_view.color_image.get_image());
             descriptor_set_images.emplace_back(&render_view.destination_image.get_image());
             if (render_view_idx == 0)
+            {
+                descriptor_set_images.emplace_back(&g.clouds_image.get_image());
                 descriptor_set_images.emplace_back(&g.ui_image.get_image());
+            }
 
             sp.per_render_view_data_map[&render_view] = {
                 .descriptor_set_idx = static_cast<uint32_t>(render_view_idx),
@@ -168,56 +174,40 @@ struct Shader_postprocess::Impl
             // Write descriptors.
             VkDescriptorSet dest_descriptor_set{ sp.allocated_descriptor_sets[render_view_idx] };
 
-            VkDescriptorImageInfo img_info_0{
-                .imageView = render_view.color_image.get_image_view(),
-                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            };
-            VkWriteDescriptorSet img_write_0{
-                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .pNext = nullptr,
-
-                .dstSet = dest_descriptor_set,
-                .dstBinding = 0,
-                .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                .pImageInfo = &img_info_0,
+            std::vector<std::pair<VkImageView, VkDescriptorType>> const image_views_w_desc_type{
+                { render_view.color_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+                { g.clouds_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+                { g.ui_image.get_image_view(), VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE },
+                { render_view.destination_image.get_image_view(), VK_DESCRIPTOR_TYPE_STORAGE_IMAGE },
             };
 
-            VkDescriptorImageInfo img_info_1{
-                .imageView = g.ui_image.get_image_view(),
-                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            };
-            VkWriteDescriptorSet img_write_1{
-                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .pNext = nullptr,
+            std::vector<VkDescriptorImageInfo> desc_image_infos;
+            desc_image_infos.reserve(image_views_w_desc_type.size());
 
-                .dstSet = dest_descriptor_set,
-                .dstBinding = 1,
-                .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
-                .pImageInfo = &img_info_1,
-            };
+            std::vector<VkWriteDescriptorSet> desc_image_writes;
+            desc_image_writes.reserve(image_views_w_desc_type.size());
 
-            VkDescriptorImageInfo img_info_2{
-                .imageView = render_view.destination_image.get_image_view(),
-                .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
-            };
-            VkWriteDescriptorSet img_write_2{
-                .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                .pNext = nullptr,
+            for (uint32_t i = 0; i < image_views_w_desc_type.size(); i++)
+            {
+                desc_image_infos.emplace_back(VkDescriptorImageInfo{
+                    .imageView = image_views_w_desc_type[i].first,
+                    .imageLayout = VK_IMAGE_LAYOUT_GENERAL,
+                });
+                desc_image_writes.emplace_back(VkWriteDescriptorSet{
+                    .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                    .pNext = nullptr,
 
-                .dstSet = dest_descriptor_set,
-                .dstBinding = 2,
-                .descriptorCount = 1,
-                .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,
-                .pImageInfo = &img_info_2,
-            };
-
-            VkWriteDescriptorSet img_writes[]{ img_write_0, img_write_1, img_write_2 };
+                    .dstSet = dest_descriptor_set,
+                    .dstBinding = i,
+                    .descriptorCount = 1,
+                    .descriptorType = image_views_w_desc_type[i].second,
+                    .pImageInfo = &desc_image_infos[i],
+                });
+            }
 
             vkUpdateDescriptorSets(device,
-                                   sizeof(img_writes) / sizeof(VkWriteDescriptorSet),
-                                   img_writes,
+                                   desc_image_writes.size(),
+                                   desc_image_writes.data(),
                                    0,
                                    nullptr);
 
@@ -273,7 +263,7 @@ void Shader_postprocess::signal_render_view_sizes_changed()
     m_pimpl->shader_pipeline.is_descriptor_set_valid = false;
 }
 
-void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
+void Shader_postprocess::compute(bool do_full_postprocess, void* render_view_param)
 {
     auto& p{ *m_pimpl };
 
@@ -310,7 +300,7 @@ void Shader_postprocess::compute(bool use_ui_image, void* render_view_param)
         0, nullptr);
 
     Shader_postprocess_push_constants push_consts{
-        .use_ui_image = use_ui_image,
+        .do_full_postprocess = do_full_postprocess,
         .exposure = 10.0f,
         .gamma = 2.2f,
     };
