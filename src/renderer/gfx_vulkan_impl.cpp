@@ -1803,7 +1803,8 @@ void Graphics::Impl::set_render_view_sizes(std::vector<Render_view_size> const& 
 
         if (i == 0)
         {
-            VkExtent2D const half_res_extent{ extent.width / 2, extent.height / 2 };
+            VkExtent2D const half_res_extent{ std::max(1u, extent.width / 2),
+                                              std::max(1u, extent.height / 2) };
 
             // Create clouds image.
             clouds_image = Vk_Image::Allocated_image::create_image_2d(

@@ -48,12 +48,6 @@ float calc_depth_at_screen_pos(uint3 thread_idx)
     return depth;
 }
 
-float sqr_distance(float3 a, float3 b)
-{
-    float3 delta = (a - b);
-    return dot(delta, delta);
-}
-
 float2 intersect_aabb(float3 ray_origin, float3 one_over_ray_dir, float3 aabb_min, float3 aabb_max)
 {
     float2 t_minmax = float2(0, 1.#INF);
@@ -117,17 +111,17 @@ float traverse(inout uint3 voxel_coord,
         (target_planes.y - raymarch_pos.y) * one_over_raymarch_dir.y,
         (target_planes.z - raymarch_pos.z) * one_over_raymarch_dir.z);
     
-    float chosen_t_max;
+    float chosen_t_max_abs;
     if (t_max.x < t_max.y)
     {
         if (t_max.x < t_max.z)
         {
-            chosen_t_max = t_max.x;
+            chosen_t_max_abs = abs(t_max.x);
             voxel_coord.x += sign(raymarch_dir.x);
         }
         else // t_max.z <= t_max.x
         {
-            chosen_t_max = t_max.z;
+            chosen_t_max_abs = abs(t_max.z);
             voxel_coord.z += sign(raymarch_dir.z);
         }
     }
@@ -135,17 +129,17 @@ float traverse(inout uint3 voxel_coord,
     {
         if (t_max.y < t_max.z)
         {
-            chosen_t_max = t_max.y;
+            chosen_t_max_abs = abs(t_max.y);
             voxel_coord.y += sign(raymarch_dir.y);
         }
         else // t_max.z <= t_max.y
         {
-            chosen_t_max = t_max.z;
+            chosen_t_max_abs = abs(t_max.z);
             voxel_coord.z += sign(raymarch_dir.z);
         }
     }
 
-    return chosen_t_max;
+    return chosen_t_max_abs;
 }
 
 
@@ -180,7 +174,7 @@ void compute_main(uniform float4x4 inv_cam_projview,
         float3 raymarch_pos;
         float3 raymarch_dir;
         float3 one_over_raymarch_dir;
-        float raymarch_dist2;
+        float raymarch_dist;
         {
             raymarch_pos = calc_start_raymarch_pos(voxel_grid_origin, inv_cam_projview, screen_pos);
 
@@ -204,7 +198,7 @@ void compute_main(uniform float4x4 inv_cam_projview,
                     (abs(raymarch_dir[i]) < 1e-9 ? 1.#INF : 1.0 / raymarch_dir[i]);
             }
 
-            raymarch_dist2 = sqr_distance(raymarch_pos, raymarch_end_pos);
+            raymarch_dist = distance(raymarch_pos, raymarch_end_pos);
         }
 
         // Find intersection w AABB for voxel field.
@@ -214,14 +208,14 @@ void compute_main(uniform float4x4 inv_cam_projview,
                                               voxel_grid_info.voxel_size *
                                                   voxel_grid_info.grid_dimensions);
         if (aabb_t_minmax.x > aabb_t_minmax.y ||
-            aabb_t_minmax.x * aabb_t_minmax.x > raymarch_dist2)
+            aabb_t_minmax.x > raymarch_dist)
         {
             // No intersection w aabb or blocked by depth.
             dest_image.Store(thread_idx.xy, float4(0, 0, 0, 0));
             return;
         }
 
-        raymarch_dist2 = min(raymarch_dist2, aabb_t_minmax.y * aabb_t_minmax.y);
+        raymarch_dist = min(raymarch_dist, aabb_t_minmax.y);
 
         // Get first voxel position.
         raymarch_pos += (raymarch_dir * aabb_t_minmax.x);
@@ -230,9 +224,10 @@ void compute_main(uniform float4x4 inv_cam_projview,
         uint3 voxel_coord = calc_voxel_coord(voxel_grid_info, raymarch_pos);
         uint voxel_value = 0;
         float transmittance = 1;
+        uint32_t iters = 0;
 
         [loop]
-        while (traversed_dist * traversed_dist <= raymarch_dist2 && (k_debug_render != 1 || voxel_value == 0))
+        while (iters < 1000 && traversed_dist <= raymarch_dist && (k_debug_render != 1 || voxel_value == 0))
         {
             // @NOTE: sample before traversal to prevent samples when traveling too far.
             voxel_value = sample_voxel_at_coord(voxel_coord);
@@ -245,6 +240,8 @@ void compute_main(uniform float4x4 inv_cam_projview,
                                raymarch_pos,
                                raymarch_dir,
                                one_over_raymarch_dir);
+            t = min(t, max(0, raymarch_dist - traversed_dist) + 1e-3);
+
             raymarch_pos += (raymarch_dir * t);
             traversed_dist += t;
 
@@ -262,6 +259,8 @@ void compute_main(uniform float4x4 inv_cam_projview,
                 if (transmittance < 1e-2)
                     break;
             }
+
+            iters++;
         }
 
         if (k_debug_render == 0)
@@ -281,6 +280,12 @@ void compute_main(uniform float4x4 inv_cam_projview,
         else if (k_debug_render == 2)
         {
             // @DEBUG: show transmittance as fluffy green ball.
+            // dest_image.Store(thread_idx.xy,
+            //                 float4(float3(raymarch_dist / 3000.0),
+            //                        1));
+            // dest_image.Store(thread_idx.xy,
+            //                 float4(float3(iters / 1000.0),
+            //                        1));
             dest_image.Store(thread_idx.xy,
                             float4(0.5,
                                    0.75,
