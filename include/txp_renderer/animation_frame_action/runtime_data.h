@@ -31,7 +31,6 @@ enum Controllable_data_label : std::uint32_t
         X_float(mvt_input_accel,                  0.0f)       \
         X_float(mvt_input_decel,                  0.0f)       \
         X_float(root_motion_multi,                1.0f)       \
-        X_float(attack_send_root_motion_multi,    1.0f)       \
         X_float(receive_staged_root_motion_multi, 1.0f)       \
         X_float(gravity_magnitude,                1.0f)        /* @THEA: @UNUSED */ \
         X_float(posture_pts_regen_multi,          1.0f)       \
@@ -49,16 +48,16 @@ enum Controllable_data_label : std::uint32_t
         X__bool(align_self_as_deathblow_receiver,      false) \
         X__bool(finish_deathblow_give,                 false) \
         X__bool(finish_deathblow_receive,              false) \
-        X__bool(hitcapsule_group_0_enabled,            true)   /* this is typically the hitbox group */    \
+        X__bool(hitcapsule_group_0_enabled,            true)  \
         X__bool(hitcapsule_group_1_enabled,            true)  \
-        X__bool(hitcapsule_group_2_enabled,            false) \
-        X__bool(hitcapsule_group_3_enabled,            false) \
-        X__bool(hitcapsule_group_4_enabled,            false) \
-        X__bool(hitcapsule_group_5_enabled,            false) \
-        X__bool(hitcapsule_group_6_enabled,            false) \
-        X__bool(hitcapsule_group_7_enabled,            false) \
-        X__bool(hitcapsule_group_8_enabled,            false) \
-        X__bool(hitcapsule_group_9_enabled,            false) \
+        X__bool(hitcapsule_group_2_enabled,            true)  \
+        X__bool(hitcapsule_group_3_enabled,            true)  \
+        X__bool(hitcapsule_group_4_enabled,            true)  \
+        X__bool(hitcapsule_group_5_enabled,            true)  \
+        X__bool(hitcapsule_group_6_enabled,            true)  \
+        X__bool(hitcapsule_group_7_enabled,            true)  \
+        X__bool(hitcapsule_group_8_enabled,            true)  \
+        X__bool(hitcapsule_group_9_enabled,            true)  \
         /* Rising edge events */                              \
         X_reeve(jump_up)                                      \
         X_reeve(inherit_prev_velocity)                        \
@@ -262,6 +261,11 @@ public:
 
     // Controlled hitcapsule group set.
     Hitcapsule_group_set hitcapsule_group_set;
+
+    /// Adds a hurtcapsule to the group set for one tick.
+    void add_hurtcapsule_for_this_tick(component_internal::Model_animator const& animator,
+                                       Hitcapsule&& hitcapsule,
+                                       Hurtcapsule_info&& info);
 
     // Update all hitcapsule groups' enabled flags to match
     // the runtime controllable data enabled flags.

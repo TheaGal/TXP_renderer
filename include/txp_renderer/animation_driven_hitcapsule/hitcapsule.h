@@ -5,6 +5,7 @@
 #include "btuuid.h"
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <unordered_set>
 
@@ -16,6 +17,40 @@ namespace component_internal
 {
 class Model_animator;
 }  // namespace component_internal
+
+struct Hurtcapsule_info
+{
+    bool is_persistent;
+
+    bool attack_is_honed;
+    bool attack_is_unparryable;
+    bool attack_is_unguardable;
+    bool attack_is_mikiriable;
+
+    int32_t attack_damage;
+
+    enum class Atk_type  // @COPYPASTA
+    {
+        METALBLADE,
+        METALBLADEMASTER,
+        WOODCLUB,
+        FIST,
+    };
+    Atk_type attack_physical_type;
+
+    enum class Atk_dir  // @COPYPASTA
+    {
+        LEFT,
+        RIGHT,
+        CENTER,
+        HEAVYCENTER,
+        ABOVE,
+        BELOW,
+    };
+    Atk_dir attack_direction_type;
+
+    float_t attack_send_root_motion_multi;
+};
 
 /// Individual hit-capsule. Multiple grouped together form a `Hitcapsule_group`.
 struct Hitcapsule
@@ -36,6 +71,8 @@ struct Hitcapsule
                                    connecting_bone_name_2);
 
     // Calculated info.
+    bool    initialized{ false };
+
     vec3    calcd_origin_a;       // Set to `origin_a` on init. Updated to connect to joint mat in
                                   // `update_transform`.
     vec3    calcd_origin_b;       // Similar to `calcd_origin_a`.
@@ -66,6 +103,7 @@ public:
     bool is_enabled() const;
     Type get_type() const;
     std::vector<Hitcapsule>& get_capsules();
+    std::vector<Hurtcapsule_info>& get_hurtcapsule_infos();
 
     // Submits debug render representation of hitcapsules, with different colors depending on type
     // of group and whether this group is enabled.
@@ -75,6 +113,7 @@ private:
     bool m_enabled{ false };
     Type m_type{ 0 };
     std::vector<Hitcapsule> m_capsules;
+    std::vector<Hurtcapsule_info> m_hurtcapsule_infos;
 
 public:
     /// Serialization/deserialization.
@@ -101,8 +140,11 @@ public:
     void emplace_debug_render_repr() const;
 
     /// Retrieves all enabled hitcapsules for overlap checking.
-    std::vector<Hitcapsule const*> fetch_all_enabled_hitcapsules(
-        Hitcapsule_group::Type hitcapsule_type) const;
+    std::pair<std::vector<Hitcapsule const*>, std::vector<Hurtcapsule_info const*>>
+    fetch_all_enabled_hitcapsules(Hitcapsule_group::Type hitcapsule_type) const;
+
+    /// Cleans up non-persistent hurtcapsules.
+    void clean_non_persistent_hurtcapsules();
 
 private:
     std::vector<Hitcapsule_group> m_hitcapsule_grps;
@@ -119,7 +161,7 @@ public:
 /// the giver and the second UUID is the receiver.
 struct Overlap_result_set
 {
-    using Entity_pair_list = std::vector<std::pair<BT::UUID, BT::UUID>>;
+    using Entity_pair_list = std::vector<std::tuple<BT::UUID, BT::UUID, Hurtcapsule_info>>;
     Entity_pair_list give_rece_hurt_pairs;
 };
 
@@ -137,7 +179,7 @@ public:
     Overlap_result_set update_overlaps();
 
 private:
-    std::unordered_set<Hitcapsule_group_set const*> m_group_sets;
+    std::unordered_set<Hitcapsule_group_set*> m_group_sets;
 
     bool check_broad_phase_hitcapsule_pair(Hitcapsule const& give_hurt_capsule,
                                            Hitcapsule const& receive_hurt_capsule) const;

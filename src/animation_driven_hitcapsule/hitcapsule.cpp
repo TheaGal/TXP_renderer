@@ -8,6 +8,7 @@
 #include "txp_renderer/debug/debug_render_job.h"
 
 #include <cassert>
+#include <stdexcept>
 
 
 // Hitcapsule.
@@ -24,10 +25,15 @@ void TXP::Hitcapsule::init_calc_info(component_internal::Model_animator const& a
     glm_vec3_copy(origin_b.raw, calcd_origin_b);
 
     calc_orig_pt_distance();
+
+    initialized = true;
 }
 
 void TXP::Hitcapsule::update_transform(mat4 base_transform, std::vector<mat4s> const& joint_matrices)
 {
+    if (!initialized)
+        throw std::runtime_error("this hitcapsule is uninitialized.");
+
     static auto s_eval_combined_transforms_fn = [](size_t connecting_bone_mat_idx,
                                                    size_t connecting_bone_mat_idx_2,
                                                    mat4 base_transform,
@@ -116,6 +122,11 @@ TXP::Hitcapsule_group::Type TXP::Hitcapsule_group::get_type() const
 std::vector<TXP::Hitcapsule>& TXP::Hitcapsule_group::get_capsules()
 {
     return m_capsules;
+}
+
+std::vector<TXP::Hurtcapsule_info>& TXP::Hitcapsule_group::get_hurtcapsule_infos()
+{
+    return m_hurtcapsule_infos;
 }
 
 void TXP::Hitcapsule_group::emplace_debug_render_repr() const
@@ -210,22 +221,56 @@ void TXP::Hitcapsule_group_set::emplace_debug_render_repr() const
     }
 }
 
-std::vector<TXP::Hitcapsule const*> TXP::Hitcapsule_group_set::fetch_all_enabled_hitcapsules(
+std::pair<std::vector<TXP::Hitcapsule const*>, std::vector<TXP::Hurtcapsule_info const*>>
+TXP::Hitcapsule_group_set::fetch_all_enabled_hitcapsules(
     Hitcapsule_group::Type hitcapsule_type) const
 {
     std::vector<Hitcapsule const*> result_hitcapsules;
+    std::vector<Hurtcapsule_info const*> result_hurtcapsule_infos;
 
     for (auto& group : m_hitcapsule_grps)
         if (group.is_enabled() && group.get_type() == hitcapsule_type)
         {
             auto const& hitcapsules{ const_cast<Hitcapsule_group&>(group).get_capsules() };  // @HACK.
+            auto const& hurtcapsule_infos{ const_cast<Hitcapsule_group&>(group).get_hurtcapsule_infos() };  // @HACK.
+
+            if (hitcapsule_type == Hitcapsule_group::HITBOX_TYPE_GIVE_HURT &&
+                hitcapsules.size() != hurtcapsule_infos.size())
+                // @NOTE: @TODO: there is no way to create/add persistent hurtcapsules (which should
+                //               be a part of the AFA editor, but hey im lazy rn)  -Thea 2026/11/06
+                throw std::runtime_error(
+                    "for hurtcapsules the number of hurtcapsule infos does not match number of "
+                    "hurtcapsules in group.");
 
             for (auto& hitcapsule : hitcapsules)
                 result_hitcapsules.emplace_back(&hitcapsule);
+
+            for (auto& hurtcapsule_info : hurtcapsule_infos)
+                result_hurtcapsule_infos.emplace_back(&hurtcapsule_info);
         }
 
     result_hitcapsules.shrink_to_fit();
-    return result_hitcapsules;    
+    result_hurtcapsule_infos.shrink_to_fit();
+    return { result_hitcapsules, result_hurtcapsule_infos };
+}
+
+void TXP::Hitcapsule_group_set::clean_non_persistent_hurtcapsules()
+{
+    for (auto& group : m_hitcapsule_grps)
+    {
+        if (group.get_type() == Hitcapsule_group::HITBOX_TYPE_GIVE_HURT)
+        {
+            auto& caps{ group.get_capsules() };
+            auto& infos{ group.get_hurtcapsule_infos() };
+
+            for (int32_t i = caps.size() - 1; i >= 0; i--)
+                if (!infos[i].is_persistent)
+                {
+                    caps.erase(caps.begin() + i);
+                    infos.erase(infos.begin() + i);
+                }
+        }
+    }
 }
 
 
@@ -283,13 +328,13 @@ TXP::Overlap_result_set TXP::Hitcapsule_group_overlap_solver::update_overlaps()
     Overlap_result_set result;
 
     // Check for all capsule group overlaps.
-    for (auto grp_set_ptr_a : m_group_sets)
-    for (auto grp_set_ptr_b : m_group_sets)
+    for (auto const* grp_set_ptr_a : m_group_sets)
+    for (auto const* grp_set_ptr_b : m_group_sets)
     if (grp_set_ptr_a != grp_set_ptr_b)
     {   // Collect capsules for check.
-        auto give_hurt_caps_a{ grp_set_ptr_a->fetch_all_enabled_hitcapsules(
+        auto [give_hurt_caps_a, give_hurt_infos_a]{ grp_set_ptr_a->fetch_all_enabled_hitcapsules(
             Hitcapsule_group::HITBOX_TYPE_GIVE_HURT) };
-        auto rece_hurt_caps_b{ grp_set_ptr_b->fetch_all_enabled_hitcapsules(
+        auto [rece_hurt_caps_b, _]{ grp_set_ptr_b->fetch_all_enabled_hitcapsules(
             Hitcapsule_group::HITBOX_TYPE_RECEIVE_HURT) };
 
         // Overlap check (A hurts B).
@@ -297,6 +342,7 @@ TXP::Overlap_result_set TXP::Hitcapsule_group_overlap_solver::update_overlaps()
         // @NOTE: Only A hurts B is necessary, since the n^2 loops. The reverse case will eventually
         //        be covered with the loops.
         bool found_hurt_overlap{ false };
+        Hurtcapsule_info const* hurt_info{ nullptr };
         {
             for (size_t a_i = 0; a_i < give_hurt_caps_a.size() && !found_hurt_overlap; a_i++)
             for (size_t b_i = 0; b_i < rece_hurt_caps_b.size() && !found_hurt_overlap; b_i++)
@@ -305,6 +351,7 @@ TXP::Overlap_result_set TXP::Hitcapsule_group_overlap_solver::update_overlaps()
                     check_narrow_phase_hitcapsule_pair(*give_hurt_caps_a[a_i], *rece_hurt_caps_b[b_i]))
                 {   // Found overlap! No more need to look.
                     found_hurt_overlap = true;
+                    hurt_info = give_hurt_infos_a[a_i];
                     break;
                 }
             }
@@ -313,15 +360,22 @@ TXP::Overlap_result_set TXP::Hitcapsule_group_overlap_solver::update_overlaps()
         if (found_hurt_overlap)
         {   // Report that A hurt B!
             result.give_rece_hurt_pairs.emplace_back(grp_set_ptr_a->get_resp_entity_uuid(),
-                                                     grp_set_ptr_b->get_resp_entity_uuid());
+                                                     grp_set_ptr_b->get_resp_entity_uuid(),
+                                                     *hurt_info);
         }
     }
 
     // Submit debug drawing for all hitcapsules.
-    for (auto group_set_ptr : m_group_sets)
+    for (auto const* group_set_ptr : m_group_sets)
     {
         group_set_ptr->emplace_debug_render_repr();
     }
+
+    // Destroy non-persistent hurtcapsules.
+    for (auto* group_set_ptr : m_group_sets)
+    {
+        group_set_ptr->clean_non_persistent_hurtcapsules();
+    } 
 
     return result;
 }

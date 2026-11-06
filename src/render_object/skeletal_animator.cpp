@@ -7,6 +7,7 @@
 #include "btlogger.h"
 #include "btuuid.h"
 #include "render_model.h"  // for Deformed_model_data_set (@TODO: remove this after moving)
+#include "txp_renderer/animation_driven_hitcapsule/hitcapsule.h"
 #include "txp_renderer/animation_frame_action/runtime_data.h"
 #include "txp_renderer/animator/skeletal_animator.h"
 #include "txp_renderer/callbacks.h"
@@ -971,6 +972,21 @@ TXP::component_internal::Model_animator::get_anim_frame_action_data_handle()
     return m_anim_frame_action_data;
 }
 
+
+namespace
+{
+
+void str_to_vec3(std::string const& str, vec3 out_vec3)
+{
+    std::istringstream iss(str);
+    iss >> out_vec3[0];
+    iss >> out_vec3[1];
+    iss >> out_vec3[2];
+}
+
+} // namespace
+
+
 std::vector<TXP::component_internal::Model_animator::Ctrl_cmd_documentation> const&
 TXP::component_internal::Model_animator::get_control_command_codes_documentation()
 {
@@ -1258,11 +1274,8 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 if (!is_first_frame)
                     return;
 
-                std::istringstream iss(argv[1]);
                 vec3 position;
-                iss >> position[0];
-                iss >> position[1];
-                iss >> position[2];
+                str_to_vec3(argv[1], position);
 
                 if (!argv[2].empty())
                 {
@@ -1286,6 +1299,130 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 Skeletal_animator::s_play_audio_at_pos_oneshot_fn(argv[0],
                                                                   position,
                                                                   std::stof(argv[3]));
+            }
+        },
+        {
+            .cmd{
+                .name = "hurtcapsule_attack",
+                .desc = "Creates a hurtcapsule and assigns it attack properties."
+            },
+            .argv{
+                {
+                    .name = "attack_is_honed",
+                    .desc = "if honed, chip damage is taken if not perfectly parried",
+                    .type = "bool"
+                },
+                {
+                    .name = "attack_is_unparryable",
+                    .desc = "whether can parry the attack",
+                    .type = "bool"
+                },
+                {
+                    .name = "attack_is_unguardable",
+                    .desc = "whether can guard the attack",
+                    .type = "bool"
+                },
+                {
+                    .name = "attack_is_mikiriable",
+                    .desc = "whether can mikiri the attack",
+                    .type = "bool"
+                },
+                {
+                    .name = "attack_damage",
+                    .desc = "damage points",
+                    .type = "int"
+                },
+                {
+                    .name = "attack_physical_type",
+                    .desc = "0:metalblade  1:metalblademaster  2:woodclub  3:fist",
+                    .type = "int"
+                },
+                {
+                    .name = "attack_direction_type",
+                    .desc = "0:left  1:right  2:center  3:heavycenter  4:above  5:below",
+                    .type = "int"
+                },
+                {
+                    .name = "attack_send_root_motion_multi",
+                    .desc = "Multiplier for root motion to send to other char if they take this "
+                            "attack",
+                    .type = "float"
+                },
+                {
+                    .name = "origin_a",
+                    .desc = "First origin of sphere of capsule",
+                    .type = "vec3"
+                },
+                {
+                    .name = "origin_b",
+                    .desc = "Second origin of sphere of capsule",
+                    .type = "vec3"
+                },
+                {
+                    .name = "radius",
+                    .desc = "Radius of capsule",
+                    .type = "float"
+                },
+                {
+                    .name = "bone_name",
+                    .desc = "Name of which bone the bone space is based (origin_a and possibly "
+                            "origin_b will be placed in this bone space)",
+                    .type = "str"
+                },
+                {
+                    .name = "bone_name_2",
+                    .desc = "(optional) another name of which bone the bone space is based "
+                            "(origin_b will be placed in this bone space)",
+                    .type = "str"
+                },
+            },
+            .exec_fn = [](Model_animator& animator,
+                          uint32_t row_idx,
+                          bool is_first_frame,
+                          bool is_last_frame,
+                          mat4 const simulation_transform,
+                          std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 13);
+
+                bool const attack_is_honed{ argv[0] == "1" };
+                bool const attack_is_unparryable{ argv[1] == "1" };
+                bool const attack_is_unguardable{ argv[2] == "1" };
+                bool const attack_is_mikiriable{ argv[3] == "1" };
+                int32_t const attack_damage{ std::stoi(argv[4]) };
+                int32_t const attack_physical_type{ std::stoi(argv[5]) };
+                int32_t const attack_direction_type{ std::stoi(argv[6]) };
+                float_t const attack_send_root_motion_multi{ std::stof(argv[7]) };
+
+                vec3 origin_a;
+                str_to_vec3(argv[8], origin_a);
+                vec3 origin_b;
+                str_to_vec3(argv[9], origin_b);
+
+                float_t const radius{ std::stof(argv[10]) };
+                std::string const& bone_name{ argv[11] };
+                std::string const& bone_name_2{ argv[12] };
+
+                // Add this to hurtcapsules in animator.
+                animator.get_anim_frame_action_data_handle().add_hurtcapsule_for_this_tick(
+                    animator,
+                    Hitcapsule{
+                        .origin_a{ origin_a[0], origin_a[1], origin_a[2] },
+                        .origin_b{ origin_b[0], origin_b[1], origin_b[2] },
+                        .radius = radius,
+                        .connecting_bone_name = bone_name,
+                        .connecting_bone_name_2 = bone_name_2,
+                    },
+                    Hurtcapsule_info{
+                        .is_persistent = false,
+                        .attack_is_honed = attack_is_honed,
+                        .attack_is_unparryable = attack_is_unparryable,
+                        .attack_is_unguardable = attack_is_unguardable,
+                        .attack_is_mikiriable = attack_is_mikiriable,
+                        .attack_damage = attack_damage,
+                        .attack_physical_type = Hurtcapsule_info::Atk_type(attack_physical_type),
+                        .attack_direction_type = Hurtcapsule_info::Atk_dir(attack_direction_type),
+                        .attack_send_root_motion_multi = attack_send_root_motion_multi,
+                    });
             }
         },
     };

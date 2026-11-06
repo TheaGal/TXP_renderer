@@ -13,6 +13,7 @@
 
 #include <cstdlib>
 #include <sstream>
+#include <stdexcept>
 #include <string>
 #include <unordered_map>
 
@@ -183,6 +184,33 @@ void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_
             "program.");
         abort();
     }
+}
+
+void TXP::anim_frame_action::Runtime_controllable_data::add_hurtcapsule_for_this_tick(
+    component_internal::Model_animator const& animator,
+    Hitcapsule&& hitcapsule,
+    Hurtcapsule_info&& info)
+{
+    // Find the hurtcapsule group.
+    Hitcapsule_group* hurtcapsule_group{ nullptr };
+    for (auto& group : hitcapsule_group_set.get_hitcapsule_groups())
+    {
+        if (group.is_enabled() && group.get_type() == Hitcapsule_group::HITBOX_TYPE_GIVE_HURT)
+        {
+            hurtcapsule_group = &group;
+            break;
+        }
+    }
+
+    if (hurtcapsule_group == nullptr)
+        throw std::runtime_error("try to apply hurtcapsule when there are no hurtcapsule groups.");
+
+    // Init hitcapsule.
+    hitcapsule.init_calc_info(animator);
+
+    // Add the hurtcapsule. (they're tied together via index)
+    hurtcapsule_group->get_capsules().emplace_back(std::move(hitcapsule));
+    hurtcapsule_group->get_hurtcapsule_infos().emplace_back(std::move(info));
 }
 
 void TXP::anim_frame_action::Runtime_controllable_data::assign_hitcapsule_enabled_flags()
