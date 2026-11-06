@@ -50,7 +50,7 @@ enum Controllable_data_label : std::uint32_t
         X__bool(finish_deathblow_give,                 false) \
         X__bool(finish_deathblow_receive,              false) \
         X__bool(hitcapsule_group_0_enabled,            true)   /* this is typically the hitbox group */    \
-        X__bool(hitcapsule_group_1_enabled,            false) \
+        X__bool(hitcapsule_group_1_enabled,            true)  \
         X__bool(hitcapsule_group_2_enabled,            false) \
         X__bool(hitcapsule_group_3_enabled,            false) \
         X__bool(hitcapsule_group_4_enabled,            false) \
