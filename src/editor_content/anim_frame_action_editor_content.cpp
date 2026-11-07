@@ -14,6 +14,7 @@
 #include "txp_renderer/renderer.h"
 #include "txp_renderer/types.h"
 
+#include <cctype>
 #include <cmath>
 #include <cstddef>
 #include <limits>
@@ -711,10 +712,60 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
 
                     ImGui::BeginDisabled(anim_frame_action::s_editor_state.show_edit_pos_gizmo);
 
+                    static auto const k_trans_bone_space_to_world_space_fn = [](std::string const&
+                                                                                    bone_name,
+                                                                                vec3 in_out_vec3,
+                                                                                bool const invert) {
+                        // Move vec3 from bone space to world space.
+                        std::vector<mat4s> joint_matrices;
+                        anim_frame_action::s_editor_state.working_model_animator
+                            ->get_anim_floored_frame_pose(SIMULATION_TIMER_PROFILE,
+                                                          false,
+                                                          joint_matrices);
+
+                        mat4 my_trans_mat;
+
+                        if (!bone_name.empty())
+                        {
+                            // Transform to bone.
+                            glm_mat4_copy(
+                                joint_matrices[anim_frame_action::s_editor_state
+                                                   .working_model_animator->get_model_skin()
+                                                   .joint_name_to_idx.at(bone_name)]
+                                    .raw,
+                                my_trans_mat);
+                        }
+                        else
+                        {
+                            // Offset by root bone.
+                            auto const& root_bone_matrix{ joint_matrices[0] };
+
+                            vec3 root_bone_position;
+                            glm_vec3_copy(const_cast<float_t*>(root_bone_matrix.raw[3]),
+                                        root_bone_position);
+
+                            glm_translate_make(
+                                my_trans_mat,
+                                vec3{ root_bone_position[0], 0, root_bone_position[2] });
+                        }
+
+                        if (invert)
+                            glm_mat4_inv(my_trans_mat, my_trans_mat);
+
+                        glm_mat4_mulv3(my_trans_mat, in_out_vec3, 1.0f, in_out_vec3);
+                    };
+
                     if (ImGui::Button(("use gimble for " + lbl_txt + "..").c_str()))
                     {
                         anim_frame_action::s_editor_state.show_edit_pos_gizmo = true;
+
                         glm_vec3_copy(argv_vec3, anim_frame_action::s_editor_state.gizmo_pos);
+
+                        k_trans_bone_space_to_world_space_fn(
+                            argv_bone,
+                            anim_frame_action::s_editor_state.gizmo_pos,
+                            false);
+
                         anim_frame_action::s_editor_state.gizmo_affecting_ptr_ref = &cmd_arg;
                     }
 
@@ -729,6 +780,9 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         if (ImGui::Button("confirm##gimble_position_for_bone_vec3"))
                         {
                             glm_vec3_copy(anim_frame_action::s_editor_state.gizmo_pos, argv_vec3);
+
+                            k_trans_bone_space_to_world_space_fn(argv_bone, argv_vec3, true);
+
                             changed = true;
                             close_gimble_mode = true;
                         }
@@ -747,6 +801,53 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     ImGui::BeginDisabled(anim_frame_action::s_editor_state.show_edit_pos_gizmo);
 
                     changed |= ImGui::InputText((lbl_txt + " (bone)").c_str(), &argv_bone);
+                    if (!argv_bone.empty())
+                    {
+                        auto const& joint_name_to_idx{ anim_frame_action::s_editor_state.working_model_animator->get_model_skin().joint_name_to_idx };
+                        bool const found{ joint_name_to_idx.find(argv_bone) != joint_name_to_idx.end() };
+
+                        if (!found)
+                        {
+                            std::vector<std::string> poss_options;
+                            poss_options.reserve(joint_name_to_idx.size());
+                            for (auto const& [key, _] : joint_name_to_idx)
+                                poss_options.emplace_back(key);
+
+                            // Filter out bone names.
+                            std::vector<size_t> keep_idxs;
+                            keep_idxs.reserve(joint_name_to_idx.size());
+                            for (size_t i = 0; i < joint_name_to_idx.size(); i++)
+                                keep_idxs.emplace_back(i);
+                            for (size_t i = 0; i < argv_bone.size(); i++)
+                            {
+                                for (int32_t j = keep_idxs.size() - 1; j >= 0; j--)
+                                {
+                                    size_t keep_idx{ keep_idxs[j] };
+                                    if (std::tolower((unsigned char)poss_options[keep_idx][i]) !=
+                                        std::tolower((unsigned char)argv_bone[i]))
+                                    {
+                                        keep_idxs.erase(keep_idxs.begin() + j);
+                                    }
+                                }
+                            }
+                            if (keep_idxs.empty())  // show everything if nothing left
+                                for (size_t i = 0; i < joint_name_to_idx.size(); i++)
+                                    keep_idxs.emplace_back(i);
+
+                            // Make out to string.
+                            std::ostringstream poss_options_ss;
+                            for (size_t keep_idx : keep_idxs)
+                            {
+                                auto const& str{ poss_options[keep_idx] };
+                                poss_options_ss << str << "\n";
+                            }
+
+                            ImGui::TextColored(ImVec4(1, 0, 0, 1),
+                                               "INVALID BONE NAME. Possible options:\n%s",
+                                               poss_options_ss.str().c_str());
+                        }
+                    }
+
                     changed |= ImGui::InputFloat3((lbl_txt + " (vec3)").c_str(), argv_vec3);
 
                     ImGui::EndDisabled();
