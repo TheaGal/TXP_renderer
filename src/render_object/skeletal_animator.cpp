@@ -984,6 +984,22 @@ void str_to_vec3(std::string const& str, vec3 out_vec3)
     iss >> out_vec3[2];
 }
 
+void str_to_bone_vec3(std::string const& str, std::string& out_bone, vec3 out_vec3)
+{
+    // @COPYPASTA: of the editor stuff in `anim_frame_action_editor_content.cpp`
+    std::istringstream iss(str);
+
+    size_t str_len;
+    iss >> str_len;
+
+    out_bone = str.substr(static_cast<size_t>(iss.tellg()) + 1, str_len);
+    iss.seekg(static_cast<size_t>(iss.tellg()) + 1 + str_len);
+
+    iss >> out_vec3[0];
+    iss >> out_vec3[1];
+    iss >> out_vec3[2];
+}
+
 } // namespace
 
 
@@ -1350,30 +1366,21 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 },
                 {
                     .name = "origin_a",
-                    .desc = "First origin of sphere of capsule",
-                    .type = "vec3"
+                    .desc = "First origin of sphere of capsule. Optional bone name to put the vec3 "
+                            "in bone space (also will put origin_b's vec3 in bone space if "
+                            "origin_b's bone is empty)",
+                    .type = "bone_vec3"
                 },
                 {
                     .name = "origin_b",
-                    .desc = "Second origin of sphere of capsule",
-                    .type = "vec3"
+                    .desc = "Second origin of sphere of capsule. Optional bone name to put the "
+                            "vec3 in bone space",
+                    .type = "bone_vec3"
                 },
                 {
                     .name = "radius",
                     .desc = "Radius of capsule",
                     .type = "float"
-                },
-                {
-                    .name = "bone_name",
-                    .desc = "Name of which bone the bone space is based (origin_a and possibly "
-                            "origin_b will be placed in this bone space)",
-                    .type = "str"
-                },
-                {
-                    .name = "bone_name_2",
-                    .desc = "(optional) another name of which bone the bone space is based "
-                            "(origin_b will be placed in this bone space)",
-                    .type = "str"
                 },
             },
             .exec_fn = [](Model_animator& animator,
@@ -1382,7 +1389,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_last_frame,
                           mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
-                k_require_argv_count(argv, 13);
+                k_require_argv_count(argv, 11);
 
                 bool const attack_is_honed{ argv[0] == "1" };
                 bool const attack_is_unparryable{ argv[1] == "1" };
@@ -1393,14 +1400,15 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 int32_t const attack_direction_type{ std::stoi(argv[6]) };
                 float_t const attack_send_root_motion_multi{ std::stof(argv[7]) };
 
+                std::string origin_a_bone_name;
                 vec3 origin_a;
-                str_to_vec3(argv[8], origin_a);
+                str_to_bone_vec3(argv[8], origin_a_bone_name, origin_a);
+
+                std::string origin_b_bone_name;
                 vec3 origin_b;
-                str_to_vec3(argv[9], origin_b);
+                str_to_bone_vec3(argv[9], origin_b_bone_name, origin_b);
 
                 float_t const radius{ std::stof(argv[10]) };
-                std::string const& bone_name{ argv[11] };
-                std::string const& bone_name_2{ argv[12] };
 
                 // Add this to hurtcapsules in animator.
                 animator.get_anim_frame_action_data_handle().add_hurtcapsule_for_this_tick(
@@ -1409,8 +1417,8 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                         .origin_a{ origin_a[0], origin_a[1], origin_a[2] },
                         .origin_b{ origin_b[0], origin_b[1], origin_b[2] },
                         .radius = radius,
-                        .connecting_bone_name = bone_name,
-                        .connecting_bone_name_2 = bone_name_2,
+                        .connecting_bone_name = origin_a_bone_name,
+                        .connecting_bone_name_2 = origin_b_bone_name,
                     },
                     Hurtcapsule_info{
                         .is_persistent = false,
