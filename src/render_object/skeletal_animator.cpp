@@ -1365,8 +1365,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 {
                     .name = "origin_a",
                     .desc = "First origin of sphere of capsule. Optional bone name to put the vec3 "
-                            "in bone space (also will put origin_b's vec3 in bone space if "
-                            "origin_b's bone is empty)",
+                            "in bone space",
                     .type = "bone_vec3"
                 },
                 {

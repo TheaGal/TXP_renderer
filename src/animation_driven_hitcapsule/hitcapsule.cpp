@@ -35,44 +35,31 @@ void TXP::Hitcapsule::update_transform(mat4 base_transform, std::vector<mat4s> c
         throw std::runtime_error("this hitcapsule is uninitialized.");
 
     static auto s_eval_combined_transforms_fn = [](size_t connecting_bone_mat_idx,
-                                                   size_t connecting_bone_mat_idx_2,
                                                    mat4 base_transform,
                                                    std::vector<mat4s> const& joint_matrices,
-                                                   mat4& out_combined_trans,
-                                                   mat4& out_combined_trans_2) {
+                                                   mat4& out_combined_trans) {
         if (connecting_bone_mat_idx == (size_t)-1)
         {
             glm_mat4_copy(base_transform, out_combined_trans);
-            glm_mat4_copy(out_combined_trans, out_combined_trans_2);
         }
         else
         {
             glm_mat4_mul(base_transform,
                          const_cast<vec4*>(joint_matrices[connecting_bone_mat_idx].raw),
                          out_combined_trans);
-
-            // Second connecting bone.
-            if (connecting_bone_mat_idx_2 == (size_t)-1)
-            {
-                glm_mat4_copy(out_combined_trans, out_combined_trans_2);
-            }
-            else
-            {
-                glm_mat4_mul(base_transform,
-                             const_cast<vec4*>(joint_matrices[connecting_bone_mat_idx_2].raw),
-                             out_combined_trans_2);
-            }
         }
     };
 
     // Update capsule origins with combined transform(s).
     mat4 combined_trans;
-    mat4 combined_trans_2;
     s_eval_combined_transforms_fn(calcd_bone_mat_idx,
-                                  calcd_bone_mat_idx_2,
                                   base_transform,
                                   joint_matrices,
-                                  combined_trans,
+                                  combined_trans);
+    mat4 combined_trans_2;
+    s_eval_combined_transforms_fn(calcd_bone_mat_idx_2,
+                                  base_transform,
+                                  joint_matrices,
                                   combined_trans_2);
 
     glm_mat4_mulv3(combined_trans, origin_a.raw, 1.0f, calcd_origin_a);
