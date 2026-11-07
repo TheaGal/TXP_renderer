@@ -30,12 +30,21 @@ TXP::Graphics::Graphics(std::string const& title,
                         Information_hook_struct info_hook_struct)
     : m_pimpl(std::make_unique<Impl>(title, settings, info_hook_struct))
 {
+    BT::Timer timer;
+    timer.start_timer();
+
     m_pimpl->init_glfw_no_api();
     m_pimpl->init_window_props();
     m_pimpl->init_window();
+
+    BT_INFOF("Initialized window in %.2fms", timer.calc_delta_time() * 1000);
+
     m_pimpl->init_vulkan_instance();
     m_pimpl->init_vulkan_window_surface();
     m_pimpl->init_vulkan_build_device();
+
+    BT_INFOF("Initialized Vulkan device in %.2fms", timer.calc_delta_time() * 1000);
+
     m_pimpl->init_vulkan_create_memory_allocator();
     m_pimpl->select_vulkan_window_surface_format();
     m_pimpl->init_vulkan_build_swapchain();
@@ -45,6 +54,8 @@ TXP::Graphics::Graphics(std::string const& title,
     m_pimpl->init_vulkan_for_imgui();
     m_pimpl->init_vulkan_render_graph_resources();
     m_pimpl->init_vulkan_create_descriptors();
+
+    BT_INFOF("Initialized Vulkan render structures in %.2fms", timer.calc_delta_time() * 1000);
 }
 
 TXP::Graphics::~Graphics()
