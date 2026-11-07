@@ -564,19 +564,26 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         };
         static Cmd_edit_data s_cmd_edit_popup_data;
 
-        if (!ImGui::IsPopupOpen("region_cmd_edit_popup") &&
+        static bool s_show_edit_region_command_popup{ false };
+        if (!s_show_edit_region_command_popup &&
             s_cmd_edit_popup_data.write_ptr != nullptr)
         {
             if (s_cmd_edit_popup_data.not_been_accessed)
             {
                 s_cmd_edit_popup_data.not_been_accessed = false;
-                ImGui::OpenPopup("region_cmd_edit_popup");
+                s_show_edit_region_command_popup = true;
             }
             else
                 s_cmd_edit_popup_data.write_ptr = nullptr;
         }
-        if (ImGui::BeginPopup("region_cmd_edit_popup"))
+        if (s_show_edit_region_command_popup)
         {
+            ImGui::SetNextWindowPos(ImGui::GetIO().MousePos, ImGuiCond_Appearing);
+            ImGui::Begin("Edit region command",
+                         nullptr,
+                         ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse |
+                             ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+
             // Cmd list.
             static auto const& k_cmd_docs{
                 component_internal::Model_animator::get_control_command_codes_documentation()
@@ -726,7 +733,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 *s_cmd_edit_popup_data.write_ptr = s_cmd_edit_popup_data.ctrl_cmd_copy;
 
                 anim_frame_action::s_editor_state.is_working_afa_dirty = true;
-                ImGui::CloseCurrentPopup();
+                s_show_edit_region_command_popup = false;
             }
 
             ImGui::SameLine();
@@ -734,12 +741,12 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             if (ImGui::Button("Cancel") ||
                 input_handler.get_keyboard_key_state(BT_KEY_ESCAPE).pressed)
             {   // Cancel!!!
-                ImGui::CloseCurrentPopup();
+                s_show_edit_region_command_popup = false;
             }
 
             ImGui::Text("%s", "Press <Enter> to confirm rename or <Esc> to cancel.");
 
-            ImGui::EndPopup();
+            ImGui::End();
         }
 
         // BT sequencer widget.
