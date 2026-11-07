@@ -42,6 +42,10 @@ struct Editor_state
     size_t prev_anim_current_frame{ (size_t)-1 };
     vec3 anim_current_frame_root_motion_delta_pos;
     vec3 anim_current_frame_root_bone_pos;
+
+    bool show_edit_pos_gizmo{ true };
+    vec3 gizmo_pos = GLM_VEC3_ZERO_INIT;
+
     bool is_working_afa_dirty{ false };
 };
 

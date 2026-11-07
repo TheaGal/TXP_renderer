@@ -11,6 +11,7 @@
 #include "render_object/skeletal_animator.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
+#include "txp_renderer/renderer.h"
 #include "txp_renderer/types.h"
 
 #include <cmath>
@@ -54,6 +55,48 @@ bool custom_imgui_listbox(std::string const& id,
     return changed;
 }
 
+
+/// Adds transform to be manipulated and a callback if it happens.
+void internal_add_transform_to_manip_list(TXP::Renderer& renderer, vec3 in_out_pos)  // @COPYPASTA
+{
+    using namespace TXP;
+
+    if (!anim_frame_action::s_editor_state.show_edit_pos_gizmo)
+        return;
+
+    // Make mat4 transform.
+    mat4 transform;
+    {
+        glm_translate_make(transform, in_out_pos);
+    }
+
+    renderer.add_to_imguizmo_manipulate(
+        transform,
+        [in_out_pos](mat4 const new_transform) {
+            mat4 nt;
+            glm_mat4_copy(const_cast<vec4*>(new_transform), nt);
+
+            vec4 dec_tra;
+            mat4 dec_rot;
+            vec3 dec_sca;
+            glm_decompose(nt, dec_tra, dec_rot, dec_sca);
+
+            glm_vec3_copy(dec_tra, in_out_pos);
+        });
+}
+
+/// Adds transform to transform manipulation list.
+void internal_manip_transform()  // @COPYPASTA
+{
+    auto& renderer{ BT::service_finder::find_service<TXP::Renderer>() };
+    auto& camera{ renderer.get_main_camera() };
+
+    renderer.set_imguizmo_enabled(camera.is_cursor_free());
+
+    internal_add_transform_to_manip_list(renderer,
+                                         TXP::anim_frame_action::s_editor_state.gizmo_pos);
+}
+
 } // namespace
 
 
@@ -63,8 +106,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
     static int32_t s_current_animation_clip{ -1 };  // -1 means unset.
     static auto s_all_afa_names{ anim_frame_action::Bank::get_all_names() };
 
-    // @NOCHECKIN
-    // system::imgui_render_transform_hierarchy_window(enter);
+    // @DEBUG
+    internal_manip_transform();
 
     // Timeline selection.
     ImGui::Begin("Timeline select");
@@ -634,6 +677,38 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         editing_cmd_arg = std::to_string(arg_val[0]) + " " +
                                           std::to_string(arg_val[1]) + " " +
                                           std::to_string(arg_val[2]);
+                    }
+                }
+                else if (cmd_arg.type == "bone_vec3")
+                {
+                    std::string argv_bone = "";
+                    vec3 argv_vec3 = GLM_VEC3_ZERO_INIT;
+                    if (!editing_cmd_arg.empty())
+                    {
+                        std::istringstream iss(editing_cmd_arg);
+
+                        size_t str_len;
+                        iss >> str_len;
+
+                        argv_bone =
+                            editing_cmd_arg.substr(static_cast<size_t>(iss.tellg()) + 1, str_len);
+                        iss.seekg(static_cast<size_t>(iss.tellg()) + 1 + str_len);
+
+                        iss >> argv_vec3[0];
+                        iss >> argv_vec3[1];
+                        iss >> argv_vec3[2];
+                    }
+
+                    bool changed{ editing_cmd_arg.empty() };
+                    changed |= ImGui::InputText((lbl_txt + " (bone)").c_str(), &argv_bone);
+                    changed |= ImGui::InputFloat3((lbl_txt + " (vec3)").c_str(), argv_vec3);
+
+                    if (changed)
+                    {
+                        editing_cmd_arg = std::to_string(argv_bone.size()) + " " + argv_bone + " " +
+                                          std::to_string(argv_vec3[0]) + " " +
+                                          std::to_string(argv_vec3[1]) + " " +
+                                          std::to_string(argv_vec3[2]);
                     }
                 }
                 else

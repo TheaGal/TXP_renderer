@@ -1425,6 +1425,25 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                     });
             }
         },
+        {
+            .cmd{
+                .name = "TEST CMD",
+                .desc = "test cmd's desc"
+            },
+            .argv{
+                {
+                    .name = "asdasdfasdf",
+                    .desc = "jkljkljkl",
+                    .type = "bone_vec3"
+                },
+            },
+            .exec_fn = [](Model_animator& animator,
+                          uint32_t row_idx,
+                          bool is_first_frame,
+                          bool is_last_frame,
+                          mat4 const simulation_transform,
+                          std::vector<std::string> const& argv) {}
+        },
     };
 
     return k_all_cmd_docs;

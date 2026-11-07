@@ -256,9 +256,8 @@ struct Shader_clouds::Impl
         };
         barrier_tex_info.pImageMemoryBarriers = &barrier_tex_read;
         vkCmdPipelineBarrier2(cmd, &barrier_tex_info);
-        err = vkEndCommandBuffer(cmd);
-        if (err)
-            throw std::runtime_error("Failed to end one-time command buffer.");
+
+        one_time_command_buffer.finish();
 
         VkCommandBufferSubmitInfo one_time_command_buffer_submit_info{
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -279,6 +278,8 @@ struct Shader_clouds::Impl
 
         // Cleanup.
         cloud_volume_image_staging.destroy();
+        vkDestroyFence(device, fence_one_time, nullptr);
+        vkDestroyCommandPool(device, onetime_cmd_pool, nullptr);
     }
 
     ~Impl()
