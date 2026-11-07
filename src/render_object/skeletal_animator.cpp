@@ -24,6 +24,7 @@
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 
@@ -1265,13 +1266,9 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                 },
                 {
                     .name = "position",
-                    .desc = "Position to play SFX (world space if bone_name is blank)",
-                    .type = "vec3"
-                },
-                {
-                    .name = "bone_name",
-                    .desc = "Name of which bone the bone space is based",
-                    .type = "str"
+                    .desc = "Position to play SFX (world space if bone_name is blank), also has "
+                            "optional name of which bone the bone space is based",
+                    .type = "bone_vec3"
                 },
                 {
                     .name = "volume",
@@ -1285,15 +1282,16 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                           bool is_last_frame,
                           mat4 const simulation_transform,
                           std::vector<std::string> const& argv) {
-                k_require_argv_count(argv, 4);
+                k_require_argv_count(argv, 3);
 
                 if (!is_first_frame)
                     return;
 
+                std::string bone_name;
                 vec3 position;
-                str_to_vec3(argv[1], position);
+                str_to_bone_vec3(argv[1], bone_name, position);
 
-                if (!argv[2].empty())
+                if (!bone_name.empty())
                 {
                     // Transform into bone space.
                     // @TODO: cache this!!!
@@ -1302,7 +1300,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                                                          animator.get_is_using_root_motion(),
                                                          joint_matrices);
 
-                    uint32_t joint_idx{ animator.get_model_skin().joint_name_to_idx.at(argv[2]) };
+                    uint32_t joint_idx{ animator.get_model_skin().joint_name_to_idx.at(bone_name) };
 
                     glm_mat4_mulv3(joint_matrices[joint_idx].raw, position, 1, position);
                 }
@@ -1314,7 +1312,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
 
                 Skeletal_animator::s_play_audio_at_pos_oneshot_fn(argv[0],
                                                                   position,
-                                                                  std::stof(argv[3]));
+                                                                  std::stof(argv[2]));
             }
         },
         {
