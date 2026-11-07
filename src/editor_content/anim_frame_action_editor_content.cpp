@@ -708,8 +708,48 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                     }
 
                     bool changed{ editing_cmd_arg.empty() };
+
+                    ImGui::BeginDisabled(anim_frame_action::s_editor_state.show_edit_pos_gizmo);
+
+                    if (ImGui::Button(("use gimble for " + lbl_txt + "..").c_str()))
+                    {
+                        anim_frame_action::s_editor_state.show_edit_pos_gizmo = true;
+                        glm_vec3_copy(argv_vec3, anim_frame_action::s_editor_state.gizmo_pos);
+                        anim_frame_action::s_editor_state.gizmo_affecting_ptr_ref = &cmd_arg;
+                    }
+
+                    ImGui::EndDisabled();
+
+                    if (anim_frame_action::s_editor_state.show_edit_pos_gizmo &&
+                        anim_frame_action::s_editor_state.gizmo_affecting_ptr_ref == &cmd_arg)
+                    {
+                        bool close_gimble_mode{ false };
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("confirm##gimble_position_for_bone_vec3"))
+                        {
+                            glm_vec3_copy(anim_frame_action::s_editor_state.gizmo_pos, argv_vec3);
+                            changed = true;
+                            close_gimble_mode = true;
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("cancel##gimble_position_for_bone_vec3"))
+                            close_gimble_mode = true;
+
+                        if (close_gimble_mode)
+                        {
+                            anim_frame_action::s_editor_state.show_edit_pos_gizmo = false;
+                            anim_frame_action::s_editor_state.gizmo_affecting_ptr_ref = nullptr;
+                        }
+                    }
+
+                    ImGui::BeginDisabled(anim_frame_action::s_editor_state.show_edit_pos_gizmo);
+
                     changed |= ImGui::InputText((lbl_txt + " (bone)").c_str(), &argv_bone);
                     changed |= ImGui::InputFloat3((lbl_txt + " (vec3)").c_str(), argv_vec3);
+
+                    ImGui::EndDisabled();
 
                     if (changed)
                     {
