@@ -60,7 +60,7 @@ struct Hitcapsule
     float_t radius;
 
     std::string connecting_bone_name{ "" };  // Leave empty str for no bone connection.
-    std::string connecting_bone_name_2{ "" };  // Leave empty str for same as `connecting_bone_name`.
+    std::string connecting_bone_name_2{ "" };  // Leave empty str for no bone connection.
 
     /// Serialization/deserialization.
     NLOHMANN_DEFINE_TYPE_INTRUSIVE(Hitcapsule,
@@ -79,7 +79,7 @@ struct Hitcapsule
     float_t calcd_orig_pts_dist;  // Calculated from `calcd_origin_a/b`.
 
     size_t  calcd_bone_mat_idx{ (size_t)-1 };
-    size_t  calcd_bone_mat_idx_2{ (size_t)-1 };  // -1 means same as `calcd_bone_mat_idx`.
+    size_t  calcd_bone_mat_idx_2{ (size_t)-1 };
 
     void init_calc_info(component_internal::Model_animator const& animator);
     void update_transform(mat4 base_transform, std::vector<mat4s> const& joint_matrices);
