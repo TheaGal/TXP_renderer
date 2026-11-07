@@ -768,8 +768,12 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             // Confirm/Cancel buttons.
             ImGui::Separator();
 
+            bool const disable_exit_window{ anim_frame_action::s_editor_state.show_edit_pos_gizmo };
+            ImGui::BeginDisabled(disable_exit_window);
+
             if (ImGui::Button("Confirm") ||
-                input_handler.get_keyboard_key_state(BT_KEY_ENTER).pressed)
+                (!disable_exit_window &&
+                 input_handler.get_keyboard_key_state(BT_KEY_ENTER).pressed))
             {   // Submit rename.
                 *s_cmd_edit_popup_data.write_ptr = s_cmd_edit_popup_data.ctrl_cmd_copy;
 
@@ -780,10 +784,13 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
             ImGui::SameLine();
 
             if (ImGui::Button("Cancel") ||
-                input_handler.get_keyboard_key_state(BT_KEY_ESCAPE).pressed)
+                (!disable_exit_window &&
+                 input_handler.get_keyboard_key_state(BT_KEY_ESCAPE).pressed))
             {   // Cancel!!!
                 s_show_edit_region_command_popup = false;
             }
+
+            ImGui::EndDisabled();
 
             ImGui::Text("%s", "Press <Enter> to confirm rename or <Esc> to cancel.");
 
@@ -1283,6 +1290,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         s_cmd_edit_popup_data.ctrl_cmd_copy = region.ctrl_cmd;
                         s_cmd_edit_popup_data.write_ptr = &region.ctrl_cmd;
                         s_edit_region_command_popup_pos = ImGui::GetIO().MousePos;
+                        anim_frame_action::s_editor_state.show_edit_pos_gizmo = false;
                     }
                 }
                 if (!is_hovering_over_timeline_region && on_lmb_press)
