@@ -565,6 +565,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         static Cmd_edit_data s_cmd_edit_popup_data;
 
         static bool s_show_edit_region_command_popup{ false };
+        static ImVec2 s_edit_region_command_popup_pos;
         if (!s_show_edit_region_command_popup &&
             s_cmd_edit_popup_data.write_ptr != nullptr)
         {
@@ -578,7 +579,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         }
         if (s_show_edit_region_command_popup)
         {
-            ImGui::SetNextWindowPos(ImGui::GetIO().MousePos, ImGuiCond_Appearing);
+            ImGui::SetNextWindowPos(s_edit_region_command_popup_pos, ImGuiCond_Always);
             ImGui::Begin("Edit region command",
                          nullptr,
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoCollapse |
@@ -1241,6 +1242,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                         s_cmd_edit_popup_data.not_been_accessed = true;
                         s_cmd_edit_popup_data.ctrl_cmd_copy = region.ctrl_cmd;
                         s_cmd_edit_popup_data.write_ptr = &region.ctrl_cmd;
+                        s_edit_region_command_popup_pos = ImGui::GetIO().MousePos;
                     }
                 }
                 if (!is_hovering_over_timeline_region && on_lmb_press)
