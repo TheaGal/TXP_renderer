@@ -56,7 +56,7 @@ bool s_show_demo_window{ false };
 /// .
 void imgui_main_menu_bar(TXP::Renderer_settings& settings,
                          Information_hook_struct const& info_hook_struct,
-                         bool& in_out_play_flag,
+                         bool& in_out_disable_mode_switch_flag,
                          bool& in_out_focus_main_viewport)
 {
     if (ImGui::BeginMainMenuBar())
@@ -65,13 +65,13 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
         {
             ImGui::BeginDisabled(s_editor_mode != EDITOR_MODE_LEVEL);
 
-            if (ImGui::MenuItem("Simulation playing", nullptr, in_out_play_flag))
+            if (ImGui::MenuItem("Simulation playing", nullptr, in_out_disable_mode_switch_flag))
             {
-                in_out_play_flag = !in_out_play_flag;
-                info_hook_struct.set_play_flag_fn(in_out_play_flag);
+                in_out_disable_mode_switch_flag = !in_out_disable_mode_switch_flag;
+                info_hook_struct.set_play_flag_fn(in_out_disable_mode_switch_flag);
 
                 // Focus onto main viewport when starting simulation.
-                if (in_out_play_flag)
+                if (in_out_disable_mode_switch_flag)
                     in_out_focus_main_viewport = true;
             }
 
@@ -83,7 +83,7 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
         {
             auto prev_mode{ s_editor_mode };
 
-            ImGui::BeginDisabled(in_out_play_flag);
+            ImGui::BeginDisabled(in_out_disable_mode_switch_flag);
 
             if (ImGui::MenuItem("Level Editor", "", s_editor_mode == EDITOR_MODE_LEVEL))
             {
@@ -223,7 +223,7 @@ void imgui_main_viewport_window(
     std::function<void(bool)> const& lock_cursor_fn,
     Camera_internal& camera,
     std::vector<ImVec2>& per_viewport_content_sizes,
-    bool& in_out_play_flag,
+    bool& in_out_disable_mode_switch_flag,
     bool& in_out_focus_main_viewport)
 {
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
@@ -238,7 +238,7 @@ void imgui_main_viewport_window(
         ImGui::Image((ImTextureRef)img_descriptor, per_viewport_content_sizes.back());
     #endif  // TXP_GFX_BACKEND_VULKAN
 
-        if (!in_out_play_flag && ImGui::IsItemHovered() &&
+        if (!in_out_disable_mode_switch_flag && ImGui::IsItemHovered() &&
             input_handler.get_mouse_button_state(BT_MOUSE_BUTTON_RIGHT).pressed)
             ImGui::OpenPopup("main_viewport_rclick_popup");
         if (ImGui::BeginPopup("main_viewport_rclick_popup"))
@@ -301,7 +301,7 @@ void imgui_main_viewport_window(
             ImGui::EndPopup();
         }
 
-        if (in_out_play_flag)
+        if (in_out_disable_mode_switch_flag)
         {
             imgui_camera_mode_shift_c_ctrl_prompt_overlay(
                 input_handler,
@@ -736,7 +736,7 @@ void imgui_editor_viewport_windows(
     editor_content::Render_view_image_content const& render_view_image_content,
     std::function<void(bool)> const& lock_cursor_fn,
     Camera_internal& camera,
-    bool& in_out_play_flag,
+    bool& in_out_disable_mode_switch_flag,
     bool& in_out_focus_main_viewport,
     std::vector<Render_view_size>& out_rend_view_sizes)
 {
@@ -752,7 +752,7 @@ void imgui_editor_viewport_windows(
                                    lock_cursor_fn,
                                    camera,
                                    per_viewport_content_sizes,
-                                   in_out_play_flag,
+                                   in_out_disable_mode_switch_flag,
                                    in_out_focus_main_viewport);
     }
     if (per_viewport_content_sizes.empty())
@@ -909,10 +909,13 @@ void editor_content::build_content(bool const load_cam_orient_settings,
                                    float_t delta_time,
                                    std::vector<Render_view_size>& out_rend_view_sizes)
 {
-    static bool s_play_flag{ info_hook_struct.get_play_flag_fn() };
+    static bool s_disable_mode_switch_flag{ info_hook_struct.get_play_flag_fn() };
     bool focus_main_viewport{ false };
 
-    imgui_main_menu_bar(settings, info_hook_struct, s_play_flag, focus_main_viewport);
+    imgui_main_menu_bar(settings,
+                        info_hook_struct,
+                        s_disable_mode_switch_flag,
+                        focus_main_viewport);
 
     s_main_area_work_pos = ImGui::GetMainViewport()->WorkPos;
     s_main_area_work_size = ImGui::GetMainViewport()->WorkSize;
@@ -934,7 +937,7 @@ void editor_content::build_content(bool const load_cam_orient_settings,
                                   render_view_image_content,
                                   lock_cursor_fn,
                                   camera,
-                                  s_play_flag,
+                                  s_disable_mode_switch_flag,
                                   focus_main_viewport,
                                   out_rend_view_sizes);
 
@@ -942,7 +945,7 @@ void editor_content::build_content(bool const load_cam_orient_settings,
     imgui_performance_timers(info_hook_struct);
 
     if (s_editor_mode == EDITOR_MODE_ANIM_FRAME_ACTION)
-        anim_frame_action_editor_content(false, delta_time);
+        anim_frame_action_editor_content(false, s_disable_mode_switch_flag, delta_time);
 
     if (s_editor_mode == EDITOR_MODE_UI_EDITOR)
         editor_content::ui_editor::ui_editor_content();

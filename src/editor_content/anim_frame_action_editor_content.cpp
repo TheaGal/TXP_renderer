@@ -101,7 +101,9 @@ void internal_manip_transform()  // @COPYPASTA
 } // namespace
 
 
-void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t delta_time)
+void TXP::editor_content::anim_frame_action_editor_content(bool enter,
+                                                           bool& in_out_disable_mode_switch_flag,
+                                                           float_t delta_time)
 {
     static size_t s_selected_afa_idx{ 0 };
     static int32_t s_current_animation_clip{ -1 };  // -1 means unset.
@@ -1672,4 +1674,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         ImGui::EndChild();
     }
     ImGui::End();
+
+    // Disable mode switch if dirty.
+    in_out_disable_mode_switch_flag = anim_frame_action::s_editor_state.is_working_afa_dirty;
 }
