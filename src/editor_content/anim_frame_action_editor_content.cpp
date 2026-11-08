@@ -565,20 +565,19 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
         };
         static Cmd_edit_data s_cmd_edit_popup_data;
 
-        static bool s_show_edit_region_command_popup{ false };
         static ImVec2 s_edit_region_command_popup_pos;
-        if (!s_show_edit_region_command_popup &&
+        if (!anim_frame_action::s_editor_state.show_edit_region_command_popup &&
             s_cmd_edit_popup_data.write_ptr != nullptr)
         {
             if (s_cmd_edit_popup_data.not_been_accessed)
             {
                 s_cmd_edit_popup_data.not_been_accessed = false;
-                s_show_edit_region_command_popup = true;
+                anim_frame_action::s_editor_state.show_edit_region_command_popup = true;
             }
             else
                 s_cmd_edit_popup_data.write_ptr = nullptr;
         }
-        if (s_show_edit_region_command_popup)
+        if (anim_frame_action::s_editor_state.show_edit_region_command_popup)
         {
             ImGui::SetNextWindowPos(s_edit_region_command_popup_pos, ImGuiCond_Always);
             ImGui::Begin("Edit region command",
@@ -879,7 +878,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 *s_cmd_edit_popup_data.write_ptr = s_cmd_edit_popup_data.ctrl_cmd_copy;
 
                 anim_frame_action::s_editor_state.is_working_afa_dirty = true;
-                s_show_edit_region_command_popup = false;
+                anim_frame_action::s_editor_state.show_edit_region_command_popup = false;
             }
 
             ImGui::SameLine();
@@ -888,7 +887,7 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter, float_t d
                 (!disable_exit_window &&
                  input_handler.get_keyboard_key_state(BT_KEY_ESCAPE).pressed))
             {   // Cancel!!!
-                s_show_edit_region_command_popup = false;
+                anim_frame_action::s_editor_state.show_edit_region_command_popup = false;
             }
 
             ImGui::EndDisabled();

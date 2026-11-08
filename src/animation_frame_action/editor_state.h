@@ -43,6 +43,8 @@ struct Editor_state
     vec3 anim_current_frame_root_motion_delta_pos;
     vec3 anim_current_frame_root_bone_pos;
 
+    bool show_edit_region_command_popup{ false };
+
     bool show_edit_pos_gizmo{ false };
     vec3 gizmo_pos = GLM_VEC3_ZERO_INIT;
     void const* gizmo_affecting_ptr_ref{ nullptr };
