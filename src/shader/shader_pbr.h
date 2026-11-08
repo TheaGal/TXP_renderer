@@ -38,9 +38,16 @@ public:
         std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
         size_t& in_out_cur_modmesh_ref_idx);
 
+    enum Lighting_mode : uint32_t
+    {
+        LIGHTING_MODE_FULL = 0,
+        LIGHTING_MODE_BASIC_LIT,
+    };
+
     void draw(std::vector<Render_object> const& render_object_list,
               std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
-              void* render_view_param);
+              void* render_view_param,
+              Lighting_mode const lighting_mode);
 
 private:
     struct Impl;

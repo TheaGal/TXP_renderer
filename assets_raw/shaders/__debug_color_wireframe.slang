@@ -32,7 +32,6 @@ struct Lighting_data
     Directional_light directional_light;
     Point_light point_lights[128];
     uint32_t num_point_lights;
-    uint32_t lighting_mode;
 };
 
 struct Per_instance_data

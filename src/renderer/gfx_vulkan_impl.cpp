@@ -1892,9 +1892,6 @@ void Graphics::Impl::set_directional_light(vec3 direction,
     glm_vec3_copy(vec4{ 0, 0, 1, 1 }, light_data.point_lights[2].color);
 
     light_data.num_point_lights = 3;
-
-    // @NOCHECKIN: this is supposed to be a different func!
-    light_data.lighting_mode = 1;
 }
 
 void Graphics::Impl::set_render_object_per_instance_data(

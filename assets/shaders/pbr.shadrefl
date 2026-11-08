@@ -131,6 +131,14 @@
                     }
                 },
                 {
+                    "name": "lighting_mode",
+                    "binding": {"kind": "uniform", "offset": 40, "size": 4, "elementStride": 0},
+                    "type": {
+                        "kind": "scalar",
+                        "scalarType": "uint32"
+                    }
+                },
+                {
                     "name": "instance_index",
                     "semanticName": "SV_VULKANINSTANCEID",
                     "type": {
@@ -141,7 +149,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 16},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 17},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -231,6 +239,15 @@
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 5}
+                        },
+                        {
+                            "name": "lighting_mode",
+                            "type": {
+                                "kind": "scalar",
+                                "scalarType": "uint32"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 6}
                         },
                         {
                             "name": "mat_param_set",
@@ -339,7 +356,7 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 6, "count": 10}
+                            "binding": {"kind": "varyingOutput", "index": 7, "count": 10}
                         }
                     ]
                 }
@@ -358,7 +375,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 16},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 17},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -448,6 +465,15 @@
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 5}
+                            },
+                            {
+                                "name": "lighting_mode",
+                                "type": {
+                                    "kind": "scalar",
+                                    "scalarType": "uint32"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 6}
                             },
                             {
                                 "name": "mat_param_set",
@@ -556,7 +582,7 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 6, "count": 10}
+                                "binding": {"kind": "varyingInput", "index": 7, "count": 10}
                             }
                         ]
                     }

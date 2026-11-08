@@ -52,11 +52,6 @@ struct Lighting_data
     Directional_light directional_light;
     Point_light point_lights[128];
     uint32_t num_point_lights;
-
-    static constexpr uint32_t k_lighting_mode_full        = 0;
-    static constexpr uint32_t k_lighting_mode_basic_lit   = 1;
-    static constexpr uint32_t k_lighting_mode_basic_unlit = 2;
-    uint32_t lighting_mode;
 };
 static_assert(offsetof(Lighting_data, directional_light) % k_vec4_alignment == 0);
 static_assert(offsetof(Lighting_data, point_lights[0]) % k_vec4_alignment == 0);

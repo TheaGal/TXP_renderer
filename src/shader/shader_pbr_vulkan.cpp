@@ -63,6 +63,7 @@ struct Shader_pbr_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
     VkDeviceAddress per_instance_data_collection_dev_addr;
     VkDeviceAddress model_transform_set_dev_addr;
     VkDeviceAddress material_param_set_collection_dev_addr;
+    uint32_t lighting_mode;
 };
 
 // struct Shader_pbr::Impl
@@ -433,10 +434,10 @@ void Shader_pbr::allocate_per_instance_data_slots(
     m_pimpl->draw_inst_list_start_end.back() = in_out_cur_modmesh_ref_idx;
 }
 
-void Shader_pbr::draw(
-    std::vector<Render_object> const& render_object_list,
-    std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
-    void* render_view_param)
+void Shader_pbr::draw(std::vector<Render_object> const& render_object_list,
+                      std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
+                      void* render_view_param,
+                      Lighting_mode const lighting_mode)
 {
     auto& p{ *m_pimpl };
     if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
@@ -478,6 +479,7 @@ void Shader_pbr::draw(
             current_frame.model_transform_set_buffer.get_device_address(),
         .material_param_set_collection_dev_addr =
             p.material_param_set_collection_buffer.get_device_address(),
+        .lighting_mode = static_cast<uint32_t>(lighting_mode),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,
@@ -491,7 +493,7 @@ void Shader_pbr::draw(
     int32_t num_combined_model_binding_changes{ 0 };
 
     // Render instances.
-    for (auto using_static_model : { true, false })
+    for (bool const using_static_model : { true, false })
     {
         auto& using_model{ using_static_model ? p.g.combined_static_model
                                               : p.g.combined_deformed_model };

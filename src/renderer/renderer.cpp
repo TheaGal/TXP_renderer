@@ -747,7 +747,11 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         g.begin_rendering_render_view(render_view_idx);
 
         m.shad_basic_diffuse->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
-        m.shad_pbr->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
+        m.shad_pbr->draw(m.render_object_list,
+                         m.model_mesh_ref_list,
+                         render_view,
+                         is_main_cam_matrix ? Shader::Shader_pbr::LIGHTING_MODE_FULL
+                                            : Shader::Shader_pbr::LIGHTING_MODE_BASIC_LIT);
 
         bool const display_debug_draws{ !is_main_cam_matrix };
         if (display_debug_draws)

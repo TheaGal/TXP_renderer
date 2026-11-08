@@ -32,7 +32,6 @@ struct Lighting_data
     Directional_light directional_light;
     Point_light point_lights[128];
     uint32_t num_point_lights;
-    uint32_t lighting_mode;
 };
 
 struct Per_instance_data
@@ -95,7 +94,7 @@ VS_output vertex_main(VS_input input,
                              float4(input.pos.xyz, 1.0))));
     output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
     output.uv = input.uv;
-    output.lighting_mode = light_data->lighting_mode;
+    output.lighting_mode = 1; // light_data->lighting_mode;
 
     output.mat_param_set =
         material_param_set_collection->material_param_sets[per_inst_data.material_param_set_idx];

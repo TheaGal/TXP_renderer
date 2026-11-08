@@ -32,7 +32,6 @@ struct Lighting_data
     Directional_light directional_light;
     Point_light point_lights[128];
     uint32_t num_point_lights;
-    uint32_t lighting_mode;
 };
 
 struct Per_instance_data
@@ -83,6 +82,7 @@ struct VS_output
     float4 tangent;
     float3 camera_pos;
     Lighting_data* light_data;
+    uint32_t lighting_mode;
     Material_param_set mat_param_set;
 };
 
@@ -94,6 +94,7 @@ VS_output vertex_main(VS_input input,
                       uniform Per_instance_data_collection* per_instance_data_collection,
                       uniform Model_transform_set* model_transform_set,
                       uniform Material_param_set_collection* material_param_set_collection,
+                      uniform uint32_t lighting_mode,
                       uint instance_index : SV_VulkanInstanceID)
 {
     const Per_instance_data per_inst_data =
@@ -117,6 +118,7 @@ VS_output vertex_main(VS_input input,
     output.camera_pos = env_data->camera_position.xyz;
 
     output.light_data = light_data;
+    output.lighting_mode = lighting_mode;
 
     output.mat_param_set = mat_param_set;
 
@@ -184,13 +186,13 @@ float4 sample_texture_idx_tinted(uint32_t texture_idx, float2 uv, float4 tint)
 
 
 /// Calculates light dir of directional light.
-float3 calc_directional_light_dir(Directional_light light, float3 world_pos)
+float3 calc_directional_light_dir(Directional_light light)
 {
     return normalize(light.direction_xyz_intensity_w.xyz);
 }
 
 /// Calculates radiance of directional light.
-float3 calc_directional_light_radiance(Directional_light light, float3 world_pos)
+float3 calc_directional_light_radiance(Directional_light light)
 {
     return (light.color.rgb * light.direction_xyz_intensity_w.w);
 }
@@ -213,22 +215,10 @@ float3 calc_point_light_radiance(Point_light light, float3 world_pos)
 }
 
 
-// struct Frag_pc
-// {
-//     [vk::offset(8 * 4)] Lighting_data* light_data;
-// };
-
-[shader("fragment")]
-// float4 fragment_main(VS_output input,
-//                      uniform Frag_pc pc)
-float4 fragment_main(VS_output input)
+/// Lighting for PBR.
+float3 pbr_lighting(VS_output input, float4 base_color)
 {
     // --- MATERIAL PROPERTY SAMPLING --------------------------------------------------------------
-    // Sample base color texture and apply material color factor
-    const float4 base_color = sample_texture_idx_tinted(input.mat_param_set.base_color_texture_idx,
-                                                        input.uv,
-                                                        input.mat_param_set.base_color_factor);
-
     // Sample metallic-roughness texture (metallic=B channel, roughness=G channel)
     // glTF standard: metallic stored in blue, roughness in green
     const float2 metallic_roughness =
@@ -290,21 +280,11 @@ float4 fragment_main(VS_output input)
     for (int i = 0; i < 1 + input.light_data->num_point_lights; i++)
     {
         // Calculate light direction and attenuation
-
-        // // @THEA: this is inverse square falloff which doesn't look great imo bc of the infinite intensity when the distance gets close to 0, so it's not great for authoring lights.
-        // const float3 light_pos = ubo.lightPositions[i].xyz;
-        // const float3 light_color = ubo.lightColors[i].rgb;
-
-        // const float3 L = normalize(light_pos - input.world_pos);     // light direction
-        // const float distance = length(light_pos - input.world_pos);  // distance for falloff
-        // const float attenuation = 1.0 / (distance * distance);       // inverse square falloff
-        // const float3 radiance = light_color * attenuation;           // attenuated light color
-
         const float3 L =
-            (i == 0 ? calc_directional_light_dir(input.light_data->directional_light, input.world_pos)
+            (i == 0 ? calc_directional_light_dir(input.light_data->directional_light)
                     : calc_point_light_dir(input.light_data->point_lights[i - 1], input.world_pos));
         const float3 radiance =
-            (i == 0 ? calc_directional_light_radiance(input.light_data->directional_light, input.world_pos)
+            (i == 0 ? calc_directional_light_radiance(input.light_data->directional_light)
                     : calc_point_light_radiance(input.light_data->point_lights[i - 1], input.world_pos));
 
         // Calculate half vector (between view and light directions)
@@ -344,7 +324,44 @@ float4 fragment_main(VS_output input)
     const float3 ambient = float3(0.03, 0.03, 0.03) * base_color.rgb * ao;
 
     // Combine all lighting contributions
-    const float3 color = ambient + Lo + emissive;
+    return (ambient + Lo + emissive);
+}
+
+
+/// Lighting for simple lit.
+float3 simple_lit_lighting(VS_output input, float4 base_color)
+{
+    float3 N = normalize(input.normal);
+    float3 L = calc_directional_light_dir(input.light_data.directional_light);
+    float3 diffuse = max(dot(N, L) * 0.5 + 0.5, 0);
+
+    constexpr float base_lightness = 0.125;
+    float3 kinda_gooch_diffuse = (diffuse * (1.0 - base_lightness) + base_lightness);
+
+    return (kinda_gooch_diffuse * base_color.rgb);
+}
+
+
+[shader("fragment")]
+float4 fragment_main(VS_output input)
+{
+    // Sample base color texture and apply material color factor
+    const float4 base_color = sample_texture_idx_tinted(input.mat_param_set.base_color_texture_idx,
+                                                        input.uv,
+                                                        input.mat_param_set.base_color_factor);
+
+    float3 color = float3(1, 0, 1);  // error debug color
+
+    // PBR lighting mode.
+    if (input.lighting_mode == 0)
+    {
+        color = pbr_lighting(input, base_color);
+    }
+    // Simple lit lighting mode.
+    else if (input.lighting_mode == 1)
+    {
+        color = simple_lit_lighting(input, base_color);
+    }
 
     // Output final color.
     return float4(color, base_color.a);
