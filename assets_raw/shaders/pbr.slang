@@ -82,18 +82,18 @@ struct VS_output
     float2 uv;
     float4 tangent;
     float3 camera_pos;
-    Material_param_set mat_param_set;
     Lighting_data* light_data;
+    Material_param_set mat_param_set;
 };
 
 
 [shader("vertex")]
 VS_output vertex_main(VS_input input,
                       uniform Environment_data* env_data,
+                      uniform Lighting_data* light_data,
                       uniform Per_instance_data_collection* per_instance_data_collection,
                       uniform Model_transform_set* model_transform_set,
                       uniform Material_param_set_collection* material_param_set_collection,
-                      uniform Lighting_data* light_data,
                       uint instance_index : SV_VulkanInstanceID)
 {
     const Per_instance_data per_inst_data =
@@ -116,9 +116,9 @@ VS_output vertex_main(VS_input input,
 
     output.camera_pos = env_data->camera_position.xyz;
 
-    output.mat_param_set = mat_param_set;
-
     output.light_data = light_data;
+
+    output.mat_param_set = mat_param_set;
 
     return output;
 }

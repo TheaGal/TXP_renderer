@@ -99,8 +99,16 @@
                     }
                 },
                 {
-                    "name": "per_instance_data_collection",
+                    "name": "light_data",
                     "binding": {"kind": "uniform", "offset": 8, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Lighting_data"
+                    }
+                },
+                {
+                    "name": "per_instance_data_collection",
+                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
                     "type": {
                         "kind": "pointer",
                         "valueType": "Per_instance_data_collection"
@@ -108,7 +116,7 @@
                 },
                 {
                     "name": "model_transform_set",
-                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
+                    "binding": {"kind": "uniform", "offset": 24, "size": 8, "elementStride": 0},
                     "type": {
                         "kind": "pointer",
                         "valueType": "Model_transform_set"
@@ -116,18 +124,10 @@
                 },
                 {
                     "name": "material_param_set_collection",
-                    "binding": {"kind": "uniform", "offset": 24, "size": 8, "elementStride": 0},
-                    "type": {
-                        "kind": "pointer",
-                        "valueType": "Material_param_set_collection"
-                    }
-                },
-                {
-                    "name": "light_data",
                     "binding": {"kind": "uniform", "offset": 32, "size": 8, "elementStride": 0},
                     "type": {
                         "kind": "pointer",
-                        "valueType": "Lighting_data"
+                        "valueType": "Material_param_set_collection"
                     }
                 },
                 {
@@ -222,6 +222,15 @@
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 4}
+                        },
+                        {
+                            "name": "light_data",
+                            "type": {
+                                "kind": "pointer",
+                                "valueType": "Lighting_data"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 5}
                         },
                         {
                             "name": "mat_param_set",
@@ -330,16 +339,7 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 5, "count": 10}
-                        },
-                        {
-                            "name": "light_data",
-                            "type": {
-                                "kind": "pointer",
-                                "valueType": "Lighting_data"
-                            },
-                            "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 15}
+                            "binding": {"kind": "varyingOutput", "index": 6, "count": 10}
                         }
                     ]
                 }
@@ -439,6 +439,15 @@
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 4}
+                            },
+                            {
+                                "name": "light_data",
+                                "type": {
+                                    "kind": "pointer",
+                                    "valueType": "Lighting_data"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 5}
                             },
                             {
                                 "name": "mat_param_set",
@@ -547,16 +556,7 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 5, "count": 10}
-                            },
-                            {
-                                "name": "light_data",
-                                "type": {
-                                    "kind": "pointer",
-                                    "valueType": "Lighting_data"
-                                },
-                                "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 15}
+                                "binding": {"kind": "varyingInput", "index": 6, "count": 10}
                             }
                         ]
                     }
