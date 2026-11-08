@@ -260,6 +260,7 @@ struct Graphics::Impl
 
         /// This environment data buffer list needs to be per-frame but also per-renderview.
         std::vector<Vk_Buffer::Allocated_buffer> environment_data_buffers;  // Matches number of render views.
+        Vk_Buffer::Allocated_buffer lighting_data_buffer;
 
         Vk_Buffer::Allocated_buffer per_instance_data_collection_buffer;
         Vk_Buffer::Allocated_buffer model_transform_set_buffer;
@@ -573,10 +574,7 @@ struct Graphics::Impl
                                 vec3 const camera_position);
 
     /// Sets render view directional light information in the environmental buffer.
-    void set_directional_light(size_t render_view_idx,
-                               vec3 direction,
-                               vec3 color,
-                               float_t intensity);
+    void set_directional_light(vec3 direction, vec3 color, float_t intensity);
 
     /// Sets GPU per-instance data from list of render objects.
     void set_render_object_per_instance_data(

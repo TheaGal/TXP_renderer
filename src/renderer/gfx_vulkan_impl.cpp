@@ -491,6 +491,7 @@ void Graphics::Impl::init_vulkan_build_device()
                     // .fillModeNonSolid = VK_TRUE,          // To render wireframes.
                     .samplerAnisotropy = VK_TRUE,
                     .fragmentStoresAndAtomics = VK_TRUE,  // For the picking buffer! @TODO: If a release build then disable.
+                    .shaderInt64 = VK_TRUE,  // For holding VkDeviceAddress as a var.
                 })
                 .select()
         };
@@ -939,6 +940,14 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
     // Create model transform set buffer.
     for (auto& frame : frames)
     {
+        frame.lighting_data_buffer.create(
+            gfx.device,
+            gfx.allocator,
+            sizeof(gpu_type::Lighting_data),
+            VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+            VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                VMA_ALLOCATION_CREATE_HOST_ACCESS_ALLOW_TRANSFER_INSTEAD_BIT |
+                VMA_ALLOCATION_CREATE_MAPPED_BIT);
         frame.per_instance_data_collection_buffer.create(
             gfx.device,
             gfx.allocator,
@@ -1010,6 +1019,7 @@ void Graphics::Impl::destroy_vulkan()
         {
             env_data_buffer.destroy();
         }
+        frame.lighting_data_buffer.destroy();
         frame.per_instance_data_collection_buffer.destroy();
         frame.model_transform_set_buffer.destroy();
         frame.sprite_data_set_buffer.destroy();
@@ -1856,21 +1866,35 @@ void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
     glm_vec3_copy(const_cast<float_t*>(camera_position), env_data.camera_position);
 }
 
-void Graphics::Impl::set_directional_light(size_t render_view_idx,
-                                           vec3 direction,
+void Graphics::Impl::set_directional_light(vec3 direction,
                                            vec3 color,
                                            float_t intensity)
 {
-    auto& env_data{ *static_cast<gpu_type::Environment_data*>(
-        get_current_frame().environment_data_buffers[render_view_idx].get_p_mapped_data()) };
+    auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
+        get_current_frame().lighting_data_buffer.get_p_mapped_data()) };
 
-    glm_vec3_copy(direction, env_data.directional_light.direction_xyz_intensity_w);
-    env_data.directional_light.direction_xyz_intensity_w[3] = intensity;
+    glm_vec3_copy(direction, light_data.directional_light.direction_xyz_intensity_w);
+    light_data.directional_light.direction_xyz_intensity_w[3] = intensity;
 
-    glm_vec3_copy(color, env_data.directional_light.color);
+    glm_vec3_copy(color, light_data.directional_light.color);
+
+    // @TEMP: @DEBUG: add point lights.
+    glm_vec3_copy(vec3{ 10, 1, 0 }, light_data.point_lights[0].position_xyz_intensity_w);
+    light_data.point_lights[0].position_xyz_intensity_w[3] = 4;
+    glm_vec3_copy(vec4{ 1, 0, 0, 1 }, light_data.point_lights[0].color);
+
+    glm_vec3_copy(vec3{ 10, 1, 1 }, light_data.point_lights[1].position_xyz_intensity_w);
+    light_data.point_lights[1].position_xyz_intensity_w[3] = 4;
+    glm_vec3_copy(vec4{ 0, 1, 0, 1 }, light_data.point_lights[1].color);
+
+    glm_vec3_copy(vec3{ 10, 1, 2 }, light_data.point_lights[2].position_xyz_intensity_w);
+    light_data.point_lights[2].position_xyz_intensity_w[3] = 4;
+    glm_vec3_copy(vec4{ 0, 0, 1, 1 }, light_data.point_lights[2].color);
+
+    light_data.num_point_lights = 3;
 
     // @NOCHECKIN: this is supposed to be a different func!
-    env_data.lighting_mode = 1;
+    light_data.lighting_mode = 1;
 }
 
 void Graphics::Impl::set_render_object_per_instance_data(

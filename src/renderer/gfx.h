@@ -21,6 +21,16 @@ class UI_state;  // Forward decl.
 namespace gpu_type
 {
 
+struct Environment_data
+{
+    mat4 projection;
+    mat4 view;
+    vec4 camera_position;
+};
+static_assert(offsetof(Environment_data, projection) % k_mat4_alignment == 0);
+static_assert(offsetof(Environment_data, view) % k_mat4_alignment == 0);
+static_assert(offsetof(Environment_data, camera_position) % k_vec4_alignment == 0);
+
 struct Directional_light
 {
     vec4 direction_xyz_intensity_w;
@@ -29,22 +39,28 @@ struct Directional_light
 static_assert(offsetof(Directional_light, direction_xyz_intensity_w) % k_vec4_alignment == 0);
 static_assert(offsetof(Directional_light, color) % k_vec4_alignment == 0);
 
-struct Environment_data
+struct Point_light
 {
-    mat4 projection;
-    mat4 view;
-    vec4 camera_position;
+    vec4 position_xyz_intensity_w;
+    vec4 color;
+};
+static_assert(offsetof(Point_light, position_xyz_intensity_w) % k_vec4_alignment == 0);
+static_assert(offsetof(Point_light, color) % k_vec4_alignment == 0);
+
+struct Lighting_data
+{
     Directional_light directional_light;
+    Point_light point_lights[128];
+    uint32_t num_point_lights;
 
     static constexpr uint32_t k_lighting_mode_full        = 0;
     static constexpr uint32_t k_lighting_mode_basic_lit   = 1;
     static constexpr uint32_t k_lighting_mode_basic_unlit = 2;
     uint32_t lighting_mode;
 };
-static_assert(offsetof(Environment_data, projection) % k_mat4_alignment == 0);
-static_assert(offsetof(Environment_data, view) % k_mat4_alignment == 0);
-static_assert(offsetof(Environment_data, camera_position) % k_vec4_alignment == 0);
-static_assert(offsetof(Environment_data, directional_light) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_light) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, point_lights[0]) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, point_lights[1]) % k_vec4_alignment == 0);
 
 struct Per_instance_data
 {
@@ -187,10 +203,7 @@ public:
                                 vec3 const camera_position);
 
     /// Sets GPU directional light properties for a render view.
-    void set_directional_light(size_t render_view_idx,
-                               vec3 direction,
-                               vec3 color,
-                               float_t intensity);
+    void set_directional_light(vec3 direction, vec3 color, float_t intensity);
 
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);

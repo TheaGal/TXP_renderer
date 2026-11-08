@@ -727,8 +727,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                  cam_matrix.projection,
                                  cam_matrix.view,
                                  cam_matrix.camera_position);
-        g.set_directional_light(render_view_idx,
-                                vec3{ 0.742781, 0.557086, 0.371391 },  // @HARDCODE
+        g.set_directional_light(vec3{ 0.742781, 0.557086, 0.371391 },  // @HARDCODE
                                 vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
                                 10.0f);
 

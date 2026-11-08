@@ -8,18 +8,30 @@ struct VS_input
     float4 tangent;
 };
 
+struct Environment_data
+{
+    float4x4 projection;
+    float4x4 view;
+    float4 camera_position;
+};
+
 struct Directional_light
 {
     float4 direction_xyz_intensity_w;
     float4 color;
 };
 
-struct Environment_data
+struct Point_light
 {
-    float4x4 projection;
-    float4x4 view;
-    float4 camera_position;
+    float4 position_xyz_intensity_w;
+    float4 color;
+};
+
+struct Lighting_data
+{
     Directional_light directional_light;
+    Point_light point_lights[128];
+    uint32_t num_point_lights;
     uint32_t lighting_mode;
 };
 
@@ -70,9 +82,8 @@ struct VS_output
     float2 uv;
     float4 tangent;
     float3 camera_pos;
-    uint32_t lighting_mode;
-    Directional_light directional_light;
     Material_param_set mat_param_set;
+    Lighting_data* light_data;
 };
 
 
@@ -82,6 +93,7 @@ VS_output vertex_main(VS_input input,
                       uniform Per_instance_data_collection* per_instance_data_collection,
                       uniform Model_transform_set* model_transform_set,
                       uniform Material_param_set_collection* material_param_set_collection,
+                      uniform Lighting_data* light_data,
                       uint instance_index : SV_VulkanInstanceID)
 {
     const Per_instance_data per_inst_data =
@@ -104,10 +116,9 @@ VS_output vertex_main(VS_input input,
 
     output.camera_pos = env_data->camera_position.xyz;
 
-    output.lighting_mode = env_data->lighting_mode;
-    output.directional_light = env_data->directional_light;
-
     output.mat_param_set = mat_param_set;
+
+    output.light_data = light_data;
 
     return output;
 }
@@ -172,7 +183,44 @@ float4 sample_texture_idx_tinted(uint32_t texture_idx, float2 uv, float4 tint)
 }
 
 
+/// Calculates light dir of directional light.
+float3 calc_directional_light_dir(Directional_light light, float3 world_pos)
+{
+    return normalize(light.direction_xyz_intensity_w.xyz);
+}
+
+/// Calculates radiance of directional light.
+float3 calc_directional_light_radiance(Directional_light light, float3 world_pos)
+{
+    return (light.color.rgb * light.direction_xyz_intensity_w.w);
+}
+
+/// Calculates light dir of point light.
+float3 calc_point_light_dir(Point_light light, float3 world_pos)
+{
+    return normalize(light.position_xyz_intensity_w.xyz - world_pos);
+}
+
+/// Calcs radiance of point light.
+float3 calc_point_light_radiance(Point_light light, float3 world_pos)
+{
+    const float3 delta_pos = (light.position_xyz_intensity_w.xyz - world_pos);
+
+    float distance2 = dot(delta_pos, delta_pos);
+    float attenuation = (light.position_xyz_intensity_w.w / distance2) - 0.1;  // @HARDCODE
+
+    return max(float3(0), light.color.rgb * attenuation);
+}
+
+
+// struct Frag_pc
+// {
+//     [vk::offset(8 * 4)] Lighting_data* light_data;
+// };
+
 [shader("fragment")]
+// float4 fragment_main(VS_output input,
+//                      uniform Frag_pc pc)
 float4 fragment_main(VS_output input)
 {
     // --- MATERIAL PROPERTY SAMPLING --------------------------------------------------------------
@@ -238,8 +286,8 @@ float4 fragment_main(VS_output input)
 
     // --- DIRECT LIGHTING LOOP --------------------------------------------------------------------
     // Calculate contribution from each light source
-    if (true)
-    // for (int i = 0; i < 4; i++)
+    [loop]
+    for (int i = 0; i < 1 + input.light_data->num_point_lights; i++)
     {
         // Calculate light direction and attenuation
 
@@ -251,9 +299,13 @@ float4 fragment_main(VS_output input)
         // const float distance = length(light_pos - input.world_pos);  // distance for falloff
         // const float attenuation = 1.0 / (distance * distance);       // inverse square falloff
         // const float3 radiance = light_color * attenuation;           // attenuated light color
-        const float3 L = normalize(input.directional_light.direction_xyz_intensity_w.xyz);
-        const float3 radiance = input.directional_light.color.rgb *
-                                    input.directional_light.direction_xyz_intensity_w.w;
+
+        const float3 L =
+            (i == 0 ? calc_directional_light_dir(input.light_data->directional_light, input.world_pos)
+                    : calc_point_light_dir(input.light_data->point_lights[i - 1], input.world_pos));
+        const float3 radiance =
+            (i == 0 ? calc_directional_light_radiance(input.light_data->directional_light, input.world_pos)
+                    : calc_point_light_radiance(input.light_data->point_lights[i - 1], input.world_pos));
 
         // Calculate half vector (between view and light directions)
         const float3 H = normalize(V + L);

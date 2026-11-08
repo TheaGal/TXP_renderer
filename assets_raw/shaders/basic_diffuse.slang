@@ -8,18 +8,30 @@ struct VS_input
     float4 tangent;
 };
 
+struct Environment_data
+{
+    float4x4 projection;
+    float4x4 view;
+    float4 camera_position;
+};
+
 struct Directional_light
 {
     float4 direction_xyz_intensity_w;
     float4 color;
 };
 
-struct Environment_data
+struct Point_light
 {
-    float4x4 projection;
-    float4x4 view;
-    float4 camera_position;
+    float4 position_xyz_intensity_w;
+    float4 color;
+};
+
+struct Lighting_data
+{
     Directional_light directional_light;
+    Point_light point_lights[128];
+    uint32_t num_point_lights;
     uint32_t lighting_mode;
 };
 
@@ -66,6 +78,7 @@ struct VS_output
 [shader("vertex")]
 VS_output vertex_main(VS_input input,
                       uniform Environment_data* env_data,
+                      uniform Lighting_data* light_data,
                       uniform Per_instance_data_collection* per_instance_data_collection,
                       uniform Model_transform_set* model_transform_set,
                       uniform Material_param_set_collection* material_param_set_collection,
@@ -82,7 +95,7 @@ VS_output vertex_main(VS_input input,
                              float4(input.pos.xyz, 1.0))));
     output.normal = mul((float3x3)mul(env_data->view, model_mat), input.normal);
     output.uv = input.uv;
-    output.lighting_mode = env_data->lighting_mode;
+    output.lighting_mode = light_data->lighting_mode;
 
     output.mat_param_set =
         material_param_set_collection->material_param_sets[per_inst_data.material_param_set_idx];
@@ -90,7 +103,7 @@ VS_output vertex_main(VS_input input,
     // Calculate view vectors required for lighting.
     float4 frag_pos = mul(mul(env_data->view, model_mat), float4(input.pos.xyz, 1.0));
     output.view_vec = -frag_pos.xyz;
-    output.light_vec = env_data->directional_light.direction_xyz_intensity_w.xyz - frag_pos.xyz;
+    output.light_vec = light_data->directional_light.direction_xyz_intensity_w.xyz - frag_pos.xyz;
     return output;
 }
 

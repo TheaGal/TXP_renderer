@@ -99,8 +99,16 @@
                     }
                 },
                 {
-                    "name": "per_instance_data_collection",
+                    "name": "light_data",
                     "binding": {"kind": "uniform", "offset": 8, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Lighting_data"
+                    }
+                },
+                {
+                    "name": "per_instance_data_collection",
+                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
                     "type": {
                         "kind": "pointer",
                         "valueType": "Per_instance_data_collection"
@@ -108,7 +116,7 @@
                 },
                 {
                     "name": "model_transform_set",
-                    "binding": {"kind": "uniform", "offset": 16, "size": 8, "elementStride": 0},
+                    "binding": {"kind": "uniform", "offset": 24, "size": 8, "elementStride": 0},
                     "type": {
                         "kind": "pointer",
                         "valueType": "Model_transform_set"
@@ -116,7 +124,7 @@
                 },
                 {
                     "name": "material_param_set_collection",
-                    "binding": {"kind": "uniform", "offset": 24, "size": 8, "elementStride": 0},
+                    "binding": {"kind": "uniform", "offset": 32, "size": 8, "elementStride": 0},
                     "type": {
                         "kind": "pointer",
                         "valueType": "Material_param_set_collection"

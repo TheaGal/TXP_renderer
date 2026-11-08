@@ -62,6 +62,7 @@ struct Shader_pbr_push_constants  // @TODO: move this to gfx_vulkan_impl!!!
     VkDeviceAddress per_instance_data_collection_dev_addr;
     VkDeviceAddress model_transform_set_dev_addr;
     VkDeviceAddress material_param_set_collection_dev_addr;
+    VkDeviceAddress lighting_data_dev_addr;
 };
 
 // struct Shader_pbr::Impl
@@ -476,6 +477,7 @@ void Shader_pbr::draw(
             current_frame.model_transform_set_buffer.get_device_address(),
         .material_param_set_collection_dev_addr =
             p.material_param_set_collection_buffer.get_device_address(),
+        .lighting_data_dev_addr = current_frame.lighting_data_buffer.get_device_address(),
     };
     vkCmdPushConstants(cmd,
                        p.shader_pipeline.pipeline_layout,

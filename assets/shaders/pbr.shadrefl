@@ -123,6 +123,14 @@
                     }
                 },
                 {
+                    "name": "light_data",
+                    "binding": {"kind": "uniform", "offset": 32, "size": 8, "elementStride": 0},
+                    "type": {
+                        "kind": "pointer",
+                        "valueType": "Lighting_data"
+                    }
+                },
+                {
                     "name": "instance_index",
                     "semanticName": "SV_VULKANINSTANCEID",
                     "type": {
@@ -133,7 +141,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 18},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 16},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -214,52 +222,6 @@
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 4}
-                        },
-                        {
-                            "name": "lighting_mode",
-                            "type": {
-                                "kind": "scalar",
-                                "scalarType": "uint32"
-                            },
-                            "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 5}
-                        },
-                        {
-                            "name": "directional_light",
-                            "type": {
-                                "kind": "struct",
-                                "name": "Directional_light",
-                                "fields": [
-                                    {
-                                        "name": "direction_xyz_intensity_w",
-                                        "type": {
-                                            "kind": "vector",
-                                            "elementCount": 4,
-                                            "elementType": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            }
-                                        },
-                                        "stage": "vertex",
-                                        "binding": {"kind": "varyingOutput", "index": 0}
-                                    },
-                                    {
-                                        "name": "color",
-                                        "type": {
-                                            "kind": "vector",
-                                            "elementCount": 4,
-                                            "elementType": {
-                                                "kind": "scalar",
-                                                "scalarType": "float32"
-                                            }
-                                        },
-                                        "stage": "vertex",
-                                        "binding": {"kind": "varyingOutput", "index": 1}
-                                    }
-                                ]
-                            },
-                            "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 6, "count": 2}
                         },
                         {
                             "name": "mat_param_set",
@@ -368,7 +330,16 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 8, "count": 10}
+                            "binding": {"kind": "varyingOutput", "index": 5, "count": 10}
+                        },
+                        {
+                            "name": "light_data",
+                            "type": {
+                                "kind": "pointer",
+                                "valueType": "Lighting_data"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 15}
                         }
                     ]
                 }
@@ -387,7 +358,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 18},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 16},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -468,52 +439,6 @@
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 4}
-                            },
-                            {
-                                "name": "lighting_mode",
-                                "type": {
-                                    "kind": "scalar",
-                                    "scalarType": "uint32"
-                                },
-                                "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 5}
-                            },
-                            {
-                                "name": "directional_light",
-                                "type": {
-                                    "kind": "struct",
-                                    "name": "Directional_light",
-                                    "fields": [
-                                        {
-                                            "name": "direction_xyz_intensity_w",
-                                            "type": {
-                                                "kind": "vector",
-                                                "elementCount": 4,
-                                                "elementType": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                }
-                                            },
-                                            "stage": "fragment",
-                                            "binding": {"kind": "varyingInput", "index": 0}
-                                        },
-                                        {
-                                            "name": "color",
-                                            "type": {
-                                                "kind": "vector",
-                                                "elementCount": 4,
-                                                "elementType": {
-                                                    "kind": "scalar",
-                                                    "scalarType": "float32"
-                                                }
-                                            },
-                                            "stage": "fragment",
-                                            "binding": {"kind": "varyingInput", "index": 1}
-                                        }
-                                    ]
-                                },
-                                "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 6, "count": 2}
                             },
                             {
                                 "name": "mat_param_set",
@@ -622,7 +547,16 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 8, "count": 10}
+                                "binding": {"kind": "varyingInput", "index": 5, "count": 10}
+                            },
+                            {
+                                "name": "light_data",
+                                "type": {
+                                    "kind": "pointer",
+                                    "valueType": "Lighting_data"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 15}
                             }
                         ]
                     }
