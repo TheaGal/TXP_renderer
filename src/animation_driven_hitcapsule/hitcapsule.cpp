@@ -190,6 +190,11 @@ void TXP::Hitcapsule_group_set::connect_animator(component_internal::Model_anima
     m_is_connected_to_animator = true;
 }
 
+bool TXP::Hitcapsule_group_set::is_connected_to_animator() const
+{
+    return m_is_connected_to_animator;
+}
+
 std::vector<TXP::Hitcapsule_group>& TXP::Hitcapsule_group_set::get_hitcapsule_groups()
 {
     return m_hitcapsule_grps;

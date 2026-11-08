@@ -247,6 +247,9 @@ void TXP::anim_frame_action::Runtime_controllable_data::update_hitcapsule_transf
     mat4 base_transform,
     std::vector<mat4s> const& joint_matrices)
 {
+    if (!hitcapsule_group_set.is_connected_to_animator())
+        return;  // dont update since not init yet
+
     auto& hitcapsule_grps{ hitcapsule_group_set.get_hitcapsule_groups() };
     for (auto& hitcapsule_grp : hitcapsule_grps)
     {

@@ -130,6 +130,7 @@ public:
     void unregister_from_overlap_solver();
 
     void connect_animator(component_internal::Model_animator const& animator);
+    bool is_connected_to_animator() const;
 
     std::vector<Hitcapsule_group>& get_hitcapsule_groups();
 
