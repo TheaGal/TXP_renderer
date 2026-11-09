@@ -1432,6 +1432,26 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
         },
         {
             .cmd{
+                .name = "signal_perilous",
+                .desc = "Signals that a perilous attack will happen"
+            },
+            .argv{},
+            .exec_fn = [](Model_animator& animator,
+                          uint32_t row_idx,
+                          bool is_first_frame,
+                          bool is_last_frame,
+                          mat4 const simulation_transform,
+                          std::vector<std::string> const& argv) {
+                k_require_argv_count(argv, 0);
+
+                if (!is_first_frame)
+                    return;
+
+                Skeletal_animator::s_play_audio_2d_oneshot_fn("perilous.mp3", 1);
+            }
+        },
+        {
+            .cmd{
                 .name = "TEST CMD",
                 .desc = "test cmd's desc"
             },

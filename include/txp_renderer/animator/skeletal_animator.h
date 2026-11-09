@@ -23,9 +23,12 @@ class Skeletal_animator
 public:
     using Play_audio_at_pos_fn_t =
         std::function<void(std::string const& snd_name, vec3 const pos, float_t volume)>;
+    using Play_audio_2d_fn_t =
+        std::function<void(std::string const& snd_name, float_t volume)>;
 
     /// Sets callback func.
-    static void set_play_audio_at_pos_oneshot_fn_callback(Play_audio_at_pos_fn_t&& callback_fn);
+    static void set_play_audio_fn_callbacks(Play_audio_at_pos_fn_t&& play_at_pos_callback_fn,
+                                            Play_audio_2d_fn_t&& play_2d_callback_fn);
 
 
     /// Sets a variable inside the state machine.
@@ -67,6 +70,7 @@ public:
 
 private:
     inline static Play_audio_at_pos_fn_t s_play_audio_at_pos_oneshot_fn{ nullptr };
+    inline static Play_audio_2d_fn_t s_play_audio_2d_oneshot_fn{ nullptr };
 
     component_internal::Model_animator* m_animator;
 
