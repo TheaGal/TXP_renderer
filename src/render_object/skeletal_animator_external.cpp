@@ -12,12 +12,14 @@
 namespace TXP
 {
 
-/*static*/ void Skeletal_animator::set_play_audio_fn_callbacks(
+/*static*/ void Skeletal_animator::set_func_callbacks(
     Play_audio_at_pos_fn_t&& play_at_pos_callback_fn,
-    Play_audio_2d_fn_t&& play_2d_callback_fn)
+    Play_audio_2d_fn_t&& play_2d_callback_fn,
+    Signal_perilous_fn_t&& signal_perilous_fn)
 {
     s_play_audio_at_pos_oneshot_fn = std::move(play_at_pos_callback_fn);
     s_play_audio_2d_oneshot_fn = std::move(play_2d_callback_fn);
+    s_signal_perilous_fn = std::move(signal_perilous_fn);
 }
 
 

@@ -1448,6 +1448,7 @@ TXP::component_internal::Model_animator::get_control_command_codes_documentation
                     return;
 
                 Skeletal_animator::s_play_audio_2d_oneshot_fn("perilous.mp3", 1);
+                Skeletal_animator::s_signal_perilous_fn();
             }
         },
         {
