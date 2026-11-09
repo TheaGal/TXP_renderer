@@ -309,6 +309,7 @@ struct Renderer::Impl
                     m.render_model_data_collection.report_one_user_added(new_render_model_idx);
 
                     m.render_object_list.emplace_back(Render_object{
+                        .is_visible = rend_obj_cfg.is_visible,
                         .layer = rend_obj_cfg.render_layer,
                         .render_model_idx = new_render_model_idx,
                         .sub_mesh_idx = new_sub_mesh_idx,
@@ -327,6 +328,10 @@ struct Renderer::Impl
                 else
                 {   // Mark as non-stale.
                     m.render_object_list[rend_owned_data.pool_key].is_stale = false;
+
+                    // Update per-frame info.
+                    m.render_object_list[rend_owned_data.pool_key].is_visible =
+                        rend_obj_cfg.is_visible;
                 }
 
                 // Update transform.
@@ -731,6 +736,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                 vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
                                 10.0f);
 
+        Render_layer const render_layer_mask{ is_main_cam_matrix ? RENDER_LAYER_DEFAULT
+                                                                 : RENDER_LAYER_ALL };
+
         if (is_main_cam_matrix)
         {
             // g.compute_light_culling();
@@ -746,12 +754,16 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         // Render all graphics shaders.
         g.begin_rendering_render_view(render_view_idx);
 
-        m.shad_basic_diffuse->draw(m.render_object_list, m.model_mesh_ref_list, render_view);
+        m.shad_basic_diffuse->draw(m.render_object_list,
+                                   m.model_mesh_ref_list,
+                                   render_view,
+                                   render_layer_mask);
         m.shad_pbr->draw(m.render_object_list,
                          m.model_mesh_ref_list,
                          render_view,
                          is_main_cam_matrix ? Shader::Shader_pbr::LIGHTING_MODE_FULL
-                                            : Shader::Shader_pbr::LIGHTING_MODE_BASIC_LIT);
+                                            : Shader::Shader_pbr::LIGHTING_MODE_BASIC_LIT,
+                         render_layer_mask);
 
         bool const display_debug_draws{ !is_main_cam_matrix };
         if (display_debug_draws)
@@ -761,7 +773,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                                render_view);
             m.shad_debug_color_wireframe->draw(m.render_object_list,
                                                m.model_mesh_ref_list,
-                                               render_view);
+                                               render_view,
+                                               render_layer_mask);
         }
 
         g.end_rendering_render_view(render_view_idx);

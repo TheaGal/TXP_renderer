@@ -1,5 +1,7 @@
 #pragma once
 
+#include "txp_renderer/types.h"
+
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -40,7 +42,8 @@ public:
 
     void draw(std::vector<Render_object> const& render_object_list,
               std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
-              void* render_view_param);
+              void* render_view_param,
+              Render_layer const render_layer_mask);
 
 private:
     struct Impl;

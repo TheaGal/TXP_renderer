@@ -100,8 +100,21 @@ enum Render_layer : uint16_t
     RENDER_LAYER_NONE         = 0b0000'0000'0000'0000,
 
     RENDER_LAYER_DEFAULT      = 0b0000'0000'0000'0001,
-    RENDER_LAYER_INVISIBLE    = 0b0000'0000'0000'0010,
-    RENDER_LAYER_LEVEL_EDITOR = 0b0000'0000'0000'0100,
+    RENDER_LAYER_LEVEL_EDITOR = 0b0000'0000'0000'0010,
+    RENDER_LAYER_UNASSIGNED3  = 0b0000'0000'0000'0100,
+    RENDER_LAYER_UNASSIGNED4  = 0b0000'0000'0000'1000,
+    RENDER_LAYER_UNASSIGNED5  = 0b0000'0000'0001'0000,
+    RENDER_LAYER_UNASSIGNED6  = 0b0000'0000'0010'0000,
+    RENDER_LAYER_UNASSIGNED7  = 0b0000'0000'0100'0000,
+    RENDER_LAYER_UNASSIGNED8  = 0b0000'0000'1000'0000,
+    RENDER_LAYER_UNASSIGNED9  = 0b0000'0001'0000'0000,
+    RENDER_LAYER_UNASSIGNED10 = 0b0000'0010'0000'0000,
+    RENDER_LAYER_UNASSIGNED11 = 0b0000'0100'0000'0000,
+    RENDER_LAYER_UNASSIGNED12 = 0b0000'1000'0000'0000,
+    RENDER_LAYER_UNASSIGNED13 = 0b0001'0000'0000'0000,
+    RENDER_LAYER_UNASSIGNED14 = 0b0010'0000'0000'0000,
+    RENDER_LAYER_UNASSIGNED15 = 0b0100'0000'0000'0000,
+    RENDER_LAYER_UNASSIGNED16 = 0b1000'0000'0000'0000,
 };
 
 
@@ -148,12 +161,9 @@ struct Entity_metadata
 /// Config for a render object (to be used as ECS component).
 struct alignas(k_mat4_alignment) Render_object_config
 {
-    Render_layer render_layer{ 0 };
+    bool is_visible{ true };
+    Render_layer render_layer{ RENDER_LAYER_DEFAULT };
     std::string model_name;
-
-#if _WIN64
-    uint32_t pad0[4];  // For necessary padding for alignment of `transform`.
-#endif // _WIN64
 
     mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
 
@@ -174,6 +184,7 @@ struct alignas(k_mat4_alignment) Render_object_config
 
 
     NLOHMANN_DEFINE_TYPE_INTRUSIVE_WITH_DEFAULT(Render_object_config,
+                                                is_visible,
                                                 render_layer,
                                                 model_name,
                                                 transform,

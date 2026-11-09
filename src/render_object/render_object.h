@@ -15,7 +15,7 @@ struct Render_object
 {
     bool is_stale{ false };
 
-    bool padding0;
+    bool is_visible{ true };
 
     Render_layer layer{ RENDER_LAYER_DEFAULT };
 

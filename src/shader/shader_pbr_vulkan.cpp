@@ -437,7 +437,8 @@ void Shader_pbr::allocate_per_instance_data_slots(
 void Shader_pbr::draw(std::vector<Render_object> const& render_object_list,
                       std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
                       void* render_view_param,
-                      Lighting_mode const lighting_mode)
+                      Lighting_mode const lighting_mode,
+                      Render_layer const render_layer_mask)
 {
     auto& p{ *m_pimpl };
     if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
@@ -505,6 +506,9 @@ void Shader_pbr::draw(std::vector<Render_object> const& render_object_list,
         {
             auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
             auto const& rend_obj{ render_object_list[modmesh_ref.render_obj_idx] };
+
+            if (!rend_obj.is_visible || (rend_obj.layer & render_layer_mask) == 0)
+                continue;
 
             bool is_static_model{ p.render_model_data_collection.is_static_model_idx(
                 rend_obj.render_model_idx) };
