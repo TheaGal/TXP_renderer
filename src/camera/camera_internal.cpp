@@ -10,6 +10,7 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 
@@ -24,6 +25,8 @@ Camera_internal::Camera_internal()
 
 void Camera_internal::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
+    ZoneScoped;
+
     size_t prev_size{ m_camera_states.size() };
 
     m_camera_states.resize(rend_view_sizes.size());
@@ -69,6 +72,8 @@ size_t Camera_internal::get_controlling_camera() const
 
 void Camera_internal::update(float_t delta_time)
 {
+    ZoneScoped;
+
     if (m_controlling_camera_state_idx >= m_camera_states.size())
     {
         m_controlling_camera_state_idx = k_controlling_camera_state_none;  // In case dangling, reset.
@@ -120,6 +125,8 @@ void Camera_internal::update(float_t delta_time)
 
 void Camera_internal::calc_cam_matrices()
 {
+    ZoneScoped;
+
     std::vector<Cam_matrix> cam_matrices;
     cam_matrices.reserve(m_camera_states.size());
 

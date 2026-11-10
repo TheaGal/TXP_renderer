@@ -25,6 +25,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <vector>
 
 
@@ -737,6 +738,8 @@ void TXP::component_internal::Model_animator::calc_anim_pose(
     bool root_motion_zeroing,
     std::vector<mat4s>& out_joint_matrices) const
 {
+    ZoneScoped;
+
     float_t time;
     switch (profile)
     {

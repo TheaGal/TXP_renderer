@@ -44,8 +44,18 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 16)
 # endif()
 
 # Profiling.
-if(ENABLE_PROFILING)
-    message(FATAL_ERROR "@TODO: Implement profiling libraries here!")
+if (NOT TARGET Tracy::TracyClient)
+    if(ENABLE_PROFILING)
+        set(TRACY_ENABLE ON CACHE BOOL "" FORCE)          # Enables Tracy profiler
+        set(TRACY_STATIC OFF CACHE BOOL "" FORCE)         # Compiles as shared lib
+        set(TRACY_ONLY_LOCALHOST ON CACHE BOOL "" FORCE)  # Only allows localhost server
+    endif()
+
+    add_subdirectory(third_party/tracy)
+
+    set(PROFILING_LINK_LIBS
+        Tracy::TracyClient
+    )
 endif()
 
 # Dependencies.
@@ -372,6 +382,7 @@ target_link_libraries(${PROJECT_NAME}
     stduuid
     nlohmann_json::nlohmann_json
     ${PLAT_SPECIFIC_LINK_LIBS}
+    ${PROFILING_LINK_LIBS}
 )
 
 

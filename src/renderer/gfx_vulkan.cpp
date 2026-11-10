@@ -22,6 +22,7 @@
 #include <cassert>
 #include <stdexcept>
 #include <string>
+#include <tracy/Tracy.hpp>
 
 
 // class Graphics
@@ -30,6 +31,8 @@ TXP::Graphics::Graphics(std::string const& title,
                         Information_hook_struct info_hook_struct)
     : m_pimpl(std::make_unique<Impl>(title, settings, info_hook_struct))
 {
+    ZoneScoped;
+
     BT::Timer timer;
     timer.start_timer();
 
@@ -133,7 +136,10 @@ void TXP::Graphics::load_model_assets(std::string const& afa_asset_dir,
                                       std::vector<Model_asset_create_info>&& model_assets,
                                       Render_model_data_collection& render_model_data_collection,
                                       Material_organizer& material_organizer)
-{   // Load models.
+{
+    ZoneScoped;
+
+    // Load models.
     BT::Timer my_timer;
     my_timer.start_timer();
 
@@ -202,17 +208,23 @@ void TXP::Graphics::build_imgui_contents(Camera_internal& camera,
                                          float_t delta_time,
                                          std::vector<Render_view_size>& out_rend_view_sizes)
 {
+    ZoneScoped;
+
     m_pimpl->build_imgui_contents(camera, delta_time, out_rend_view_sizes);
 }
 
 bool TXP::Graphics::check_render_view_sizes_changed(
     std::vector<Render_view_size> const& rend_view_sizes) const
 {
+    ZoneScoped;
+
     return m_pimpl->check_render_view_sizes_changed(rend_view_sizes);
 }
 
 void TXP::Graphics::set_render_view_sizes(std::vector<Render_view_size> const& rend_view_sizes)
 {
+    ZoneScoped;
+
     m_pimpl->set_render_view_sizes(rend_view_sizes);
 }
 
@@ -362,11 +374,15 @@ void TXP::Graphics::render_imgui()
 
 bool TXP::Graphics::start_next_frame()
 {
+    ZoneScoped;
+
     return m_pimpl->start_next_frame();
 }
 
 void TXP::Graphics::present_frame_to_screen()
 {
+    ZoneScoped;
+
     m_pimpl->present_frame_to_screen();
 }
 

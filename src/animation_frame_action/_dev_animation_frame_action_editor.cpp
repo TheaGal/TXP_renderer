@@ -14,10 +14,13 @@
 
 #include <cassert>
 #include <optional>
+#include <tracy/Tracy.hpp>
 
 
 void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
 {
+    ZoneScoped;
+
     auto& renderer{ BT::service_finder::find_service<Renderer>() };
     auto view{ reg.view<component::_Dev_animation_frame_action_editor_agent>() };
     auto& eds{ anim_frame_action::s_editor_state };

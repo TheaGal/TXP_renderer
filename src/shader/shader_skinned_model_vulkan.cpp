@@ -1,3 +1,4 @@
+#include <tracy/Tracy.hpp>
 #if TXP_GFX_BACKEND_VULKAN
 
 // clang-format off
@@ -223,6 +224,8 @@ void Shader_skinned_model::build_combined_deformed_vertex_set_descriptor_set()
 
 void Shader_skinned_model::compute(void* deformed_model_ptr)
 {
+    ZoneScoped;
+
     auto& p{ *m_pimpl };
 
     auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };

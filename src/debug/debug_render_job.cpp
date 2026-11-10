@@ -11,6 +11,7 @@
 
 #include <set>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 
@@ -301,6 +302,8 @@ void debug::emplace_debug_line_based_capsule(vec3 const origin_a,
 
 void debug::tick_debug_render_jobs(float_t delta_time)
 {
+    ZoneScoped;
+
     auto dbg_line_info_coll{ g_dbg_line_info_coll.scoped_lock() };
 
     // Check over non-expired indexes to see if they are expired.

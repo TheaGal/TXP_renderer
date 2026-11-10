@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <stdexcept>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -296,6 +297,8 @@ void UI_state::save_persistent_canvas_to_disk(std::string const& canvas_name) co
 
 void UI_state::tick()
 {
+    ZoneScoped;
+
     for (auto&& [action_type, canvas_name] : m_staged_actions)
     {
         UI_canvas_state* canvas_state_ptr{ nullptr };

@@ -50,6 +50,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -213,6 +214,8 @@ namespace TXP
 
 void Graphics::Impl::init_glfw_no_api()
 {
+    ZoneScoped;
+
     auto result = glfwInit();
     assert(result == GLFW_TRUE);
 
@@ -221,6 +224,8 @@ void Graphics::Impl::init_glfw_no_api()
 
 void Graphics::Impl::init_window_props(bool pre_creation)
 {
+    ZoneScoped;
+
     if (pre_creation && settings.is_fullscreen)
     {
         throw std::runtime_error("Window must not be fullscreen on default settings.");
@@ -315,6 +320,8 @@ void Graphics::Impl::init_window_props(bool pre_creation)
 
 void Graphics::Impl::init_window()
 {
+    ZoneScoped;
+
     int32_t window_dims[2]{
         settings.windowed_width,
         settings.windowed_height,
@@ -412,7 +419,10 @@ VkSemaphore Graphics::Impl::get_current_swapchain_submit_semaphore()
 
 
 void Graphics::Impl::init_vulkan_instance()
-{   // Build vulkan instance (targeting Vulkan 1.3).
+{
+    ZoneScoped;
+
+    // Build vulkan instance (targeting Vulkan 1.3).
     vkb::InstanceBuilder builder;
     vkb::Result<vkb::Instance> instance_build_result{
         builder
@@ -438,6 +448,8 @@ void Graphics::Impl::init_vulkan_instance()
 
 void Graphics::Impl::init_vulkan_window_surface()
 {
+    ZoneScoped;
+
     VkResult err = glfwCreateWindowSurface(gfx.instance, window, nullptr, &gfx.surface);
     if (err)
     {
@@ -446,7 +458,10 @@ void Graphics::Impl::init_vulkan_window_surface()
 }
 
 void Graphics::Impl::init_vulkan_build_device()
-{   // Vulkan 1.3 features.
+{
+    ZoneScoped;
+
+    // Vulkan 1.3 features.
     VkPhysicalDeviceVulkan13Features vulkan13_features{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES,
         .pNext = nullptr,
@@ -622,7 +637,10 @@ void Graphics::Impl::init_vulkan_build_device()
 }
 
 void Graphics::Impl::init_vulkan_create_memory_allocator()
-{   // Initialize VMA.
+{
+    ZoneScoped;
+
+    // Initialize VMA.
     VmaAllocatorCreateInfo vma_allocator_info{
         .flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,  // To access GPU pointers.
         .physicalDevice = gfx.physical_device,
@@ -633,7 +651,10 @@ void Graphics::Impl::init_vulkan_create_memory_allocator()
 }
 
 void Graphics::Impl::select_vulkan_window_surface_format()
-{   // Check for WSI support.
+{
+    ZoneScoped;
+
+    // Check for WSI support.
     // VkBool32 res;
     // vkGetPhysicalDeviceSurfaceSupportKHR(gfx.physical_device, gfx.graphics_queue_family_idx, gfx.surface, &res);
     // if (res != VK_TRUE)
@@ -686,7 +707,10 @@ void Graphics::Impl::select_vulkan_window_surface_format()
 }
 
 void Graphics::Impl::init_vulkan_build_swapchain()
-{   // Get framebuffer size (if different from window size).
+{
+    ZoneScoped;
+
+    // Get framebuffer size (if different from window size).
     int fb_width, fb_height;
     glfwGetFramebufferSize(window, &fb_width, &fb_height);
 
@@ -762,6 +786,8 @@ void Graphics::Impl::init_vulkan_build_swapchain()
 
 void Graphics::Impl::init_vulkan_retrieve_queues()
 {
+    ZoneScoped;
+
     gfx.graphics_queue = gfx.vkb_device.get_queue(vkb::QueueType::graphics).value();
     gfx.graphics_queue_family_idx = gfx.vkb_device.get_queue_index(vkb::QueueType::graphics).value();
 
@@ -785,6 +811,8 @@ void Graphics::Impl::init_vulkan_retrieve_queues()
 
 void Graphics::Impl::init_vulkan_create_cmd_structures()
 {
+    ZoneScoped;
+
     VkResult err;
 
     VkCommandPoolCreateInfo cmd_pool_info{
@@ -810,6 +838,8 @@ void Graphics::Impl::init_vulkan_create_cmd_structures()
 
 void Graphics::Impl::init_vulkan_create_sync_structures()
 {
+    ZoneScoped;
+
     VkResult err;
 
     // Create fence to sync when gpu has finished rendering the frame.
@@ -838,6 +868,8 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
 
 void Graphics::Impl::init_vulkan_for_imgui()
 {
+    ZoneScoped;
+
     {   // Create descriptor pool.
         VkDescriptorPoolSize pool_sizes[]{
             { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
@@ -929,6 +961,8 @@ void Graphics::Impl::init_vulkan_for_imgui()
 
 void Graphics::Impl::init_vulkan_render_graph_resources()
 {
+    ZoneScoped;
+
     Vk_Image::Allocated_image::set_vk_props(gfx.physical_device, gfx.device, gfx.allocator);
 
     std::vector<Render_view_size> const default_rend_view_sizes{
@@ -977,6 +1011,8 @@ void Graphics::Impl::init_vulkan_render_graph_resources()
 
 void Graphics::Impl::init_vulkan_create_descriptors()
 {
+    ZoneScoped;
+
     // @TODO: @THEA: abstract this into the reflection-based version.
 
     std::vector<Descriptor_allocator::Pool_size_ratio> sizes{
@@ -991,6 +1027,8 @@ void Graphics::Impl::init_vulkan_create_descriptors()
 
 void Graphics::Impl::rebuild_vulkan_swapchain()
 {
+    ZoneScoped;
+
     wait_until_gpu_idle();
     init_vulkan_build_swapchain();
     rebuild_swapchain_flag = false;
@@ -998,6 +1036,8 @@ void Graphics::Impl::rebuild_vulkan_swapchain()
 
 void Graphics::Impl::destroy_vulkan()
 {
+    ZoneScoped;
+
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

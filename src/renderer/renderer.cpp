@@ -36,6 +36,7 @@
 #include <memory>
 #include <optional>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 
@@ -158,6 +159,8 @@ struct Renderer::Impl
 
     void process_render_object_changes()
     {
+        ZoneScoped;
+
         // @TODO: process this once per tick (e.g. 1/60th second) (i.e. at the same rate as the
         //        simulation loop)
 
@@ -478,6 +481,8 @@ Renderer_settings Renderer::get_current_settings() const
 // Render loop.
 void Renderer::build()
 {
+    ZoneScoped;
+
     auto& m{ *m_pimpl };
 
     // Setup renderer.
@@ -608,6 +613,8 @@ void Renderer::poll_input_events()
 
 void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 {
+    ZoneScoped;
+
     auto& m{ *m_pimpl };
     auto& g{ *m.graphics };
 
@@ -882,6 +889,8 @@ void Renderer::add_model(std::string const& model_name,
 
 void Renderer::advance_afa_sim_timer(float_t delta_time)
 {
+    ZoneScoped;
+
     component_internal::Model_animator::advance_sim_timer(delta_time);
 }
 
