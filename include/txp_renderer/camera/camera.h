@@ -9,7 +9,7 @@ namespace TXP
 {
 
 /// Projection and view matrices for a camera.
-struct Cam_matrix
+struct alignas(k_mat4_alignment) Cam_matrix
 {
     mat4 projection;
     mat4 view;
@@ -17,6 +17,7 @@ struct Cam_matrix
 };
 static_assert(offsetof(Cam_matrix, projection) % k_mat4_alignment == 0);
 static_assert(offsetof(Cam_matrix, view) % k_mat4_alignment == 0);
+static_assert(sizeof(Cam_matrix) % k_mat4_alignment == 0);
 
 /// Externally-facing camera class.
 class Camera

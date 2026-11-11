@@ -127,8 +127,8 @@ struct Shader_clouds::Impl
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Create volume texture.
         constexpr VkExtent3D k_cloud_volume_extent{ 256, 32, 256 };
-        uint8_t cloud_volume_data[k_cloud_volume_extent.width][k_cloud_volume_extent.height]
-                                 [k_cloud_volume_extent.depth];
+        static uint8_t cloud_volume_data[k_cloud_volume_extent.width][k_cloud_volume_extent.height]
+                                        [k_cloud_volume_extent.depth];  // marked static to prevent stack overflow
         for (size_t x = 0; x < k_cloud_volume_extent.width; x++)
             for (size_t y = 0; y < k_cloud_volume_extent.height; y++)
                 for (size_t z = 0; z < k_cloud_volume_extent.depth; z++)
