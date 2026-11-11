@@ -22,6 +22,7 @@
 #include <memory>
 #include <stdexcept>
 #include <vector>
+#include <tracy/TracyVulkan.hpp>
 
 
 namespace TXP
@@ -409,7 +410,10 @@ void Shader_clouds::compute(Camera_internal const& camera, void* render_view_par
         p.build_descriptor();
     }
 
-    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
+    auto& gqcb{ p.g.get_current_frame().graphics_queue_command_buffer };
+    auto cmd{ gqcb.get() };
+
+    TracyVkZone(gqcb.get_tracy(), cmd, "Compute Shader_clouds");
 
     // Ready needed images for compute shader.
     std::vector<std::pair<Vk_Image::Image*, VkImageLayout>> image_transitions;

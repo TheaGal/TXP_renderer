@@ -833,6 +833,13 @@ void Graphics::Impl::init_vulkan_create_cmd_structures()
         frames[i].graphics_queue_command_buffer.allocate(gfx.device,
                                                          frames[i].command_pool,
                                                          true);
+
+    #if TRACY_ENABLE
+        // Create tracy vulkan context.
+        frames[i].graphics_queue_command_buffer.tracy_vk_ctx_init(gfx.physical_device,
+                                                                  gfx.device,
+                                                                  gfx.graphics_queue);
+    #endif // TRACY_ENABLE
     }
 }
 
@@ -1097,6 +1104,10 @@ void Graphics::Impl::destroy_vulkan()
     for (auto& frame : frames)
     {
         vkDestroyCommandPool(gfx.device, frame.command_pool, nullptr);
+
+    #if TRACY_ENABLE
+        frame.graphics_queue_command_buffer.tracy_vk_ctx_destroy();
+    #endif // TRACY_ENABLE
     }
 
     vmaDestroyAllocator(gfx.allocator);
@@ -2182,7 +2193,10 @@ void Graphics::Impl::blit_image(Vk_Image::Image& from_image,
 
 void Graphics::Impl::render_imgui()
 {
-    auto cmd{ get_current_frame().graphics_queue_command_buffer.get() };
+    auto& gqcb{ get_current_frame().graphics_queue_command_buffer };
+    auto cmd{ gqcb.get() };
+
+    TracyVkZone(gqcb.get_tracy(), cmd, "Draw ImGui");
 
     Vk_Image::Image::transition_to(
         cmd,
@@ -2222,6 +2236,7 @@ void Graphics::Impl::present_frame_to_screen()
         { { &get_current_swapchain_image(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
 
     // End recording command buffers.
+    TracyVkCollect(current_frame.graphics_queue_command_buffer.get_tracy(), cmd);
     current_frame.graphics_queue_command_buffer.finish();
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

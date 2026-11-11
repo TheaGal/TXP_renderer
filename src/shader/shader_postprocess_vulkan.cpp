@@ -275,7 +275,10 @@ void Shader_postprocess::compute(bool do_full_postprocess, void* render_view_par
         p.build_descriptors();
     }
 
-    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
+    auto& gqcb{ p.g.get_current_frame().graphics_queue_command_buffer };
+    auto cmd{ gqcb.get() };
+
+    TracyVkZone(gqcb.get_tracy(), cmd, "Compute Shader_postprocess");
 
     // Ready needed images for compute shader.
     auto const& prv_data{ p.shader_pipeline.per_render_view_data_map.at(&render_view) };

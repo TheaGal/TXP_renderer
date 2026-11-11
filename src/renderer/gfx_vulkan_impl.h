@@ -30,6 +30,7 @@
 #include <functional>
 #include <stdexcept>
 #include <vector>
+#include <tracy/TracyVulkan.hpp>
 
 
 namespace TXP
@@ -152,6 +153,19 @@ struct Graphics::Impl
                 throw std::runtime_error("Vulkan command pool allocation failed for frame #");
         }
 
+    #if TRACY_ENABLE
+        void tracy_vk_ctx_init(VkPhysicalDevice physical_device, VkDevice device, VkQueue queue)
+        {
+            // Create tracy vulkan context.
+            m_cmd_tracyvk = TracyVkContext(physical_device, device, queue, m_cmd);
+        }
+
+        void tracy_vk_ctx_destroy()
+        {
+            TracyVkDestroy(m_cmd_tracyvk);
+        }
+    #endif // TRACY_ENABLE
+
         /// Resets command buffer, causing initialization for the next `.get()` call.
         void reset()
         {
@@ -197,6 +211,13 @@ struct Graphics::Impl
             return m_cmd;
         }
 
+    #if TRACY_ENABLE
+        TracyVkCtx get_tracy() const
+        {
+            return m_cmd_tracyvk;
+        }
+    #endif // TRACY_ENABLE
+
         /// Ends command buffer recording.
         void finish()
         {
@@ -218,6 +239,9 @@ struct Graphics::Impl
         static constexpr int32_t k_state_finished{ 1 };
         int32_t m_state{ k_state_undefined };
         VkCommandBuffer m_cmd;
+    #if TRACY_ENABLE
+        TracyVkCtx m_cmd_tracyvk{ nullptr };
+    #endif // TRACY_ENABLE
     };
 
 

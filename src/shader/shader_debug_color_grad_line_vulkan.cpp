@@ -339,6 +339,10 @@ void Shader_debug_color_grad_line::draw(
     auto& current_frame{ p.g.get_current_frame() };
     auto cmd{ current_frame.graphics_queue_command_buffer.get() };
 
+    TracyVkZone(current_frame.graphics_queue_command_buffer.get_tracy(),
+                cmd,
+                "Draw Shader_debug_color_grad_line");
+
     // Render.
     VkViewport viewport{ .width = static_cast<float_t>(render_view.color_image.get_extent().width),
                          .height = static_cast<float_t>(render_view.color_image.get_extent().height),
