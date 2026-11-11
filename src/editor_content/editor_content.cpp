@@ -23,6 +23,7 @@
 #include "txp_renderer/types.h"
 #include "ui_editor_content.h"
 
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <functional>
@@ -677,32 +678,50 @@ void imgui_performance_timers(Information_hook_struct const& info_hook_struct)
             ImGui::PopID();
         }
 
-        ImGui::SeparatorText("Burden Metrics (amortized over 100 frames)");
+        if (info_hook_struct.perf_frame_acquire_time >= 0)
+        {
+            ImGui::SeparatorText("Burden Metrics (amortized over 128 frames)");
 
-        float_t const render_time_minus_frame_acquire_time_ms{
-            (latest_perf_time_render_loop_sample - info_hook_struct.perf_frame_acquire_time) * 1000
-        };
+            constexpr uint32_t k_num_amortize_frames{ 128 };
+            static uint32_t s_cur_sample_frame{ 0 };
 
-        static float_t s_avg_rtmfat_ms{ render_time_minus_frame_acquire_time_ms };
-        s_avg_rtmfat_ms = glm_lerp(s_avg_rtmfat_ms, render_time_minus_frame_acquire_time_ms, 0.01);
+            float_t const render_time_minus_frame_acquire_time_ms{
+                (latest_perf_time_render_loop_sample - info_hook_struct.perf_frame_acquire_time) *
+                1000
+            };
 
-        float_t const frame_acquire_time_ms{ info_hook_struct.perf_frame_acquire_time * 1000 };
+            static std::array<float_t, k_num_amortize_frames> s_rtmfat_ms_samples{};
+            s_rtmfat_ms_samples[s_cur_sample_frame] = render_time_minus_frame_acquire_time_ms;
 
-        static float_t s_avg_fat_ms{ frame_acquire_time_ms };
-        s_avg_fat_ms = glm_lerp(s_avg_fat_ms, frame_acquire_time_ms, 0.01);
+            float_t avg_rtmfat_ms{ 0 };
+            for (float_t const sample : s_rtmfat_ms_samples)
+                avg_rtmfat_ms += (sample / k_num_amortize_frames);
 
-        ImGui::Text(
-            "No wait FPS        : %4.0f (%.1fms)\n"
-            "Frame acquire time : %4.1fms\n"
-            "Burden standard A  : %3.0f%% of 120 fps\n"
-            "Burden standard B  : %3.0f%% of  60 fps\n"
-            "Burden standard C  : %3.0f%% of  30 fps",
-            1000.0 / s_avg_rtmfat_ms,
-            s_avg_rtmfat_ms,
-            s_avg_fat_ms,
-            s_avg_rtmfat_ms / (1000.0 / 120.0) * 100,
-            s_avg_rtmfat_ms / (1000.0 / 60.0) * 100,
-            s_avg_rtmfat_ms / (1000.0 / 30.0) * 100);
+            float_t const frame_acquire_time_ms{ info_hook_struct.perf_frame_acquire_time * 1000 };
+
+            static std::array<float_t, k_num_amortize_frames> s_fat_ms_samples{};
+            s_fat_ms_samples[s_cur_sample_frame] = frame_acquire_time_ms;
+
+            float_t avg_fat_ms{ 0 };
+            for (float_t const sample : s_fat_ms_samples)
+                avg_fat_ms += (sample / k_num_amortize_frames);
+
+            ImGui::Text(
+                "No wait FPS        : %4.0f (%.1fms)\n"
+                "Frame acquire time : %4.1fms\n"
+                "Burden standard A  : %3.0f%% of 120 fps\n"
+                "Burden standard B  : %3.0f%% of  60 fps\n"
+                "Burden standard C  : %3.0f%% of  30 fps",
+                1000.0 / avg_rtmfat_ms,
+                avg_rtmfat_ms,
+                avg_fat_ms,
+                avg_rtmfat_ms / (1000.0 / 120.0) * 100,
+                avg_rtmfat_ms / (1000.0 / 60.0) * 100,
+                avg_rtmfat_ms / (1000.0 / 30.0) * 100);
+
+            // To next frame sample.
+            s_cur_sample_frame = ((s_cur_sample_frame + 1) & (k_num_amortize_frames - 1));
+        }
     }
     ImGui::End();
 }

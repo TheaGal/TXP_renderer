@@ -152,7 +152,7 @@ struct Renderer::Impl
     Performance_time_map_t perf_time_map;
 
     /// Debug stats for time for waiting for next frame to acquire.
-    float_t perf_frame_acquire_time;
+    float_t perf_frame_acquire_time{ -1 };
 
 
     // ---- Functions ------------------------------------------------------------------------------

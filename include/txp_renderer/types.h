@@ -165,11 +165,7 @@ struct alignas(k_mat4_alignment) Render_object_config
     Render_layer render_layer{ RENDER_LAYER_DEFAULT };
     std::string model_name;
 
-#if _WIN64
-    uint32_t pad0;
-#endif // _WIN64
-
-    mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
+    alignas(k_mat4_alignment) mat4s transform = mat4s{ GLM_MAT4_IDENTITY_INIT };
 
     // ^^ Required ^^ / vv Optional vv
 
