@@ -524,7 +524,7 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
     //           the animator.
 
     assert(profile == SIMULATION_TIMER_PROFILE);
-    BT::date_deadline(2026, 11, 10);  // @REFACTOR: make this explicitly for only simulation timer profile!!!
+    BT::date_deadline(2026, 11, 11);  // @REFACTOR: make this explicitly for only simulation timer profile!!!
 
     bool const is_paused{ m_is_paused.load() };
 
