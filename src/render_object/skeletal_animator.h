@@ -100,10 +100,9 @@ public:
     /// Caches a transform for simulation update to use.
     void cache_simulation_transform(mat4 const simulation_transform);
 
-    /// Updates the animator's state at its current time.
-    /// @NOTE: while paused, `update()` may be used to update the AFA data. Also, `delta_time` will
-    ///        do nothing while paused.
-    void update_state(Animator_timer_profile profile);
+    /// Updates the animator's simulation state at its current time.
+    /// @NOTE: while paused, this func may be used to update the AFA data.
+    void update_state();
 
     /// Progresses time in animator on the profile.
     /// There are two animator timers, so you need to give which timer to update.

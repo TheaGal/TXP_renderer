@@ -212,7 +212,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     eds.working_model_animator->cache_simulation_transform(mocked_sim_transform);
                 }
 
-                eds.working_model_animator->update_state(SIMULATION_TIMER_PROFILE);  // Forces data update.
+                eds.working_model_animator->update_state();  // Forces data update.
 
                 eds.prev_anim_current_frame = eds.anim_current_frame;
 

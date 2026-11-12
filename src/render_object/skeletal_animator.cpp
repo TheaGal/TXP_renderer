@@ -515,7 +515,7 @@ void TXP::component_internal::Model_animator::cache_simulation_transform(
     glm_mat4_copy(const_cast<vec4*>(simulation_transform), m_cached_simulation_transform);
 }
 
-void TXP::component_internal::Model_animator::update_state(Animator_timer_profile profile)
+void TXP::component_internal::Model_animator::update_state()
 {   // @TODO: There needs to be some kind of time syncing between timers. Since the creation of
     //        setting triggers and variables to switch states, there will be issues when changing
     //        states.
@@ -523,30 +523,16 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
     //           synced up enough? Only the simulation loop is going to be changing states inside
     //           the animator.
 
-    assert(profile == SIMULATION_TIMER_PROFILE);
-    BT::date_deadline(2026, 11, 11);  // @REFACTOR: make this explicitly for only simulation timer profile!!!
-
     bool const is_paused{ m_is_paused.load() };
 
-    animator_frame_t* frame_handle{ nullptr };
-    animator_time_t* time_handle{ nullptr };
-    switch (profile)
-    {
-    case SIMULATION_TIMER_PROFILE:
-        frame_handle = &get_profile_frame_handle(profile);
-        break;
-
-    case RENDERER_TIMER_PROFILE:
-        time_handle = &get_profile_time_handle(profile);
-        break;
-    }
+    animator_frame_t& frame_handle{ get_profile_frame_handle(SIMULATION_TIMER_PROFILE) };
 
     auto const [anim_state_idx, anim_loop]{ get_animator_state_info_from_current_state_set() };
     auto const& anim_state{ m_animator_states[anim_state_idx] };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process anim frame action controls.
-    if (profile == SIMULATION_TIMER_PROFILE && m_anim_frame_action_controls != nullptr)
+    if (m_anim_frame_action_controls != nullptr)
     {
         // Process anim frame action runtime.
         auto current_action_timeline_idx{
@@ -564,12 +550,13 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
                                             ? anim_state.animation_idx
                                             : anim_state.blend_anims.front().animation_idx]
         };
-        auto frame_idx{ current_anim_for_state.normalize_frame_idx(frame_handle->load(),
+        auto frame_idx{ current_anim_for_state.normalize_frame_idx(frame_handle.load(),
                                                                    anim_loop) };
         auto num_frames{ current_anim_for_state.get_num_frames() };
 
         // Get prev anim frame idx.
-        animator_frame_t& prev_frame_handle{ get_profile_prev_frame_handle(profile) };
+        animator_frame_t& prev_frame_handle{ get_profile_prev_frame_handle(
+            SIMULATION_TIMER_PROFILE) };
         uint32_t prev_frame_idx{ prev_frame_handle };
 
         // Test to make sure that frames only advance one at a time.
@@ -613,7 +600,7 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // Process animator state transitions.
-    if (!is_paused && profile == SIMULATION_TIMER_PROFILE)
+    if (!is_paused)
     {
         bool performed_state_transition{ false };
 
@@ -644,9 +631,9 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
                                                 : anim_state.blend_anims.front().animation_idx]
             };
 
-            bool is_at_last_frame{ model_anim.normalize_frame_idx(frame_handle->load(),
-                                                                  anim_loop) ==
-                                   model_anim.get_num_frames() - 1 };
+            bool const is_at_last_frame{ model_anim.normalize_frame_idx(frame_handle.load(),
+                                                                        anim_loop) ==
+                                         model_anim.get_num_frames() - 1 };
             if (is_at_last_frame)
             {
                 auto success = change_state_set_state_idx_goto_next(false);
@@ -678,7 +665,7 @@ void TXP::component_internal::Model_animator::update_state(Animator_timer_profil
             //        processed), then this `update_state()` call was for processing the event
             //        queues and another `update_state()` is needed for the transitioned new state's
             //        first frame.
-            update_state(profile);
+            update_state();
         }
     }
 }

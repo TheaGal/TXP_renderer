@@ -41,9 +41,9 @@ void Skeletal_animator::cache_simulation_transform(mat4 const simulation_transfo
     m_animator->cache_simulation_transform(simulation_transform);
 }
 
-void Skeletal_animator::update_state(Animator_timer_profile profile)
+void Skeletal_animator::update_state()
 {
-    m_animator->update_state(profile);
+    m_animator->update_state();
 }
 
 void Skeletal_animator::progress_time(Animator_timer_profile profile, float_t delta_time)

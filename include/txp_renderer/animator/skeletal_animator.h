@@ -47,7 +47,7 @@ public:
     void cache_simulation_transform(mat4 const simulation_transform);
 
     /// Updates the animator's state at its current time.
-    void update_state(Animator_timer_profile profile);
+    void update_state();
 
     /// Progresses time in animator on the profile.
     /// There are two animator timers, so you need to give which timer to update.
