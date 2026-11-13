@@ -1677,7 +1677,7 @@ void Graphics::Impl::poll_input_events()
         init_window_props(false);
     }
 
-    glfwPollEvents();
+    glfwPollEvents();  // @NOTE: @THEA: this can crash from discord screen share if the width of the window is negative!!!
 }
 
 void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
