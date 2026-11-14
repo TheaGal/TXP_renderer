@@ -29,6 +29,20 @@ constexpr uint64_t k_mat4_alignment{ 16 };
 #endif
 
 
+/// Simple math for keeping angles at a certain range.
+inline void btglm_angle_normalize(float_t& in_out_angle,
+                                  float_t const range_min,
+                                  float_t const range_max)
+{
+    assert(std::abs(range_max - (range_min + glm_rad(360.0f))) < 1e-6);
+
+    while (in_out_angle <= range_min)
+        in_out_angle += glm_rad(360.0f);
+    while (in_out_angle > range_max)
+        in_out_angle -= glm_rad(360.0f);
+}
+
+
 /// Whether to use double or single precision for real type.
 //  @NOTE: There's an issue where `using rvec3 = real_t[3];` causes errors. This is due to the type
 //         alias being something not quite the same type. It shows up as `AKA double[3]` in clang.

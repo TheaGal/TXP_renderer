@@ -410,10 +410,7 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
     float_t look_delta_y{ look_delta_raw[1] * m_orbit_sensitivity_y };
 
     m_orbits[0] -= look_delta_x;
-    while (m_orbits[0] >= glm_rad(360.0f))
-        m_orbits[0] -= glm_rad(360.0f);
-    while (m_orbits[0] < 0.0f)
-        m_orbits[0] += glm_rad(360.0f);
+    btglm_angle_normalize(m_orbits[0], glm_rad(0.0f), glm_rad(360.0f));
 
     m_orbits[1] += look_delta_y;
     m_orbits[1] = glm_clamp(m_orbits[1],
