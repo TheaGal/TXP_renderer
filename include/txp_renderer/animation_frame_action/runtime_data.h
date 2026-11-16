@@ -39,6 +39,7 @@ enum Controllable_data_label : std::uint32_t
         X__bool(can_do_turnaround_anim,                false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(use_pos_of_interest_root_motion_multi, false) \
         X__bool(mvt_input_enabled,                     false)  /* @TODO: rename this to "use_input_based_mvt" since it disables the root animation based movement in favor for input based movement */    \
+        X__bool(check_for_wall_jump,                   false) \
         X__bool(can_cancel_attack_w_parry,             false)  /* @THEA: @UNUSED: is this ever gonna be used??? */    \
         X__bool(blade_has_mizunokata,                  false) \
         X__bool(blade_has_honoonokata,                 false) \
