@@ -58,6 +58,7 @@ enum Controllable_data_label : std::uint32_t
         X__bool(hitcapsule_group_9_enabled,            true)  \
         /* Rising edge events */                              \
         X_reeve(jump_up)                                      \
+        X_reeve(do_crouch_stance_toggle)                      \
         X_reeve(inherit_prev_velocity)                        \
         X_reeve(cpu_aware_chg_suspicious_to_unaware)          \
         X_reeve(calc_pos_of_interest_root_motion_multi)       \
