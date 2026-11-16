@@ -1633,7 +1633,8 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter,
                                 region.end_frame -= lowest_start_frame;
                             }
                         }
-                        else if (on_v_press && cur_ctrl_pressed)
+                        else if (on_v_press && cur_ctrl_pressed &&
+                                 !s_reg_sel.copied_regions.empty())
                         {   // Paste selected regions.
                             auto [hover_row_idx, hover_start_frame] =
                                 calc_mouse_pos_hovering_cell_fn();
