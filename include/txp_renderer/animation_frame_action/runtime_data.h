@@ -69,7 +69,8 @@ enum Controllable_data_label : std::uint32_t
         X_reeve(request_new_attack_early)                     \
         X_reeve(receive_atk_as_hurt)                          \
         X_reeve(receive_atk_as_guard)                         \
-        X_reeve(receive_atk_as_parry)
+        X_reeve(receive_atk_as_parry)                         \
+        X_reeve(receive_atk_as_mikiri)
 
     INTERNAL__CTRL_DATA_LABEL_MARKER_BEGIN_FLOAT = 0,
 
