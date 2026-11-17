@@ -210,6 +210,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_render_job.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/light/light.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/ui/ui_state.h
