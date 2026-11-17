@@ -244,6 +244,16 @@ void TXP::Graphics::set_directional_light(vec3 direction, vec3 color, float_t in
     m_pimpl->set_directional_light(direction, color, intensity);
 }
 
+void TXP::Graphics::clear_point_light_list()
+{
+    m_pimpl->clear_point_light_list();
+}
+
+void TXP::Graphics::add_point_light(vec3 origin, vec3 color, float_t intensity)
+{
+    m_pimpl->add_point_light(origin, color, intensity);
+}
+
 void* TXP::Graphics::get_render_view(size_t rend_view_idx)
 {
     return m_pimpl->get_render_view(rend_view_idx);

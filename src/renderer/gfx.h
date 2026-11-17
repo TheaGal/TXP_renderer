@@ -197,8 +197,14 @@ public:
                                 mat4 const camera_view,
                                 vec3 const camera_position);
 
-    /// Sets GPU directional light properties for a render view.
+    /// Sets GPU directional light properties.
     void set_directional_light(vec3 direction, vec3 color, float_t intensity);
+
+    /// Clears the GPU point light list.
+    void clear_point_light_list();
+
+    /// Adds a GPU point light.
+    void add_point_light(vec3 origin, vec3 color, float_t intensity);
 
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);

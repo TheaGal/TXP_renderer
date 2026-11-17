@@ -28,6 +28,7 @@
 #include "shader/shader_sprite.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/animator/skeletal_animator.h"
+#include "txp_renderer/light/light.h"
 #include "txp_renderer/types.h"
 #include "txp_renderer/ui/ui_state.h"
 
@@ -412,6 +413,22 @@ struct Renderer::Impl
             m.shad_skinned_model->build_combined_deformed_vertex_set_descriptor_set();
         }
     }
+
+    void gather_lights()
+    {
+        ZoneScoped;
+
+        for (auto const& [_, light] : ecs_registry.view<component::Directional_light>().each())
+        {
+            graphics->set_directional_light(light.direction.raw, light.color.raw, light.intensity);
+        }
+
+        graphics->clear_point_light_list();
+        for (auto const& [_, light] : ecs_registry.view<component::Point_light>().each())
+        {
+            graphics->add_point_light(light.origin.raw, light.color.raw, light.intensity);
+        }
+    }
 };
 
 
@@ -725,9 +742,11 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         ui_state->validate_draw_cache();
     }
 
-    // Render for each render view.
     m.camera.calc_cam_matrices();
 
+    m.gather_lights();
+
+    // Render for each render view.
     size_t render_view_idx{ 0 };
     for (auto const& cam_matrix : m.camera.get_calcd_cam_matrices())
     {
@@ -739,9 +758,6 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                  cam_matrix.projection,
                                  cam_matrix.view,
                                  cam_matrix.camera_position);
-        g.set_directional_light(vec3{ 0.742781, 0.557086, 0.371391 },  // @HARDCODE
-                                vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
-                                10.0f);
 
         Render_layer const render_layer_mask{ is_main_cam_matrix ? RENDER_LAYER_DEFAULT
                                                                  : RENDER_LAYER_ALL };

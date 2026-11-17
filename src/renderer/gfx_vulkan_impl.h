@@ -597,8 +597,14 @@ struct Graphics::Impl
                                 mat4 const camera_view,
                                 vec3 const camera_position);
 
-    /// Sets render view directional light information in the environmental buffer.
+    /// Sets directional light information in the lights buffer.
     void set_directional_light(vec3 direction, vec3 color, float_t intensity);
+
+    /// Resets the writing to lights buffer.
+    void clear_point_light_list();
+
+    /// Adds a point light into lights buffer.
+    void add_point_light(vec3 origin, vec3 color, float_t intensity);
 
     /// Sets GPU per-instance data from list of render objects.
     void set_render_object_per_instance_data(
