@@ -1928,21 +1928,6 @@ void Graphics::Impl::set_directional_light(vec3 direction,
     glm_vec3_copy(direction, light_data.directional_light.direction_xyz_intensity_w);
     light_data.directional_light.direction_xyz_intensity_w[3] = intensity;
     glm_vec3_copy(color, light_data.directional_light.color);
-
-    // // @TEMP: @DEBUG: add point lights.
-    // glm_vec3_copy(vec3{ 10, 1, 0 }, light_data.point_lights[0].position_xyz_intensity_w);
-    // light_data.point_lights[0].position_xyz_intensity_w[3] = 4;
-    // glm_vec3_copy(vec4{ 1, 0, 0, 1 }, light_data.point_lights[0].color);
-
-    // glm_vec3_copy(vec3{ 10, 1, 1 }, light_data.point_lights[1].position_xyz_intensity_w);
-    // light_data.point_lights[1].position_xyz_intensity_w[3] = 4;
-    // glm_vec3_copy(vec4{ 0, 1, 0, 1 }, light_data.point_lights[1].color);
-
-    // glm_vec3_copy(vec3{ 10, 1, 2 }, light_data.point_lights[2].position_xyz_intensity_w);
-    // light_data.point_lights[2].position_xyz_intensity_w[3] = 4;
-    // glm_vec3_copy(vec4{ 0, 0, 1, 1 }, light_data.point_lights[2].color);
-
-    // light_data.num_point_lights = 3;
 }
 
 void Graphics::Impl::clear_point_light_list()
@@ -1956,7 +1941,7 @@ void Graphics::Impl::clear_point_light_list()
 void Graphics::Impl::add_point_light(vec3 origin, vec3 color, float_t intensity)
 {
     // @TODO: add light clustering.
-    BT::date_deadline(2026, 11, 30);
+    BT::date_deadline(2026, 12, 30);
 
     auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
         get_current_frame().lighting_data_buffer.get_p_mapped_data()) };
