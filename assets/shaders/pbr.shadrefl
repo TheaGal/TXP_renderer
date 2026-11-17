@@ -1,8 +1,25 @@
 {
     "parameters": [
         {
-            "name": "textures",
+            "name": "shadow_atlas_texture",
             "binding": {"kind": "descriptorTableSlot", "index": 0},
+            "type": {
+                "kind": "resource",
+                "baseShape": "texture2D",
+                "combined": true,
+                "resultType": {
+                    "kind": "vector",
+                    "elementCount": 4,
+                    "elementType": {
+                        "kind": "scalar",
+                        "scalarType": "float32"
+                    }
+                }
+            }
+        },
+        {
+            "name": "textures",
+            "binding": {"kind": "descriptorTableSlot", "index": 1},
             "type": {
                 "kind": "array",
                 "elementCount": 0,
@@ -149,7 +166,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0, "count": 17},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 18},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -180,7 +197,7 @@
                             "binding": {"kind": "varyingOutput", "index": 0}
                         },
                         {
-                            "name": "normal",
+                            "name": "frag_pos",
                             "type": {
                                 "kind": "vector",
                                 "elementCount": 3,
@@ -193,6 +210,19 @@
                             "binding": {"kind": "varyingOutput", "index": 1}
                         },
                         {
+                            "name": "normal",
+                            "type": {
+                                "kind": "vector",
+                                "elementCount": 3,
+                                "elementType": {
+                                    "kind": "scalar",
+                                    "scalarType": "float32"
+                                }
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 2}
+                        },
+                        {
                             "name": "uv",
                             "type": {
                                 "kind": "vector",
@@ -203,7 +233,7 @@
                                 }
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 2}
+                            "binding": {"kind": "varyingOutput", "index": 3}
                         },
                         {
                             "name": "tangent",
@@ -216,7 +246,7 @@
                                 }
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 3}
+                            "binding": {"kind": "varyingOutput", "index": 4}
                         },
                         {
                             "name": "camera_pos",
@@ -229,7 +259,7 @@
                                 }
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 4}
+                            "binding": {"kind": "varyingOutput", "index": 5}
                         },
                         {
                             "name": "light_data",
@@ -238,7 +268,7 @@
                                 "valueType": "Lighting_data"
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 5}
+                            "binding": {"kind": "varyingOutput", "index": 6}
                         },
                         {
                             "name": "lighting_mode",
@@ -247,7 +277,7 @@
                                 "scalarType": "uint32"
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 6}
+                            "binding": {"kind": "varyingOutput", "index": 7}
                         },
                         {
                             "name": "mat_param_set",
@@ -356,15 +386,19 @@
                                 ]
                             },
                             "stage": "vertex",
-                            "binding": {"kind": "varyingOutput", "index": 7, "count": 10}
+                            "binding": {"kind": "varyingOutput", "index": 8, "count": 10}
                         }
                     ]
                 }
             },
             "bindings": [
                 {
-                    "name": "textures",
+                    "name": "shadow_atlas_texture",
                     "binding": {"kind": "descriptorTableSlot", "index": 0}
+                },
+                {
+                    "name": "textures",
+                    "binding": {"kind": "descriptorTableSlot", "index": 1}
                 }
             ]
         },
@@ -375,7 +409,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0, "count": 17},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 18},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -406,7 +440,7 @@
                                 "binding": {"kind": "varyingInput", "index": 0}
                             },
                             {
-                                "name": "normal",
+                                "name": "frag_pos",
                                 "type": {
                                     "kind": "vector",
                                     "elementCount": 3,
@@ -419,6 +453,19 @@
                                 "binding": {"kind": "varyingInput", "index": 1}
                             },
                             {
+                                "name": "normal",
+                                "type": {
+                                    "kind": "vector",
+                                    "elementCount": 3,
+                                    "elementType": {
+                                        "kind": "scalar",
+                                        "scalarType": "float32"
+                                    }
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 2}
+                            },
+                            {
                                 "name": "uv",
                                 "type": {
                                     "kind": "vector",
@@ -429,7 +476,7 @@
                                     }
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 2}
+                                "binding": {"kind": "varyingInput", "index": 3}
                             },
                             {
                                 "name": "tangent",
@@ -442,7 +489,7 @@
                                     }
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 3}
+                                "binding": {"kind": "varyingInput", "index": 4}
                             },
                             {
                                 "name": "camera_pos",
@@ -455,7 +502,7 @@
                                     }
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 4}
+                                "binding": {"kind": "varyingInput", "index": 5}
                             },
                             {
                                 "name": "light_data",
@@ -464,7 +511,7 @@
                                     "valueType": "Lighting_data"
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 5}
+                                "binding": {"kind": "varyingInput", "index": 6}
                             },
                             {
                                 "name": "lighting_mode",
@@ -473,7 +520,7 @@
                                     "scalarType": "uint32"
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 6}
+                                "binding": {"kind": "varyingInput", "index": 7}
                             },
                             {
                                 "name": "mat_param_set",
@@ -582,7 +629,7 @@
                                     ]
                                 },
                                 "stage": "fragment",
-                                "binding": {"kind": "varyingInput", "index": 7, "count": 10}
+                                "binding": {"kind": "varyingInput", "index": 8, "count": 10}
                             }
                         ]
                     }
@@ -602,8 +649,12 @@
             },
             "bindings": [
                 {
-                    "name": "textures",
+                    "name": "shadow_atlas_texture",
                     "binding": {"kind": "descriptorTableSlot", "index": 0}
+                },
+                {
+                    "name": "textures",
+                    "binding": {"kind": "descriptorTableSlot", "index": 1}
                 }
             ]
         }

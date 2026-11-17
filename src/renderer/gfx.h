@@ -39,6 +39,15 @@ struct Directional_light
 static_assert(offsetof(Directional_light, direction_xyz_intensity_w) % k_vec4_alignment == 0);
 static_assert(offsetof(Directional_light, color) % k_vec4_alignment == 0);
 
+struct Directional_light_shadow
+{
+    mat4 inv_light_matrix;
+    vec2 shadow_atlas_uv_min;
+    vec2 shadow_atlas_uv_max;
+};
+static_assert(offsetof(Directional_light_shadow, inv_light_matrix) % k_mat4_alignment == 0);
+static_assert(sizeof(Directional_light_shadow) % k_mat4_alignment == 0);
+
 struct Point_light
 {
     vec4 position_xyz_intensity_w;
@@ -50,10 +59,17 @@ static_assert(offsetof(Point_light, color) % k_vec4_alignment == 0);
 struct Lighting_data
 {
     Directional_light directional_light;
+    Directional_light_shadow directional_shadows[4];
+    vec4 directional_shadow_splits;
+    vec4 directional_shadow_split_band_widths;
     Point_light point_lights[128];
     uint32_t num_point_lights;
 };
 static_assert(offsetof(Lighting_data, directional_light) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadows[0]) % k_mat4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadows[1]) % k_mat4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadow_splits) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadow_split_band_widths) % k_vec4_alignment == 0);
 static_assert(offsetof(Lighting_data, point_lights[0]) % k_vec4_alignment == 0);
 static_assert(offsetof(Lighting_data, point_lights[1]) % k_vec4_alignment == 0);
 

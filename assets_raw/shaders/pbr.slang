@@ -21,6 +21,15 @@ struct Directional_light
     float4 color;
 };
 
+struct Directional_light_shadow
+{
+    float4x4 inv_light_matrix;
+    float2 shadow_atlas_uv_min;
+    float2 shadow_atlas_uv_max;
+};
+
+Sampler2D shadow_atlas_texture;
+
 struct Point_light
 {
     float4 position_xyz_intensity_w;
@@ -30,6 +39,9 @@ struct Point_light
 struct Lighting_data
 {
     Directional_light directional_light;
+    Directional_light_shadow directional_shadows[4];
+    float4 directional_shadow_splits;
+    float4 directional_shadow_split_band_widths;
     Point_light point_lights[128];
     uint32_t num_point_lights;
 };
@@ -77,6 +89,7 @@ struct VS_output
 {
     float4 pos : SV_POSITION;
     float3 world_pos;
+    float3 frag_pos;
     float3 normal;
     float2 uv;
     float4 tangent;
@@ -111,6 +124,7 @@ VS_output vertex_main(VS_input input,
     output.pos = mul(env_data->projection, frag_pos);
 
     output.world_pos = world_pos.xyz / world_pos.w;
+    output.frag_pos = frag_pos.xyz;
     output.normal = normalize(mul((float3x3)model_mat, input.normal));
     output.uv = (input.uv + mat_param_set.uv_offset_tiling.xy) * mat_param_set.uv_offset_tiling.zw;
     output.tangent = input.tangent;
@@ -215,6 +229,26 @@ float3 calc_point_light_radiance(Point_light light, float3 world_pos)
 }
 
 
+/// Calculates .
+float calc_directional_shadow(float3 world_pos,
+                              float3 frag_pos,
+                              Directional_light_shadow directional_shadows[4],
+                              float4 directional_shadow_splits,
+                              float4 directional_shadow_split_band_widths,
+                              float NdotL)
+{
+    float shadow = 1;
+    if (false)
+    {
+        // blah blah
+
+        shadow *= NdotL;
+    }
+
+    return shadow;
+}
+
+
 /// Lighting for PBR.
 float3 pbr_lighting(VS_output input, float4 base_color)
 {
@@ -313,10 +347,21 @@ float3 pbr_lighting(VS_output input, float4 base_color)
         float3 kD = float3(1.0, 1.0, 1.0) - kS;  // diffuse contribution (energy conservation)
         kD *= 1.0 - metallic;                    // metals have no diffuse reflection
 
+        // --- SHADOW ------------------------------------------------------------------------------
+        const float shadow =
+            (i == 0
+                 ? calc_directional_shadow(input.world_pos,
+                                           input.frag_pos,
+                                           input.light_data->directional_shadows,
+                                           input.light_data->directional_shadow_splits,
+                                           input.light_data->directional_shadow_split_band_widths,
+                                           NdotL)
+                 : 1.0);
+
         // --- RADIANCE ACCUMULATION ---------------------------------------------------------------
         // Combine diffuse (Lambertian) and specular (Cook-Torrance) terms
         // Multiply by incident radiance and cosine foreshortening
-        Lo += (kD * base_color.rgb / PI + specular) * radiance * NdotL;
+        Lo += (kD * base_color.rgb / PI + specular) * radiance * shadow * NdotL;
     }
 
     // --- AMBIENT AND EMISSIVE --------------------------------------------------------------------
