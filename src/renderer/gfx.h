@@ -225,6 +225,12 @@ public:
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);
 
+    /// Begins rendering shadow pass.
+    void begin_rendering_shadows();
+
+    /// Ends rendering the shadow pass.
+    void end_rendering_shadows();
+
     /// Begins rendering while clearing the render view images.
     void begin_rendering_render_view(size_t rend_view_idx);
 

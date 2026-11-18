@@ -92,11 +92,13 @@ struct Shader_pbr::Impl
         // Create pipeline layout.
         VkPushConstantRange push_constant_range{ .stageFlags = VK_SHADER_STAGE_VERTEX_BIT,
                                                  .size = sizeof(Shader_pbr_push_constants) };
+        VkDescriptorSetLayout desc_layouts[]{ g.shadow_atlas_texture_descriptor_layout,
+                                              g.all_textures_descriptor_layout };
         VkPipelineLayoutCreateInfo pipeline_layout_info{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
             .pNext = nullptr,
-            .setLayoutCount = 1,
-            .pSetLayouts = &g.all_textures_descriptor_layout,
+            .setLayoutCount = 2,
+            .pSetLayouts = desc_layouts,
             .pushConstantRangeCount = 1,
             .pPushConstantRanges = &push_constant_range,
         };
@@ -469,6 +471,12 @@ void Shader_pbr::draw(std::vector<Render_object> const& render_object_list,
                             VK_PIPELINE_BIND_POINT_GRAPHICS,
                             p.shader_pipeline.pipeline_layout,
                             0,
+                            1, &p.g.shadow_atlas_texture_descriptor_set,
+                            0, nullptr);
+    vkCmdBindDescriptorSets(cmd,
+                            VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            p.shader_pipeline.pipeline_layout,
+                            1,
                             1, &p.g.all_textures_descriptor_set,
                             0, nullptr);
 

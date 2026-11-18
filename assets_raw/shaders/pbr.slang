@@ -28,8 +28,6 @@ struct Directional_light_shadow
     float2 shadow_atlas_uv_max;
 };
 
-Sampler2D shadow_atlas_texture;
-
 struct Point_light
 {
     float4 position_xyz_intensity_w;
@@ -62,7 +60,8 @@ struct Model_transform_set
     float4x4 transforms[65535];
 };
 
-Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
+[[vk::binding(0,0)]] Sampler2D shadow_atlas_texture;
+[[vk::binding(0,1)]] Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
 // StructuredBuffer<DescriptorHandle<Sampler2D>> textures;  // try this method??
 static const uint32_t TEX_IDX_NONE = (uint32_t)-1;
 
@@ -229,7 +228,7 @@ float3 calc_point_light_radiance(Point_light light, float3 world_pos)
 }
 
 
-/// Calculates .
+/// Calculates shadow of directional light.
 float calc_directional_shadow(float3 world_pos,
                               float3 frag_pos,
                               Directional_light_shadow directional_shadows[4],

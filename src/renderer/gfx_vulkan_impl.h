@@ -25,6 +25,7 @@
 #include "renderer/gfx_vulkan/vk_buffer.h"
 #include "renderer/types.h"
 
+#include <array>
 #include <cmath>
 #include <fstream>
 #include <functional>
@@ -547,8 +548,24 @@ struct Graphics::Impl
 
     Descriptor_allocator global_descriptor_allocator;
 
+    /// Descriptor set for `shadow_atlas_texture`.
+    Vk_Image::Allocated_image shadow_atlas_texture_image;
+    Vk_Image::Allocated_image shadow_atlas_depth_image;
+    VkDescriptorSet shadow_atlas_texture_descriptor_set;
+    VkDescriptorSetLayout shadow_atlas_texture_descriptor_layout;
+
+    struct Shadow_atlas_entry
+    {
+        mat4 light_projection;
+        mat4 light_view;
+        ivec2 atlas_pos;
+        ivec2 atlas_extent;
+    };
+    std::array<Shadow_atlas_entry, 4> shadow_atlas_entries;
+
+    void create_shadow_atlas_texture_descriptor();
+
     /// Descriptor set for `textures`.
-    std::vector<VkDescriptorImageInfo> all_texture_infos;
     VkDescriptorSet all_textures_descriptor_set;
     VkDescriptorSetLayout all_textures_descriptor_layout;
 

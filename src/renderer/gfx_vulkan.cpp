@@ -259,6 +259,19 @@ void* TXP::Graphics::get_render_view(size_t rend_view_idx)
     return m_pimpl->get_render_view(rend_view_idx);
 }
 
+void TXP::Graphics::begin_rendering_shadows()
+{
+    auto& color_image{ m_pimpl->shadow_atlas_texture_image };
+    auto& depth_image{ m_pimpl->shadow_atlas_depth_image };
+
+    m_pimpl->begin_rendering(color_image, vec4{ 0, 0, 0, 1 }, &depth_image);
+}
+
+void TXP::Graphics::end_rendering_shadows()
+{
+    m_pimpl->end_rendering();
+}
+
 void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)
 {
     auto& color_image{ m_pimpl->render_views[rend_view_idx].color_image };

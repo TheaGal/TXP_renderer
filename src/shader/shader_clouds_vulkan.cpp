@@ -170,7 +170,7 @@ struct Shader_clouds::Impl
         
         ////////////////////////////////////////////////////////////////////////////////////////////
         // Transfer to GPU
-        BT::date_deadline(2026, 11, 17);  // @TODO: put this section into the Allocated_image struct helpers!
+        BT::date_deadline(2026, 11, 18);  // @TODO: put this section into the Allocated_image struct helpers!
 
         VkFenceCreateInfo fence_one_time_info{
             .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,

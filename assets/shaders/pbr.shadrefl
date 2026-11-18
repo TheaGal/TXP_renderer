@@ -19,7 +19,7 @@
         },
         {
             "name": "textures",
-            "binding": {"kind": "descriptorTableSlot", "index": 1},
+            "binding": {"kind": "descriptorTableSlot", "space": 1, "index": 0},
             "type": {
                 "kind": "array",
                 "elementCount": 0,
@@ -398,7 +398,7 @@
                 },
                 {
                     "name": "textures",
-                    "binding": {"kind": "descriptorTableSlot", "index": 1}
+                    "binding": {"kind": "descriptorTableSlot", "space": 1, "index": 0}
                 }
             ]
         },
@@ -654,10 +654,10 @@
                 },
                 {
                     "name": "textures",
-                    "binding": {"kind": "descriptorTableSlot", "index": 1}
+                    "binding": {"kind": "descriptorTableSlot", "space": 1, "index": 0}
                 }
             ]
         }
     ],
-    "bindlessSpaceIndex": 1
+    "bindlessSpaceIndex": 2
 }

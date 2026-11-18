@@ -21,6 +21,7 @@
 #include "shader/shader_clouds.h"
 #include "shader/shader_debug_color_grad_line.h"
 #include "shader/shader_debug_color_wireframe.h"
+#include "shader/shader_directional_light_shadow.h"
 #include "shader/shader_gradient.h"
 #include "shader/shader_pbr.h"
 #include "shader/shader_postprocess.h"
@@ -120,6 +121,7 @@ struct Renderer::Impl
     /// Shaders.
     std::unique_ptr<Shader::Shader_gradient> shad_gradient;
     std::unique_ptr<Shader::Shader_skinned_model> shad_skinned_model;
+    std::unique_ptr<Shader::Shader_directional_light_shadow> shad_directional_light_shadow;
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
     std::unique_ptr<Shader::Shader_pbr> shad_pbr;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
@@ -549,6 +551,10 @@ void Renderer::build()
         std::make_unique<Shader::Shader_skinned_model>(m.material_organizer,
                                                        m.render_model_data_collection,
                                                        g.get_impl());
+    m.shad_directional_light_shadow =
+        std::make_unique<Shader::Shader_directional_light_shadow>(m.material_organizer,
+                                                                  m.render_model_data_collection,
+                                                                  g.get_impl());
     m.shad_basic_diffuse =
         std::make_unique<Shader::Shader_basic_diffuse>(m.material_organizer,
                                                        m.render_model_data_collection,
@@ -711,6 +717,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     m.shad_gradient->allocate_per_instance_data_slots(m.render_object_list,
                                                       m.model_mesh_ref_list,
                                                       cur_modmesh_ref_idx);
+    m.shad_directional_light_shadow->allocate_per_instance_data_slots(m.render_object_list,
+                                                                      m.model_mesh_ref_list,
+                                                                      cur_modmesh_ref_idx);
     m.shad_basic_diffuse->allocate_per_instance_data_slots(m.render_object_list,
                                                            m.model_mesh_ref_list,
                                                            cur_modmesh_ref_idx);
@@ -770,7 +779,17 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             // g.compute_transparent_geometry_culling();
         }
 
-        // g.render_shadows(render_view);
+        // Render shadows.
+        g.begin_rendering_shadows();
+        for (size_t idx = 0;
+             idx < m.shad_directional_light_shadow->get_num_shadow_atlas_entries_to_draw();
+             idx++)
+            m.shad_directional_light_shadow->draw(idx,
+                                                  m.render_object_list,
+                                                  m.model_mesh_ref_list,
+                                                  RENDER_LAYER_DEFAULT);
+        g.end_rendering_shadows();
+
         // if (is_main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
         //     m.shad_gradient->compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
 

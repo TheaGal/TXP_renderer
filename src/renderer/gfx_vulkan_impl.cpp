@@ -1031,6 +1031,9 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     };
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
+
+    // Create shadow atlas texture descriptor.
+    create_shadow_atlas_texture_descriptor();
 }
 
 void Graphics::Impl::rebuild_vulkan_swapchain()
@@ -1095,6 +1098,9 @@ void Graphics::Impl::destroy_vulkan()
 
     clouds_image.teardown();
     ui_image.teardown();
+
+    shadow_atlas_texture_image.teardown();
+    shadow_atlas_depth_image.teardown();
 
     for (auto desc_layout : built_descriptor_layouts)
     {
@@ -1562,11 +1568,72 @@ VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
     return layout;
 }
 
+void Graphics::Impl::create_shadow_atlas_texture_descriptor()
+{
+    VkResult err;
+
+    constexpr VkExtent2D k_atlas_extent{ 4096, 4096 };
+
+    // Create shadow atlas texture.
+    shadow_atlas_texture_image = Vk_Image::Allocated_image::create_image_2d(
+        VK_FORMAT_R32_SFLOAT,
+        k_atlas_extent,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    shadow_atlas_depth_image =
+        Vk_Image::Allocated_image::create_image_depth_buffer(k_atlas_extent);
+
+    // Create texture sampler.
+    VkSamplerCreateInfo sampler_info{
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_NEAREST,
+        .minFilter = VK_FILTER_NEAREST,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .anisotropyEnable = VK_FALSE,
+        .maxLod = 1,
+    };
+
+    VkSampler img_sampler;
+    err = vkCreateSampler(gfx.device, &sampler_info, nullptr, &img_sampler);
+    if (err)
+        throw std::runtime_error("Failed to create VK sampler.");
+
+    // Create descriptor.
+    VkDescriptorImageInfo desc_img_info{
+        .sampler = img_sampler,
+        .imageView = shadow_atlas_texture_image.get_image_view(),
+        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    };
+
+    // Descriptor layouts.
+    using Descriptor_type_info = Graphics::Impl::Descriptor_type_info;
+
+    shadow_atlas_texture_descriptor_layout = build_descriptor_layout(
+        {
+            { 0,
+              Descriptor_type_info{
+                  .descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              } },
+        },
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0);
+
+    // Descriptor.
+    shadow_atlas_texture_descriptor_set =
+        global_descriptor_allocator.allocate(shadow_atlas_texture_descriptor_layout);
+
+    VkWriteDescriptorSet imgs_write{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+                                     .dstSet = shadow_atlas_texture_descriptor_set,
+                                     .dstBinding = 0,
+                                     .descriptorCount = 1,
+                                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                     .pImageInfo = &desc_img_info };
+    vkUpdateDescriptorSets(gfx.device, 1, &imgs_write, 0, nullptr);
+}
 
 void Graphics::Impl::create_all_textures_descriptor()
-{   // Create all-texture descriptor image infos.
-    all_texture_infos.reserve(texture_entries.size());
-
+{
+    // Create all-texture descriptor image infos.
     if (texture_entries.empty())
     {
         BT_ERROR(
