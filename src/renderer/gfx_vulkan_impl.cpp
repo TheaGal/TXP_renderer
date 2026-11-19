@@ -39,6 +39,7 @@
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
+#include "txp_renderer/debug/debug_render_job.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
 
@@ -46,6 +47,7 @@
 #include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <sstream>
@@ -1629,6 +1631,36 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
                                      .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
                                      .pImageInfo = &desc_img_info };
     vkUpdateDescriptorSets(gfx.device, 1, &imgs_write, 0, nullptr);
+
+    // Shadow atlas entries.
+    auto const add_shadow_atlas_entry_fn =
+        [this](size_t shadow_idx, ivec2 atlas_pos, ivec2 atlas_extent) {
+            glm_ivec2_copy(atlas_pos, shadow_atlas_entries[shadow_idx].atlas_pos);
+            glm_ivec2_copy(atlas_extent, shadow_atlas_entries[shadow_idx].atlas_extent);
+
+            for (auto& frame : frames)
+            {
+                auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
+                    frame.lighting_data_buffer.get_p_mapped_data()) };
+
+                constexpr VkExtent2D k_atlas_extent{ 4096, 4096 };  // @COPYPASTA
+
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_min[0] =
+                    (static_cast<float_t>(atlas_pos[0]) / k_atlas_extent.width);
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_min[1] =
+                    (static_cast<float_t>(atlas_pos[1]) / k_atlas_extent.height);
+
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_max[0] =
+                    (static_cast<float_t>(atlas_pos[0] + atlas_extent[0]) / k_atlas_extent.width);
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_max[1] =
+                    (static_cast<float_t>(atlas_pos[1] + atlas_extent[1]) / k_atlas_extent.height);
+            }
+        };
+
+    add_shadow_atlas_entry_fn(0, ivec2{ 0, 0 }, ivec2{ 1024, 1024 });
+    add_shadow_atlas_entry_fn(1, ivec2{ 1024, 0 }, ivec2{ 1024, 1024 });
+    add_shadow_atlas_entry_fn(2, ivec2{ 2048, 0 }, ivec2{ 1024, 1024 });
+    add_shadow_atlas_entry_fn(3, ivec2{ 3072, 0 }, ivec2{ 1024, 1024 });
 }
 
 void Graphics::Impl::create_all_textures_descriptor()
@@ -1985,16 +2017,111 @@ void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
     glm_vec3_copy(const_cast<float_t*>(camera_position), env_data.camera_position);
 }
 
-void Graphics::Impl::set_directional_light(vec3 direction,
-                                           vec3 color,
-                                           float_t intensity)
+void Graphics::Impl::set_directional_light(vec3 const direction,
+                                           vec3 const color,
+                                           float_t intensity,
+                                           mat4 const main_cam_inv_proj_view,
+                                           vec2 const main_cam_znear_zfar,
+                                           vec4 const directional_shadow_splits)
 {
     auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
         get_current_frame().lighting_data_buffer.get_p_mapped_data()) };
 
-    glm_vec3_copy(direction, light_data.directional_light.direction_xyz_intensity_w);
+    glm_vec3_copy(const_cast<float_t*>(direction), light_data.directional_light.direction_xyz_intensity_w);
     light_data.directional_light.direction_xyz_intensity_w[3] = intensity;
-    glm_vec3_copy(color, light_data.directional_light.color);
+    glm_vec3_copy(const_cast<float_t*>(color), light_data.directional_light.color);
+
+    // @TODO: figure out this part!!!!
+
+    // Calc CSM shadow matrices.
+    vec4 frustum_corners[8];
+    glm_frustum_corners(const_cast<vec4*>(main_cam_inv_proj_view), frustum_corners);
+
+    static auto const k_debug_draw_frustum = [](vec4 frustum_corners[8], vec4 color){
+        for (size_t i = 0; i < 4; i++)
+        {
+            {
+                debug::Debug_line line;
+                glm_vec3_copy(frustum_corners[i], line.pos1);
+                glm_vec3_copy(frustum_corners[(i + 1) % 4], line.pos2);
+                glm_vec4_copy(color, line.color1);
+                glm_vec4_copy(line.color1, line.color2);
+
+                debug::emplace_debug_line(std::move(line), 0.03f);
+            }
+
+            {
+                debug::Debug_line line;
+                glm_vec3_copy(frustum_corners[i + 4], line.pos1);
+                glm_vec3_copy(frustum_corners[((i + 1) % 4) + 4], line.pos2);
+                glm_vec4_copy(color, line.color1);
+                glm_vec4_copy(line.color1, line.color2);
+
+                debug::emplace_debug_line(std::move(line), 0.03f);
+            }
+
+            {
+                debug::Debug_line line;
+                glm_vec3_copy(frustum_corners[i], line.pos1);
+                glm_vec3_copy(frustum_corners[i + 4], line.pos2);
+                glm_vec4_copy(color, line.color1);
+                glm_vec4_copy(line.color1, line.color2);
+
+                debug::emplace_debug_line(std::move(line), 0.03f);
+            }
+        }
+    };
+
+    // k_debug_draw_frustum(frustum_corners, vec4{ 1, 0, 0, 1 });
+
+    for (size_t i = 0; i < 4; i++)
+    {
+        vec2 split_near_far{ i == 0 ? 0
+                                    : (directional_shadow_splits[i - 1] - main_cam_znear_zfar[0]) /
+                                          (main_cam_znear_zfar[1] - main_cam_znear_zfar[0]),
+                             (directional_shadow_splits[i] - main_cam_znear_zfar[0]) /
+                                 (main_cam_znear_zfar[1] - main_cam_znear_zfar[0]) };
+
+        vec4 split_frustum_corners[8];
+        for (size_t j = 0; j < 4; j++)
+        {
+            // @NOTE: near and far switched bc of reverse depth projview matrix for extracting
+            //        frustums.
+            glm_vec3_lerp(frustum_corners[j + 4],
+                          frustum_corners[j],
+                          split_near_far[0],
+                          split_frustum_corners[j]);
+            glm_vec3_lerp(frustum_corners[j + 4],
+                          frustum_corners[j],
+                          split_near_far[1],
+                          split_frustum_corners[j + 4]);
+        }
+
+        k_debug_draw_frustum(split_frustum_corners, vec4{ 1, 0, 0, 1 });
+    }
+
+
+    vec3 up{ 0.0f, 1.0f, 0.0f };
+    if (std::abs(direction[0]) < 1e-6f &&
+        std::abs(direction[1]) > 0.5f &&
+        std::abs(direction[2]) < 1e-6f)
+    {
+        glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
+    }
+
+    mat4 light_view;
+    glm_lookat(const_cast<float_t*>(direction), vec3{0, 0, 0}, up, light_view);
+
+    // // Transform frustum corners to light view space.
+    // for (size_t i = 0; i < 8; i++)
+    // {
+    //     glm_mat4_mulv(light_view, frustum_corners[i], frustum_corners[i]);
+    // }
+
+    // Find bounding boxes for frustum corners.
+
+    // glm_frustum_planes(float left, float right, float bottom, float top, float nearZ, float farZ, vec4 *dest);
+    // glm_frustum(float left, float right, float bottom, float top, float nearZ, float farZ, vec4 *dest);
 }
 
 void Graphics::Impl::clear_point_light_list()
@@ -2005,7 +2132,7 @@ void Graphics::Impl::clear_point_light_list()
     light_data.num_point_lights = 0;
 }
 
-void Graphics::Impl::add_point_light(vec3 origin, vec3 color, float_t intensity)
+void Graphics::Impl::add_point_light(vec3 const origin, vec3 const color, float_t intensity)
 {
     // @TODO: add light clustering.
     BT::date_deadline(2026, 12, 30);
@@ -2015,9 +2142,9 @@ void Graphics::Impl::add_point_light(vec3 origin, vec3 color, float_t intensity)
 
     auto& point_light{ light_data.point_lights[light_data.num_point_lights] };
 
-    glm_vec3_copy(origin, point_light.position_xyz_intensity_w);
+    glm_vec3_copy(const_cast<float_t*>(origin), point_light.position_xyz_intensity_w);
     point_light.position_xyz_intensity_w[3] = intensity;
-    glm_vec3_copy(color, point_light.color);
+    glm_vec3_copy(const_cast<float_t*>(color), point_light.color);
 
     light_data.num_point_lights++;
 }

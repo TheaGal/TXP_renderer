@@ -31,6 +31,7 @@ public:
     std::vector<Cam_matrix> const& get_calcd_cam_matrices() const;
 
     float_t get_main_cam_aspect() const;
+    void get_main_cam_znear_zfar(vec2 out_znear_zfar) const;
 
     void set_position(size_t const idx, rvec3 const position);
     void get_position(size_t const idx, rvec3 out_cam_position) const;

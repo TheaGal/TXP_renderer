@@ -182,6 +182,7 @@ struct Shader_directional_light_shadow::Impl
         };
         VkPipelineRasterizationStateCreateInfo rasterization_state{
             .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+            .depthClampEnable = VK_TRUE,  // @THEA: this is different!!!
             .cullMode = VK_CULL_MODE_BACK_BIT,
             .lineWidth = 1.0f,
         };

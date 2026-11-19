@@ -239,9 +239,19 @@ void TXP::Graphics::set_render_view_camera(size_t render_view_idx,
                                     camera_position);
 }
 
-void TXP::Graphics::set_directional_light(vec3 direction, vec3 color, float_t intensity)
+void TXP::Graphics::set_directional_light(vec3 const direction,
+                                          vec3 const color,
+                                          float_t intensity,
+                                          mat4 const main_cam_inv_proj_view,
+                                          vec2 const main_cam_znear_zfar,
+                                          vec4 const directional_shadow_splits)
 {
-    m_pimpl->set_directional_light(direction, color, intensity);
+    m_pimpl->set_directional_light(direction,
+                                   color,
+                                   intensity,
+                                   main_cam_inv_proj_view,
+                                   main_cam_znear_zfar,
+                                   directional_shadow_splits);
 }
 
 void TXP::Graphics::clear_point_light_list()
@@ -249,7 +259,7 @@ void TXP::Graphics::clear_point_light_list()
     m_pimpl->clear_point_light_list();
 }
 
-void TXP::Graphics::add_point_light(vec3 origin, vec3 color, float_t intensity)
+void TXP::Graphics::add_point_light(vec3 const origin, vec3 const color, float_t intensity)
 {
     m_pimpl->add_point_light(origin, color, intensity);
 }

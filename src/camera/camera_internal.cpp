@@ -202,6 +202,18 @@ float_t Camera_internal::get_main_cam_aspect() const
     return m_camera_states.front().aspect;
 }
 
+void Camera_internal::get_main_cam_znear_zfar(vec2 out_znear_zfar) const
+{
+    if (m_camera_states.empty())
+    {
+        BT_WARN("No camera states, just going to return. Fix this if you feel like it.");
+        return;
+    }
+
+    out_znear_zfar[0] = m_camera_states.front().z_near;
+    out_znear_zfar[1] = m_camera_states.front().z_far;
+}
+
 void Camera_internal::set_position(size_t const idx, rvec3 const position)
 {
     if (m_camera_states.empty())

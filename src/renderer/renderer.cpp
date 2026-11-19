@@ -422,7 +422,23 @@ struct Renderer::Impl
 
         for (auto const& [_, light] : ecs_registry.view<component::Directional_light>().each())
         {
-            graphics->set_directional_light(light.direction.raw, light.color.raw, light.intensity);
+            auto const& main_cam{ camera.get_calcd_cam_matrices().front() };
+
+            mat4 inv_proj_view;
+            glm_mat4_mul(const_cast<vec4*>(main_cam.projection),
+                         const_cast<vec4*>(main_cam.view),
+                         inv_proj_view);
+            glm_mat4_inv(inv_proj_view, inv_proj_view);
+
+            vec2 main_cam_znear_zfar;
+            camera.get_main_cam_znear_zfar(main_cam_znear_zfar);
+
+            graphics->set_directional_light(light.direction.raw,
+                                            light.color.raw,
+                                            light.intensity,
+                                            inv_proj_view,
+                                            main_cam_znear_zfar,
+                                            vec4{ 4, 16, 64, 256 });
         }
 
         graphics->clear_point_light_list();
@@ -753,7 +769,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     m.camera.calc_cam_matrices();
 
-    m.gather_lights();
+    m.gather_lights();  // this recalculates CSM shadow matrices so it must be after camera update.  -thea 2026/11/18
 
     // Render for each render view.
     size_t render_view_idx{ 0 };
