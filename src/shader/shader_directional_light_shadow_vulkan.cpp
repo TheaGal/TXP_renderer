@@ -23,6 +23,7 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 
@@ -285,16 +286,16 @@ void Shader_directional_light_shadow::allocate_per_instance_data_slots(
         // Collect meshes for this shader.
         bool use_all_meshes{ rend_obj.sub_mesh_idx == (uint16_t)-1 };
 
-        auto this_shader_id{ m_pimpl->material_organizer.get_shader_id(k_name) };
-        auto const& material_palette{ m_pimpl->material_organizer.get_material_palette(
-            rend_obj.material_palette_idx) };
+        // auto this_shader_id{ m_pimpl->material_organizer.get_shader_id(k_name) };
+        // auto const& material_palette{ m_pimpl->material_organizer.get_material_palette(
+        //     rend_obj.material_palette_idx) };
 
         for (size_t mesh_idx = (use_all_meshes ? 0 : rend_obj.sub_mesh_idx);
              mesh_idx < num_meshes_in_model;
              mesh_idx++)
         {
-            auto const& material{ material_palette.at(mesh_idx) };
-            if (material.shader_id == this_shader_id)
+            // auto const& material{ material_palette.at(mesh_idx) };
+            // if (material.shader_id == this_shader_id)
             {   // Uses this shader!
                 auto& modmesh_ref_entry{ out_model_mesh_ref_list[in_out_cur_modmesh_ref_idx++] };
                 modmesh_ref_entry.render_obj_idx = render_obj_idx;
@@ -322,6 +323,8 @@ void Shader_directional_light_shadow::draw(
     std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
     Render_layer const render_layer_mask)
 {
+    ZoneScoped;
+
     auto& p{ *m_pimpl };
     if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
         return;  // Nothing to draw. Exit early.
@@ -337,7 +340,9 @@ void Shader_directional_light_shadow::draw(
     auto const& shadow_atlas_entry{ p.g.shadow_atlas_entries[shadow_atlas_entry_idx] };
 
     // Render.
-    VkViewport viewport{ .width = static_cast<float_t>(shadow_atlas_entry.atlas_extent[0]),
+    VkViewport viewport{ .x = static_cast<float_t>(shadow_atlas_entry.atlas_pos[0]),
+                         .y = static_cast<float_t>(shadow_atlas_entry.atlas_pos[1]),
+                         .width = static_cast<float_t>(shadow_atlas_entry.atlas_extent[0]),
                          .height = static_cast<float_t>(shadow_atlas_entry.atlas_extent[1]),
                          .minDepth = 0.0f,
                          .maxDepth = 1.0f };
@@ -375,6 +380,8 @@ void Shader_directional_light_shadow::draw(
     // Render instances.
     for (bool const using_static_model : { true, false })
     {
+        ZoneScopedN("using 1st static 2nd deformed model");
+
         auto& using_model{ using_static_model ? p.g.combined_static_model
                                               : p.g.combined_deformed_model };
         bool bound_using_model{ false };
@@ -383,6 +390,8 @@ void Shader_directional_light_shadow::draw(
              draw_instance < p.draw_inst_list_start_end.back();
              draw_instance++)
         {
+            ZoneScopedN("draw instance");
+
             auto const& modmesh_ref{ model_mesh_ref_list[draw_instance] };
             auto const& rend_obj{ render_object_list[modmesh_ref.render_obj_idx] };
 
@@ -417,6 +426,19 @@ void Shader_directional_light_shadow::draw(
                              draw_instance);
         }
     }
+}
+
+void Shader_directional_light_shadow::wait_until_completion()
+{
+    ZoneScoped;
+
+    auto& p{ *m_pimpl };
+
+    auto cmd{ p.g.get_current_frame().graphics_queue_command_buffer.get() };
+
+    Vk_Image::Image::transition_to(cmd,
+                                   { { &p.g.shadow_atlas_texture_image.get_image(),
+                                       VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL } });
 }
 
 }  // namespace Shader

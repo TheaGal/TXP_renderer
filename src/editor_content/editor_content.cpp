@@ -52,6 +52,7 @@ ImVec2 s_main_area_work_size;
 
 
 bool s_show_demo_window{ false };
+bool s_show_rend_grph_res_window{ false };
 
 
 /// .
@@ -154,15 +155,26 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
                     settings.open_scene_view_ids.emplace_back(std::to_string(new_id));
                 }
                 ImGui::EndMenu();
-        }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Help"))
-        {
+            }
+
+            if (ImGui::MenuItem("Show Render graph resources window",
+                                nullptr,
+                                s_show_rend_grph_res_window))
+            {
+                s_show_rend_grph_res_window = !s_show_rend_grph_res_window;
+            }
+
             if (ImGui::MenuItem("Show ImGui demo window", "Ctrl+Alt+Shift+D", s_show_demo_window))
             {
                 s_show_demo_window = !s_show_demo_window;
             }
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Help"))
+        {
+            (void)ImGui::MenuItem("About");
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
@@ -726,6 +738,34 @@ void imgui_performance_timers(Information_hook_struct const& info_hook_struct)
     ImGui::End();
 }
 
+/// Optional render graph resources window.
+void imgui_render_graph_resources_window_content(
+    editor_content::Render_view_image_content const& image_content)
+{
+    if (!s_show_rend_grph_res_window)
+        return;
+
+    ImGui::Begin("Render graph resources");
+
+    if (ImGui::CollapsingHeader("HDR image"))
+    {
+    #if TXP_GFX_BACKEND_VULKAN
+        ImGui::Text("TODO");
+        // auto& img_descriptor{ render_view_image_content.content_image_descriptors.front() };
+        // ImGui::Image((ImTextureRef)img_descriptor, per_viewport_content_sizes.back());
+    #endif  // TXP_GFX_BACKEND_VULKAN
+    }
+
+    if (ImGui::CollapsingHeader("Shadow atlas"))
+    {
+    #if TXP_GFX_BACKEND_VULKAN
+        ImGui::Image((ImTextureRef)image_content.shadow_atlas_image_descriptor, ImVec2(512, 512));
+    #endif  // TXP_GFX_BACKEND_VULKAN
+    }
+
+    ImGui::End();
+}
+
 /// Optional ImGui demo window drawing (enable/disable-able).
 void imgui_demo_window_content(TXP::Input::Input_handler const& input_handler)
 {
@@ -970,6 +1010,7 @@ void editor_content::build_content(bool const load_cam_orient_settings,
         editor_content::ui_editor::ui_editor_content();
 
     imgui_debug_printable_info_data();
+    imgui_render_graph_resources_window_content(render_view_image_content);
     imgui_demo_window_content(input_handler);
 }
 

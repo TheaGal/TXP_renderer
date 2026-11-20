@@ -793,18 +793,23 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             // g.compute_shadow_culling();
             // g.compute_opaque_geometry_culling();
             // g.compute_transparent_geometry_culling();
-        }
 
-        // Render shadows.
-        g.begin_rendering_shadows();
-        for (size_t idx = 0;
-             idx < m.shad_directional_light_shadow->get_num_shadow_atlas_entries_to_draw();
-             idx++)
-            m.shad_directional_light_shadow->draw(idx,
-                                                  m.render_object_list,
-                                                  m.model_mesh_ref_list,
-                                                  RENDER_LAYER_DEFAULT);
-        g.end_rendering_shadows();
+            // Render shadows.
+            g.begin_rendering_shadows();
+            for (size_t idx = 0;
+                idx < m.shad_directional_light_shadow->get_num_shadow_atlas_entries_to_draw();
+                idx++)
+            {
+                ZoneScopedN("render directional light shadows");
+                m.shad_directional_light_shadow->draw(idx,
+                                                      m.render_object_list,
+                                                      m.model_mesh_ref_list,
+                                                      RENDER_LAYER_DEFAULT);
+            }
+            g.end_rendering_shadows();
+
+            m.shad_directional_light_shadow->wait_until_completion();
+        }
 
         // if (is_main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
         //     m.shad_gradient->compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.

@@ -23,7 +23,8 @@ struct Directional_light
 
 struct Directional_light_shadow
 {
-    float4x4 inv_light_matrice;
+    float4x4 light_projection;
+    float4x4 light_view;
     float2 shadow_atlas_uv_min;
     float2 shadow_atlas_uv_max;
 };

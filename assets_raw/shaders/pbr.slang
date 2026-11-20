@@ -23,7 +23,8 @@ struct Directional_light
 
 struct Directional_light_shadow
 {
-    float4x4 inv_light_matrix;
+    float4x4 light_projection;
+    float4x4 light_view;
     float2 shadow_atlas_uv_min;
     float2 shadow_atlas_uv_max;
 };
@@ -88,7 +89,7 @@ struct VS_output
 {
     float4 pos : SV_POSITION;
     float3 world_pos;
-    float3 frag_pos;
+    float3 view_pos;
     float3 normal;
     float2 uv;
     float4 tangent;
@@ -123,7 +124,7 @@ VS_output vertex_main(VS_input input,
     output.pos = mul(env_data->projection, frag_pos);
 
     output.world_pos = world_pos.xyz / world_pos.w;
-    output.frag_pos = frag_pos.xyz;
+    output.view_pos = frag_pos.xyz;
     output.normal = normalize(mul((float3x3)model_mat, input.normal));
     output.uv = (input.uv + mat_param_set.uv_offset_tiling.xy) * mat_param_set.uv_offset_tiling.zw;
     output.tangent = input.tangent;
@@ -230,18 +231,59 @@ float3 calc_point_light_radiance(Point_light light, float3 world_pos)
 
 /// Calculates shadow of directional light.
 float calc_directional_shadow(float3 world_pos,
-                              float3 frag_pos,
+                              float3 view_pos,
                               Directional_light_shadow directional_shadows[4],
                               float4 directional_shadow_splits,
                               float4 directional_shadow_split_band_widths,
                               float NdotL)
 {
-    float shadow = 1;
-    if (false)
-    {
-        // blah blah
+    const float view_depth = -view_pos.z;  // right handed coords make z depth negative
 
-        shadow *= NdotL;
+    float shadow = 1;
+    if (view_depth < directional_shadow_splits.w)
+    {
+        // view_pos.z;
+        // // blah blah
+
+        // shadow *= NdotL;
+        // shadow = view_depth % 10.0;
+        shadow = 0;
+
+        // Calc which cascade to look.
+        uint32_t cascade_idx = 3;
+        [unroll]
+        for (int32_t i = 4 - 1 - 1; i >= 0; i--)
+        {
+            if (view_depth < directional_shadow_splits[i])
+                cascade_idx = i;
+        }
+
+    #if 0
+        // @DEBUG
+        constexpr float dbg_colors[4] = {
+            0.0, 0.25, 0.5, 0.75
+        };
+        shadow = dbg_colors[cascade_idx];
+    #endif // 0
+
+        // Calc shadow depth.
+        const float4 frag_pos = mul(directional_shadows[cascade_idx].light_view,
+                                    float4(world_pos, 1));
+        const float light_view_space_depth = frag_pos.z;  // @THEA: @NOCHECKIN: should this be negative.???
+
+        // Calc shadow uv.
+        const float4 clip_pos = mul(directional_shadows[cascade_idx].light_projection, frag_pos);
+
+        const float2 uv_raw = clip_pos.xy * 0.5 + float2(0.5);
+
+        const float2 uv_coords = lerp(directional_shadows[cascade_idx].shadow_atlas_uv_min,
+                                      directional_shadows[cascade_idx].shadow_atlas_uv_max,
+                                      uv_raw);
+
+        // Check if in shadow.
+        const float shadow_tex_depth = shadow_atlas_texture.Sample(uv_coords).r;
+        if (shadow_tex_depth + 1 < light_view_space_depth)
+            shadow = 0;  // in shadow!
     }
 
     return shadow;
@@ -347,15 +389,23 @@ float3 pbr_lighting(VS_output input, float4 base_color)
         kD *= 1.0 - metallic;                    // metals have no diffuse reflection
 
         // --- SHADOW ------------------------------------------------------------------------------
-        const float shadow =
+        // const
+         float shadow =
             (i == 0
                  ? calc_directional_shadow(input.world_pos,
-                                           input.frag_pos,
+                                           input.view_pos,
                                            input.light_data->directional_shadows,
                                            input.light_data->directional_shadow_splits,
                                            input.light_data->directional_shadow_split_band_widths,
                                            NdotL)
                  : 1.0);
+
+        // if (shadow < 0)
+        // {
+        //     return float3(0, 1, 0);
+        // }
+        // else
+        //     return float3(shadow, 0, 0);
 
         // --- RADIANCE ACCUMULATION ---------------------------------------------------------------
         // Combine diffuse (Lambertian) and specular (Cook-Torrance) terms
@@ -389,6 +439,8 @@ float3 simple_lit_lighting(VS_output input, float4 base_color)
 [shader("fragment")]
 float4 fragment_main(VS_output input)
 {
+    // return float4(input.view_pos, 1);
+
     // Sample base color texture and apply material color factor
     const float4 base_color = sample_texture_idx_tinted(input.mat_param_set.base_color_texture_idx,
                                                         input.uv,

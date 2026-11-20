@@ -197,7 +197,7 @@
                             "binding": {"kind": "varyingOutput", "index": 0}
                         },
                         {
-                            "name": "frag_pos",
+                            "name": "view_pos",
                             "type": {
                                 "kind": "vector",
                                 "elementCount": 3,
@@ -440,7 +440,7 @@
                                 "binding": {"kind": "varyingInput", "index": 0}
                             },
                             {
-                                "name": "frag_pos",
+                                "name": "view_pos",
                                 "type": {
                                     "kind": "vector",
                                     "elementCount": 3,

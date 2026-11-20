@@ -59,5 +59,5 @@ VS_output vertex_main(VS_input input,
 [shader("fragment")]
 float fragment_main(VS_output input)
 {
-    return input.frag_pos.z;
+    return input.frag_pos.z;  // negative bc of right hand coords????? idk what exactly this should be !!!!  @THEA: @NOCHECKIN
 }

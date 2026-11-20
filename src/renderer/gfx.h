@@ -41,11 +41,13 @@ static_assert(offsetof(Directional_light, color) % k_vec4_alignment == 0);
 
 struct Directional_light_shadow
 {
-    mat4 inv_light_matrix;
+    mat4 light_projection;
+    mat4 light_view;
     vec2 shadow_atlas_uv_min;
     vec2 shadow_atlas_uv_max;
 };
-static_assert(offsetof(Directional_light_shadow, inv_light_matrix) % k_mat4_alignment == 0);
+static_assert(offsetof(Directional_light_shadow, light_projection) % k_mat4_alignment == 0);
+static_assert(offsetof(Directional_light_shadow, light_view) % k_mat4_alignment == 0);
 static_assert(sizeof(Directional_light_shadow) % k_mat4_alignment == 0);
 
 struct Point_light

@@ -50,6 +50,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -1796,6 +1797,7 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
         render_view_image_content.content_image_descriptors.emplace_back(
             rv.imgui_destination_image_descriptor);
     }
+    render_view_image_content.shadow_atlas_image_descriptor = shadow_atlas_texture_descriptor_set;
 
     editor_content::build_content(load_cam_orient_settings_flag,
                                   settings,
@@ -2072,10 +2074,22 @@ void Graphics::Impl::set_directional_light(vec3 const direction,
         }
     };
 
-    // k_debug_draw_frustum(frustum_corners, vec4{ 1, 0, 0, 1 });
+    // Calc base light view matrix.
+    vec3 up{ 0.0f, 1.0f, 0.0f };
+    if (std::abs(direction[0]) < 1e-6f &&
+        std::abs(direction[1]) > 0.5f &&
+        std::abs(direction[2]) < 1e-6f)
+    {
+        glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
+    }
 
+    mat4 light_view;
+    glm_lookat(const_cast<float_t*>(direction), vec3{0, 0, 0}, up, light_view);
+
+    // Calc split frustums and light projection matrices.
     for (size_t i = 0; i < 4; i++)
     {
+        // Split the frustum.
         vec2 split_near_far{ i == 0 ? 0
                                     : (directional_shadow_splits[i - 1] - main_cam_znear_zfar[0]) /
                                           (main_cam_znear_zfar[1] - main_cam_znear_zfar[0]),
@@ -2098,30 +2112,60 @@ void Graphics::Impl::set_directional_light(vec3 const direction,
         }
 
         k_debug_draw_frustum(split_frustum_corners, vec4{ 1, 0, 0, 1 });
+
+        // Transform frustum corners to light view space and create AABB.
+        vec3 aabb_min_max[2]{ { std::numeric_limits<float_t>::max(),
+                                std::numeric_limits<float_t>::max(),
+                                std::numeric_limits<float_t>::max() },
+                              { std::numeric_limits<float_t>::lowest(),
+                                std::numeric_limits<float_t>::lowest(),
+                                std::numeric_limits<float_t>::lowest() } };
+        for (size_t j = 0; j < 8; j++)
+        {
+            vec4 view_space_corner;
+            glm_mat4_mulv(light_view, split_frustum_corners[j], view_space_corner);
+
+            glm_vec3_minv(view_space_corner, aabb_min_max[0], aabb_min_max[0]);
+            glm_vec3_maxv(view_space_corner, aabb_min_max[1], aabb_min_max[1]);
+        }
+
+        // Create light projection matrix.
+        mat4 light_projection;
+        glm_ortho_aabb(aabb_min_max, light_projection);
+
+        // Calc light projection view matrix.
+        mat4 light_proj_view;
+        glm_mat4_mul(light_projection, light_view, light_proj_view);
+
+        // @DEBUG: show frustum corners.
+        {
+            mat4 light_inv_proj_view;
+            glm_mat4_inv(light_proj_view, light_inv_proj_view);
+
+            vec4 light_aabb_corners[8];
+            glm_frustum_corners(light_inv_proj_view, light_aabb_corners);
+
+            k_debug_draw_frustum(light_aabb_corners, vec4{ 0, 0, 1, 1 });
+        }
+
+        // Write to shadow map entries.
+        glm_mat4_copy(light_projection, shadow_atlas_entries[i].light_projection);
+        glm_mat4_copy(light_view, shadow_atlas_entries[i].light_view);
+
+        // Write to GPU.
+        glm_mat4_copy(shadow_atlas_entries[i].light_projection,
+                      light_data.directional_shadows[i].light_projection);
+        glm_mat4_copy(shadow_atlas_entries[i].light_view,
+                      light_data.directional_shadows[i].light_view);
     }
 
-
-    vec3 up{ 0.0f, 1.0f, 0.0f };
-    if (std::abs(direction[0]) < 1e-6f &&
-        std::abs(direction[1]) > 0.5f &&
-        std::abs(direction[2]) < 1e-6f)
-    {
-        glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
-    }
-
-    mat4 light_view;
-    glm_lookat(const_cast<float_t*>(direction), vec3{0, 0, 0}, up, light_view);
-
-    // // Transform frustum corners to light view space.
-    // for (size_t i = 0; i < 8; i++)
-    // {
-    //     glm_mat4_mulv(light_view, frustum_corners[i], frustum_corners[i]);
-    // }
-
-    // Find bounding boxes for frustum corners.
-
-    // glm_frustum_planes(float left, float right, float bottom, float top, float nearZ, float farZ, vec4 *dest);
-    // glm_frustum(float left, float right, float bottom, float top, float nearZ, float farZ, vec4 *dest);
+    // @THEA: set this here or somewhere else??
+    // @THOUGHT: the shadow splits and the split band widths do need to be here.
+    glm_vec4_copy(const_cast<float_t*>(directional_shadow_splits),
+                  light_data.directional_shadow_splits);
+    
+    // @TODO: add in split band widths into this func so that the light matrices can be padded.
+    glm_vec4_copy(vec4{ 0, 0, 0, 0 }, light_data.directional_shadow_split_band_widths);
 }
 
 void Graphics::Impl::clear_point_light_list()

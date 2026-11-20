@@ -42,6 +42,8 @@ public:
               std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
               Render_layer const render_layer_mask);
 
+    void wait_until_completion();
+
 private:
     struct Impl;
     std::unique_ptr<Impl> m_pimpl;
