@@ -269,7 +269,7 @@ float calc_directional_shadow(float3 world_pos,
         // Calc shadow depth.
         const float4 frag_pos = mul(directional_shadows[cascade_idx].light_view,
                                     float4(world_pos, 1));
-        const float light_view_space_depth = frag_pos.z;  // @THEA: @NOCHECKIN: should this be negative.???
+        const float light_view_space_depth = frag_pos.z;
 
         // Calc shadow uv.
         const float4 clip_pos = mul(directional_shadows[cascade_idx].light_projection, frag_pos);
@@ -282,8 +282,11 @@ float calc_directional_shadow(float3 world_pos,
 
         // Check if in shadow.
         const float shadow_tex_depth = shadow_atlas_texture.Sample(uv_coords).r;
-        if (shadow_tex_depth + 1 < light_view_space_depth)
+        if (shadow_tex_depth < light_view_space_depth)
             shadow = 0;  // in shadow!
+        
+        // @DEBUG
+        shadow = shadow_tex_depth - light_view_space_depth;
     }
 
     return shadow;
@@ -400,12 +403,12 @@ float3 pbr_lighting(VS_output input, float4 base_color)
                                            NdotL)
                  : 1.0);
 
-        // if (shadow < 0)
-        // {
-        //     return float3(0, 1, 0);
-        // }
-        // else
-        //     return float3(shadow, 0, 0);
+        if (shadow < 0)
+        {
+            return float3(0, -shadow, 0);
+        }
+        else
+            return float3(shadow, 0, 0);
 
         // --- RADIANCE ACCUMULATION ---------------------------------------------------------------
         // Combine diffuse (Lambertian) and specular (Cook-Torrance) terms

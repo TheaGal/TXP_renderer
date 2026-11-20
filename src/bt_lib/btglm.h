@@ -12,6 +12,10 @@
 #include "btdatecheck.h"
 #include "btjson.h"
 
+#ifdef CGLM_CONFIG_CLIP_CONTROL
+#error Something is wrong. Probably included something outside of btglm.h?
+#endif // CGLM_CONFIG_CLIP_CONTROL
+
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 
 #ifdef GLM_CSCOORD_LBN

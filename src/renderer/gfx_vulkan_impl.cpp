@@ -2075,16 +2075,19 @@ void Graphics::Impl::set_directional_light(vec3 const direction,
     };
 
     // Calc base light view matrix.
+    vec3 neg_direction;
+    glm_vec3_negate_to(const_cast<float_t*>(direction), neg_direction);
+
     vec3 up{ 0.0f, 1.0f, 0.0f };
-    if (std::abs(direction[0]) < 1e-6f &&
-        std::abs(direction[1]) > 0.5f &&
-        std::abs(direction[2]) < 1e-6f)
+    if (std::abs(neg_direction[0]) < 1e-6f &&
+        std::abs(neg_direction[1]) > 0.5f &&
+        std::abs(neg_direction[2]) < 1e-6f)
     {
         glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
     }
 
     mat4 light_view;
-    glm_lookat(const_cast<float_t*>(direction), vec3{0, 0, 0}, up, light_view);
+    glm_lookat(const_cast<float_t*>(neg_direction), vec3{0, 0, 0}, up, light_view);
 
     // Calc split frustums and light projection matrices.
     for (size_t i = 0; i < 4; i++)
@@ -2101,11 +2104,11 @@ void Graphics::Impl::set_directional_light(vec3 const direction,
         {
             // @NOTE: near and far switched bc of reverse depth projview matrix for extracting
             //        frustums.
-            glm_vec3_lerp(frustum_corners[j + 4],
+            glm_vec4_lerp(frustum_corners[j + 4],
                           frustum_corners[j],
                           split_near_far[0],
                           split_frustum_corners[j]);
-            glm_vec3_lerp(frustum_corners[j + 4],
+            glm_vec4_lerp(frustum_corners[j + 4],
                           frustum_corners[j],
                           split_near_far[1],
                           split_frustum_corners[j + 4]);
