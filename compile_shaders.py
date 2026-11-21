@@ -31,10 +31,10 @@ if __name__ == '__main__':
         build_fname = (Path(BUILD_DIR) / relative_fpath.with_suffix('.shader')).as_posix()
         reflect_fname = (Path(BUILD_DIR) / relative_fpath.with_suffix('.shadrefl')).as_posix()
 
-        # Check if already compiled.
-        built_hashes_path = Path(f'{BUILT_HASHES_DIR}/{relative_fpath}.built_hashes')
-
         # @TODO: uncomment below if want to skip building shaders that have been built in the past
+        # # Check if already compiled.
+        # built_hashes_path = Path(f'{BUILT_HASHES_DIR}/{relative_fpath}.built_hashes')
+
         # if built_hashes_path.exists() and \
         #    Path(src_fname).exists() and \
         #    Path(build_fname).exists() and \
@@ -85,8 +85,9 @@ if __name__ == '__main__':
         else:
             print(f'\n    {proc_shader_compile.stderr}')
 
-        # Write built hashes file.
-        with open(built_hashes_path, 'w') as f:
-            f.write(f'{hash_file(src_fname)}\n')
-            f.write(f'{hash_file(build_fname)}\n')
-            f.write(f'{hash_file(reflect_fname)}\n')
+        # @TODO: uncomment below if want to skip building shaders that have been built in the past
+        # # Write built hashes file.
+        # with open(built_hashes_path, 'w') as f:
+        #     f.write(f'{hash_file(src_fname)}\n')
+        #     f.write(f'{hash_file(build_fname)}\n')
+        #     f.write(f'{hash_file(reflect_fname)}\n')
