@@ -28,6 +28,7 @@ struct VS_output
 {
     float4 pos : SV_POSITION;
     float3 frag_pos;
+    uint32_t pcf_radius;
 };
 
 
@@ -37,6 +38,7 @@ VS_output vertex_main(VS_input input,
                       uniform float4x4 light_view,
                       uniform Per_instance_data_collection* per_instance_data_collection,
                       uniform Model_transform_set* model_transform_set,
+                      uniform uint32_t pcf_radius,
                       uint instance_index : SV_VulkanInstanceID)
 {
     const Per_instance_data per_inst_data =
@@ -52,6 +54,8 @@ VS_output vertex_main(VS_input input,
 
     output.frag_pos = frag_pos.xyz;
 
+    output.pcf_radius = pcf_radius;
+
     return output;
 }
 
@@ -60,5 +64,5 @@ VS_output vertex_main(VS_input input,
 float fragment_main(VS_output input)
 {
     float d = input.frag_pos.z;
-    return (d + fwidth(d));
+    return (d + (fwidth(d) * (1 + input.pcf_radius)));
 }

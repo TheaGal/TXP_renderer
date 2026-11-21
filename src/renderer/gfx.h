@@ -45,6 +45,8 @@ struct Directional_light_shadow
     mat4 light_view;
     vec2 shadow_atlas_uv_min;
     vec2 shadow_atlas_uv_max;
+    uint32_t pcf_radius;
+    uint32_t pad0[3];
 };
 static_assert(offsetof(Directional_light_shadow, light_projection) % k_mat4_alignment == 0);
 static_assert(offsetof(Directional_light_shadow, light_view) % k_mat4_alignment == 0);

@@ -18,6 +18,23 @@
             }
         },
         {
+            "name": "jitter_16_texture",
+            "binding": {"kind": "descriptorTableSlot", "index": 1},
+            "type": {
+                "kind": "resource",
+                "baseShape": "texture3D",
+                "combined": true,
+                "resultType": {
+                    "kind": "vector",
+                    "elementCount": 4,
+                    "elementType": {
+                        "kind": "scalar",
+                        "scalarType": "float32"
+                    }
+                }
+            }
+        },
+        {
             "name": "textures",
             "binding": {"kind": "descriptorTableSlot", "space": 1, "index": 0},
             "type": {
@@ -397,6 +414,10 @@
                     "binding": {"kind": "descriptorTableSlot", "index": 0}
                 },
                 {
+                    "name": "jitter_16_texture",
+                    "binding": {"kind": "descriptorTableSlot", "index": 1}
+                },
+                {
                     "name": "textures",
                     "binding": {"kind": "descriptorTableSlot", "space": 1, "index": 0}
                 }
@@ -651,6 +672,10 @@
                 {
                     "name": "shadow_atlas_texture",
                     "binding": {"kind": "descriptorTableSlot", "index": 0}
+                },
+                {
+                    "name": "jitter_16_texture",
+                    "binding": {"kind": "descriptorTableSlot", "index": 1}
                 },
                 {
                     "name": "textures",

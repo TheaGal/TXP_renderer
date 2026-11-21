@@ -551,6 +551,9 @@ struct Graphics::Impl
     /// Descriptor set for `shadow_atlas_texture`.
     Vk_Image::Allocated_image shadow_atlas_texture_image;
     Vk_Image::Allocated_image shadow_atlas_depth_image;
+
+    Vk_Image::Allocated_image jitter_16_texture_image;
+
     VkDescriptorSet shadow_atlas_texture_descriptor_set;
     VkDescriptorSetLayout shadow_atlas_texture_descriptor_layout;
 
@@ -560,7 +563,11 @@ struct Graphics::Impl
         mat4 light_view;
         ivec2 atlas_pos;
         ivec2 atlas_extent;
+        uint32_t pcf_radius;
     };
+    static_assert(offsetof(Shadow_atlas_entry, light_projection) % k_mat4_alignment == 0);
+    static_assert(offsetof(Shadow_atlas_entry, light_view) % k_mat4_alignment == 0);
+    static_assert(sizeof(Shadow_atlas_entry) % k_mat4_alignment == 0);
     std::array<Shadow_atlas_entry, 4> shadow_atlas_entries;
 
     void create_shadow_atlas_texture_descriptor();

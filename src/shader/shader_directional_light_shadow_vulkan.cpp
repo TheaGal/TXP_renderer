@@ -39,6 +39,7 @@ struct Shader_directional_light_shadow_push_constants  // @TODO: move this to gf
     mat4 light_view;
     VkDeviceAddress per_instance_data_collection_dev_addr;
     VkDeviceAddress model_transform_set_dev_addr;
+    uint32_t pcf_radius;
 };
 static_assert(offsetof(Shader_directional_light_shadow_push_constants, light_projection) % k_mat4_alignment == 0);
 static_assert(offsetof(Shader_directional_light_shadow_push_constants, light_view) % k_mat4_alignment == 0);
@@ -361,6 +362,7 @@ void Shader_directional_light_shadow::draw(
             current_frame.per_instance_data_collection_buffer.get_device_address(),
         .model_transform_set_dev_addr =
             current_frame.model_transform_set_buffer.get_device_address(),
+        .pcf_radius = shadow_atlas_entry.pcf_radius,
     };
     glm_mat4_copy(const_cast<vec4*>(shadow_atlas_entry.light_projection),
                   push_consts.light_projection);

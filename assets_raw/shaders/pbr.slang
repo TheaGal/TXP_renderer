@@ -27,6 +27,8 @@ struct Directional_light_shadow
     float4x4 light_view;
     float2 shadow_atlas_uv_min;
     float2 shadow_atlas_uv_max;
+    uint32_t pcf_radius;
+    uint32_t pad0[3];
 };
 
 struct Point_light
@@ -62,6 +64,7 @@ struct Model_transform_set
 };
 
 [[vk::binding(0,0)]] Sampler2D shadow_atlas_texture;
+[[vk::binding(1,0)]] Sampler3D jitter_16_texture;
 [[vk::binding(0,1)]] Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
 // StructuredBuffer<DescriptorHandle<Sampler2D>> textures;  // try this method??
 static const uint32_t TEX_IDX_NONE = (uint32_t)-1;
@@ -229,25 +232,67 @@ float3 calc_point_light_radiance(Point_light light, float3 world_pos)
 }
 
 
+/// Interleaved gradient noise.
+float compute_interleaved_gradient_noise(const float2 fragcoord)
+{
+    return frac(52.9829189 * frac(0.06711056 * fragcoord.x + 0.00583715 * fragcoord.y));
+}
+
+/// Vogel disk.
+float2 compute_vogel_disk_sample_pos(uint32_t sample_idx, uint32_t num_samples, float phi)
+{
+    constexpr float k_golden_angle = 2.39996;
+    float r = sqrt(float(sample_idx) + 0.5) / sqrt(float(num_samples));
+    float theta = sample_idx * k_golden_angle + phi;
+
+    return (r * float2(cos(theta), sin(theta)));
+}
+
+/// Samples shadow with PCF.
+float sample_shadow_pcf(const float2 uv_coords,
+                        const int32_t pcf_radius,
+                        const float2 fragcoord,
+                        const float light_view_space_depth)
+{
+    float shadow = 1;
+
+    constexpr float one_texel = 1.0 / 4096.0;  // @HARDCODE
+
+    constexpr uint32_t k_num_vogel_samples = 4;
+    constexpr float k_vogel_sample_factor = 1.0 / k_num_vogel_samples;
+
+    for (uint32_t i = 0; i < k_num_vogel_samples; i++)
+    {
+        const float2 vogel_pos =
+            compute_vogel_disk_sample_pos(i,
+                                          k_num_vogel_samples,
+                                          compute_interleaved_gradient_noise(fragcoord) * 2 * PI) *
+            (pcf_radius + 0.5);  // @NOTE: adding 0.5 gives a bit more pcf without introducing acne.
+
+        const float shadow_tex_depth =
+            shadow_atlas_texture.SampleLevelZero(
+                uv_coords + float2(vogel_pos.x * one_texel, vogel_pos.y * one_texel)).r;
+        if (shadow_tex_depth < light_view_space_depth)
+            shadow -= k_vogel_sample_factor;  // in shadow!
+    }
+
+    return shadow;
+}
+
 /// Calculates shadow of directional light.
 float calc_directional_shadow(float3 world_pos,
                               float3 view_pos,
                               Directional_light_shadow directional_shadows[4],
                               float4 directional_shadow_splits,
                               float4 directional_shadow_split_band_widths,
-                              float NdotL)
+                              float NdotL,
+                              const float2 fragcoord)
 {
     const float view_depth = -view_pos.z;  // right handed coords make z depth negative
 
     float shadow = 1;
     if (view_depth < directional_shadow_splits.w)
     {
-        // view_pos.z;
-        // // blah blah
-
-        // shadow *= NdotL;
-        // shadow = view_depth % 10.0;
-
         // Calc which cascade to look.
         uint32_t cascade_idx = 3;
         [unroll]
@@ -280,15 +325,18 @@ float calc_directional_shadow(float3 world_pos,
                                       uv_raw);
 
         // Check if in shadow.
-        const float shadow_tex_depth = shadow_atlas_texture.Sample(uv_coords).r;
-        if (shadow_tex_depth < light_view_space_depth)
-            shadow = 0;  // in shadow!
+        const int32_t pcf_radius = directional_shadows[cascade_idx].pcf_radius;
+        shadow = sample_shadow_pcf(uv_coords, pcf_radius, fragcoord, light_view_space_depth);
 
+    #if 0
         // @NOTE: VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT not supported for imageview type
-        // shadow = shadow_atlas_texture.SampleCmpLevelZero(uv_coords, light_view_space_depth);
-        
-        // // @DEBUG
-        // shadow = shadow_tex_depth - light_view_space_depth;
+        shadow = shadow_atlas_texture.SampleCmpLevelZero(uv_coords, light_view_space_depth);
+    #endif // 0
+
+    #if 0
+        // @DEBUG
+        shadow = shadow_tex_depth - light_view_space_depth;
+    #endif // 0
     }
 
     return shadow;
@@ -402,7 +450,8 @@ float3 pbr_lighting(VS_output input, float4 base_color)
                                            input.light_data->directional_shadows,
                                            input.light_data->directional_shadow_splits,
                                            input.light_data->directional_shadow_split_band_widths,
-                                           NdotL)
+                                           NdotL,
+                                           input.pos.xy)
                  : 1.0);
 
         // if (shadow < 0)
@@ -444,7 +493,7 @@ float3 simple_lit_lighting(VS_output input, float4 base_color)
 [shader("fragment")]
 float4 fragment_main(VS_output input)
 {
-    // return float4(input.view_pos, 1);
+    // return float4(input.pos.xy, 0, 1);
 
     // Sample base color texture and apply material color factor
     const float4 base_color = sample_texture_idx_tinted(input.mat_param_set.base_color_texture_idx,

@@ -27,6 +27,8 @@ struct Directional_light_shadow
     float4x4 light_view;
     float2 shadow_atlas_uv_min;
     float2 shadow_atlas_uv_max;
+    uint32_t pcf_radius;
+    uint32_t pad0[3];
 };
 
 struct Point_light

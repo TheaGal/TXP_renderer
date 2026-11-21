@@ -113,6 +113,14 @@
                     }
                 },
                 {
+                    "name": "pcf_radius",
+                    "binding": {"kind": "uniform", "offset": 144, "size": 4, "elementStride": 0},
+                    "type": {
+                        "kind": "scalar",
+                        "scalarType": "uint32"
+                    }
+                },
+                {
                     "name": "instance_index",
                     "semanticName": "SV_VULKANINSTANCEID",
                     "type": {
@@ -123,7 +131,7 @@
             ],
             "result": {
                 "stage": "vertex",
-                "binding": {"kind": "varyingOutput", "index": 0},
+                "binding": {"kind": "varyingOutput", "index": 0, "count": 2},
                 "type": {
                     "kind": "struct",
                     "name": "VS_output",
@@ -152,6 +160,15 @@
                             },
                             "stage": "vertex",
                             "binding": {"kind": "varyingOutput", "index": 0}
+                        },
+                        {
+                            "name": "pcf_radius",
+                            "type": {
+                                "kind": "scalar",
+                                "scalarType": "uint32"
+                            },
+                            "stage": "vertex",
+                            "binding": {"kind": "varyingOutput", "index": 1}
                         }
                     ]
                 }
@@ -167,7 +184,7 @@
                 {
                     "name": "input",
                     "stage": "fragment",
-                    "binding": {"kind": "varyingInput", "index": 0},
+                    "binding": {"kind": "varyingInput", "index": 0, "count": 2},
                     "type": {
                         "kind": "struct",
                         "name": "VS_output",
@@ -196,6 +213,15 @@
                                 },
                                 "stage": "fragment",
                                 "binding": {"kind": "varyingInput", "index": 0}
+                            },
+                            {
+                                "name": "pcf_radius",
+                                "type": {
+                                    "kind": "scalar",
+                                    "scalarType": "uint32"
+                                },
+                                "stage": "fragment",
+                                "binding": {"kind": "varyingInput", "index": 1}
                             }
                         ]
                     }

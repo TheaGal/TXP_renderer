@@ -39,6 +39,7 @@
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
+#include "txp_renderer/callbacks.h"
 #include "txp_renderer/debug/debug_render_job.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
@@ -1104,6 +1105,7 @@ void Graphics::Impl::destroy_vulkan()
 
     shadow_atlas_texture_image.teardown();
     shadow_atlas_depth_image.teardown();
+    jitter_16_texture_image.teardown();
 
     for (auto desc_layout : built_descriptor_layouts)
     {
@@ -1586,9 +1588,39 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
     shadow_atlas_depth_image =
         Vk_Image::Allocated_image::create_image_depth_buffer(k_atlas_extent);
 
+    // Create sampling jitter texture.
+    constexpr VkExtent3D k_jitter_16_extent{ 16, 16, 16 };
+    static uint8_t jitter_16_data[k_jitter_16_extent.width][k_jitter_16_extent.height]
+                                 [k_jitter_16_extent.depth][2];
+    for (size_t x = 0; x < k_jitter_16_extent.width; x++)
+        for (size_t y = 0; y < k_jitter_16_extent.height; y++)
+            for (size_t z = 0; z < k_jitter_16_extent.depth; z++)
+            {
+                vec2 val{ callback::calc_random_value_01_exclusive_callback(),
+                          callback::calc_random_value_01_exclusive_callback() };
+
+
+                jitter_16_data[x][y][z][0] = (val[0] * 255);
+                jitter_16_data[x][y][z][1] = (val[1] * 255);
+            }
+
+    jitter_16_texture_image = Vk_Image::Allocated_image::create_image_3d(
+        VK_FORMAT_R8G8_UNORM,
+        k_jitter_16_extent,
+        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    jitter_16_texture_image.upload_data_to_image(gfx.device,
+                                                 gfx.allocator,
+                                                 gfx.graphics_queue,
+                                                 gfx.graphics_queue_family_idx,
+                                                 jitter_16_data,
+                                                 sizeof(jitter_16_data));
+
     // Create texture sampler.
     VkSamplerCreateInfo sampler_info{
         .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        // .magFilter = VK_FILTER_LINEAR,
+        // .minFilter = VK_FILTER_LINEAR,
         .magFilter = VK_FILTER_NEAREST,
         .minFilter = VK_FILTER_NEAREST,
         .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
@@ -1601,11 +1633,18 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
     if (err)
         throw std::runtime_error("Failed to create VK sampler.");
 
-    // Create descriptor.
-    VkDescriptorImageInfo desc_img_info{
-        .sampler = img_sampler,
-        .imageView = shadow_atlas_texture_image.get_image_view(),
-        .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    // Create descriptors.
+    std::array<VkDescriptorImageInfo, 2> desc_img_infos{
+        VkDescriptorImageInfo{
+            .sampler = img_sampler,
+            .imageView = shadow_atlas_texture_image.get_image_view(),
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        },
+        VkDescriptorImageInfo{
+            .sampler = img_sampler,
+            .imageView = jitter_16_texture_image.get_image_view(),
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        },
     };
 
     // Descriptor layouts.
@@ -1617,6 +1656,10 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
               Descriptor_type_info{
                   .descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
               } },
+            { 1,
+              Descriptor_type_info{
+                  .descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              } },
         },
         VK_SHADER_STAGE_FRAGMENT_BIT,
         0);
@@ -1625,19 +1668,32 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
     shadow_atlas_texture_descriptor_set =
         global_descriptor_allocator.allocate(shadow_atlas_texture_descriptor_layout);
 
-    VkWriteDescriptorSet imgs_write{ .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
-                                     .dstSet = shadow_atlas_texture_descriptor_set,
-                                     .dstBinding = 0,
-                                     .descriptorCount = 1,
-                                     .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                                     .pImageInfo = &desc_img_info };
-    vkUpdateDescriptorSets(gfx.device, 1, &imgs_write, 0, nullptr);
+    std::array<VkWriteDescriptorSet, 2> imgs_writes{
+        VkWriteDescriptorSet{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = shadow_atlas_texture_descriptor_set,
+            .dstBinding = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .pImageInfo = &desc_img_infos[0],
+        },
+        VkWriteDescriptorSet{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = shadow_atlas_texture_descriptor_set,
+            .dstBinding = 1,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .pImageInfo = &desc_img_infos[1],
+        },
+    };
+    vkUpdateDescriptorSets(gfx.device, imgs_writes.size(), imgs_writes.data(), 0, nullptr);
 
     // Shadow atlas entries.
     auto const add_shadow_atlas_entry_fn =
-        [this](size_t shadow_idx, ivec2 atlas_pos, ivec2 atlas_extent) {
+        [this](size_t shadow_idx, ivec2 atlas_pos, ivec2 atlas_extent, uint32_t pcf_radius) {
             glm_ivec2_copy(atlas_pos, shadow_atlas_entries[shadow_idx].atlas_pos);
             glm_ivec2_copy(atlas_extent, shadow_atlas_entries[shadow_idx].atlas_extent);
+            shadow_atlas_entries[shadow_idx].pcf_radius = pcf_radius;
 
             for (auto& frame : frames)
             {
@@ -1655,13 +1711,17 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
                     (static_cast<float_t>(atlas_pos[0] + atlas_extent[0]) / k_atlas_extent.width);
                 light_data.directional_shadows[shadow_idx].shadow_atlas_uv_max[1] =
                     (static_cast<float_t>(atlas_pos[1] + atlas_extent[1]) / k_atlas_extent.height);
+
+                light_data.directional_shadows[shadow_idx].pcf_radius = pcf_radius;
             }
         };
 
-    add_shadow_atlas_entry_fn(0, ivec2{ 0, 0 }, ivec2{ 1024, 1024 });
-    add_shadow_atlas_entry_fn(1, ivec2{ 1024, 0 }, ivec2{ 1024, 1024 });
-    add_shadow_atlas_entry_fn(2, ivec2{ 2048, 0 }, ivec2{ 1024, 1024 });
-    add_shadow_atlas_entry_fn(3, ivec2{ 3072, 0 }, ivec2{ 1024, 1024 });
+    constexpr uint32_t k_pcf_radius{ 1 };  // @HARDCODE (1 is sharper and has less peter panning, but you can see the individual shadow texels. 2 is opposite)
+
+    add_shadow_atlas_entry_fn(0, ivec2{ 0, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+    add_shadow_atlas_entry_fn(1, ivec2{ 1024, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+    add_shadow_atlas_entry_fn(2, ivec2{ 2048, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+    add_shadow_atlas_entry_fn(3, ivec2{ 3072, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
 }
 
 void Graphics::Impl::create_all_textures_descriptor()
