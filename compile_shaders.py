@@ -34,19 +34,20 @@ if __name__ == '__main__':
         # Check if already compiled.
         built_hashes_path = Path(f'{BUILT_HASHES_DIR}/{relative_fpath}.built_hashes')
 
-        if built_hashes_path.exists() and \
-           Path(src_fname).exists() and \
-           Path(build_fname).exists() and \
-           Path(reflect_fname).exists():
-            with open(built_hashes_path, 'r') as f:
-                hash_lines = f.readlines()
+        # @TODO: uncomment below if want to skip building shaders that have been built in the past
+        # if built_hashes_path.exists() and \
+        #    Path(src_fname).exists() and \
+        #    Path(build_fname).exists() and \
+        #    Path(reflect_fname).exists():
+        #     with open(built_hashes_path, 'r') as f:
+        #         hash_lines = f.readlines()
 
-            if len(hash_lines) >= 3 and \
-               hash_file(src_fname) == hash_lines[0].strip() and \
-               hash_file(build_fname) == hash_lines[1].strip() and \
-               hash_file(reflect_fname) == hash_lines[2].strip():
-                # This one is already compiled! Skip it.
-                continue
+        #     if len(hash_lines) >= 3 and \
+        #        hash_file(src_fname) == hash_lines[0].strip() and \
+        #        hash_file(build_fname) == hash_lines[1].strip() and \
+        #        hash_file(reflect_fname) == hash_lines[2].strip():
+        #         # This one is already compiled! Skip it.
+        #         continue
 
         # Compile shader!!
         shader_compile_cmd = ['slangc',
