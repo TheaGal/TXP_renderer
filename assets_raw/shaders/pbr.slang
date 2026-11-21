@@ -247,7 +247,6 @@ float calc_directional_shadow(float3 world_pos,
 
         // shadow *= NdotL;
         // shadow = view_depth % 10.0;
-        shadow = 0;
 
         // Calc which cascade to look.
         uint32_t cascade_idx = 3;
@@ -284,9 +283,12 @@ float calc_directional_shadow(float3 world_pos,
         const float shadow_tex_depth = shadow_atlas_texture.Sample(uv_coords).r;
         if (shadow_tex_depth < light_view_space_depth)
             shadow = 0;  // in shadow!
+
+        // @NOTE: VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT not supported for imageview type
+        // shadow = shadow_atlas_texture.SampleCmpLevelZero(uv_coords, light_view_space_depth);
         
-        // @DEBUG
-        shadow = shadow_tex_depth - light_view_space_depth;
+        // // @DEBUG
+        // shadow = shadow_tex_depth - light_view_space_depth;
     }
 
     return shadow;
@@ -403,12 +405,12 @@ float3 pbr_lighting(VS_output input, float4 base_color)
                                            NdotL)
                  : 1.0);
 
-        if (shadow < 0)
-        {
-            return float3(0, -shadow, 0);
-        }
-        else
-            return float3(shadow, 0, 0);
+        // if (shadow < 0)
+        // {
+        //     return float3(0, -shadow, 0);
+        // }
+        // else
+        //     return float3(shadow, 0, 0);
 
         // --- RADIANCE ACCUMULATION ---------------------------------------------------------------
         // Combine diffuse (Lambertian) and specular (Cook-Torrance) terms
