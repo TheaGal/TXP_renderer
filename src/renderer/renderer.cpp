@@ -438,7 +438,8 @@ struct Renderer::Impl
                                             light.intensity,
                                             inv_proj_view,
                                             main_cam_znear_zfar,
-                                            vec4{ 4, 16, 64, 256 });
+                                            vec4{ 4, 16, 64, 256 },
+                                            vec4{ 1, 2, 4, 16 });
         }
 
         graphics->clear_point_light_list();

@@ -223,7 +223,8 @@ public:
                                float_t intensity,
                                mat4 const main_cam_inv_proj_view,
                                vec2 const main_cam_znear_zfar,
-                               vec4 const directional_shadow_splits);
+                               vec4 const directional_shadow_splits,
+                               vec4 const directional_shadow_split_band_widths);
 
     /// Clears the GPU point light list.
     void clear_point_light_list();

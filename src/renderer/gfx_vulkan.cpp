@@ -244,14 +244,16 @@ void TXP::Graphics::set_directional_light(vec3 const direction,
                                           float_t intensity,
                                           mat4 const main_cam_inv_proj_view,
                                           vec2 const main_cam_znear_zfar,
-                                          vec4 const directional_shadow_splits)
+                                          vec4 const directional_shadow_splits,
+                                          vec4 const directional_shadow_split_band_widths)
 {
     m_pimpl->set_directional_light(direction,
                                    color,
                                    intensity,
                                    main_cam_inv_proj_view,
                                    main_cam_znear_zfar,
-                                   directional_shadow_splits);
+                                   directional_shadow_splits,
+                                   directional_shadow_split_band_widths);
 }
 
 void TXP::Graphics::clear_point_light_list()

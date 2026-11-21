@@ -64,7 +64,6 @@ struct Model_transform_set
 };
 
 [[vk::binding(0,0)]] Sampler2D shadow_atlas_texture;
-[[vk::binding(1,0)]] Sampler3D jitter_16_texture;
 [[vk::binding(0,1)]] Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
 // StructuredBuffer<DescriptorHandle<Sampler2D>> textures;  // try this method??
 static const uint32_t TEX_IDX_NONE = (uint32_t)-1;
@@ -248,7 +247,7 @@ float2 compute_vogel_disk_sample_pos(uint32_t sample_idx, uint32_t num_samples, 
     return (r * float2(cos(theta), sin(theta)));
 }
 
-/// Samples shadow with PCF.
+/// Samples shadow with ~~PCF~~ stochastic Vogel disk sampling.
 float sample_shadow_pcf(const float2 uv_coords,
                         const int32_t pcf_radius,
                         const float2 fragcoord,
@@ -279,6 +278,31 @@ float sample_shadow_pcf(const float2 uv_coords,
     return shadow;
 }
 
+/// Calculates UV coords and samples a cascade's shadow.
+float sample_shadow_at_cascade(float3 world_pos,
+                               Directional_light_shadow directional_shadows[4],
+                               uint32_t cascade_idx,
+                               const float2 fragcoord)
+{
+    // Calc shadow depth.
+    const float4 frag_pos = mul(directional_shadows[cascade_idx].light_view,
+                                float4(world_pos, 1));
+    const float light_view_space_depth = frag_pos.z;
+
+    // Calc shadow uv.
+    const float4 clip_pos = mul(directional_shadows[cascade_idx].light_projection, frag_pos);
+
+    const float2 uv_raw = clip_pos.xy * 0.5 + float2(0.5);
+
+    const float2 uv_coords = lerp(directional_shadows[cascade_idx].shadow_atlas_uv_min,
+                                  directional_shadows[cascade_idx].shadow_atlas_uv_max,
+                                  uv_raw);
+
+    // Check if in shadow.
+    const int32_t pcf_radius = directional_shadows[cascade_idx].pcf_radius;
+    return sample_shadow_pcf(uv_coords, pcf_radius, fragcoord, light_view_space_depth);
+}
+
 /// Calculates shadow of directional light.
 float calc_directional_shadow(float3 world_pos,
                               float3 view_pos,
@@ -294,12 +318,21 @@ float calc_directional_shadow(float3 world_pos,
     if (view_depth < directional_shadow_splits.w)
     {
         // Calc which cascade to look.
-        uint32_t cascade_idx = 3;
+        uint32_t cascade_idx;
+        float blend_upper_band = 0;
+
         [unroll]
-        for (int32_t i = 4 - 1 - 1; i >= 0; i--)
+        for (int32_t i = 4 - 1; i >= 0; i--)
         {
-            if (view_depth < directional_shadow_splits[i])
+            if (i == 4 - 1 || view_depth < directional_shadow_splits[i])
+            {
                 cascade_idx = i;
+
+                const float distance_from_split_end = (directional_shadow_splits[i] - view_depth);
+                blend_upper_band =
+                    saturate(1.0 - (distance_from_split_end /
+                                    directional_shadow_split_band_widths[i]));
+            }
         }
 
     #if 0
@@ -310,23 +343,20 @@ float calc_directional_shadow(float3 world_pos,
         shadow = dbg_colors[cascade_idx];
     #endif // 0
 
-        // Calc shadow depth.
-        const float4 frag_pos = mul(directional_shadows[cascade_idx].light_view,
-                                    float4(world_pos, 1));
-        const float light_view_space_depth = frag_pos.z;
+        shadow = sample_shadow_at_cascade(world_pos, directional_shadows, cascade_idx, fragcoord);
 
-        // Calc shadow uv.
-        const float4 clip_pos = mul(directional_shadows[cascade_idx].light_projection, frag_pos);
-
-        const float2 uv_raw = clip_pos.xy * 0.5 + float2(0.5);
-
-        const float2 uv_coords = lerp(directional_shadows[cascade_idx].shadow_atlas_uv_min,
-                                      directional_shadows[cascade_idx].shadow_atlas_uv_max,
-                                      uv_raw);
-
-        // Check if in shadow.
-        const int32_t pcf_radius = directional_shadows[cascade_idx].pcf_radius;
-        shadow = sample_shadow_pcf(uv_coords, pcf_radius, fragcoord, light_view_space_depth);
+        if (blend_upper_band > 1e-6)
+        {
+            float upper_band_shadow = 1;
+            if (cascade_idx < 4 - 1)
+            {
+                upper_band_shadow = sample_shadow_at_cascade(world_pos,
+                                                             directional_shadows,
+                                                             cascade_idx + 1,
+                                                             fragcoord);
+            }
+            shadow = lerp(shadow, upper_band_shadow, blend_upper_band);
+        }
 
     #if 0
         // @NOTE: VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT not supported for imageview type
@@ -442,8 +472,7 @@ float3 pbr_lighting(VS_output input, float4 base_color)
         kD *= 1.0 - metallic;                    // metals have no diffuse reflection
 
         // --- SHADOW ------------------------------------------------------------------------------
-        // const
-         float shadow =
+        const float shadow =
             (i == 0
                  ? calc_directional_shadow(input.world_pos,
                                            input.view_pos,
@@ -453,13 +482,6 @@ float3 pbr_lighting(VS_output input, float4 base_color)
                                            NdotL,
                                            input.pos.xy)
                  : 1.0);
-
-        // if (shadow < 0)
-        // {
-        //     return float3(0, -shadow, 0);
-        // }
-        // else
-        //     return float3(shadow, 0, 0);
 
         // --- RADIANCE ACCUMULATION ---------------------------------------------------------------
         // Combine diffuse (Lambertian) and specular (Cook-Torrance) terms
@@ -493,8 +515,6 @@ float3 simple_lit_lighting(VS_output input, float4 base_color)
 [shader("fragment")]
 float4 fragment_main(VS_output input)
 {
-    // return float4(input.pos.xy, 0, 1);
-
     // Sample base color texture and apply material color factor
     const float4 base_color = sample_texture_idx_tinted(input.mat_param_set.base_color_texture_idx,
                                                         input.uv,

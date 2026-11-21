@@ -552,8 +552,6 @@ struct Graphics::Impl
     Vk_Image::Allocated_image shadow_atlas_texture_image;
     Vk_Image::Allocated_image shadow_atlas_depth_image;
 
-    Vk_Image::Allocated_image jitter_16_texture_image;
-
     VkDescriptorSet shadow_atlas_texture_descriptor_set;
     VkDescriptorSetLayout shadow_atlas_texture_descriptor_layout;
 
@@ -627,7 +625,8 @@ struct Graphics::Impl
                                float_t intensity,
                                mat4 const main_cam_inv_proj_view,
                                vec2 const main_cam_znear_zfar,
-                               vec4 const directional_shadow_splits);
+                               vec4 const directional_shadow_splits,
+                               vec4 const directional_shadow_split_band_widths);
 
     /// Resets the writing to lights buffer.
     void clear_point_light_list();
