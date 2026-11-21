@@ -267,7 +267,7 @@ float sample_shadow_pcf(const float2 uv_coords,
             compute_vogel_disk_sample_pos(i,
                                           k_num_vogel_samples,
                                           compute_interleaved_gradient_noise(fragcoord) * 2 * PI) *
-            (pcf_radius + 0.5);  // @NOTE: adding 0.5 gives a bit more pcf without introducing acne.
+            (pcf_radius + 0.5);  // @NOTE: adding 0.5 gives a bit more pcf without introducing acne.  -Thea 2026/11/21
 
         const float shadow_tex_depth =
             shadow_atlas_texture.SampleLevelZero(

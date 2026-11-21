@@ -1716,7 +1716,12 @@ void Graphics::Impl::create_shadow_atlas_texture_descriptor()
             }
         };
 
-    constexpr uint32_t k_pcf_radius{ 1 };  // @HARDCODE (1 is sharper and has less peter panning, but you can see the individual shadow texels. 2 is opposite)
+    // @HARDCODE: 1 is sharper and has less peter panning, but you can see the individual shadow
+    //            texels. 2 is opposite  -Thea 2026/11/21
+    // @NOTE: in the shader, the pcf gets 0.5 added to it which gives a little more softness
+    //        (similar to 2) without introducing any acne (bypasses the biasing), so 1 is probably
+    //        the best option since 0 doesn't look good.  -Thea 2026/11/21
+    constexpr uint32_t k_pcf_radius{ 1 };
 
     add_shadow_atlas_entry_fn(0, ivec2{ 0, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
     add_shadow_atlas_entry_fn(1, ivec2{ 1024, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
