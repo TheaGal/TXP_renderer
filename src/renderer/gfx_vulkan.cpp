@@ -20,6 +20,7 @@
 #include "renderer/types.h"
 
 #include <cassert>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <tracy/Tracy.hpp>
@@ -276,7 +277,12 @@ void TXP::Graphics::begin_rendering_shadows()
     auto& color_image{ m_pimpl->shadow_atlas_texture_image };
     auto& depth_image{ m_pimpl->shadow_atlas_depth_image };
 
-    m_pimpl->begin_rendering(color_image, vec4{ 0, 0, 0, 1 }, &depth_image);
+    m_pimpl->begin_rendering(color_image,
+                             vec4{ std::numeric_limits<float_t>::max(),
+                                   std::numeric_limits<float_t>::max(),
+                                   std::numeric_limits<float_t>::max(),
+                                   1 },
+                             &depth_image);
 }
 
 void TXP::Graphics::end_rendering_shadows()
