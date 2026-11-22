@@ -26,6 +26,7 @@
 #include "ktxvulkan.h"
 // clang-format on
 
+#include "btdatecheck.h"
 #include "btglm.h"
 #include "btlogger.h"
 #include "btservice_finder.h"
@@ -38,6 +39,9 @@
 #include "render_object/vertex.h"
 #include "renderer/gfx.h"
 #include "renderer/types.h"
+#include "txp_renderer/callbacks.h"
+#include "txp_renderer/debug/debug_printable_info.h"
+#include "txp_renderer/debug/debug_render_job.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
 
@@ -45,8 +49,10 @@
 #include <cassert>
 #include <cerrno>
 #include <cmath>
+#include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -873,6 +879,26 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
     }
 }
 
+void Graphics::Impl::init_vulkan_create_query_pool()
+{
+    ZoneScoped;
+
+    VkResult err;
+
+    // Create query pool for getting GPU timestamps.
+    VkQueryPoolCreateInfo query_pool_info{
+        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .queryType = VK_QUERY_TYPE_TIMESTAMP,
+        .queryCount = 2,
+    };
+
+    for (uint32_t i = 0; i < k_frame_overlap; i++)
+    {
+        frames[i].gpu_profiler.init(gfx.device, gfx.physical_device_properties);
+    }
+}
+
 void Graphics::Impl::init_vulkan_for_imgui()
 {
     ZoneScoped;
@@ -1030,6 +1056,9 @@ void Graphics::Impl::init_vulkan_create_descriptors()
     };
 
     global_descriptor_allocator.init_pool(gfx.device, gfx.allocator, 10, std::move(sizes));
+
+    // Create shadow atlas texture descriptor.
+    create_shadow_atlas_texture_descriptor();
 }
 
 void Graphics::Impl::rebuild_vulkan_swapchain()
@@ -1056,6 +1085,7 @@ void Graphics::Impl::destroy_vulkan()
     }
     for (auto& frame : frames)
     {
+        frame.gpu_profiler.teardown();
         vkDestroyFence(gfx.device, frame.render_fence, nullptr);
         vkDestroySemaphore(gfx.device, frame.acquire_nxt_img_semaphore, nullptr);
     }
@@ -1094,6 +1124,9 @@ void Graphics::Impl::destroy_vulkan()
 
     clouds_image.teardown();
     ui_image.teardown();
+
+    shadow_atlas_texture_image.teardown();
+    shadow_atlas_depth_image.teardown();
 
     for (auto desc_layout : built_descriptor_layouts)
     {
@@ -1561,11 +1594,120 @@ VkDescriptorSetLayout Graphics::Impl::build_descriptor_layout(
     return layout;
 }
 
+void Graphics::Impl::create_shadow_atlas_texture_descriptor()
+{
+    VkResult err;
+
+    constexpr VkExtent2D k_atlas_extent{ 4096, 4096 };
+
+    // Create shadow atlas texture.
+    shadow_atlas_texture_image = Vk_Image::Allocated_image::create_image_2d(
+        VK_FORMAT_R32_SFLOAT,
+        k_atlas_extent,
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+    shadow_atlas_depth_image =
+        Vk_Image::Allocated_image::create_image_depth_buffer(k_atlas_extent);
+
+    // Create texture sampler.
+    VkSamplerCreateInfo sampler_info{
+        .sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO,
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        // .magFilter = VK_FILTER_NEAREST,
+        // .minFilter = VK_FILTER_NEAREST,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
+        .anisotropyEnable = VK_FALSE,
+        .maxLod = 1,
+    };
+
+    VkSampler img_sampler;
+    err = vkCreateSampler(gfx.device, &sampler_info, nullptr, &img_sampler);
+    if (err)
+        throw std::runtime_error("Failed to create VK sampler.");
+
+    // Create descriptors.
+    std::array<VkDescriptorImageInfo, 1> desc_img_infos{
+        VkDescriptorImageInfo{
+            .sampler = img_sampler,
+            .imageView = shadow_atlas_texture_image.get_image_view(),
+            .imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        },
+    };
+
+    // Descriptor layouts.
+    using Descriptor_type_info = Graphics::Impl::Descriptor_type_info;
+
+    shadow_atlas_texture_descriptor_layout = build_descriptor_layout(
+        {
+            { 0,
+              Descriptor_type_info{
+                  .descriptor_type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+              } },
+        },
+        VK_SHADER_STAGE_FRAGMENT_BIT,
+        0);
+
+    // Descriptor.
+    shadow_atlas_texture_descriptor_set =
+        global_descriptor_allocator.allocate(shadow_atlas_texture_descriptor_layout);
+
+    std::array<VkWriteDescriptorSet, 1> imgs_writes{
+        VkWriteDescriptorSet{
+            .sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+            .dstSet = shadow_atlas_texture_descriptor_set,
+            .dstBinding = 0,
+            .descriptorCount = 1,
+            .descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+            .pImageInfo = &desc_img_infos[0],
+        },
+    };
+    vkUpdateDescriptorSets(gfx.device, imgs_writes.size(), imgs_writes.data(), 0, nullptr);
+
+    // Shadow atlas entries.
+    auto const add_shadow_atlas_entry_fn =
+        [this](size_t shadow_idx, ivec2 atlas_pos, ivec2 atlas_extent, uint32_t pcf_radius) {
+            glm_ivec2_copy(atlas_pos, shadow_atlas_entries[shadow_idx].atlas_pos);
+            glm_ivec2_copy(atlas_extent, shadow_atlas_entries[shadow_idx].atlas_extent);
+            shadow_atlas_entries[shadow_idx].pcf_radius = pcf_radius;
+
+            for (auto& frame : frames)
+            {
+                auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
+                    frame.lighting_data_buffer.get_p_mapped_data()) };
+
+                constexpr VkExtent2D k_atlas_extent{ 4096, 4096 };  // @COPYPASTA
+
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_min[0] =
+                    (static_cast<float_t>(atlas_pos[0]) / k_atlas_extent.width);
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_min[1] =
+                    (static_cast<float_t>(atlas_pos[1]) / k_atlas_extent.height);
+
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_max[0] =
+                    (static_cast<float_t>(atlas_pos[0] + atlas_extent[0]) / k_atlas_extent.width);
+                light_data.directional_shadows[shadow_idx].shadow_atlas_uv_max[1] =
+                    (static_cast<float_t>(atlas_pos[1] + atlas_extent[1]) / k_atlas_extent.height);
+
+                light_data.directional_shadows[shadow_idx].pcf_radius = pcf_radius;
+            }
+        };
+
+    // @HARDCODE: 1 is sharper and has less peter panning, but you can see the individual shadow
+    //            texels. 2 is opposite  -Thea 2026/11/21
+    // @NOTE: in the shader, the pcf gets 0.5 added to it which gives a little more softness
+    //        (similar to 2) without introducing any acne (bypasses the biasing), so 1 is probably
+    //        the best option since 0 doesn't look good.  -Thea 2026/11/21
+    constexpr uint32_t k_pcf_radius{ 1 };
+
+    add_shadow_atlas_entry_fn(0, ivec2{ 0, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+    add_shadow_atlas_entry_fn(1, ivec2{ 1024, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+    add_shadow_atlas_entry_fn(2, ivec2{ 2048, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+    add_shadow_atlas_entry_fn(3, ivec2{ 3072, 0 }, ivec2{ 1024, 1024 }, k_pcf_radius);
+}
 
 void Graphics::Impl::create_all_textures_descriptor()
-{   // Create all-texture descriptor image infos.
-    all_texture_infos.reserve(texture_entries.size());
-
+{
+    // Create all-texture descriptor image infos.
     if (texture_entries.empty())
     {
         BT_ERROR(
@@ -1696,6 +1838,7 @@ void Graphics::Impl::build_imgui_contents(Camera_internal& camera,
         render_view_image_content.content_image_descriptors.emplace_back(
             rv.imgui_destination_image_descriptor);
     }
+    render_view_image_content.shadow_atlas_image_descriptor = shadow_atlas_texture_descriptor_set;
 
     editor_content::build_content(load_cam_orient_settings_flag,
                                   settings,
@@ -1917,32 +2060,184 @@ void Graphics::Impl::set_render_view_camera(size_t render_view_idx,
     glm_vec3_copy(const_cast<float_t*>(camera_position), env_data.camera_position);
 }
 
-void Graphics::Impl::set_directional_light(vec3 direction,
-                                           vec3 color,
-                                           float_t intensity)
+void Graphics::Impl::set_directional_light(vec3 const direction,
+                                           vec3 const color,
+                                           float_t intensity,
+                                           mat4 const main_cam_inv_proj_view,
+                                           vec2 const main_cam_znear_zfar,
+                                           vec4 const directional_shadow_splits,
+                                           vec4 const directional_shadow_split_band_widths)
 {
     auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
         get_current_frame().lighting_data_buffer.get_p_mapped_data()) };
 
-    glm_vec3_copy(direction, light_data.directional_light.direction_xyz_intensity_w);
+    glm_vec3_copy(const_cast<float_t*>(direction), light_data.directional_light.direction_xyz_intensity_w);
     light_data.directional_light.direction_xyz_intensity_w[3] = intensity;
+    glm_vec3_copy(const_cast<float_t*>(color), light_data.directional_light.color);
 
-    glm_vec3_copy(color, light_data.directional_light.color);
+    // @TODO: figure out this part!!!!
 
-    // @TEMP: @DEBUG: add point lights.
-    glm_vec3_copy(vec3{ 10, 1, 0 }, light_data.point_lights[0].position_xyz_intensity_w);
-    light_data.point_lights[0].position_xyz_intensity_w[3] = 4;
-    glm_vec3_copy(vec4{ 1, 0, 0, 1 }, light_data.point_lights[0].color);
+    // Calc CSM shadow matrices.
+    vec4 frustum_corners[8];
+    glm_frustum_corners(const_cast<vec4*>(main_cam_inv_proj_view), frustum_corners);
 
-    glm_vec3_copy(vec3{ 10, 1, 1 }, light_data.point_lights[1].position_xyz_intensity_w);
-    light_data.point_lights[1].position_xyz_intensity_w[3] = 4;
-    glm_vec3_copy(vec4{ 0, 1, 0, 1 }, light_data.point_lights[1].color);
+    static auto const k_debug_draw_frustum = [](vec4 frustum_corners[8], vec4 color){
+        for (size_t i = 0; i < 4; i++)
+        {
+            {
+                debug::Debug_line line;
+                glm_vec3_copy(frustum_corners[i], line.pos1);
+                glm_vec3_copy(frustum_corners[(i + 1) % 4], line.pos2);
+                glm_vec4_copy(color, line.color1);
+                glm_vec4_copy(line.color1, line.color2);
 
-    glm_vec3_copy(vec3{ 10, 1, 2 }, light_data.point_lights[2].position_xyz_intensity_w);
-    light_data.point_lights[2].position_xyz_intensity_w[3] = 4;
-    glm_vec3_copy(vec4{ 0, 0, 1, 1 }, light_data.point_lights[2].color);
+                debug::emplace_debug_line(std::move(line), 0.03f);
+            }
 
-    light_data.num_point_lights = 3;
+            {
+                debug::Debug_line line;
+                glm_vec3_copy(frustum_corners[i + 4], line.pos1);
+                glm_vec3_copy(frustum_corners[((i + 1) % 4) + 4], line.pos2);
+                glm_vec4_copy(color, line.color1);
+                glm_vec4_copy(line.color1, line.color2);
+
+                debug::emplace_debug_line(std::move(line), 0.03f);
+            }
+
+            {
+                debug::Debug_line line;
+                glm_vec3_copy(frustum_corners[i], line.pos1);
+                glm_vec3_copy(frustum_corners[i + 4], line.pos2);
+                glm_vec4_copy(color, line.color1);
+                glm_vec4_copy(line.color1, line.color2);
+
+                debug::emplace_debug_line(std::move(line), 0.03f);
+            }
+        }
+    };
+
+    // Calc base light view matrix.
+    vec3 neg_direction;
+    glm_vec3_negate_to(const_cast<float_t*>(direction), neg_direction);
+
+    vec3 up{ 0.0f, 1.0f, 0.0f };
+    if (std::abs(neg_direction[0]) < 1e-6f &&
+        std::abs(neg_direction[1]) > 0.5f &&
+        std::abs(neg_direction[2]) < 1e-6f)
+    {
+        glm_vec3_copy(vec3{ 0.0f, 0.0f, 1.0f }, up);
+    }
+
+    mat4 light_view;
+    glm_lookat(const_cast<float_t*>(neg_direction), vec3{0, 0, 0}, up, light_view);
+
+    // Calc split frustums and light projection matrices.
+    for (size_t i = 0; i < 4; i++)
+    {
+        // Split the frustum.
+        vec2 split_near_far{ i == 0 ? 0
+                                    : (directional_shadow_splits[i - 1] -
+                                       directional_shadow_split_band_widths[i - 1] -  // padding for split bands
+                                       main_cam_znear_zfar[0]) /
+                                          (main_cam_znear_zfar[1] - main_cam_znear_zfar[0]),
+                             (directional_shadow_splits[i] - main_cam_znear_zfar[0]) /
+                                 (main_cam_znear_zfar[1] - main_cam_znear_zfar[0]) };
+
+        vec4 split_frustum_corners[8];
+        for (size_t j = 0; j < 4; j++)
+        {
+            // @NOTE: near and far switched bc of reverse depth projview matrix for extracting
+            //        frustums.
+            glm_vec4_lerp(frustum_corners[j + 4],
+                          frustum_corners[j],
+                          split_near_far[0],
+                          split_frustum_corners[j]);
+            glm_vec4_lerp(frustum_corners[j + 4],
+                          frustum_corners[j],
+                          split_near_far[1],
+                          split_frustum_corners[j + 4]);
+        }
+
+        k_debug_draw_frustum(split_frustum_corners, vec4{ 1, 0, 0, 1 });
+
+        // Transform frustum corners to light view space and create AABB.
+        vec3 aabb_min_max[2]{ { std::numeric_limits<float_t>::max(),
+                                std::numeric_limits<float_t>::max(),
+                                std::numeric_limits<float_t>::max() },
+                              { std::numeric_limits<float_t>::lowest(),
+                                std::numeric_limits<float_t>::lowest(),
+                                std::numeric_limits<float_t>::lowest() } };
+        for (size_t j = 0; j < 8; j++)
+        {
+            vec4 view_space_corner;
+            glm_mat4_mulv(light_view, split_frustum_corners[j], view_space_corner);
+
+            glm_vec3_minv(view_space_corner, aabb_min_max[0], aabb_min_max[0]);
+            glm_vec3_maxv(view_space_corner, aabb_min_max[1], aabb_min_max[1]);
+        }
+
+        // Create light projection matrix.
+        mat4 light_projection;
+        glm_ortho_aabb(aabb_min_max, light_projection);
+
+        // Calc light projection view matrix.
+        mat4 light_proj_view;
+        glm_mat4_mul(light_projection, light_view, light_proj_view);
+
+        // @DEBUG: show frustum corners.
+        {
+            mat4 light_inv_proj_view;
+            glm_mat4_inv(light_proj_view, light_inv_proj_view);
+
+            vec4 light_aabb_corners[8];
+            glm_frustum_corners(light_inv_proj_view, light_aabb_corners);
+
+            k_debug_draw_frustum(light_aabb_corners, vec4{ 0, 0, 1, 1 });
+        }
+
+        // Write to shadow map entries.
+        glm_mat4_copy(light_projection, shadow_atlas_entries[i].light_projection);
+        glm_mat4_copy(light_view, shadow_atlas_entries[i].light_view);
+
+        // Write to GPU.
+        glm_mat4_copy(shadow_atlas_entries[i].light_projection,
+                      light_data.directional_shadows[i].light_projection);
+        glm_mat4_copy(shadow_atlas_entries[i].light_view,
+                      light_data.directional_shadows[i].light_view);
+    }
+
+    // @THEA: set this here or somewhere else??
+    // @THOUGHT: the shadow splits and the split band widths do need to be here.
+    glm_vec4_copy(const_cast<float_t*>(directional_shadow_splits),
+                  light_data.directional_shadow_splits);
+
+    glm_vec4_copy(const_cast<float_t*>(directional_shadow_split_band_widths),
+                  light_data.directional_shadow_split_band_widths);
+}
+
+void Graphics::Impl::clear_point_light_list()
+{
+    auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
+        get_current_frame().lighting_data_buffer.get_p_mapped_data()) };
+
+    light_data.num_point_lights = 0;
+}
+
+void Graphics::Impl::add_point_light(vec3 const origin, vec3 const color, float_t intensity)
+{
+    // @TODO: add light clustering.
+    BT::date_deadline(2026, 12, 30);
+
+    auto& light_data{ *static_cast<gpu_type::Lighting_data*>(
+        get_current_frame().lighting_data_buffer.get_p_mapped_data()) };
+
+    auto& point_light{ light_data.point_lights[light_data.num_point_lights] };
+
+    glm_vec3_copy(const_cast<float_t*>(origin), point_light.position_xyz_intensity_w);
+    point_light.position_xyz_intensity_w[3] = intensity;
+    glm_vec3_copy(const_cast<float_t*>(color), point_light.color);
+
+    light_data.num_point_lights++;
 }
 
 void Graphics::Impl::set_render_object_per_instance_data(
@@ -2063,12 +2358,35 @@ bool Graphics::Impl::start_next_frame()
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();
 
+    // Retrieve GPU timings from query pool.
+    if (current_frame.gpu_profiler.has_results())
+    {
+        info_hook_struct.report_gpu_perf_results_fn(current_frame.gpu_profiler.get_results());
+    }
+
+    // Start profiling GPU frame.
+    VkCommandBuffer cmd{ current_frame.graphics_queue_command_buffer.get() };
+    current_frame.gpu_profiler.clear_results(cmd);
+    current_frame.gpu_profiler.begin_region(cmd, "GPU frame");
+
     return true;
 }
 
 void* Graphics::Impl::get_render_view(size_t rend_view_idx)
 {
     return &render_views[rend_view_idx];
+}
+
+void Graphics::Impl::begin_profile_region(char const* const region_name)
+{
+    auto& frame{ get_current_frame() };
+    frame.gpu_profiler.begin_region(frame.graphics_queue_command_buffer.get(), region_name);
+}
+
+void Graphics::Impl::end_profile_region(char const* const region_name)
+{
+    auto& frame{ get_current_frame() };
+    frame.gpu_profiler.end_region(frame.graphics_queue_command_buffer.get(), region_name);
 }
 
 void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
@@ -2234,6 +2552,9 @@ void Graphics::Impl::present_frame_to_screen()
     Vk_Image::Image::transition_to(
         cmd,
         { { &get_current_swapchain_image(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
+
+    // End profiling GPU frame.
+    current_frame.gpu_profiler.end_region(cmd, "GPU frame");
 
     // End recording command buffers.
     TracyVkCollect(current_frame.graphics_queue_command_buffer.get_tracy(), cmd);

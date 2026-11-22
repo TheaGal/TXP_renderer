@@ -21,6 +21,16 @@ struct Directional_light
     float4 color;
 };
 
+struct Directional_light_shadow
+{
+    float4x4 light_projection;
+    float4x4 light_view;
+    float2 shadow_atlas_uv_min;
+    float2 shadow_atlas_uv_max;
+    uint32_t pcf_radius;
+    uint32_t pad0[3];
+};
+
 struct Point_light
 {
     float4 position_xyz_intensity_w;
@@ -30,6 +40,9 @@ struct Point_light
 struct Lighting_data
 {
     Directional_light directional_light;
+    Directional_light_shadow directional_shadows[4];
+    float4 directional_shadow_splits;
+    float4 directional_shadow_split_band_widths;
     Point_light point_lights[128];
     uint32_t num_point_lights;
 };

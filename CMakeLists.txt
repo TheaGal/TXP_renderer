@@ -170,6 +170,8 @@ set(ASSET_DIR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/clouds.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/default_shader.shadrefl
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/directional_light_shadow.shader
+    ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/directional_light_shadow.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shader
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/gradient.shadrefl
     ${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/pbr.shader
@@ -210,6 +212,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/debug/debug_render_job.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_handler.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/input_handler/input_key_codes.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/light/light.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/renderer.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/types.h
     ${CMAKE_CURRENT_SOURCE_DIR}/include/txp_renderer/ui/ui_state.h
@@ -289,6 +292,8 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_grad_line_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_wireframe.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_debug_color_wireframe_vulkan.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_directional_light_shadow.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_directional_light_shadow_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_gradient_vulkan.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/shader/shader_pbr.h

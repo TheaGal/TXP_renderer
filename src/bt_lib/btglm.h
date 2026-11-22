@@ -11,7 +11,29 @@
 
 #include "btdatecheck.h"
 #include "btjson.h"
+
+#ifdef CGLM_CONFIG_CLIP_CONTROL
+#error Something is wrong. Probably included something outside of btglm.h?
+#endif // CGLM_CONFIG_CLIP_CONTROL
+
 #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
+
+#ifdef GLM_CSCOORD_LBN
+#error Something is wrong. Probably included something outside of btglm.h?
+#endif // GLM_CSCOORD_LBN
+
+#define GLM_CUSTOM_CLIPSPACE
+/* near */
+#define GLM_CSCOORD_LBN {-1.0f, -1.0f,  0.0f, 1.0f}
+#define GLM_CSCOORD_LTN {-1.0f,  1.0f,  0.0f, 1.0f}
+#define GLM_CSCOORD_RTN { 1.0f,  1.0f,  0.0f, 1.0f}
+#define GLM_CSCOORD_RBN { 1.0f, -1.0f,  0.0f, 1.0f}
+/* far */
+#define GLM_CSCOORD_LBF {-1.0f, -1.0f,  1.0f, 1.0f}
+#define GLM_CSCOORD_LTF {-1.0f,  1.0f,  1.0f, 1.0f}
+#define GLM_CSCOORD_RTF { 1.0f,  1.0f,  1.0f, 1.0f}
+#define GLM_CSCOORD_RBF { 1.0f, -1.0f,  1.0f, 1.0f}
+
 #include "cglm/cglm.h"
 #include "cglm/quat.h"
 #include "cglm/types-struct.h"

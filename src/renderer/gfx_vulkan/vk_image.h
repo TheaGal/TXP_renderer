@@ -78,6 +78,14 @@ public:
 
     void teardown();
 
+    /// Uploads data to image.
+    void upload_data_to_image(VkDevice device,
+                              VmaAllocator allocator,
+                              VkQueue queue,
+                              uint32_t queue_family_idx,
+                              void const* data_ptr,
+                              size_t data_size_bytes);
+
     Image& get_image();
 
     VkImageView get_image_view() const;

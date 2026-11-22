@@ -39,6 +39,19 @@ struct Directional_light
 static_assert(offsetof(Directional_light, direction_xyz_intensity_w) % k_vec4_alignment == 0);
 static_assert(offsetof(Directional_light, color) % k_vec4_alignment == 0);
 
+struct Directional_light_shadow
+{
+    mat4 light_projection;
+    mat4 light_view;
+    vec2 shadow_atlas_uv_min;
+    vec2 shadow_atlas_uv_max;
+    uint32_t pcf_radius;
+    uint32_t pad0[3];
+};
+static_assert(offsetof(Directional_light_shadow, light_projection) % k_mat4_alignment == 0);
+static_assert(offsetof(Directional_light_shadow, light_view) % k_mat4_alignment == 0);
+static_assert(sizeof(Directional_light_shadow) % k_mat4_alignment == 0);
+
 struct Point_light
 {
     vec4 position_xyz_intensity_w;
@@ -50,10 +63,17 @@ static_assert(offsetof(Point_light, color) % k_vec4_alignment == 0);
 struct Lighting_data
 {
     Directional_light directional_light;
+    Directional_light_shadow directional_shadows[4];
+    vec4 directional_shadow_splits;
+    vec4 directional_shadow_split_band_widths;
     Point_light point_lights[128];
     uint32_t num_point_lights;
 };
 static_assert(offsetof(Lighting_data, directional_light) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadows[0]) % k_mat4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadows[1]) % k_mat4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadow_splits) % k_vec4_alignment == 0);
+static_assert(offsetof(Lighting_data, directional_shadow_split_band_widths) % k_vec4_alignment == 0);
 static_assert(offsetof(Lighting_data, point_lights[0]) % k_vec4_alignment == 0);
 static_assert(offsetof(Lighting_data, point_lights[1]) % k_vec4_alignment == 0);
 
@@ -133,6 +153,17 @@ struct Model_asset_create_info
 };
 
 
+struct GPU_performance_results
+{
+    struct Result
+    {
+        char const* region_name;
+        float_t start_time_offset;
+        float_t duration;
+    };
+    std::vector<Result> data;
+};
+
 /// Set of information useful for graphics.
 struct Information_hook_struct
 {
@@ -140,7 +171,8 @@ struct Information_hook_struct
     std::function<bool()> const& get_play_flag_fn;
     std::function<void(bool)> const& set_dev_anim_editor_view_fn;
     Performance_time_map_t const& perf_time_map;
-    float_t const& perf_frame_acquire_time;
+    GPU_performance_results const& gpu_perf_results;
+    std::function<void(GPU_performance_results)> const& report_gpu_perf_results_fn;
 };
 
 
@@ -197,11 +229,37 @@ public:
                                 mat4 const camera_view,
                                 vec3 const camera_position);
 
-    /// Sets GPU directional light properties for a render view.
-    void set_directional_light(vec3 direction, vec3 color, float_t intensity);
+    /// Sets GPU directional light properties.
+    void set_directional_light(vec3 const direction,
+                               vec3 const color,
+                               float_t intensity,
+                               mat4 const main_cam_inv_proj_view,
+                               vec2 const main_cam_znear_zfar,
+                               vec4 const directional_shadow_splits,
+                               vec4 const directional_shadow_split_band_widths);
+
+    /// Clears the GPU point light list.
+    void clear_point_light_list();
+
+    /// Adds a GPU point light.
+    void add_point_light(vec3 const origin, vec3 const color, float_t intensity);
 
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);
+
+    /// Starts profile region.
+    /// @note: `region_name` must be a static string.
+    void begin_profile_region(char const* const region_name);
+
+    /// Ends profile region.
+    /// @note: `region_name` must be a static string.
+    void end_profile_region(char const* const region_name);
+
+    /// Begins rendering shadow pass.
+    void begin_rendering_shadows();
+
+    /// Ends rendering the shadow pass.
+    void end_rendering_shadows();
 
     /// Begins rendering while clearing the render view images.
     void begin_rendering_render_view(size_t rend_view_idx);

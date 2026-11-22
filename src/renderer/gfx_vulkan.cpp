@@ -20,6 +20,7 @@
 #include "renderer/types.h"
 
 #include <cassert>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <tracy/Tracy.hpp>
@@ -54,6 +55,7 @@ TXP::Graphics::Graphics(std::string const& title,
     m_pimpl->init_vulkan_retrieve_queues();
     m_pimpl->init_vulkan_create_cmd_structures();
     m_pimpl->init_vulkan_create_sync_structures();
+    m_pimpl->init_vulkan_create_query_pool();
     m_pimpl->init_vulkan_for_imgui();
     m_pimpl->init_vulkan_render_graph_resources();
     m_pimpl->init_vulkan_create_descriptors();
@@ -239,14 +241,64 @@ void TXP::Graphics::set_render_view_camera(size_t render_view_idx,
                                     camera_position);
 }
 
-void TXP::Graphics::set_directional_light(vec3 direction, vec3 color, float_t intensity)
+void TXP::Graphics::set_directional_light(vec3 const direction,
+                                          vec3 const color,
+                                          float_t intensity,
+                                          mat4 const main_cam_inv_proj_view,
+                                          vec2 const main_cam_znear_zfar,
+                                          vec4 const directional_shadow_splits,
+                                          vec4 const directional_shadow_split_band_widths)
 {
-    m_pimpl->set_directional_light(direction, color, intensity);
+    m_pimpl->set_directional_light(direction,
+                                   color,
+                                   intensity,
+                                   main_cam_inv_proj_view,
+                                   main_cam_znear_zfar,
+                                   directional_shadow_splits,
+                                   directional_shadow_split_band_widths);
+}
+
+void TXP::Graphics::clear_point_light_list()
+{
+    m_pimpl->clear_point_light_list();
+}
+
+void TXP::Graphics::add_point_light(vec3 const origin, vec3 const color, float_t intensity)
+{
+    m_pimpl->add_point_light(origin, color, intensity);
 }
 
 void* TXP::Graphics::get_render_view(size_t rend_view_idx)
 {
     return m_pimpl->get_render_view(rend_view_idx);
+}
+
+void TXP::Graphics::begin_profile_region(char const* const region_name)
+{
+    m_pimpl->begin_profile_region(region_name);
+}
+
+void TXP::Graphics::end_profile_region(char const* const region_name)
+{
+    m_pimpl->end_profile_region(region_name);
+}
+
+void TXP::Graphics::begin_rendering_shadows()
+{
+    auto& color_image{ m_pimpl->shadow_atlas_texture_image };
+    auto& depth_image{ m_pimpl->shadow_atlas_depth_image };
+
+    m_pimpl->begin_rendering(color_image,
+                             vec4{ std::numeric_limits<float_t>::max(),
+                                   std::numeric_limits<float_t>::max(),
+                                   std::numeric_limits<float_t>::max(),
+                                   1 },
+                             &depth_image);
+}
+
+void TXP::Graphics::end_rendering_shadows()
+{
+    m_pimpl->end_rendering();
 }
 
 void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)

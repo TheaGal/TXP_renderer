@@ -27,10 +27,11 @@ namespace editor_content
 {
 
 /// Content needed for render view image displaying.
-struct Render_view_image_content
+struct Render_view_image_content  // @TODO: get this renamed
 {
 #if TXP_GFX_BACKEND_VULKAN
     std::vector<VkDescriptorSet> content_image_descriptors;
+    VkDescriptorSet shadow_atlas_image_descriptor;
 #endif // TXP_GFX_BACKEND_VULKAN
 };
 

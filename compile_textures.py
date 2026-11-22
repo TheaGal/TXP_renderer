@@ -1,3 +1,5 @@
+import hashlib
+import json
 import os
 from pathlib import Path
 from random import choice
@@ -11,6 +13,7 @@ import yaml  # @NOTE: may have to run `pip install pyyaml`
 
 
 SOURCE_DIR = './assets_raw/textures'
+BUILT_HASHES_DIR = f'./assets_raw/.built_hashes'
 SOURCE_RECIPE_PATH = f'{SOURCE_DIR}/_textures_recipe.yaml'
 BUILD_DIR = './assets/textures'
 
@@ -176,6 +179,10 @@ def build_texture2d_channelmapped(num_channels: int,
     os.remove(temp_img_path)
 
 
+def hash_str(my_str: str) -> str:
+    return hashlib.sha512(my_str.encode('utf-8')).hexdigest()
+
+
 if __name__ == '__main__':
     # Get recipes.
     recipes = {}
@@ -187,6 +194,13 @@ if __name__ == '__main__':
 
     # Build each texture.
     for texture_recipe_name in recipes.keys():                # type: ignore
+        # Check if texture already built.
+        built_hashes_path = Path(f'{BUILT_HASHES_DIR}/{texture_recipe_name}.ktx2.built_hashes')
+        if built_hashes_path.exists():
+            # @TODO: how do i get the filenames referenced??
+            # @TODO: if wanted, make it so unchanged textures don't get recompiled.
+            recipe_hash = hash_str(json.dumps(recipes[texture_recipe_name], sort_keys=True))
+
         # Building message.
         building_texture_msg = f'Building texture \"{texture_recipe_name}\"'
         print(f'{building_texture_msg:<60} ... ', end='', flush=True)

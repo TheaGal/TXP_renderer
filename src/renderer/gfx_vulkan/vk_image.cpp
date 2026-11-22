@@ -1,3 +1,4 @@
+#include "btdatecheck.h"
 #if TXP_GFX_BACKEND_VULKAN
 
 #include "vk_image.h"
@@ -7,6 +8,7 @@
 #include <vk_mem_alloc.h>
 // clang-format on
 
+#include "../gfx_vulkan_impl.h" // for Graphics::Impl::Command_buffer  @TODO: make its own file
 #include "btlogger.h"
 #include "vk_structs.h"
 
@@ -277,6 +279,143 @@ void Allocated_image::teardown()
 {
     vkDestroyImageView(s_device, m_image_view, nullptr);
     vmaDestroyImage(s_allocator, m_image.get(), m_allocation);
+}
+
+void Allocated_image::upload_data_to_image(VkDevice device,
+                                           VmaAllocator allocator,
+                                           VkQueue queue,
+                                           uint32_t queue_family_idx,
+                                           void const* data_ptr,
+                                           size_t data_size_bytes)
+{
+    if (get_data_size() != data_size_bytes)
+    {
+        throw std::runtime_error("Upload data to image size is wrong.");
+    }
+
+    // Create staging buffer.
+    Vk_Buffer::Allocated_buffer image_staging;
+    image_staging.create(device,
+                         allocator,
+                         data_size_bytes,
+                         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                         VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT |
+                             VMA_ALLOCATION_CREATE_MAPPED_BIT);
+    memcpy(image_staging.get_p_mapped_data(), data_ptr, data_size_bytes);
+
+    // Transfer to GPU.
+    VkResult err;
+
+    VkFenceCreateInfo fence_one_time_info{
+        .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+    };
+    VkFence fence_one_time;
+    err = vkCreateFence(device, &fence_one_time_info, nullptr, &fence_one_time);
+    if (err)
+        throw std::runtime_error("Failed to create one-time fence.");
+
+    VkCommandPoolCreateInfo cmd_pool_info{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = queue_family_idx,
+    };
+    VkCommandPool onetime_cmd_pool;
+    err = vkCreateCommandPool(device, &cmd_pool_info, nullptr, &onetime_cmd_pool);
+    if (err)
+        throw std::runtime_error("Vulkan command pool creation failed one-time.");
+
+    BT::date_deadline(2027, 1, 1);  // @TODO: move Graphics::Impl::Command_buffer to own file
+    Graphics::Impl::Command_buffer one_time_command_buffer;
+    one_time_command_buffer.allocate(device, onetime_cmd_pool, true);
+    one_time_command_buffer.reset();
+
+    VkCommandBuffer cmd{ one_time_command_buffer.get() };
+
+    if (get_mip_levels() != 1 || get_array_layers() != 1)
+        throw std::runtime_error(
+            "More than 1 mip or array layer is unsupported currently. You can add support if "
+            "you wanna program it in.");
+
+    VkImageMemoryBarrier2 barrier_tex_image{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+        .srcAccessMask = VK_ACCESS_2_NONE,
+        .dstStageMask = VK_PIPELINE_STAGE_2_TRANSFER_BIT,
+        .dstAccessMask = VK_ACCESS_2_TRANSFER_WRITE_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .image = get_image().get(),
+        .subresourceRange =
+            VkImageSubresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1,
+            },
+    };
+    VkDependencyInfo barrier_tex_info{
+        .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+        .imageMemoryBarrierCount = 1,
+        .pImageMemoryBarriers = &barrier_tex_image,
+    };
+    vkCmdPipelineBarrier2(cmd, &barrier_tex_info);
+    VkBufferImageCopy copy_region{
+        .bufferOffset = 0,
+        .imageSubresource{
+            .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+            .mipLevel = 0,
+            .layerCount = 1,
+        },
+        .imageExtent = get_extent(),
+    };
+    vkCmdCopyBufferToImage(cmd,
+                           image_staging.get_buffer(),
+                           get_image().get(),
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &copy_region);
+    VkImageMemoryBarrier2 barrier_tex_read{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2,
+        .srcStageMask = VK_PIPELINE_STAGE_TRANSFER_BIT,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
+        .dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        .newLayout = VK_IMAGE_LAYOUT_READ_ONLY_OPTIMAL,
+        .image = get_image().get(),
+        .subresourceRange =
+            VkImageSubresourceRange{
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .levelCount = 1,
+                .layerCount = 1,
+            },
+    };
+    barrier_tex_info.pImageMemoryBarriers = &barrier_tex_read;
+    vkCmdPipelineBarrier2(cmd, &barrier_tex_info);
+
+    one_time_command_buffer.finish();
+
+    VkCommandBufferSubmitInfo one_time_command_buffer_submit_info{
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .commandBuffer = cmd,
+    };
+    VkSubmitInfo2 one_time_submit_info{
+        .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
+        .commandBufferInfoCount = 1,
+        .pCommandBufferInfos = &one_time_command_buffer_submit_info,
+    };
+    err = vkQueueSubmit2(queue, 1, &one_time_submit_info, fence_one_time);
+    if (err)
+        throw std::runtime_error("One-time queue submit failed.");
+
+    err = vkWaitForFences(device, 1, &fence_one_time, VK_TRUE, UINT64_MAX);
+    if (err)
+        throw std::runtime_error("One-time fence wait failed.");
+
+    // Cleanup.
+    image_staging.destroy();
+    vkDestroyFence(device, fence_one_time, nullptr);
+    vkDestroyCommandPool(device, onetime_cmd_pool, nullptr);
 }
 
 Image& Allocated_image::get_image()

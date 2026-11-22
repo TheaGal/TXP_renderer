@@ -26,6 +26,7 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstring>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -52,6 +53,7 @@ ImVec2 s_main_area_work_size;
 
 
 bool s_show_demo_window{ false };
+bool s_show_rend_grph_res_window{ false };
 
 
 /// .
@@ -154,15 +156,26 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
                     settings.open_scene_view_ids.emplace_back(std::to_string(new_id));
                 }
                 ImGui::EndMenu();
-        }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Help"))
-        {
+            }
+
+            if (ImGui::MenuItem("Show Render graph resources window",
+                                nullptr,
+                                s_show_rend_grph_res_window))
+            {
+                s_show_rend_grph_res_window = !s_show_rend_grph_res_window;
+            }
+
             if (ImGui::MenuItem("Show ImGui demo window", "Ctrl+Alt+Shift+D", s_show_demo_window))
             {
                 s_show_demo_window = !s_show_demo_window;
             }
+
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Help"))
+        {
+            (void)ImGui::MenuItem("About");
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
@@ -587,7 +600,7 @@ void imgui_render_console_window()
 /// .
 void imgui_performance_timers(Information_hook_struct const& info_hook_struct)
 {
-    float_t latest_perf_time_render_loop_sample;
+    float_t latest_perf_time_gpu_sample;
 
     ImGui::SetNextWindowSize(ImVec2(300, 300), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("Performance timers"))
@@ -640,8 +653,8 @@ void imgui_performance_timers(Information_hook_struct const& info_hook_struct)
             float_t ms = latest_sample * 1000.0f;
             float_t fps = 1.0f / latest_sample;
 
-            if (perf_time_type == PERF_TIME_TYPE_RENDERER_LOOP)
-                latest_perf_time_render_loop_sample = latest_sample;
+            if (perf_time_type == INTERNAL__DONOTUSE__PERF_TIME_TYPE_GPU_RENDER)
+                latest_perf_time_gpu_sample = latest_sample;
 
             constexpr float_t k_ms_max_scale{ 500 };
 
@@ -678,51 +691,84 @@ void imgui_performance_timers(Information_hook_struct const& info_hook_struct)
             ImGui::PopID();
         }
 
-        if (info_hook_struct.perf_frame_acquire_time >= 0)
+        if (!info_hook_struct.gpu_perf_results.data.empty())
         {
+            ImGui::SeparatorText("GPU Render Timings");
+            {
+                auto const& gpu_timings{ info_hook_struct.gpu_perf_results.data };
+                for (auto const& timing : gpu_timings)
+                {
+                    constexpr size_t k_padded_length{ 20 };  // @HARDCODE
+
+                    size_t const name_length{ std::strlen(timing.region_name) };
+
+                    ImGui::Text("%s%s : %6.2fms",
+                                timing.region_name,
+                                k_padded_length > name_length
+                                    ? std::string(k_padded_length - name_length, ' ').c_str()
+                                    : "",
+                                timing.duration * 1000);
+                }
+            }
+
+
             ImGui::SeparatorText("Burden Metrics (amortized over 128 frames)");
 
             constexpr uint32_t k_num_amortize_frames{ 128 };
             static uint32_t s_cur_sample_frame{ 0 };
 
-            float_t const render_time_minus_frame_acquire_time_ms{
-                (latest_perf_time_render_loop_sample - info_hook_struct.perf_frame_acquire_time) *
-                1000
-            };
+            static std::array<float_t, k_num_amortize_frames> s_gpu_frame_time_samples{};
+            s_gpu_frame_time_samples[s_cur_sample_frame] = latest_perf_time_gpu_sample;
 
-            static std::array<float_t, k_num_amortize_frames> s_rtmfat_ms_samples{};
-            s_rtmfat_ms_samples[s_cur_sample_frame] = render_time_minus_frame_acquire_time_ms;
-
-            float_t avg_rtmfat_ms{ 0 };
-            for (float_t const sample : s_rtmfat_ms_samples)
-                avg_rtmfat_ms += (sample / k_num_amortize_frames);
-
-            float_t const frame_acquire_time_ms{ info_hook_struct.perf_frame_acquire_time * 1000 };
-
-            static std::array<float_t, k_num_amortize_frames> s_fat_ms_samples{};
-            s_fat_ms_samples[s_cur_sample_frame] = frame_acquire_time_ms;
-
-            float_t avg_fat_ms{ 0 };
-            for (float_t const sample : s_fat_ms_samples)
-                avg_fat_ms += (sample / k_num_amortize_frames);
+            float_t avg_gpu_frame_time{ 0 };
+            for (float_t const sample : s_gpu_frame_time_samples)
+                avg_gpu_frame_time += (sample / k_num_amortize_frames);
 
             ImGui::Text(
-                "No wait FPS        : %4.0f (%.1fms)\n"
-                "Frame acquire time : %4.1fms\n"
+                "Avg GPU FPS        : %4.0f (%.1fms)\n"
+                "Burden standard S  : %3.0f%% of 300 fps\n"
                 "Burden standard A  : %3.0f%% of 120 fps\n"
                 "Burden standard B  : %3.0f%% of  60 fps\n"
                 "Burden standard C  : %3.0f%% of  30 fps",
-                1000.0 / avg_rtmfat_ms,
-                avg_rtmfat_ms,
-                avg_fat_ms,
-                avg_rtmfat_ms / (1000.0 / 120.0) * 100,
-                avg_rtmfat_ms / (1000.0 / 60.0) * 100,
-                avg_rtmfat_ms / (1000.0 / 30.0) * 100);
+                1.0 / avg_gpu_frame_time,
+                avg_gpu_frame_time * 1000,
+                avg_gpu_frame_time / (1.0 / 300.0) * 100,
+                avg_gpu_frame_time / (1.0 / 120.0) * 100,
+                avg_gpu_frame_time / (1.0 / 60.0) * 100,
+                avg_gpu_frame_time / (1.0 / 30.0) * 100);
 
             // To next frame sample.
             s_cur_sample_frame = ((s_cur_sample_frame + 1) & (k_num_amortize_frames - 1));
         }
     }
+    ImGui::End();
+}
+
+/// Optional render graph resources window.
+void imgui_render_graph_resources_window_content(
+    editor_content::Render_view_image_content const& image_content)
+{
+    if (!s_show_rend_grph_res_window)
+        return;
+
+    ImGui::Begin("Render graph resources");
+
+    if (ImGui::CollapsingHeader("HDR image"))
+    {
+    #if TXP_GFX_BACKEND_VULKAN
+        ImGui::Text("TODO");
+        // auto& img_descriptor{ render_view_image_content.content_image_descriptors.front() };
+        // ImGui::Image((ImTextureRef)img_descriptor, per_viewport_content_sizes.back());
+    #endif  // TXP_GFX_BACKEND_VULKAN
+    }
+
+    if (ImGui::CollapsingHeader("Shadow atlas"))
+    {
+    #if TXP_GFX_BACKEND_VULKAN
+        ImGui::Image((ImTextureRef)image_content.shadow_atlas_image_descriptor, ImVec2(512, 512));
+    #endif  // TXP_GFX_BACKEND_VULKAN
+    }
+
     ImGui::End();
 }
 
@@ -970,6 +1016,7 @@ void editor_content::build_content(bool const load_cam_orient_settings,
         editor_content::ui_editor::ui_editor_content();
 
     imgui_debug_printable_info_data();
+    imgui_render_graph_resources_window_content(render_view_image_content);
     imgui_demo_window_content(input_handler);
 }
 

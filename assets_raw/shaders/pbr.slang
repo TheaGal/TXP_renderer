@@ -21,6 +21,16 @@ struct Directional_light
     float4 color;
 };
 
+struct Directional_light_shadow
+{
+    float4x4 light_projection;
+    float4x4 light_view;
+    float2 shadow_atlas_uv_min;
+    float2 shadow_atlas_uv_max;
+    uint32_t pcf_radius;
+    uint32_t pad0[3];
+};
+
 struct Point_light
 {
     float4 position_xyz_intensity_w;
@@ -30,6 +40,9 @@ struct Point_light
 struct Lighting_data
 {
     Directional_light directional_light;
+    Directional_light_shadow directional_shadows[4];
+    float4 directional_shadow_splits;
+    float4 directional_shadow_split_band_widths;
     Point_light point_lights[128];
     uint32_t num_point_lights;
 };
@@ -50,7 +63,8 @@ struct Model_transform_set
     float4x4 transforms[65535];
 };
 
-Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
+[[vk::binding(0,0)]] Sampler2D shadow_atlas_texture;
+[[vk::binding(0,1)]] Sampler2D textures[];  // @NOCHECKIN: @CHECK: does this work??  @REPLY: it looks like it doesn't quite work? I'll need to look into it more huh.  -Thea 2026/09/27
 // StructuredBuffer<DescriptorHandle<Sampler2D>> textures;  // try this method??
 static const uint32_t TEX_IDX_NONE = (uint32_t)-1;
 
@@ -77,6 +91,7 @@ struct VS_output
 {
     float4 pos : SV_POSITION;
     float3 world_pos;
+    float3 view_pos;
     float3 normal;
     float2 uv;
     float4 tangent;
@@ -111,6 +126,7 @@ VS_output vertex_main(VS_input input,
     output.pos = mul(env_data->projection, frag_pos);
 
     output.world_pos = world_pos.xyz / world_pos.w;
+    output.view_pos = frag_pos.xyz;
     output.normal = normalize(mul((float3x3)model_mat, input.normal));
     output.uv = (input.uv + mat_param_set.uv_offset_tiling.xy) * mat_param_set.uv_offset_tiling.zw;
     output.tangent = input.tangent;
@@ -215,6 +231,148 @@ float3 calc_point_light_radiance(Point_light light, float3 world_pos)
 }
 
 
+/// Interleaved gradient noise.
+float compute_interleaved_gradient_noise(const float2 fragcoord)
+{
+    return frac(52.9829189 * frac(0.06711056 * fragcoord.x + 0.00583715 * fragcoord.y));
+}
+
+/// Vogel disk.
+float2 compute_vogel_disk_sample_pos(uint32_t sample_idx, uint32_t num_samples, float phi)
+{
+    constexpr float k_golden_angle = 2.39996;
+    float r = sqrt(float(sample_idx) + 0.5) / sqrt(float(num_samples));
+    float theta = sample_idx * k_golden_angle + phi;
+
+    return (r * float2(cos(theta), sin(theta)));
+}
+
+/// Samples shadow with ~~PCF~~ stochastic Vogel disk sampling.
+float sample_shadow_pcf(const float2 uv_coords,
+                        const int32_t pcf_radius,
+                        const float2 fragcoord,
+                        const float light_view_space_depth)
+{
+    float shadow = 1;
+
+    constexpr float one_texel = 1.0 / 4096.0;  // @HARDCODE
+
+    constexpr uint32_t k_num_vogel_samples = 4;
+    constexpr float k_vogel_sample_factor = 1.0 / k_num_vogel_samples;
+
+    for (uint32_t i = 0; i < k_num_vogel_samples; i++)
+    {
+        const float2 vogel_pos =
+            compute_vogel_disk_sample_pos(i,
+                                          k_num_vogel_samples,
+                                          compute_interleaved_gradient_noise(fragcoord) * 2 * PI) *
+            (pcf_radius + 0.5);  // @NOTE: adding 0.5 gives a bit more pcf without introducing acne.  -Thea 2026/11/21
+
+        const float shadow_tex_depth =
+            shadow_atlas_texture.SampleLevelZero(
+                uv_coords + float2(vogel_pos.x * one_texel, vogel_pos.y * one_texel)).r;
+        if (shadow_tex_depth < light_view_space_depth)
+            shadow -= k_vogel_sample_factor;  // in shadow!
+    }
+
+    return shadow;
+}
+
+/// Calculates UV coords and samples a cascade's shadow.
+float sample_shadow_at_cascade(float3 world_pos,
+                               Directional_light_shadow directional_shadows[4],
+                               uint32_t cascade_idx,
+                               const float2 fragcoord)
+{
+    // Calc shadow depth.
+    const float4 frag_pos = mul(directional_shadows[cascade_idx].light_view,
+                                float4(world_pos, 1));
+    const float light_view_space_depth = frag_pos.z;
+
+    // Calc shadow uv.
+    const float4 clip_pos = mul(directional_shadows[cascade_idx].light_projection, frag_pos);
+
+    const float2 uv_raw = clip_pos.xy * 0.5 + float2(0.5);
+
+    const float2 uv_coords = lerp(directional_shadows[cascade_idx].shadow_atlas_uv_min,
+                                  directional_shadows[cascade_idx].shadow_atlas_uv_max,
+                                  uv_raw);
+
+    // Check if in shadow.
+    const int32_t pcf_radius = directional_shadows[cascade_idx].pcf_radius;
+    return sample_shadow_pcf(uv_coords, pcf_radius, fragcoord, light_view_space_depth);
+}
+
+/// Calculates shadow of directional light.
+float calc_directional_shadow(float3 world_pos,
+                              float3 view_pos,
+                              Directional_light_shadow directional_shadows[4],
+                              float4 directional_shadow_splits,
+                              float4 directional_shadow_split_band_widths,
+                              float NdotL,
+                              const float2 fragcoord)
+{
+    const float view_depth = -view_pos.z;  // right handed coords make z depth negative
+
+    float shadow = 1;
+    if (view_depth < directional_shadow_splits.w)
+    {
+        // Calc which cascade to look.
+        uint32_t cascade_idx;
+        float blend_upper_band = 0;
+
+        [unroll]
+        for (int32_t i = 4 - 1; i >= 0; i--)
+        {
+            if (i == 4 - 1 || view_depth < directional_shadow_splits[i])
+            {
+                cascade_idx = i;
+
+                const float distance_from_split_end = (directional_shadow_splits[i] - view_depth);
+                blend_upper_band =
+                    saturate(1.0 - (distance_from_split_end /
+                                    directional_shadow_split_band_widths[i]));
+            }
+        }
+
+    #if 0
+        // @DEBUG
+        constexpr float dbg_colors[4] = {
+            0.0, 0.25, 0.5, 0.75
+        };
+        shadow = dbg_colors[cascade_idx];
+    #endif // 0
+
+        shadow = sample_shadow_at_cascade(world_pos, directional_shadows, cascade_idx, fragcoord);
+
+        if (blend_upper_band > 1e-6)
+        {
+            float upper_band_shadow = 1;
+            if (cascade_idx < 4 - 1)
+            {
+                upper_band_shadow = sample_shadow_at_cascade(world_pos,
+                                                             directional_shadows,
+                                                             cascade_idx + 1,
+                                                             fragcoord);
+            }
+            shadow = lerp(shadow, upper_band_shadow, blend_upper_band);
+        }
+
+    #if 0
+        // @NOTE: VK_FORMAT_FEATURE_2_SAMPLED_IMAGE_DEPTH_COMPARISON_BIT not supported for imageview type
+        shadow = shadow_atlas_texture.SampleCmpLevelZero(uv_coords, light_view_space_depth);
+    #endif // 0
+
+    #if 0
+        // @DEBUG
+        shadow = shadow_tex_depth - light_view_space_depth;
+    #endif // 0
+    }
+
+    return shadow;
+}
+
+
 /// Lighting for PBR.
 float3 pbr_lighting(VS_output input, float4 base_color)
 {
@@ -313,10 +471,22 @@ float3 pbr_lighting(VS_output input, float4 base_color)
         float3 kD = float3(1.0, 1.0, 1.0) - kS;  // diffuse contribution (energy conservation)
         kD *= 1.0 - metallic;                    // metals have no diffuse reflection
 
+        // --- SHADOW ------------------------------------------------------------------------------
+        const float shadow =
+            (i == 0
+                 ? calc_directional_shadow(input.world_pos,
+                                           input.view_pos,
+                                           input.light_data->directional_shadows,
+                                           input.light_data->directional_shadow_splits,
+                                           input.light_data->directional_shadow_split_band_widths,
+                                           NdotL,
+                                           input.pos.xy)
+                 : 1.0);
+
         // --- RADIANCE ACCUMULATION ---------------------------------------------------------------
         // Combine diffuse (Lambertian) and specular (Cook-Torrance) terms
         // Multiply by incident radiance and cosine foreshortening
-        Lo += (kD * base_color.rgb / PI + specular) * radiance * NdotL;
+        Lo += (kD * base_color.rgb / PI + specular) * radiance * shadow * NdotL;
     }
 
     // --- AMBIENT AND EMISSIVE --------------------------------------------------------------------

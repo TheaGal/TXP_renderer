@@ -9,6 +9,7 @@
 #include "txp_renderer/debug/debug_render_job.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/input_handler/input_key_codes.h"
+#include "txp_renderer/light/light.h"
 #include "txp_renderer/ui/ui_state.h"
 #include "txp_renderer/callbacks.h"
 #include "txp_renderer/renderer.h"

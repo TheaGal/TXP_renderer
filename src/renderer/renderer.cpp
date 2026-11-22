@@ -21,6 +21,7 @@
 #include "shader/shader_clouds.h"
 #include "shader/shader_debug_color_grad_line.h"
 #include "shader/shader_debug_color_wireframe.h"
+#include "shader/shader_directional_light_shadow.h"
 #include "shader/shader_gradient.h"
 #include "shader/shader_pbr.h"
 #include "shader/shader_postprocess.h"
@@ -28,6 +29,7 @@
 #include "shader/shader_sprite.h"
 #include "shader_creation/shader_creation.h"
 #include "txp_renderer/animator/skeletal_animator.h"
+#include "txp_renderer/light/light.h"
 #include "txp_renderer/types.h"
 #include "txp_renderer/ui/ui_state.h"
 
@@ -71,6 +73,9 @@ struct Renderer::Impl
         , get_play_flag_fn(std::move(get_play_flag_fn))
         , set_dev_anim_editor_view_fn(std::move(set_dev_anim_editor_view_fn))
     {
+        report_gpu_perf_results_fn = [this](GPU_performance_results results) {
+            report_gpu_perf_results(results);
+        };
     }
 
     ~Impl()
@@ -98,6 +103,7 @@ struct Renderer::Impl
     std::function<void(bool)> set_play_flag_fn;
     std::function<bool()> get_play_flag_fn;
     std::function<void(bool)> set_dev_anim_editor_view_fn;
+    std::function<void(GPU_performance_results)> report_gpu_perf_results_fn;
 
     /// Able to register assets until assets are starting to be loaded into the GPU.
     std::atomic_bool asset_reg_window_open{ true };
@@ -119,6 +125,7 @@ struct Renderer::Impl
     /// Shaders.
     std::unique_ptr<Shader::Shader_gradient> shad_gradient;
     std::unique_ptr<Shader::Shader_skinned_model> shad_skinned_model;
+    std::unique_ptr<Shader::Shader_directional_light_shadow> shad_directional_light_shadow;
     std::unique_ptr<Shader::Shader_basic_diffuse> shad_basic_diffuse;
     std::unique_ptr<Shader::Shader_pbr> shad_pbr;
     std::unique_ptr<Shader::Shader_debug_color_grad_line> shad_debug_color_grad_line;
@@ -151,8 +158,8 @@ struct Renderer::Impl
     /// Debug stats' performance times.
     Performance_time_map_t perf_time_map;
 
-    /// Debug stats for time for waiting for next frame to acquire.
-    float_t perf_frame_acquire_time{ -1 };
+    /// Performance stats for most recent GPU measurement.
+    GPU_performance_results gpu_perf_results;
 
 
     // ---- Functions ------------------------------------------------------------------------------
@@ -313,7 +320,7 @@ struct Renderer::Impl
 
                     m.render_object_list.emplace_back(Render_object{
                         .is_visible = rend_obj_cfg.is_visible,
-                        .layer = rend_obj_cfg.render_layer,
+                        .layer = Render_layer(rend_obj_cfg.render_layer),
                         .render_model_idx = new_render_model_idx,
                         .sub_mesh_idx = new_sub_mesh_idx,
                         .material_palette_idx = m.material_organizer.get_material_palette_idx(
@@ -412,6 +419,47 @@ struct Renderer::Impl
             m.shad_skinned_model->build_combined_deformed_vertex_set_descriptor_set();
         }
     }
+
+    void gather_lights()
+    {
+        ZoneScoped;
+
+        for (auto const& [_, light] : ecs_registry.view<component::Directional_light>().each())
+        {
+            auto const& main_cam{ camera.get_calcd_cam_matrices().front() };
+
+            mat4 inv_proj_view;
+            glm_mat4_mul(const_cast<vec4*>(main_cam.projection),
+                         const_cast<vec4*>(main_cam.view),
+                         inv_proj_view);
+            glm_mat4_inv(inv_proj_view, inv_proj_view);
+
+            vec2 main_cam_znear_zfar;
+            camera.get_main_cam_znear_zfar(main_cam_znear_zfar);
+
+            graphics->set_directional_light(light.direction.raw,
+                                            light.color.raw,
+                                            light.intensity,
+                                            inv_proj_view,
+                                            main_cam_znear_zfar,
+                                            vec4{ 4, 16, 64, 256 },
+                                            vec4{ 1, 2, 4, 16 });
+        }
+
+        graphics->clear_point_light_list();
+        for (auto const& [_, light] : ecs_registry.view<component::Point_light>().each())
+        {
+            graphics->add_point_light(light.origin.raw, light.color.raw, light.intensity);
+        }
+    }
+
+    void report_gpu_perf_results(GPU_performance_results results)
+    {
+        float_t const total_dt = results.data.front().duration;
+        perf_time_map[INTERNAL__DONOTUSE__PERF_TIME_TYPE_GPU_RENDER].add_sample(total_dt);
+
+        gpu_perf_results = results;
+    }
 };
 
 
@@ -494,7 +542,8 @@ void Renderer::build()
             .get_play_flag_fn = m.get_play_flag_fn,
             .set_dev_anim_editor_view_fn = m.set_dev_anim_editor_view_fn,
             .perf_time_map = m.perf_time_map,
-            .perf_frame_acquire_time = m.perf_frame_acquire_time,
+            .gpu_perf_results = m.gpu_perf_results,
+            .report_gpu_perf_results_fn = m.report_gpu_perf_results_fn,
         });
     auto& g{ *m.graphics };
 
@@ -532,6 +581,10 @@ void Renderer::build()
         std::make_unique<Shader::Shader_skinned_model>(m.material_organizer,
                                                        m.render_model_data_collection,
                                                        g.get_impl());
+    m.shad_directional_light_shadow =
+        std::make_unique<Shader::Shader_directional_light_shadow>(m.material_organizer,
+                                                                  m.render_model_data_collection,
+                                                                  g.get_impl());
     m.shad_basic_diffuse =
         std::make_unique<Shader::Shader_basic_diffuse>(m.material_organizer,
                                                        m.render_model_data_collection,
@@ -611,6 +664,21 @@ void Renderer::poll_input_events()
     g.poll_input_events();
 }
 
+
+#define GPU_BEGIN_PROFILE_GFX(__region_name)  g.begin_profile_region(__region_name)
+#define GPU_END_PROFILE_GFX(__region_name)  g.end_profile_region(__region_name)
+
+#if _WIN64
+    #define GPU_BEGIN_PROFILE_COMPUTE(__region_name)  GPU_BEGIN_PROFILE_GFX(__region_name)
+    #define GPU_END_PROFILE_COMPUTE(__region_name)  GPU_END_PROFILE_GFX(__region_name)
+#elif __APPLE__
+    #define GPU_BEGIN_PROFILE_COMPUTE(__region_name)  (void)0
+    #define GPU_END_PROFILE_COMPUTE(__region_name)  (void)0
+#else
+    #error "Unknown, currently unsupported OS です"
+#endif
+
+
 void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 {
     ZoneScoped;
@@ -650,15 +718,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     // Wait until can start rendering.
     bool frame_acquired{ false };
-    {
-        BT::Timer acquire_timer;
-        acquire_timer.start_timer();
 
-        if (!render_view_sizes_changed)
-            frame_acquired = g.start_next_frame();
-
-        m_pimpl->perf_frame_acquire_time = acquire_timer.calc_delta_time();
-    }
+    if (!render_view_sizes_changed)
+        frame_acquired = g.start_next_frame();
 
     // Set render view sizes.
     g.set_render_view_sizes(render_view_sizes);
@@ -669,6 +731,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         return;
 
     // Update animators.
+    GPU_BEGIN_PROFILE_COMPUTE("deformed models");
+
     for (auto&& [_, animator] : m.ecs_registry.view<component_internal::Model_animator>().each())
     {   // Tick animator.
         std::vector<mat4s> joint_matrices;
@@ -689,11 +753,16 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         m.shad_skinned_model->compute(&def_mod);
     }
 
+    GPU_END_PROFILE_COMPUTE("deformed models");
+
     // Populate render object model mesh references for organizing per-instance data.
     size_t cur_modmesh_ref_idx{ 0 };
     m.shad_gradient->allocate_per_instance_data_slots(m.render_object_list,
                                                       m.model_mesh_ref_list,
                                                       cur_modmesh_ref_idx);
+    m.shad_directional_light_shadow->allocate_per_instance_data_slots(m.render_object_list,
+                                                                      m.model_mesh_ref_list,
+                                                                      cur_modmesh_ref_idx);
     m.shad_basic_diffuse->allocate_per_instance_data_slots(m.render_object_list,
                                                            m.model_mesh_ref_list,
                                                            cur_modmesh_ref_idx);
@@ -718,16 +787,22 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     {
         m.shad_sprite->upload_ui_state_data(*ui_state);
 
+        GPU_BEGIN_PROFILE_GFX("ui");
+
         g.begin_rendering_ui();
         m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
         g.end_rendering_ui();
 
+        GPU_END_PROFILE_GFX("ui");
+
         ui_state->validate_draw_cache();
     }
 
-    // Render for each render view.
     m.camera.calc_cam_matrices();
 
+    m.gather_lights();  // this recalculates CSM shadow matrices so it must be after camera update.  -thea 2026/11/18
+
+    // Render for each render view.
     size_t render_view_idx{ 0 };
     for (auto const& cam_matrix : m.camera.get_calcd_cam_matrices())
     {
@@ -739,9 +814,6 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                  cam_matrix.projection,
                                  cam_matrix.view,
                                  cam_matrix.camera_position);
-        g.set_directional_light(vec3{ 0.742781, 0.557086, 0.371391 },  // @HARDCODE
-                                vec3{ 255.0f / 255.0f, 228.0f / 255.0f, 206.0f / 255.0f },
-                                10.0f);
 
         Render_layer const render_layer_mask{ is_main_cam_matrix ? RENDER_LAYER_DEFAULT
                                                                  : RENDER_LAYER_ALL };
@@ -752,13 +824,52 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             // g.compute_shadow_culling();
             // g.compute_opaque_geometry_culling();
             // g.compute_transparent_geometry_culling();
+
+            // Render shadows.
+            GPU_BEGIN_PROFILE_GFX("shadows");
+
+            g.begin_rendering_shadows();
+            for (size_t idx = 0;
+                idx < m.shad_directional_light_shadow->get_num_shadow_atlas_entries_to_draw();
+                idx++)
+            {
+                ZoneScopedN("render directional light shadows");
+                m.shad_directional_light_shadow->draw(idx,
+                                                      m.render_object_list,
+                                                      m.model_mesh_ref_list,
+                                                      RENDER_LAYER_SHADOW_CASTER);
+            }
+            g.end_rendering_shadows();
+
+            GPU_END_PROFILE_GFX("shadows");
+
+            m.shad_directional_light_shadow->wait_until_completion();
         }
 
-        // g.render_shadows(render_view);
         // if (is_main_cam_matrix)  // @TEMP: @TODO: when render view resizes, the descriptor set for this compute shader needs to get recreated.
         //     m.shad_gradient->compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
 
         // Render all graphics shaders.
+        constexpr char const* k_render_view_region_names[]{
+            "render view 0",
+            "render view 1",
+            "render view 2",
+            "render view 3",
+            "render view 4",
+            "render view 5",
+            "render view 6",
+            "render view 7",
+            "render view 8",
+            "render view 9",
+            "render view 10",
+            "render view 11",
+            "render view 12",
+            "render view 13",
+            "render view 14",
+            "render view 15",
+        };
+        GPU_BEGIN_PROFILE_GFX(k_render_view_region_names[render_view_idx]);
+
         g.begin_rendering_render_view(render_view_idx);
 
         m.shad_basic_diffuse->draw(m.render_object_list,
@@ -786,17 +897,44 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
         g.end_rendering_render_view(render_view_idx);
 
+        GPU_END_PROFILE_GFX(k_render_view_region_names[render_view_idx]);
+
         if (is_main_cam_matrix)
         {
+            GPU_BEGIN_PROFILE_COMPUTE("clouds");
             m.shad_clouds->compute(m.camera, render_view);
+            GPU_END_PROFILE_COMPUTE("clouds");
+
             // g.render_volumetric_light();
         }
 
         // g.render_particles();
         // g.render_transparent_geometry();
 
+        constexpr char const* k_postprocess_region_names[]{
+            "postprocess 0",
+            "postprocess 1",
+            "postprocess 2",
+            "postprocess 3",
+            "postprocess 4",
+            "postprocess 5",
+            "postprocess 6",
+            "postprocess 7",
+            "postprocess 8",
+            "postprocess 9",
+            "postprocess 10",
+            "postprocess 11",
+            "postprocess 12",
+            "postprocess 13",
+            "postprocess 14",
+            "postprocess 15",
+        };
+        GPU_BEGIN_PROFILE_COMPUTE(k_postprocess_region_names[render_view_idx]);
+
         bool const do_full_postprocess{ is_main_cam_matrix };
         m.shad_postprocess->compute(do_full_postprocess, render_view);
+
+        GPU_END_PROFILE_COMPUTE(k_postprocess_region_names[render_view_idx]);
 
         render_view_idx++;
     }
@@ -967,6 +1105,7 @@ void Renderer::set_allow_deformed_render_models(bool allow)
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
 {
+    assert(perf_time_type != INTERNAL__DONOTUSE__PERF_TIME_TYPE_GPU_RENDER);
     m_pimpl->perf_time_map[perf_time_type].add_sample(delta_time);
 }
 
