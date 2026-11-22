@@ -308,14 +308,7 @@ struct Graphics::Impl
             return m_has_results;
         }
 
-        struct Results
-        {
-            char const* region_name;
-            float_t start_time_offset_ms;
-            float_t duration_ms;
-        };
-
-        std::vector<Results> get_results() const
+        GPU_performance_results get_results() const
         {
             if (!m_has_results)
                 throw std::runtime_error("No results I has. Aauuugghhh!");
@@ -332,22 +325,22 @@ struct Graphics::Impl
             if (err)
                 throw std::runtime_error("Getting query pool results failed.");
 
-            float_t const gpu_time_to_ms{ m_physical_device_properties.limits.timestampPeriod /
-                                          1e6f };
+            float_t const gpu_time_to_sec{ m_physical_device_properties.limits.timestampPeriod /
+                                           1e9f };
 
-            std::vector<Results> results;
-            results.reserve(m_region_name_mention_order.size());
+            GPU_performance_results results;
+            results.data.reserve(m_region_name_mention_order.size());
 
             for (char const* region_name : m_region_name_mention_order)
             {
                 auto const [reg_start_idx, reg_end_idx] =
                     m_region_name_to_result_idxs_map.at(region_name);
 
-                float_t const start_time_offset_ms{ result_pool[reg_start_idx] * gpu_time_to_ms};
-                float_t const duration_ms{ (result_pool[reg_end_idx] - result_pool[reg_start_idx]) *
-                                           gpu_time_to_ms };
+                float_t const start_time_offset{ result_pool[reg_start_idx] * gpu_time_to_sec };
+                float_t const duration{ (result_pool[reg_end_idx] - result_pool[reg_start_idx]) *
+                                        gpu_time_to_sec };
 
-                results.emplace_back(region_name, start_time_offset_ms, duration_ms);
+                results.data.emplace_back(region_name, start_time_offset, duration);
             }
 
             return results;

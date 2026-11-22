@@ -21,6 +21,7 @@ enum Performance_time_type : uint32_t
 {
     PERF_TIME_TYPE_SIMULATION_LOOP = 0,
     PERF_TIME_TYPE_RENDERER_LOOP,
+    INTERNAL__DONOTUSE__PERF_TIME_TYPE_GPU_RENDER,
 
     NUM_PERF_TIME_TYPES
 };
@@ -29,6 +30,7 @@ enum Performance_time_type : uint32_t
 constexpr std::array<char const* const, NUM_PERF_TIME_TYPES> k_performance_time_type_labels{
     "Simulation Loop",
     "Renderer Loop",
+    "GPU Render",
 };
 
 /// Collects samples, overwriting old ones.

@@ -73,6 +73,9 @@ struct Renderer::Impl
         , get_play_flag_fn(std::move(get_play_flag_fn))
         , set_dev_anim_editor_view_fn(std::move(set_dev_anim_editor_view_fn))
     {
+        report_gpu_perf_results_fn = [this](GPU_performance_results results) {
+            report_gpu_perf_results(results);
+        };
     }
 
     ~Impl()
@@ -100,6 +103,7 @@ struct Renderer::Impl
     std::function<void(bool)> set_play_flag_fn;
     std::function<bool()> get_play_flag_fn;
     std::function<void(bool)> set_dev_anim_editor_view_fn;
+    std::function<void(GPU_performance_results)> report_gpu_perf_results_fn;
 
     /// Able to register assets until assets are starting to be loaded into the GPU.
     std::atomic_bool asset_reg_window_open{ true };
@@ -153,6 +157,9 @@ struct Renderer::Impl
 
     /// Debug stats' performance times.
     Performance_time_map_t perf_time_map;
+
+    /// Performance stats for most recent GPU measurement.
+    GPU_performance_results gpu_perf_results;
 
     /// Debug stats for time for waiting for next frame to acquire.
     float_t perf_frame_acquire_time{ -1 };
@@ -448,6 +455,14 @@ struct Renderer::Impl
             graphics->add_point_light(light.origin.raw, light.color.raw, light.intensity);
         }
     }
+
+    void report_gpu_perf_results(GPU_performance_results results)
+    {
+        float_t const total_dt = results.data.front().duration;
+        perf_time_map[INTERNAL__DONOTUSE__PERF_TIME_TYPE_GPU_RENDER].add_sample(total_dt);
+
+        gpu_perf_results = results;
+    }
 };
 
 
@@ -530,6 +545,8 @@ void Renderer::build()
             .get_play_flag_fn = m.get_play_flag_fn,
             .set_dev_anim_editor_view_fn = m.set_dev_anim_editor_view_fn,
             .perf_time_map = m.perf_time_map,
+            .gpu_perf_results = m.gpu_perf_results,
+            .report_gpu_perf_results_fn = m.report_gpu_perf_results_fn,
             .perf_frame_acquire_time = m.perf_frame_acquire_time,
         });
     auto& g{ *m.graphics };
@@ -1098,6 +1115,7 @@ void Renderer::set_allow_deformed_render_models(bool allow)
 
 void Renderer::report_performance_time(Performance_time_type perf_time_type, float_t delta_time)
 {
+    assert(perf_time_type != INTERNAL__DONOTUSE__PERF_TIME_TYPE_GPU_RENDER);
     m_pimpl->perf_time_map[perf_time_type].add_sample(delta_time);
 }
 

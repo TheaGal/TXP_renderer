@@ -153,6 +153,17 @@ struct Model_asset_create_info
 };
 
 
+struct GPU_performance_results
+{
+    struct Result
+    {
+        char const* region_name;
+        float_t start_time_offset;
+        float_t duration;
+    };
+    std::vector<Result> data;
+};
+
 /// Set of information useful for graphics.
 struct Information_hook_struct
 {
@@ -160,6 +171,8 @@ struct Information_hook_struct
     std::function<bool()> const& get_play_flag_fn;
     std::function<void(bool)> const& set_dev_anim_editor_view_fn;
     Performance_time_map_t const& perf_time_map;
+    GPU_performance_results const& gpu_perf_results;
+    std::function<void(GPU_performance_results)> const& report_gpu_perf_results_fn;
     float_t const& perf_frame_acquire_time;
 };
 

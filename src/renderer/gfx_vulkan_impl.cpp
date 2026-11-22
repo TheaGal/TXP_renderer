@@ -2361,11 +2361,7 @@ bool Graphics::Impl::start_next_frame()
     // Retrieve GPU timings from query pool.
     if (current_frame.gpu_profiler.has_results())
     {
-        auto results = current_frame.gpu_profiler.get_results();
-
-        for (auto const& result : results)
-            debug::emplace_data_point(std::string(result.region_name) + " (ms)",
-                                      result.duration_ms);
+        info_hook_struct.report_gpu_perf_results_fn(current_frame.gpu_profiler.get_results());
     }
 
     // Start profiling GPU frame.
