@@ -282,6 +282,8 @@ struct Graphics::Impl
         Command_buffer graphics_queue_command_buffer;
         VkSemaphore acquire_nxt_img_semaphore;
         VkFence render_fence;
+        VkQueryPool query_pool;  // for performance timings (@CHECK: should we keep in release build?)
+        bool is_query_pool_reset;  // @TODO: abstract this shit!
 
         /// This environment data buffer list needs to be per-frame but also per-renderview.
         std::vector<Vk_Buffer::Allocated_buffer> environment_data_buffers;  // Matches number of render views.
@@ -367,6 +369,7 @@ struct Graphics::Impl
     void init_vulkan_retrieve_queues();
     void init_vulkan_create_cmd_structures();
     void init_vulkan_create_sync_structures();
+    void init_vulkan_create_query_pool();
     void init_vulkan_for_imgui();
     void init_vulkan_render_graph_resources();
     void init_vulkan_create_descriptors();

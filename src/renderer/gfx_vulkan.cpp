@@ -55,6 +55,7 @@ TXP::Graphics::Graphics(std::string const& title,
     m_pimpl->init_vulkan_retrieve_queues();
     m_pimpl->init_vulkan_create_cmd_structures();
     m_pimpl->init_vulkan_create_sync_structures();
+    m_pimpl->init_vulkan_create_query_pool();
     m_pimpl->init_vulkan_for_imgui();
     m_pimpl->init_vulkan_render_graph_resources();
     m_pimpl->init_vulkan_create_descriptors();

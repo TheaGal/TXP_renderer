@@ -878,6 +878,32 @@ void Graphics::Impl::init_vulkan_create_sync_structures()
     }
 }
 
+void Graphics::Impl::init_vulkan_create_query_pool()
+{
+    ZoneScoped;
+
+    VkResult err;
+
+    // Create query pool for getting GPU timestamps.
+    VkQueryPoolCreateInfo query_pool_info{
+        .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+        .pNext = nullptr,
+        .queryType = VK_QUERY_TYPE_TIMESTAMP,
+        .queryCount = 2,
+    };
+
+    for (uint32_t i = 0; i < k_frame_overlap; i++)
+    {
+        err = vkCreateQueryPool(gfx.device, &query_pool_info, nullptr, &frames[i].query_pool);
+        if (err)
+        {
+            throw std::runtime_error("Vulkan query pool creation failed.");
+        }
+
+        frames[i].is_query_pool_reset = false;
+    }
+}
+
 void Graphics::Impl::init_vulkan_for_imgui()
 {
     ZoneScoped;
@@ -1064,6 +1090,7 @@ void Graphics::Impl::destroy_vulkan()
     }
     for (auto& frame : frames)
     {
+        vkDestroyQueryPool(gfx.device, frame.query_pool, nullptr);
         vkDestroyFence(gfx.device, frame.render_fence, nullptr);
         vkDestroySemaphore(gfx.device, frame.acquire_nxt_img_semaphore, nullptr);
     }
@@ -2336,6 +2363,29 @@ bool Graphics::Impl::start_next_frame()
     // Reset command buffers.
     current_frame.graphics_queue_command_buffer.reset();
 
+    // Retrieve GPU timings from query pool.
+    if (current_frame.is_query_pool_reset)
+    {
+        uint64_t results[2];
+        vkGetQueryPoolResults(gfx.device,
+                              current_frame.query_pool,
+                              0,
+                              2,
+                              sizeof(results),
+                              results,
+                              sizeof(results[0]),
+                              VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+        BT_INFOF("Render time GPU: %.2fms",
+                 (results[1] - results[0]) * gfx.physical_device_properties.limits.timestampPeriod /
+                     1e6f);
+    }
+
+    // Start profiling GPU frame.
+    VkCommandBuffer cmd{ current_frame.graphics_queue_command_buffer.get() };
+    vkCmdResetQueryPool(cmd, current_frame.query_pool, 0, 2);
+    vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, current_frame.query_pool, 0);
+    current_frame.is_query_pool_reset = true;
+
     return true;
 }
 
@@ -2507,6 +2557,9 @@ void Graphics::Impl::present_frame_to_screen()
     Vk_Image::Image::transition_to(
         cmd,
         { { &get_current_swapchain_image(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
+
+    // End profiling GPU frame.
+    vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, current_frame.query_pool, 1);
 
     // End recording command buffers.
     TracyVkCollect(current_frame.graphics_queue_command_buffer.get_tracy(), cmd);
