@@ -40,6 +40,7 @@
 #include "renderer/gfx.h"
 #include "renderer/types.h"
 #include "txp_renderer/callbacks.h"
+#include "txp_renderer/debug/debug_printable_info.h"
 #include "txp_renderer/debug/debug_render_job.h"
 #include "txp_renderer/input_handler/input_handler.h"
 #include "txp_renderer/renderer.h"
@@ -894,13 +895,7 @@ void Graphics::Impl::init_vulkan_create_query_pool()
 
     for (uint32_t i = 0; i < k_frame_overlap; i++)
     {
-        err = vkCreateQueryPool(gfx.device, &query_pool_info, nullptr, &frames[i].query_pool);
-        if (err)
-        {
-            throw std::runtime_error("Vulkan query pool creation failed.");
-        }
-
-        frames[i].is_query_pool_reset = false;
+        frames[i].gpu_profiler.init(gfx.device, gfx.physical_device_properties);
     }
 }
 
@@ -1090,7 +1085,7 @@ void Graphics::Impl::destroy_vulkan()
     }
     for (auto& frame : frames)
     {
-        vkDestroyQueryPool(gfx.device, frame.query_pool, nullptr);
+        frame.gpu_profiler.teardown();
         vkDestroyFence(gfx.device, frame.render_fence, nullptr);
         vkDestroySemaphore(gfx.device, frame.acquire_nxt_img_semaphore, nullptr);
     }
@@ -2364,27 +2359,19 @@ bool Graphics::Impl::start_next_frame()
     current_frame.graphics_queue_command_buffer.reset();
 
     // Retrieve GPU timings from query pool.
-    if (current_frame.is_query_pool_reset)
+    if (current_frame.gpu_profiler.has_results())
     {
-        uint64_t results[2];
-        vkGetQueryPoolResults(gfx.device,
-                              current_frame.query_pool,
-                              0,
-                              2,
-                              sizeof(results),
-                              results,
-                              sizeof(results[0]),
-                              VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
-        BT_INFOF("Render time GPU: %.2fms",
-                 (results[1] - results[0]) * gfx.physical_device_properties.limits.timestampPeriod /
-                     1e6f);
+        auto results = current_frame.gpu_profiler.get_results();
+
+        for (auto const& result : results)
+            debug::emplace_data_point(std::string(result.region_name) + " (ms)",
+                                      result.duration_ms);
     }
 
     // Start profiling GPU frame.
     VkCommandBuffer cmd{ current_frame.graphics_queue_command_buffer.get() };
-    vkCmdResetQueryPool(cmd, current_frame.query_pool, 0, 2);
-    vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, current_frame.query_pool, 0);
-    current_frame.is_query_pool_reset = true;
+    current_frame.gpu_profiler.clear_results(cmd);
+    current_frame.gpu_profiler.begin_region(cmd, "GPU frame");
 
     return true;
 }
@@ -2392,6 +2379,18 @@ bool Graphics::Impl::start_next_frame()
 void* Graphics::Impl::get_render_view(size_t rend_view_idx)
 {
     return &render_views[rend_view_idx];
+}
+
+void Graphics::Impl::begin_profile_region(char const* const region_name)
+{
+    auto& frame{ get_current_frame() };
+    frame.gpu_profiler.begin_region(frame.graphics_queue_command_buffer.get(), region_name);
+}
+
+void Graphics::Impl::end_profile_region(char const* const region_name)
+{
+    auto& frame{ get_current_frame() };
+    frame.gpu_profiler.end_region(frame.graphics_queue_command_buffer.get(), region_name);
 }
 
 void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
@@ -2559,7 +2558,7 @@ void Graphics::Impl::present_frame_to_screen()
         { { &get_current_swapchain_image(), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR } });
 
     // End profiling GPU frame.
-    vkCmdWriteTimestamp(cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, current_frame.query_pool, 1);
+    current_frame.gpu_profiler.end_region(cmd, "GPU frame");
 
     // End recording command buffers.
     TracyVkCollect(current_frame.graphics_queue_command_buffer.get_tracy(), cmd);

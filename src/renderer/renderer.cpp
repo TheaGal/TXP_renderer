@@ -651,6 +651,21 @@ void Renderer::poll_input_events()
     g.poll_input_events();
 }
 
+
+#define GPU_BEGIN_PROFILE_GFX(__region_name)  g.begin_profile_region(__region_name)
+#define GPU_END_PROFILE_GFX(__region_name)  g.end_profile_region(__region_name)
+
+#if _WIN64
+    #define GPU_BEGIN_PROFILE_COMPUTE(__region_name)  GPU_BEGIN_PROFILE_GFX(__region_name)
+    #define GPU_END_PROFILE_COMPUTE(__region_name)  GPU_END_PROFILE_GFX(__region_name)
+#elif __APPLE__
+    #define GPU_BEGIN_PROFILE_COMPUTE(__region_name)  (void)0
+    #define GPU_END_PROFILE_COMPUTE(__region_name)  (void)0
+#else
+    #error "Unknown, currently unsupported OS です"
+#endif
+
+
 void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 {
     ZoneScoped;
@@ -709,6 +724,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         return;
 
     // Update animators.
+    GPU_BEGIN_PROFILE_COMPUTE("deformed models");
+
     for (auto&& [_, animator] : m.ecs_registry.view<component_internal::Model_animator>().each())
     {   // Tick animator.
         std::vector<mat4s> joint_matrices;
@@ -728,6 +745,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         // Execute compute shader for corresponding deformed model,
         m.shad_skinned_model->compute(&def_mod);
     }
+
+    GPU_END_PROFILE_COMPUTE("deformed models");
 
     // Populate render object model mesh references for organizing per-instance data.
     size_t cur_modmesh_ref_idx{ 0 };
@@ -761,9 +780,13 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     {
         m.shad_sprite->upload_ui_state_data(*ui_state);
 
+        GPU_BEGIN_PROFILE_GFX("ui");
+
         g.begin_rendering_ui();
         m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
         g.end_rendering_ui();
+
+        GPU_END_PROFILE_GFX("ui");
 
         ui_state->validate_draw_cache();
     }
@@ -796,6 +819,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             // g.compute_transparent_geometry_culling();
 
             // Render shadows.
+            GPU_BEGIN_PROFILE_GFX("shadows");
+
             g.begin_rendering_shadows();
             for (size_t idx = 0;
                 idx < m.shad_directional_light_shadow->get_num_shadow_atlas_entries_to_draw();
@@ -809,6 +834,8 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
             }
             g.end_rendering_shadows();
 
+            GPU_END_PROFILE_GFX("shadows");
+
             m.shad_directional_light_shadow->wait_until_completion();
         }
 
@@ -816,6 +843,26 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
         //     m.shad_gradient->compute(render_view);  // @TODO: this needs to get changed to image-type GENERAL before compute shader usage.
 
         // Render all graphics shaders.
+        constexpr char const* k_render_view_region_names[]{
+            "render view 0",
+            "render view 1",
+            "render view 2",
+            "render view 3",
+            "render view 4",
+            "render view 5",
+            "render view 6",
+            "render view 7",
+            "render view 8",
+            "render view 9",
+            "render view 10",
+            "render view 11",
+            "render view 12",
+            "render view 13",
+            "render view 14",
+            "render view 15",
+        };
+        GPU_BEGIN_PROFILE_GFX(k_render_view_region_names[render_view_idx]);
+
         g.begin_rendering_render_view(render_view_idx);
 
         m.shad_basic_diffuse->draw(m.render_object_list,
@@ -843,17 +890,44 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
         g.end_rendering_render_view(render_view_idx);
 
+        GPU_END_PROFILE_GFX(k_render_view_region_names[render_view_idx]);
+
         if (is_main_cam_matrix)
         {
+            GPU_BEGIN_PROFILE_COMPUTE("clouds");
             m.shad_clouds->compute(m.camera, render_view);
+            GPU_END_PROFILE_COMPUTE("clouds");
+
             // g.render_volumetric_light();
         }
 
         // g.render_particles();
         // g.render_transparent_geometry();
 
+        constexpr char const* k_postprocess_region_names[]{
+            "postprocess 0",
+            "postprocess 1",
+            "postprocess 2",
+            "postprocess 3",
+            "postprocess 4",
+            "postprocess 5",
+            "postprocess 6",
+            "postprocess 7",
+            "postprocess 8",
+            "postprocess 9",
+            "postprocess 10",
+            "postprocess 11",
+            "postprocess 12",
+            "postprocess 13",
+            "postprocess 14",
+            "postprocess 15",
+        };
+        GPU_BEGIN_PROFILE_COMPUTE(k_postprocess_region_names[render_view_idx]);
+
         bool const do_full_postprocess{ is_main_cam_matrix };
         m.shad_postprocess->compute(do_full_postprocess, render_view);
+
+        GPU_END_PROFILE_COMPUTE(k_postprocess_region_names[render_view_idx]);
 
         render_view_idx++;
     }

@@ -235,6 +235,14 @@ public:
     /// Gets render view data for a render view.
     void* get_render_view(size_t rend_view_idx);
 
+    /// Starts profile region.
+    /// @note: `region_name` must be a static string.
+    void begin_profile_region(char const* const region_name);
+
+    /// Ends profile region.
+    /// @note: `region_name` must be a static string.
+    void end_profile_region(char const* const region_name);
+
     /// Begins rendering shadow pass.
     void begin_rendering_shadows();
 

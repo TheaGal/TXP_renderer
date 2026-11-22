@@ -30,8 +30,9 @@
 #include <fstream>
 #include <functional>
 #include <stdexcept>
-#include <vector>
 #include <tracy/TracyVulkan.hpp>
+#include <unordered_map>
+#include <vector>
 
 
 namespace TXP
@@ -275,6 +276,147 @@ struct Graphics::Impl
     }
 
 
+    /// Profiles GPU with timestamp queries.
+    class GPU_performance_profiler
+    {
+    public:
+        void init(VkDevice device, VkPhysicalDeviceProperties physical_device_properties)
+        {
+            m_device = device;
+            m_physical_device_properties = physical_device_properties;
+
+            VkQueryPoolCreateInfo query_pool_info{
+                .sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO,
+                .pNext = nullptr,
+                .queryType = VK_QUERY_TYPE_TIMESTAMP,
+                .queryCount = k_num_pool_items,
+            };
+            VkResult err = vkCreateQueryPool(m_device, &query_pool_info, nullptr, &m_query_pool);
+
+            if (err)
+                throw std::runtime_error("Vulkan query pool creation failed.");
+        }
+
+        void teardown()
+        {
+            vkDestroyQueryPool(m_device, m_query_pool, nullptr);
+        }
+
+
+        inline bool has_results() const
+        {
+            return m_has_results;
+        }
+
+        struct Results
+        {
+            char const* region_name;
+            float_t start_time_offset_ms;
+            float_t duration_ms;
+        };
+
+        std::vector<Results> get_results() const
+        {
+            if (!m_has_results)
+                throw std::runtime_error("No results I has. Aauuugghhh!");
+
+            uint64_t result_pool[k_num_pool_items];
+            VkResult err = vkGetQueryPoolResults(m_device,
+                                                 m_query_pool,
+                                                 0,
+                                                 m_cur_result_idx,
+                                                 sizeof(result_pool),
+                                                 result_pool,
+                                                 sizeof(result_pool[0]),
+                                                 VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+            if (err)
+                throw std::runtime_error("Getting query pool results failed.");
+
+            float_t const gpu_time_to_ms{ m_physical_device_properties.limits.timestampPeriod /
+                                          1e6f };
+
+            std::vector<Results> results;
+            results.reserve(m_region_name_mention_order.size());
+
+            for (char const* region_name : m_region_name_mention_order)
+            {
+                auto const [reg_start_idx, reg_end_idx] =
+                    m_region_name_to_result_idxs_map.at(region_name);
+
+                float_t const start_time_offset_ms{ result_pool[reg_start_idx] * gpu_time_to_ms};
+                float_t const duration_ms{ (result_pool[reg_end_idx] - result_pool[reg_start_idx]) *
+                                           gpu_time_to_ms };
+
+                results.emplace_back(region_name, start_time_offset_ms, duration_ms);
+            }
+
+            return results;
+        }
+
+        void clear_results(VkCommandBuffer cmd)
+        {
+            vkCmdResetQueryPool(cmd, m_query_pool, 0, k_num_pool_items);
+
+            m_has_results = false;
+            m_cur_result_idx = 0;
+            m_region_name_mention_order.clear();
+            m_region_name_to_result_idxs_map.clear();
+        }
+
+        void begin_region(VkCommandBuffer cmd, char const* const region_name)
+        {
+            if (m_cur_result_idx >= k_num_pool_items)
+                throw std::runtime_error("Exceeded result pool items.");
+
+            vkCmdWriteTimestamp(cmd,
+                                VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+                                m_query_pool,
+                                m_cur_result_idx);
+
+            m_region_name_mention_order.emplace_back(region_name);
+
+            auto [_, success] = m_region_name_to_result_idxs_map.emplace(
+                region_name,
+                std::make_pair(m_cur_result_idx, m_cur_result_idx));
+
+            if (!success)
+                throw std::runtime_error(
+                    "GPU_performance_profiler::begin_region() emplace failed.");
+
+            m_cur_result_idx++;
+        }
+
+        void end_region(VkCommandBuffer cmd, char const* const region_name)
+        {
+            if (m_cur_result_idx >= k_num_pool_items)
+                throw std::runtime_error("Exceeded result pool items.");
+
+            vkCmdWriteTimestamp(cmd,
+                                VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                                m_query_pool,
+                                m_cur_result_idx);
+
+            m_region_name_to_result_idxs_map.at(region_name).second = m_cur_result_idx;
+            m_cur_result_idx++;
+
+            m_has_results = true;
+        }
+
+    private:
+        VkDevice m_device;
+        VkPhysicalDeviceProperties m_physical_device_properties;
+
+        static constexpr uint32_t k_num_pool_items{ 64 };
+        VkQueryPool m_query_pool;
+
+        bool m_has_results{ false };
+        uint32_t m_cur_result_idx{ 0 };
+        std::vector<char const*> m_region_name_mention_order;
+        std::unordered_map<char const*, std::pair<uint32_t, uint32_t>>
+            m_region_name_to_result_idxs_map;
+    };
+
+
     /// Holds per-frame data.
     struct Frame_data
     {
@@ -282,8 +424,7 @@ struct Graphics::Impl
         Command_buffer graphics_queue_command_buffer;
         VkSemaphore acquire_nxt_img_semaphore;
         VkFence render_fence;
-        VkQueryPool query_pool;  // for performance timings (@CHECK: should we keep in release build?)
-        bool is_query_pool_reset;  // @TODO: abstract this shit!
+        GPU_performance_profiler gpu_profiler;  // @CHECK: should we keep in release build?
 
         /// This environment data buffer list needs to be per-frame but also per-renderview.
         std::vector<Vk_Buffer::Allocated_buffer> environment_data_buffers;  // Matches number of render views.
@@ -649,6 +790,14 @@ struct Graphics::Impl
 
     /// Gets a render view.
     void* get_render_view(size_t rend_view_idx);
+
+    /// Starts profile region.
+    /// @note: `region_name` must be a static string.
+    void begin_profile_region(char const* const region_name);
+
+    /// Ends profile region.
+    /// @note: `region_name` must be a static string.
+    void end_profile_region(char const* const region_name);
 
     /// Begins dynamic rendering while clearing the render view images.
     /// @NOTE: depth image is optional.

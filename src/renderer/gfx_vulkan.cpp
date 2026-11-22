@@ -273,6 +273,16 @@ void* TXP::Graphics::get_render_view(size_t rend_view_idx)
     return m_pimpl->get_render_view(rend_view_idx);
 }
 
+void TXP::Graphics::begin_profile_region(char const* const region_name)
+{
+    m_pimpl->begin_profile_region(region_name);
+}
+
+void TXP::Graphics::end_profile_region(char const* const region_name)
+{
+    m_pimpl->end_profile_region(region_name);
+}
+
 void TXP::Graphics::begin_rendering_shadows()
 {
     auto& color_image{ m_pimpl->shadow_atlas_texture_image };
