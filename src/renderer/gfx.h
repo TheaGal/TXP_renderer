@@ -173,7 +173,6 @@ struct Information_hook_struct
     Performance_time_map_t const& perf_time_map;
     GPU_performance_results const& gpu_perf_results;
     std::function<void(GPU_performance_results)> const& report_gpu_perf_results_fn;
-    float_t const& perf_frame_acquire_time;
 };
 
 

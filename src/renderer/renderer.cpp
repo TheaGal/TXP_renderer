@@ -161,9 +161,6 @@ struct Renderer::Impl
     /// Performance stats for most recent GPU measurement.
     GPU_performance_results gpu_perf_results;
 
-    /// Debug stats for time for waiting for next frame to acquire.
-    float_t perf_frame_acquire_time{ -1 };
-
 
     // ---- Functions ------------------------------------------------------------------------------
 
@@ -547,7 +544,6 @@ void Renderer::build()
             .perf_time_map = m.perf_time_map,
             .gpu_perf_results = m.gpu_perf_results,
             .report_gpu_perf_results_fn = m.report_gpu_perf_results_fn,
-            .perf_frame_acquire_time = m.perf_frame_acquire_time,
         });
     auto& g{ *m.graphics };
 
@@ -722,15 +718,9 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
 
     // Wait until can start rendering.
     bool frame_acquired{ false };
-    {
-        BT::Timer acquire_timer;
-        acquire_timer.start_timer();
 
-        if (!render_view_sizes_changed)
-            frame_acquired = g.start_next_frame();
-
-        m_pimpl->perf_frame_acquire_time = acquire_timer.calc_delta_time();
-    }
+    if (!render_view_sizes_changed)
+        frame_acquired = g.start_next_frame();
 
     // Set render view sizes.
     g.set_render_view_sizes(render_view_sizes);
