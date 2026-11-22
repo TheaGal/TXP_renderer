@@ -49,7 +49,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
         if (reset_agent_model_flag || !reg.any_of<component::Render_object_config>(entity))
         {
             auto& rend_obj_cfg = reg.emplace_or_replace<component::Render_object_config>(entity);
-            rend_obj_cfg.render_layer = RENDER_LAYER_DEFAULT;
+            rend_obj_cfg.render_layer |= RENDER_LAYER_SHADOW_CASTER;
             rend_obj_cfg.model_name = eds.working_model_name;
             rend_obj_cfg.is_deformed = true;
 

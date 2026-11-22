@@ -316,7 +316,7 @@ struct Renderer::Impl
 
                     m.render_object_list.emplace_back(Render_object{
                         .is_visible = rend_obj_cfg.is_visible,
-                        .layer = rend_obj_cfg.render_layer,
+                        .layer = Render_layer(rend_obj_cfg.render_layer),
                         .render_model_idx = new_render_model_idx,
                         .sub_mesh_idx = new_sub_mesh_idx,
                         .material_palette_idx = m.material_organizer.get_material_palette_idx(
@@ -805,7 +805,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                 m.shad_directional_light_shadow->draw(idx,
                                                       m.render_object_list,
                                                       m.model_mesh_ref_list,
-                                                      RENDER_LAYER_DEFAULT);
+                                                      RENDER_LAYER_SHADOW_CASTER);
             }
             g.end_rendering_shadows();
 

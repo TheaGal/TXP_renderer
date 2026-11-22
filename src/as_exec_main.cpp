@@ -1,4 +1,5 @@
 #include "btuuid.h"
+#include "txp_renderer/types.h"
 #define BT_SERVICE_FINDER_IMPLEMENTATION
 #include "btservice_finder.h"  // @TODO: put in public folder.
 #include "entt/entity/registry.hpp"
@@ -19,7 +20,8 @@ int32_t main()
         meta.uuid = BT::UUID_helper::generate_uuid();
 
         auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
-        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.render_layer =
+            TXP::Render_layer(TXP::RENDER_LAYER_DEFAULT | TXP::RENDER_LAYER_SHADOW_CASTER);
         rend_obj_cfg.model_name = "probuilder_example";
     }
     {   // Create sample entity 2.
@@ -29,7 +31,8 @@ int32_t main()
         meta.uuid = BT::UUID_helper::generate_uuid();
 
         auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
-        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.render_layer =
+            TXP::Render_layer(TXP::RENDER_LAYER_DEFAULT | TXP::RENDER_LAYER_SHADOW_CASTER);
         rend_obj_cfg.model_name = "probuilder_example";
         glm_scale_make(rend_obj_cfg.transform.raw, vec3{ 0.25f, 0.25f, 0.25f });
         glm_translate(rend_obj_cfg.transform.raw, vec3{ 100, 0, 0 });
@@ -41,7 +44,8 @@ int32_t main()
         meta.uuid = BT::UUID_helper::generate_uuid();
 
         auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
-        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.render_layer =
+            TXP::Render_layer(TXP::RENDER_LAYER_DEFAULT | TXP::RENDER_LAYER_SHADOW_CASTER);
         rend_obj_cfg.model_name = "simple_combat_char";
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 6 });
         rend_obj_cfg.is_deformed = false;
@@ -53,7 +57,8 @@ int32_t main()
         meta.uuid = BT::UUID_helper::generate_uuid();
 
         auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
-        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.render_layer =
+            TXP::Render_layer(TXP::RENDER_LAYER_DEFAULT | TXP::RENDER_LAYER_SHADOW_CASTER);
         rend_obj_cfg.model_name = "simple_combat_char";
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ -25, 5, 0 });
         rend_obj_cfg.is_deformed = true;
@@ -65,7 +70,8 @@ int32_t main()
         meta.uuid = BT::UUID_helper::generate_uuid();
 
         auto& rend_obj_cfg = ecs_registry.emplace<TXP::component::Render_object_config>(ecs_entity);
-        rend_obj_cfg.render_layer = TXP::RENDER_LAYER_DEFAULT;
+        rend_obj_cfg.render_layer =
+            TXP::Render_layer(TXP::RENDER_LAYER_DEFAULT | TXP::RENDER_LAYER_SHADOW_CASTER);
         rend_obj_cfg.model_name = "rails";
         rend_obj_cfg.sub_mesh_name = "CurveRail.L.001";
         glm_translate_make(rend_obj_cfg.transform.raw, vec3{ 0, 10, 0 });
