@@ -307,7 +307,7 @@ void Camera_internal::get_main_cam_follow_orbit_orbits(vec2 out_orbit_angles) co
 void Camera_internal::set_main_cam_follow_orbit_cam_angle_offset_euler(vec3 const offset_angles)
 {
     m_orbit_cam_angle_offset_y = offset_angles[0];
-    glm_euler_zyx(const_cast<float_t*>(offset_angles), m_orbit_cam_angle_offset_rotation);
+    glm_euler_yxz(const_cast<float_t*>(offset_angles), m_orbit_cam_angle_offset_rotation);
 }
 
 void Camera_internal::copy_cam_transform(uint32_t const src_cam_idx, uint32_t const dest_cam_idx)
@@ -436,7 +436,7 @@ void Camera_internal::update_orbit_cam(vec2 look_delta_raw)
     glm_vec3_copy(const_cast<float_t*>(cam_offset_pos), offset_from_follow_obj);
 
     mat4 look_rotation;
-    glm_euler_zyx(vec3{ m_orbits[1], m_orbits[0], 0.0f }, look_rotation);
+    glm_euler_yxz(vec3{ m_orbits[1], m_orbits[0], 0.0f }, look_rotation);
     glm_mat4_mulv3(look_rotation, offset_from_follow_obj, 0.0f, offset_from_follow_obj);
 
     // Position camera transform.

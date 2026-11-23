@@ -51,7 +51,7 @@ constexpr uint64_t k_mat4_alignment{ 16 };
 #endif
 
 
-/// Simple math for keeping angles at a certain range.
+/// Simple math for keeping angles at a certain range (for radians).
 inline void btglm_angle_normalize(float_t& in_out_angle,
                                   float_t const range_min,
                                   float_t const range_max)
@@ -62,6 +62,54 @@ inline void btglm_angle_normalize(float_t& in_out_angle,
         in_out_angle += glm_rad(360.0f);
     while (in_out_angle > range_max)
         in_out_angle -= glm_rad(360.0f);
+}
+
+/// Simple math for keeping angles at a certain range (for degrees).
+inline void btglm_angle_normalize_degrees(float_t& in_out_angle,
+                                          float_t const range_min,
+                                          float_t const range_max)
+{
+    assert(std::abs(range_max - (range_min + 360.0f)) < 1e-6);
+
+    while (in_out_angle <= range_min)
+        in_out_angle += 360.0f;
+    while (in_out_angle > range_max)
+        in_out_angle -= 360.0f;
+}
+
+
+/// Extracts euler angles in YXZ order.
+inline void btglm_euler_angles_yxz(mat4 m, vec3 dest)
+{
+    float_t theta_x, theta_y, theta_z;
+
+    // @NOTE: the below values are derived from `glm_euler_by_order()` in euler.h of cglm.
+    //          -Thea 2026/11/22
+    float_t const sx{ -m[2][1] };
+    float_t const cxsy{ m[2][0] };
+    float_t const cxcy{ m[2][2] };
+    float_t const cxsz{ m[0][1] };
+    float_t const cxcz{ m[1][1] };
+
+    float_t const czsy_cysxsz{ -m[0][2] };  // in edge cases sz is 0
+    float_t const cycz_sxsysz{ m[0][0] };  // in edge cases sz is 0
+
+    if (sx > -1.0f && sx < 1.0f)
+    {
+        theta_x = asinf(sx);
+        theta_y = atan2f(cxsy, cxcy);
+        theta_z = atan2f(cxsz, cxcz);
+    }
+    else  // edge case: sx == +-1
+    {
+        theta_x = GLM_PI_2f * glm_signf(sx);
+        theta_y = atan2f(czsy_cysxsz, cycz_sxsysz);  // cant use `atan2f(cxsy, cxcy)` since cx is 0 (bc sx is +-1)
+        theta_z = 0;  // i think the reason why 0 here is bc of gimble lock from prev x axis
+    }
+
+    dest[0] = theta_x;
+    dest[1] = theta_y;
+    dest[2] = theta_z;
 }
 
 

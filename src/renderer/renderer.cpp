@@ -956,13 +956,17 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     switch (ldr_target)
     {
     case LDR_TARGET_SWAPCHAIN:
+        GPU_BEGIN_PROFILE_GFX("blit to swapchain");
         // @TODO: rename to "blit_image_to_image()".
         BT::date_deadline(2026, 9, 17);
         // g.render_hdr_to_ldr_postprocessing(render_view_idx, render_ui, g.LDR_TARGET_IMGUI);
+        GPU_END_PROFILE_GFX("blit to swapchain");
         break;
 
     case LDR_TARGET_IMGUI:
+        GPU_BEGIN_PROFILE_GFX("imgui");
         g.render_imgui();
+        GPU_END_PROFILE_GFX("imgui");
         break;
 
     default:
