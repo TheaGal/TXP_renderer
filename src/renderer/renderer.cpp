@@ -559,7 +559,7 @@ void Renderer::build()
     add_material("__debug_color_physics_unstandable_mesh",
                  "__debug_color_wireframe",
                  {
-                     { "color", "0 1 0.5 0.25" },
+                     { "color", "0 0 1 0.25" },
                  });
     add_material_palette("__debug_color_physics_unstandable_mesh_mat_pal",
                          { "__debug_color_physics_unstandable_mesh" });
