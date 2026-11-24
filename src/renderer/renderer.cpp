@@ -548,13 +548,21 @@ void Renderer::build()
     auto& g{ *m.graphics };
 
     // Final add-ins internally before closing window.
-    add_material("__debug_color_wireframe_physics_mesh",
+    add_material("__debug_color_physics_standable_mesh",
                  "__debug_color_wireframe",
                  {
                      { "color", "0 1 0 0.25" },
                  });
-    add_material_palette("__debug_color_wireframe_physics_mesh_mat_pal",
-                         { "__debug_color_wireframe_physics_mesh" });
+    add_material_palette("__debug_color_physics_standable_mesh_mat_pal",
+                         { "__debug_color_physics_standable_mesh" });
+
+    add_material("__debug_color_physics_unstandable_mesh",
+                 "__debug_color_wireframe",
+                 {
+                     { "color", "0 1 0.5 0.25" },
+                 });
+    add_material_palette("__debug_color_physics_unstandable_mesh_mat_pal",
+                         { "__debug_color_physics_unstandable_mesh" });
 
     add_material("__debug_color_wireframe_selected_mesh",
                  "__debug_color_wireframe",

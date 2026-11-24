@@ -20,7 +20,8 @@ using debug_model_id_t = uint64_t;
 
 enum Material_type : uint32_t
 {
-    PHYSICS_WIREFRAME,
+    PHYSICS_STANDABLE_WIREFRAME,
+    PHYSICS_UNSTANDABLE_WIREFRAME,
     SELECTED_WIREFRAME,
 
     NUM_MATERIAL_TYPES

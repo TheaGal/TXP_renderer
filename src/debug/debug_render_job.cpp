@@ -23,7 +23,8 @@ namespace
 using namespace debug;
 
 static std::unordered_map<Material_type, char const*> const k_material_type_str_map{
-    { PHYSICS_WIREFRAME, "__debug_color_wireframe_physics_mesh_mat_pal" },
+    { PHYSICS_STANDABLE_WIREFRAME, "__debug_color_physics_standable_mesh_mat_pal" },
+    { PHYSICS_UNSTANDABLE_WIREFRAME, "__debug_color_physics_unstandable_mesh_mat_pal" },
     { SELECTED_WIREFRAME, "__debug_color_wireframe_selected_mesh_mat_pal" },
 };
 
