@@ -727,8 +727,6 @@ void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ra
             uploaded_mesh.model_buffer->vertex_index_buffer.destroy();
             pointers_to_erase.emplace_back(pointer);
             assert(pointer != nullptr);  // you're not supposed to destroy the nullptr one!!!
-
-            BT::date_deadline(2026, 11, 25);  // @TODO: delete this if no errors in the mesh deletion system by this date.
         }
 
     for (void* pointer : pointers_to_erase)
