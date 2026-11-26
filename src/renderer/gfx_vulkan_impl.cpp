@@ -2398,8 +2398,6 @@ void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
                                      vec4 clear_color,
                                      Vk_Image::Allocated_image* optional_depth_image)
 {
-    ZoneScoped;
-
     VkCommandBuffer cmd{ get_current_frame().graphics_queue_command_buffer.get() };
 
     // Ready images.
@@ -2445,8 +2443,6 @@ void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
 
 void Graphics::Impl::end_rendering()
 {
-    ZoneScoped;
-
     vkCmdEndRendering(get_current_frame().graphics_queue_command_buffer.get());
 }
 
