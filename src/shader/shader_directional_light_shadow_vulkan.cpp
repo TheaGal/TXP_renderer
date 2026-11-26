@@ -269,6 +269,8 @@ void Shader_directional_light_shadow::allocate_per_instance_data_slots(
     std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
     size_t& in_out_cur_modmesh_ref_idx)
 {
+    ZoneScoped;
+
     m_pimpl->draw_inst_list_start_end.front() = in_out_cur_modmesh_ref_idx;
 
     uint16_t render_obj_idx{ 0 };

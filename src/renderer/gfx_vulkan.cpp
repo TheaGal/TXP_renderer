@@ -285,6 +285,8 @@ void TXP::Graphics::end_profile_region(char const* const region_name)
 
 void TXP::Graphics::begin_rendering_shadows()
 {
+    ZoneScoped;
+
     auto& color_image{ m_pimpl->shadow_atlas_texture_image };
     auto& depth_image{ m_pimpl->shadow_atlas_depth_image };
 
@@ -298,11 +300,15 @@ void TXP::Graphics::begin_rendering_shadows()
 
 void TXP::Graphics::end_rendering_shadows()
 {
+    ZoneScoped;
+
     m_pimpl->end_rendering();
 }
 
 void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)
 {
+    ZoneScoped;
+
     auto& color_image{ m_pimpl->render_views[rend_view_idx].color_image };
     auto& depth_image{ m_pimpl->render_views[rend_view_idx].depth_image };
 
@@ -311,16 +317,22 @@ void TXP::Graphics::begin_rendering_render_view(size_t rend_view_idx)
 
 void TXP::Graphics::end_rendering_render_view(size_t /*rend_view_idx*/)
 {
+    ZoneScoped;
+
     m_pimpl->end_rendering();
 }
 
 void TXP::Graphics::begin_rendering_ui()
 {
+    ZoneScoped;
+
     m_pimpl->begin_rendering(m_pimpl->ui_image, vec4{ 0, 0, 0, 0 }, nullptr);
 }
 
 void TXP::Graphics::end_rendering_ui()
 {
+    ZoneScoped;
+
     m_pimpl->end_rendering();
 }
 

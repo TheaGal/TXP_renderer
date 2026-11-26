@@ -226,6 +226,7 @@ set(MAIN_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/animation_frame_action/runtime_data_controls.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/as_exec_main.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/bt_lib_version_check.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/bt_memory_shim.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btdatecheck.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btdatecheck.h
     ${CMAKE_CURRENT_SOURCE_DIR}/src/bt_lib/btglm.h

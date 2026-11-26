@@ -23,6 +23,7 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 
@@ -392,6 +393,8 @@ void Shader_pbr::allocate_per_instance_data_slots(
     std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
     size_t& in_out_cur_modmesh_ref_idx)
 {
+    ZoneScoped;
+
     m_pimpl->draw_inst_list_start_end.front() = in_out_cur_modmesh_ref_idx;
 
     uint16_t render_obj_idx{ 0 };
@@ -442,6 +445,8 @@ void Shader_pbr::draw(std::vector<Render_object> const& render_object_list,
                       Lighting_mode const lighting_mode,
                       Render_layer const render_layer_mask)
 {
+    ZoneScoped;
+
     auto& p{ *m_pimpl };
     if (p.draw_inst_list_start_end.back() - p.draw_inst_list_start_end.front() == 0)
         return;  // Nothing to draw. Exit early.

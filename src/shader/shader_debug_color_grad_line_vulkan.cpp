@@ -24,6 +24,7 @@
 #include <cstring>
 #include <memory>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 
 
@@ -289,6 +290,8 @@ void Shader_debug_color_grad_line::allocate_per_instance_data_slots(
     std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
     size_t& in_out_cur_modmesh_ref_idx)
 {
+    ZoneScoped;
+
     (void)render_object_list;
     (void)out_model_mesh_ref_list;
     (void)in_out_cur_modmesh_ref_idx;
@@ -329,6 +332,8 @@ void Shader_debug_color_grad_line::draw(
     std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
     void* render_view_param)
 {
+    ZoneScoped;
+
     (void)render_object_list;
     (void)model_mesh_ref_list;
 

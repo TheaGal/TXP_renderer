@@ -14,6 +14,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 
 
 namespace TXP
@@ -186,6 +187,8 @@ void Shader_gradient::allocate_per_instance_data_slots(
     std::vector<Render_object_model_mesh_reference>& out_model_mesh_ref_list,
     size_t& in_out_cur_modmesh_ref_idx)
 {
+    ZoneScoped;
+
     // Do nothing.
     // BT_TRACE("Shader_gradient has no per-instance data.");
 }

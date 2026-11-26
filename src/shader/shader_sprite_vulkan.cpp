@@ -24,6 +24,7 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -605,6 +606,8 @@ bool is_empty_ui_node(UI::UI_element const* elem)
 
 void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 {
+    ZoneScoped;
+
     auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
     if (render_order_elem_list.empty())
         return;
@@ -668,6 +671,8 @@ void Shader_sprite::upload_ui_state_data(UI_state const& ui_state)
 
 void Shader_sprite::draw(UI_state const& ui_state, float_t camera_view_aspect_ratio)
 {
+    ZoneScoped;
+
     auto render_order_elem_list{ ui_state.gather_rendering_ui_elements_in_render_order() };
     if (render_order_elem_list.empty())
         return;

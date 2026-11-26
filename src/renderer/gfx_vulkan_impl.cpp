@@ -673,7 +673,10 @@ void Graphics::Impl::select_vulkan_window_surface_format()
                                                         VK_FORMAT_R8G8B8A8_UNORM,
                                                         VK_FORMAT_B8G8R8_UNORM,
                                                         VK_FORMAT_R8G8B8_UNORM };
-    constexpr VkColorSpaceKHR request_surface_color_space{ VK_COLORSPACE_SRGB_NONLINEAR_KHR };
+    constexpr VkColorSpaceKHR request_surface_color_space{ VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+
+    // @TODO: look into hdr surface color spaces
+    BT::date_deadline(2027, 2, 1);
 
     VkPhysicalDeviceSurfaceInfo2KHR surface_info{
         .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SURFACE_INFO_2_KHR,
@@ -2246,6 +2249,8 @@ void Graphics::Impl::set_render_object_per_instance_data(
     std::vector<Render_object_model_mesh_reference> const& model_mesh_ref_list,
     size_t mod_mesh_ref_list_length)
 {
+    ZoneScoped;
+
     // Write transform data.
     size_t num_transforms{ std::min(rend_obj_list.size(), static_cast<size_t>(65535)) };  // @HARDCODE: comes from shader.
     auto model_transform_ptr =
@@ -2393,6 +2398,8 @@ void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
                                      vec4 clear_color,
                                      Vk_Image::Allocated_image* optional_depth_image)
 {
+    ZoneScoped;
+
     VkCommandBuffer cmd{ get_current_frame().graphics_queue_command_buffer.get() };
 
     // Ready images.
@@ -2438,6 +2445,8 @@ void Graphics::Impl::begin_rendering(Vk_Image::Allocated_image& color_image,
 
 void Graphics::Impl::end_rendering()
 {
+    ZoneScoped;
+
     vkCmdEndRendering(get_current_frame().graphics_queue_command_buffer.get());
 }
 

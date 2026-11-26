@@ -13,6 +13,7 @@
 
 #include <memory>
 #include <stdexcept>
+#include <tracy/Tracy.hpp>
 #include <unordered_map>
 #include <vector>
 
@@ -265,6 +266,8 @@ void Shader_postprocess::signal_render_view_sizes_changed()
 
 void Shader_postprocess::compute(bool do_full_postprocess, void* render_view_param)
 {
+    ZoneScoped;
+
     auto& p{ *m_pimpl };
 
     auto& render_view{ *static_cast<Graphics::Impl::Render_view_data*>(render_view_param) };
