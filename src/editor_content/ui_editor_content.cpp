@@ -1,7 +1,6 @@
 #include "ui_editor_content.h"
 
 #include "btlogger.h"
-#include "btservice_finder.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "misc/cpp/imgui_stdlib.h"
@@ -443,9 +442,9 @@ void UI_editor::make_not_dirty_also_known_as_clean()
 } // namespace TXP
 
 
-void TXP::editor_content::ui_editor::open_editor()
+void TXP::editor_content::ui_editor::open_editor(UI_state& ui_state)
 {
-    s_ui_editor = new UI_editor(BT::service_finder::find_service<UI_state>());  // @TODO!!
+    s_ui_editor = new UI_editor(ui_state);
 
     s_avail_ui_files = fetch_all_ui_files();
     assert(!s_avail_ui_files.empty());

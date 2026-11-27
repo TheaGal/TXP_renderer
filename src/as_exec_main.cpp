@@ -1,5 +1,4 @@
 #include "btuuid.h"
-#include "txp_renderer/types.h"
 #define BT_SERVICE_FINDER_IMPLEMENTATION
 #include "btservice_finder.h"  // @TODO: put in public folder.
 #include "entt/entity/registry.hpp"
@@ -79,8 +78,10 @@ int32_t main()
     }
 
     TXP::Input::Input_handler input_handler;
+    TXP::UI_state ui_state;
 
     TXP::Renderer r{ ecs_registry,
+                     ui_state,
                      "My renderer test!",
                      "assets/textures/",
                      "assets/shaders/",

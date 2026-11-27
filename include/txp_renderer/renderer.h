@@ -56,6 +56,7 @@ class Renderer
 {
 public:
     Renderer(entt::registry& ecs_registry,
+             UI_state& ui_state,
              std::string const& title,
              std::string const& texture_asset_dir,
              std::string const& shader_asset_dir,

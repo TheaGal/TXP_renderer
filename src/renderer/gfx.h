@@ -167,6 +167,7 @@ struct GPU_performance_results
 /// Set of information useful for graphics.
 struct Information_hook_struct
 {
+    UI_state& ui_state;
     std::function<void(bool)> const& set_play_flag_fn;
     std::function<bool()> const& get_play_flag_fn;
     std::function<void(bool)> const& set_dev_anim_editor_view_fn;

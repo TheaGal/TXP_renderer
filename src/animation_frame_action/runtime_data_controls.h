@@ -55,9 +55,13 @@ struct Runtime_data_controls
                 NLOHMANN_DEFINE_TYPE_INTRUSIVE(Region, row_idx, start_frame, end_frame, ctrl_cmd);
             };
             std::vector<Region> regions;
+            std::string base_state_name;  // If filled, makes this as variant of the named state.
             std::string state_name;  // The corresponding animator state name this timeline belongs to.
 
-            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Animation_frame_action_timeline, regions, state_name);
+            NLOHMANN_DEFINE_TYPE_INTRUSIVE(Animation_frame_action_timeline,
+                                           regions,
+                                           base_state_name,
+                                           state_name);
         };
         std::vector<Animation_frame_action_timeline> anim_frame_action_timelines;  // Same order as `model_animations`. (@CHECK: I think this is not true anymore)
 

@@ -68,7 +68,7 @@ private:
     bool m_is_data_dirty{ false };
 };
 
-void open_editor();
+void open_editor(UI_state& ui_state);
 
 void close_editor();
 

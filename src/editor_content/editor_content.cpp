@@ -102,7 +102,7 @@ void imgui_main_menu_bar(TXP::Renderer_settings& settings,
             if (ImGui::MenuItem("UI Editor", "", s_editor_mode == EDITOR_MODE_UI_EDITOR))
             {
                 s_editor_mode = EDITOR_MODE_UI_EDITOR;
-                editor_content::ui_editor::open_editor();
+                editor_content::ui_editor::open_editor(info_hook_struct.ui_state);
             }
 
             if (s_editor_mode != prev_mode)

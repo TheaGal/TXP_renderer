@@ -49,6 +49,7 @@ namespace TXP
 struct Renderer::Impl
 {
     Impl(entt::registry& ecs_registry,
+         UI_state& ui_state,
          std::string const& title,
          std::string const& texture_asset_dir,
          std::string const& shader_asset_dir,
@@ -61,6 +62,7 @@ struct Renderer::Impl
          std::function<bool()>&& get_play_flag_fn,
          std::function<void(bool)>&& set_dev_anim_editor_view_fn)
         : ecs_registry(ecs_registry)
+        , ui_state(ui_state)
         , anim_template_bank(animator_asset_dir)
         , title(title)
         , texture_asset_dir(texture_asset_dir)
@@ -85,6 +87,7 @@ struct Renderer::Impl
     }
 
     entt::registry& ecs_registry;
+    UI_state& ui_state;
 
     Animator_template_bank anim_template_bank;
 
@@ -465,6 +468,7 @@ struct Renderer::Impl
 
 // class Renderer
 Renderer::Renderer(entt::registry& ecs_registry,
+                   UI_state& ui_state,
                    std::string const& title,
                    std::string const& texture_asset_dir,
                    std::string const& shader_asset_dir,
@@ -477,6 +481,7 @@ Renderer::Renderer(entt::registry& ecs_registry,
                    std::function<bool()>&& get_play_flag_fn,
                    std::function<void(bool)>&& set_dev_anim_editor_view_fn)
     : m_pimpl(std::make_unique<Impl>(ecs_registry,
+                                     ui_state,
                                      title,
                                      texture_asset_dir,
                                      shader_asset_dir,
@@ -538,6 +543,7 @@ void Renderer::build()
         m.title,
         m.settings,
         Information_hook_struct{
+            .ui_state = m.ui_state,
             .set_play_flag_fn = m.set_play_flag_fn,
             .get_play_flag_fn = m.get_play_flag_fn,
             .set_dev_anim_editor_view_fn = m.set_dev_anim_editor_view_fn,
@@ -719,7 +725,7 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
     // Invalidate cache when sizes change.
     if (render_view_sizes_changed)
     {
-        ui_state->invalidate_draw_cache();
+        m.ui_state.invalidate_draw_cache();
         m.shad_clouds->signal_render_view_sizes_changed();
         m.shad_postprocess->signal_render_view_sizes_changed();
     }
@@ -791,19 +797,19 @@ void Renderer::render_one_frame(float_t delta_time, UI_state* ui_state)
                                           cur_modmesh_ref_idx);
 
     // Upload UI state and draw.
-    if (ui_state != nullptr && ui_state->is_requesting_draw())
+    if (m.ui_state.is_requesting_draw())
     {
-        m.shad_sprite->upload_ui_state_data(*ui_state);
+        m.shad_sprite->upload_ui_state_data(m.ui_state);
 
         GPU_BEGIN_PROFILE_GFX("ui");
 
         g.begin_rendering_ui();
-        m.shad_sprite->draw(*ui_state, m.camera.get_main_cam_aspect());
+        m.shad_sprite->draw(m.ui_state, m.camera.get_main_cam_aspect());
         g.end_rendering_ui();
 
         GPU_END_PROFILE_GFX("ui");
 
-        ui_state->validate_draw_cache();
+        m.ui_state.validate_draw_cache();
     }
 
     m.camera.calc_cam_matrices();
