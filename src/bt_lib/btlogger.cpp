@@ -8,11 +8,13 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <functional>
 #include <iostream>  // @NOTE: @TEMP: See `printe()`
 #include <mutex>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <utility>
 #include <vector>
 
 using std::array;
@@ -26,6 +28,8 @@ using std::vector;
 
 namespace BT::logger
 {
+
+static std::function<void()> s_on_error_callback_fn{ nullptr };
 
 static atomic_uint64_t s_mainloop_iteration{ 0 };
 
@@ -227,6 +231,11 @@ uint64_t reserve_bytes(uint32_t const num_bytes)
 }  // namespace BT::logger
 
 
+void BT::logger::set_on_error_callback_fn(std::function<void()>&& on_error_callback_fn)
+{
+    s_on_error_callback_fn = std::move(on_error_callback_fn);
+}
+
 void BT::logger::notify_start_new_mainloop_iteration()
 {
     s_mainloop_iteration++;
@@ -252,6 +261,11 @@ void BT::logger::printef(Log_type type, string format_str, ...)
 
 void BT::logger::printe(Log_type type, string entry)
 {
+    if (type == ERROR && s_on_error_callback_fn != nullptr)
+    {
+        s_on_error_callback_fn();
+    }
+
 #define DO_RESERVED_CHAR_SANITY_CHECK 1
 #if DO_RESERVED_CHAR_SANITY_CHECK
     // Sanity check to make sure entry doesn't contain reserved char.

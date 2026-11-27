@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <tuple>
 
@@ -15,6 +16,8 @@ namespace BT
 {
 namespace logger
 {
+
+void set_on_error_callback_fn(std::function<void()>&& on_error_callback_fn);
 
 constexpr uint32_t k_num_rows{ 4096 };
 static_assert((k_num_rows & (k_num_rows - 1)) == 0, "Must be a power of 2.");
