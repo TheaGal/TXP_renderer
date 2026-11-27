@@ -91,21 +91,7 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                     eds.anim_state_name_to_idx_map.emplace(anim_states[i].state_name, i);
                 }
 
-                // @THEA: this component check reaches into BTZC engine so it's not available from
-                //        here, but maybe there could be a way to ensure that it's working????? ig
-                //        just making sure this component isn't attached to the entity in the
-                //        .btscene, since it's not an automatically added component after all.
-                //          -Thea 2026/08/26
-                // // Due to manual control in configuring the model animator, ensure that there is no
-                // // auto configuration component attached (this exclusion is just a special case for
-                // // this editor agent entity).  -Thea 2025/11/16
-                // assert(!reg.any_of<component::Anim_frame_action_controller>(entity));
-
                 // Configure anim frame action data.
-                // @NOTE: Using the `anim_frame_action_controller` component will configure the
-                //        model animator, however, since we want to manually control which AFA
-                //        controller is assigned on this dynamic entity, this component is not
-                //        attached.
                 eds.working_model_animator->configure_anim_frame_action_controls(
                     eds.working_afa_ctrls_copy,
                     BT::UUID_helper::generate_uuid(),  // dummy
