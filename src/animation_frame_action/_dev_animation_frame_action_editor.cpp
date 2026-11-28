@@ -114,8 +114,6 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                         .anim_state_idx_to_timeline_ref_map.at(afa_agent.working_anim_state_idx);
                 eds.selected_action_timeline_idx = timeline_ref.timeline_idx;
                 eds.selected_action_base_timeline_idx = timeline_ref.base_timeline_idx;
-                
-                assert(false);  // make afa editor better!!
 
                 // Set initial animator state.
                 eds.working_model_animator->change_state_set(

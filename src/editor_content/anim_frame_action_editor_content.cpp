@@ -1248,8 +1248,23 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter,
                                                ImVec2(cr_timeline_max.x, glm_min(cr_timeline_max.y, cr_timeline_min.y + s_sequencer_y_offset + k_top_measuring_region_height + 2 + (s_timeline_cell_size.y * k_num_timeline_rows)))) };
                 bool is_hovering_over_timeline_region{ false };  // Check in upcoming block.
 
-                for (auto& region : afa_timeline_regions)
-                {   // Check that the sequencer current frame has this region active.
+
+                using Region = anim_frame_action::Runtime_data_controls::Data::
+                    Animation_frame_action_timeline::Region;
+
+                static auto const k_draw_region_fn = [](Region& region,
+                                                        bool const is_region_selectable,
+                                                        ImVec2 const cr_timeline_min,
+                                                        ImVec2 const cr_timeline_max,
+                                                        ImU32 const active_bg_col,
+                                                        ImU32 const inactive_bg_col,
+                                                        ImDrawList* draw_list,
+                                                        bool const is_hovering_over_timeline,
+                                                        bool const on_lmb_press,
+                                                        bool const on_rmb_press,
+                                                        bool const cur_shift_pressed,
+                                                        bool& is_hovering_over_timeline_region) {
+                    // Check that the sequencer current frame has this region active.
                     bool is_active_this_frame{ s_current_frame >= region.start_frame &&
                                                s_current_frame < region.end_frame };
 
@@ -1259,15 +1274,13 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter,
                         cr_timeline_min.y + s_sequencer_y_offset + k_top_measuring_region_height + 2 + (s_timeline_cell_size.y * (region.row_idx + 1)) - 1 };
                     ImVec2 p_min{ cr_timeline_min.x + s_sequencer_x_offset + (region.start_frame * s_timeline_cell_size.x) + 1, region_bar_top_bottom.s };
                     ImVec2 p_max{ cr_timeline_min.x + s_sequencer_x_offset + (region.end_frame * s_timeline_cell_size.x) - 1, region_bar_top_bottom.t };
-                    draw_list->AddRectFilled(p_min,
-                                             p_max,
-                                             (is_active_this_frame ? 0x5500FF00 : 0x556DFC6D),
-                                             4.0f);
+                    draw_list->AddRectFilled(
+                        p_min,
+                        p_max,
+                        (is_active_this_frame ? active_bg_col : inactive_bg_col),
+                        4.0f);
 
                     // Helper funcs for regions.
-                    using Region = anim_frame_action::Runtime_data_controls::Data::
-                        Animation_frame_action_timeline::Region;
-
                     auto const check_is_selected_region_fn = [](Region const& region) {
                         for (auto* sel_reg : s_reg_sel.sel_regs)
                             if (&region == sel_reg)
@@ -1298,12 +1311,16 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter,
 
                     // Region seletected outline.
                     bool const is_selected_region{ check_is_selected_region_fn(region) };
-                    draw_list->AddRect(p_min,
-                                       p_max,
-                                       (is_selected_region ? 0xFF3176F5 : 0x55FFFFFF),
-                                       4.0f,
-                                       0,
-                                       (is_selected_region ? 4.0f : 2.0f));
+                    if (is_region_selectable)
+                        draw_list->AddRect(p_min,
+                                           p_max,
+                                           (is_selected_region ? 0xFF3176F5 : 0x77FFFFFF),
+                                           4.0f,
+                                           0,
+                                           (is_selected_region ? 4.0f : 2.0f));
+
+                    if (is_selected_region && !is_region_selectable)
+                        throw std::runtime_error("something that shouldntve happened happened");
 
                     // Draw text inside bar.
                     std::stringstream complete_cmd;
@@ -1322,6 +1339,10 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter,
                         ImVec2(p_min.x + k_cmd_txt_padding.x, p_min.y + k_cmd_txt_padding.y),
                         0xFFCCCCCC,
                         complete_cmd.str().c_str());
+
+                    // Everything below is selecting stuff, so exit early if unselectable.
+                    if (!is_region_selectable)
+                        return;
 
                     // Open the cmd editing popup.
                     bool open_cmd_edit_popup{ false };
@@ -1394,7 +1415,53 @@ void TXP::editor_content::anim_frame_action_editor_content(bool enter,
                         s_edit_region_command_popup_pos = ImGui::GetIO().MousePos;
                         anim_frame_action::s_editor_state.show_edit_pos_gizmo = false;
                     }
+                };
+
+                if (anim_frame_action::s_editor_state.selected_action_base_timeline_idx != -1)
+                {
+                    auto const& base_state_afa_timeline_regions{
+                        anim_frame_action::s_editor_state.working_afa_ctrls_copy->data
+                            .anim_frame_action_timelines[anim_frame_action::s_editor_state
+                                                             .selected_action_base_timeline_idx]
+                            .regions
+                    };
+
+                    for (auto const& region : base_state_afa_timeline_regions)
+                    {
+                        bool _;
+                        k_draw_region_fn(
+                            const_cast<Region&>(region),
+                            false,
+                            cr_timeline_min,
+                            cr_timeline_max,
+                            ImGui::ColorConvertFloat4ToU32(ImVec4(0.0186, 0.620, 0.530, 0.4)),
+                            ImGui::ColorConvertFloat4ToU32(ImVec4(0.340, 0.680, 0.623, 0.2)),
+                            draw_list,
+                            false,
+                            false,
+                            false,
+                            false,
+                            _);
+                    }
                 }
+
+                for (auto& region : afa_timeline_regions)
+                {
+                    k_draw_region_fn(
+                        region,
+                        true,
+                        cr_timeline_min,
+                        cr_timeline_max,
+                        ImGui::ColorConvertFloat4ToU32(ImVec4(0.130, 0.720, 0.336, 0.6)),
+                        ImGui::ColorConvertFloat4ToU32(ImVec4(0.370, 0.660, 0.471, 0.4)),
+                        draw_list,
+                        is_hovering_over_timeline,
+                        on_lmb_press,
+                        on_rmb_press,
+                        cur_shift_pressed,
+                        is_hovering_over_timeline_region);
+                }
+
                 if (!is_hovering_over_timeline_region && on_lmb_press)
                 {   // Deselect selected region(s).
                     s_reg_sel.sel_state = Region_selecting::UNSELECTED;
