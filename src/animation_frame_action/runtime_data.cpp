@@ -181,6 +181,12 @@ void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_
                         data_control_timelines[poss_base_timeline_idx].state_name)
                     {
                         base_timeline_idx = poss_base_timeline_idx;
+
+                        if (!data_control_timelines[poss_base_timeline_idx].base_state_name.empty())
+                            throw std::runtime_error(
+                                "Base timeline must not be a variant. This base timeline had a "
+                                "reference to its own base timeline.");
+
                         break;
                     }
 
