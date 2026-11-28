@@ -535,11 +535,19 @@ void TXP::component_internal::Model_animator::update_state()
     if (m_anim_frame_action_controls != nullptr)
     {
         // Process anim frame action runtime.
-        auto current_action_timeline_idx{
-            m_anim_frame_action_data.anim_state_idx_to_timeline_idx_map.at(anim_state_idx)
+        auto const current_action_timeline_ref{
+            m_anim_frame_action_data.anim_state_idx_to_timeline_ref_map.at(anim_state_idx)
         };
-        auto& afa_timeline{ m_anim_frame_action_controls->data
-                                .anim_frame_action_timelines[current_action_timeline_idx] };
+        auto const& afa_timeline{
+            m_anim_frame_action_controls->data
+                .anim_frame_action_timelines[current_action_timeline_ref.timeline_idx]
+        };
+        auto const* base_afa_timeline{
+            current_action_timeline_ref.base_timeline_idx != -1
+                ? &m_anim_frame_action_controls->data
+                       .anim_frame_action_timelines[current_action_timeline_ref.base_timeline_idx]
+                : nullptr
+        };
 
         m_anim_frame_action_data.clear_all_data_overrides();
         reset_event_queue_watchlist();
@@ -582,16 +590,68 @@ void TXP::component_internal::Model_animator::update_state()
         }
 
         // Process timeline regions.
-        for (auto const& region : afa_timeline.regions)
+        uint32_t base_tmln_region_idx{ 0 };
+        uint32_t tmln_region_idx{ 0 };
+
+        for (uint32_t row_idx = 0; row_idx < 1'000; row_idx++)
         {
-            // Check if within region.
-            if (frame_idx >= region.start_frame && frame_idx < region.end_frame)
+            using Region = anim_frame_action::Runtime_data_controls::Data::
+                Animation_frame_action_timeline::Region;
+            static auto const k_process_region_fn = [](Model_animator* self,
+                                                       uint32_t const frame_idx,
+                                                       uint32_t const row_idx,
+                                                       Region const& region) {
+                if (region.row_idx != row_idx)
+                {
+                    // Not at this priority level of processing yet.
+                    return false;
+                }
+
+                // Check if within region.
+                if (frame_idx >= region.start_frame && frame_idx < region.end_frame)
+                {
+                    self->execute_command_code(region.ctrl_cmd,
+                                               region.row_idx,
+                                               frame_idx == region.start_frame,
+                                               frame_idx == region.end_frame - 1);
+                }
+
+                return true;
+            };
+
+            bool has_regions_to_check{ false };
+
+            for (; base_afa_timeline != nullptr &&
+                   base_tmln_region_idx < base_afa_timeline->regions.size();
+                 base_tmln_region_idx++)
             {
-                execute_command_code(region.ctrl_cmd,
-                                     region.row_idx,
-                                     frame_idx == region.start_frame,
-                                     frame_idx == region.end_frame - 1);
+                has_regions_to_check = true;
+
+                if (!k_process_region_fn(this,
+                                         frame_idx,
+                                         row_idx,
+                                         base_afa_timeline->regions[base_tmln_region_idx]))
+                    break;
             }
+
+            for (; tmln_region_idx < afa_timeline.regions.size(); tmln_region_idx++)
+            {
+                has_regions_to_check = true;
+
+                if (!k_process_region_fn(this,
+                                         frame_idx,
+                                         row_idx,
+                                         afa_timeline.regions[tmln_region_idx]))
+                    break;
+            }
+
+            // Break if finished checking all timelines.
+            if (!has_regions_to_check)
+                break;
+
+            // Sanity check crash.
+            if (row_idx == 1'000 - 1)
+                throw std::runtime_error("shouldnt have made it this far");
         }
 
         // Update prev frame.

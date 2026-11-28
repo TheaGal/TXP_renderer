@@ -150,7 +150,7 @@ void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_
     component_internal::Model_animator const& animator,
     Runtime_data_controls const& data_controls)
 {
-    anim_state_idx_to_timeline_idx_map.clear();
+    anim_state_idx_to_timeline_ref_map.clear();
 
     auto const& animator_states{ animator.get_animator_states() };
     auto const& data_control_timelines{ data_controls.data.anim_frame_action_timelines };
@@ -166,17 +166,32 @@ void TXP::anim_frame_action::Runtime_controllable_data::map_animator_to_control_
         abort();
     }
 
-    anim_state_idx_to_timeline_idx_map.reserve(animator_states.size());
+    anim_state_idx_to_timeline_ref_map.reserve(animator_states.size());
     for (size_t anim_state_idx = 0; anim_state_idx < animator_states.size(); anim_state_idx++)
         for (size_t timeline_idx = 0; timeline_idx < data_control_timelines.size(); timeline_idx++)
             if (animator_states[anim_state_idx].state_name ==
                 data_control_timelines[timeline_idx].state_name)
             {   // Found a mapping!
-                anim_state_idx_to_timeline_idx_map.emplace(anim_state_idx, timeline_idx);
+                size_t base_timeline_idx{ (size_t)-1 };
+
+                for (size_t poss_base_timeline_idx = 0;
+                     poss_base_timeline_idx < data_control_timelines.size();
+                     poss_base_timeline_idx++)
+                    if (data_control_timelines[timeline_idx].base_state_name ==
+                        data_control_timelines[poss_base_timeline_idx].state_name)
+                    {
+                        base_timeline_idx = poss_base_timeline_idx;
+                        break;
+                    }
+
+                anim_state_idx_to_timeline_ref_map.emplace(
+                    anim_state_idx,
+                    Timeline_reference{ .timeline_idx = timeline_idx,
+                                        .base_timeline_idx = base_timeline_idx });
                 break;
             }
 
-    if (anim_state_idx_to_timeline_idx_map.size() != animator_states.size())
+    if (anim_state_idx_to_timeline_ref_map.size() != animator_states.size())
     {
         BT_ERROR(
             ">=1 anim states in .btanitor could not find a mapping into the .btafa. Check that the "
@@ -274,7 +289,14 @@ TXP::anim_frame_action::Runtime_data_controls::Runtime_data_controls(std::string
         uint32_t cur_row{ 0 };
         for (auto const& region : tmln.regions)
         {
-            if (region.row_idx < cur_row)
+            if (region.row_idx > 100)
+            {
+                BT_ERRORF("Timeline region row idx is too large (>100). Row_idx=%u State_name=%s",
+                          region.row_idx,
+                          tmln.state_name.c_str());
+                assert(false);
+            }
+            else if (region.row_idx < cur_row)
             {
                 BT_ERRORF("Timeline regions not sorted. Prev=%u Cur=%u State_name=%s",
                           cur_row,

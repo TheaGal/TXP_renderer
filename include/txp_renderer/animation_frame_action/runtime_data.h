@@ -253,8 +253,15 @@ public:
 
     void clear_all_data_overrides();
 
+    /// For holding reference of a timeline (and if there is a base timeline).
+    struct Timeline_reference
+    {
+        size_t timeline_idx{ (size_t)-1 };
+        size_t base_timeline_idx{ (size_t)-1 };  // optional
+    };
+
     /// Map to get timeline idx for runtime controls.
-    std::unordered_map<size_t, size_t> anim_state_idx_to_timeline_idx_map;
+    std::unordered_map<size_t, Timeline_reference> anim_state_idx_to_timeline_ref_map;
 
     /// Calculates the mapping of animator state indices to timeline indices.
     void map_animator_to_control_regions(component_internal::Model_animator const& animator,

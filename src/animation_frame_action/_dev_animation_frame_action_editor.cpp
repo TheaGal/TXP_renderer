@@ -109,9 +109,13 @@ void TXP::system::_dev_animation_frame_action_editor(entt::registry& reg)
                 afa_agent.working_anim_state_idx = eds.selected_anim_state_idx;
 
                 // Set control region idx.
-                eds.selected_action_timeline_idx =
+                auto const& timeline_ref =
                     eds.working_model_animator->get_anim_frame_action_data_handle()
-                        .anim_state_idx_to_timeline_idx_map.at(afa_agent.working_anim_state_idx);
+                        .anim_state_idx_to_timeline_ref_map.at(afa_agent.working_anim_state_idx);
+                eds.selected_action_timeline_idx = timeline_ref.timeline_idx;
+                eds.selected_action_base_timeline_idx = timeline_ref.base_timeline_idx;
+                
+                assert(false);  // make afa editor better!!
 
                 // Set initial animator state.
                 eds.working_model_animator->change_state_set(

@@ -37,6 +37,7 @@ struct Editor_state
     std::map<std::string, size_t> anim_state_name_to_idx_map;
     size_t selected_anim_state_idx{ 0 };
     size_t selected_action_timeline_idx{ 0 };
+    size_t selected_action_base_timeline_idx{ (size_t)-1 };
     size_t selected_anim_num_frames{ 0 };
     size_t anim_current_frame{ 0 };
     size_t prev_anim_current_frame{ (size_t)-1 };
